@@ -655,7 +655,9 @@ keringanan/beasiswa — bahkan **mustahil secara struktural**, karena
 `tagihan_item.nominal` bertipe `unsignedBigInteger` sehingga baris potongan tidak
 dapat disimpan sama sekali.
 
-Rincian lengkap di ROADMAP §Perbandingan dengan SIAKAD Lain.
+Rincian lengkap dulu ada di ROADMAP §Perbandingan dengan SIAKAD Lain. Bagian itu
+ditulis ulang pada 15 Agustus 2026 — ketujuh kesenjangan sudah tertutup, dan
+pembandingnya kini SEVIMA siAkadCloud.
 
 ### Bagian 2 — G1 Tugas Akhir
 
@@ -1054,8 +1056,13 @@ antarmuka.
 
 Saya sempat menyatakan "seluruh modul selesai". **Itu keliru.** Pemeriksaan
 ulang terhadap kode — item menu ber-`route` null, dan tabel domain yang hanya
-pernah ditulis seeder — menemukan enam hal yang masih kosong. Rinciannya di
-[`ROADMAP.md`](ROADMAP.md#belum-dikerjakan--diverifikasi-7-agustus-2026).
+pernah ditulis seeder — menemukan enam hal yang masih kosong: finalisasi status
+semester, Jadwal & Kelas, matriks tarif, wisuda, pengumuman, dan unggah berkas.
+Keenamnya diselesaikan pada hari yang sama; lihat sesi-sesi berikutnya.
+
+*(Rinciannya dulu ada di ROADMAP §Belum Dikerjakan. Bagian itu tidak ikut
+terbawa saat ROADMAP disusun ulang pada 15 Agustus 2026 menjadi dokumen yang
+menghadap ke depan.)*
 
 Yang terpenting bukan layar yang hilang: **tidak ada kode produksi yang
 memfinalisasi `status_mahasiswa`.** `BatasSksCalculator` mensyaratkan
