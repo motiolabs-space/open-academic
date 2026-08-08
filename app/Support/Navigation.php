@@ -99,6 +99,7 @@ final class Navigation
                     self::item('Dasbor', '▦', 'admin.dashboard'),
                     self::item('Master Akademik', '▤', 'admin.master.index'),
                     self::item('Jadwal & Kelas', '◫', 'admin.kelas'),
+                    self::item('Padanan & Paket', '⇄', 'admin.kurikulum-lanjutan'),
                 ],
             ],
             [

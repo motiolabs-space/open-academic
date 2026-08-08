@@ -389,10 +389,35 @@ class KrsService
             return $kelas->prodi_id === $mahasiswa->prodi_id;
         }
 
-        return $kelas->mataKuliah
-            ->kurikulum()
-            ->where('kurikulum.id', $mahasiswa->kurikulum_id)
-            ->exists();
+        $baris = DB::table('kurikulum_mata_kuliah')
+            ->where('kurikulum_id', $mahasiswa->kurikulum_id)
+            ->where('mata_kuliah_id', $kelas->mata_kuliah_id)
+            ->first(['konsentrasi_id']);
+
+        if ($baris === null) {
+            return false;
+        }
+
+        /*
+         * Shared course — belongs to every track.
+         *
+         * The common case by a wide margin: most of a degree is shared, and a
+         * null here means "no track restriction" rather than "no track chosen".
+         */
+        if ($baris->konsentrasi_id === null) {
+            return true;
+        }
+
+        /*
+         * Track course: only for students in that track.
+         *
+         * A student who has not chosen one yet is refused rather than allowed.
+         * Letting them through would have them sit a course counting towards a
+         * track requirement they are not subject to — and discovering that at
+         * graduation is far more expensive than being told now.
+         */
+        return $mahasiswa->konsentrasi_id !== null
+            && (int) $baris->konsentrasi_id === (int) $mahasiswa->konsentrasi_id;
     }
 
     private function sudahMengambilMataKuliah(Krs $krs, KelasKuliah $kelas): bool

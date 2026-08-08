@@ -47,6 +47,17 @@ class Kurikulum extends Model
         return $this->belongsTo(Prodi::class);
     }
 
+    /** Tracks defined by this curriculum version. */
+    public function konsentrasi(): HasMany
+    {
+        return $this->hasMany(Konsentrasi::class)->orderBy('kode');
+    }
+
+    public function paketKuliah(): HasMany
+    {
+        return $this->hasMany(PaketKuliah::class)->orderBy('semester_ke');
+    }
+
     /**
      * Courses in this version. The recommended semester and whether the course
      * is compulsory live on the pivot, because both differ between versions.

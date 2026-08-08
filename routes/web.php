@@ -371,6 +371,13 @@ Route::middleware(['auth:staff', 'term.active'])->prefix('admin')->name('admin.'
     Route::post('/surat/{surat}/cabut', [Admin\SuratController::class, 'cabut'])->name('surat.cabut');
     Route::get('/surat/{surat}/unduh', [Admin\SuratController::class, 'unduh'])->name('surat.unduh');
 
+    Route::get('/kurikulum-lanjutan', [Admin\KurikulumLanjutanController::class, 'index'])->name('kurikulum-lanjutan');
+    Route::post('/kurikulum-lanjutan/padanan', [Admin\KurikulumLanjutanController::class, 'simpanPadanan'])->name('kurikulum-lanjutan.padanan');
+    Route::delete('/kurikulum-lanjutan/padanan', [Admin\KurikulumLanjutanController::class, 'hapusPadanan'])->name('kurikulum-lanjutan.padanan.hapus');
+    Route::post('/kurikulum-lanjutan/{kurikulum}/konsentrasi', [Admin\KurikulumLanjutanController::class, 'simpanKonsentrasi'])->name('kurikulum-lanjutan.konsentrasi');
+    Route::post('/kurikulum-lanjutan/{kurikulum}/paket', [Admin\KurikulumLanjutanController::class, 'simpanPaket'])->name('kurikulum-lanjutan.paket');
+    Route::post('/kurikulum-lanjutan/{kurikulum}/petakan', [Admin\KurikulumLanjutanController::class, 'petakanKonsentrasi'])->name('kurikulum-lanjutan.petakan');
+
     Route::get('/akuntansi', [Admin\AkuntansiController::class, 'index'])->name('akuntansi.index');
     Route::post('/akuntansi/kirim', [Admin\AkuntansiController::class, 'kirim'])->name('akuntansi.kirim');
     Route::post('/akuntansi/ulangi-semua', [Admin\AkuntansiController::class, 'ulangiSemua'])->name('akuntansi.ulangi-semua');

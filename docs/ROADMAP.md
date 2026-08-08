@@ -80,9 +80,9 @@ Apa yang ada hari ini, dikelompokkan menurut siapa yang memakainya.
 | RPS & SAP | ✅ | Peta MK→CPL yang membuat penguasaan materi terukur — [`RPS-ANALITIK.md`](RPS-ANALITIK.md) |
 | Jurnal perkuliahan (BAP) | ✅ | Terlaksana dan berjurnal dilaporkan terpisah; jaraknya adalah temuannya |
 | Analitik kelas & mahasiswa | ✅ | Kehadiran, penilaian, penguasaan CPL. Fakta dan aturan — tanpa prediksi |
-| **Padanan mata kuliah** | ⬜ | Ekuivalensi antar kurikulum; berbeda dari konversi RPL |
-| **Kurikulum konsentrasi / peminatan** | ⬜ | Satu prodi, beberapa jalur wajib |
-| **Kuliah paket** | ⬜ | Lazim di vokasi/diploma: KRS ditetapkan, bukan dipilih |
+| Padanan mata kuliah | ✅ | Terarah dan transitif; mendarat di satu tempat — `PrasyaratChecker` |
+| Kurikulum konsentrasi | ✅ | Menggerbang katalog KRS; mata kuliah bersama tetap terbuka untuk semua |
+| Kuliah paket | ✅ | Mendelegasi ke `KrsService`, jadi tak satu pun aturan dilewati |
 | **Evaluasi mahasiswa (peringatan & DO)** | ⬜ | Ada penutupan semester, belum ada aturan evaluasi bertingkat |
 | **Monitoring pemakaian ruang** | ⬜ | Bentrok terdeteksi; pemanfaatannya belum terlihat |
 | **Cetak KTM, kartu ujian, absensi** | ⬜ | Pola PDF sudah ada dari transkrip/SKPI/BKD |
@@ -255,11 +255,11 @@ Inti produk. Semuanya menempel pada kelas dan kurikulum yang sudah ada.
 | ~~2~~ | ~~**RPS & SAP**~~ | ✅ 16 Agustus 2026 — memetakan MK ke CPL, yang membuat penguasaan materi dapat diukur |
 | ~~3~~ | ~~**Berita acara & jurnal perkuliahan**~~ | ✅ 16 Agustus 2026 |
 | ~~4~~ | ~~**Analitik perkuliahan**~~ | ✅ 16 Agustus 2026 — kehadiran, penilaian, penguasaan CPL |
-| 5 | **Padanan mata kuliah** | Setiap pergantian kurikulum menuntutnya, dan tanpanya transkrip mahasiswa lama tidak dapat dibaca oleh aturan kurikulum baru. `KonversiKredit` sudah menyediakan pola "diakui setara" — ini saudaranya di tingkat kurikulum, bukan tingkat orang |
-| 6 | **Kuliah paket** | Di vokasi/diploma KRS ditetapkan, bukan dipilih. `KrsService` tinggal menerima mode kedua: paket disalin, mahasiswa tidak memilih |
-| 7 | **Kurikulum konsentrasi** | Satu prodi beberapa jalur wajib; berpengaruh ke prasyarat dan syarat kelulusan |
+| ~~5~~ | ~~**Padanan mata kuliah**~~ | ✅ 17 Agustus 2026 |
+| ~~6~~ | ~~**Kuliah paket**~~ | ✅ 17 Agustus 2026 |
+| ~~7~~ | ~~**Kurikulum konsentrasi**~~ | ✅ 17 Agustus 2026 |
 | 8 | **Cetak KTM, kartu ujian, absensi, jurnal** | Pola PDF sudah ada dari transkrip/SKPI/BKD. Jurnal kini punya isinya |
-| 9 | **Kustomisasi templat dokumen** | Transkrip dan ijazah kini Blade tetap. Tiap kampus punya kop dan tata letaknya sendiri |
+| 9 | **Pengaturan dokumen** | Kop, logo, penandatangan, dan catatan kaki per jenis dokumen. **Bukan** templat Blade yang dapat disunting pengguna — itu berarti mengeksekusi kode yang tersimpan di basis data, dan risikonya tidak sebanding dengan keluwesan yang didapat |
 
 ### P2 — memperdalam data mahasiswa & dosen
 

@@ -22,6 +22,8 @@ class PrasyaratChecker
     /** @var array<int, Collection<int, int>> mahasiswa id => course ids passed */
     private array $memo = [];
 
+    public function __construct(private readonly PadananMataKuliah $padanan) {}
+
     /**
      * Prerequisites the student has not cleared, by course name.
      *
@@ -60,6 +62,13 @@ class PrasyaratChecker
      * prerequisite. Memoised per student for the request — a KRS catalogue
      * checks this once per row.
      *
+     * **The one place course equivalence lands.** Everything that asks "has this
+     * student passed X" comes through here: prerequisites, the KRS
+     * already-taken rule, and the graduation checklist. Expanding the set here
+     * makes all of them respect a curriculum change without any of them
+     * knowing equivalence exists — and, more importantly, without any of them
+     * being able to disagree about it.
+     *
      * @return Collection<int, int>
      */
     private function mataKuliahLulus(Mahasiswa $mahasiswa): Collection
@@ -75,11 +84,12 @@ class PrasyaratChecker
             ->whereNotNull('nilai_huruf')
             ->get();
 
-        return $this->memo[$mahasiswa->id] = $nilai
+        $ditempuh = $nilai
             ->filter(fn (Nilai $baris): bool => $baris->nilai_huruf->satisfiesPrerequisite())
             ->map(fn (Nilai $baris): int => (int) $baris->kelasKuliah->mata_kuliah_id)
-            ->unique()
-            ->values();
+            ->unique();
+
+        return $this->memo[$mahasiswa->id] = $this->padanan->perluas($ditempuh)->values();
     }
 
     /** Drops the memo — required after a grade is finalised within one request. */
