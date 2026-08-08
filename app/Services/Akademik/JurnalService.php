@@ -87,18 +87,37 @@ class JurnalService
      * documented less. Reporting one number would hide which of the two problems
      * the campus has.
      *
+     * @param Rps|false|null $rps the plan in force, when the caller already has
+     *                            it; `false` means "look it up", `null` means
+     *                            "there is none". A lecturer's RPS list calls
+     *                            this once per class, and looking the plan up
+     *                            here made that one query per row on a screen
+     *                            that had already fetched every plan it needs.
      * @return array<string, mixed>
      */
-    public function keterlaksanaan(KelasKuliah $kelas): array
+    public function keterlaksanaan(KelasKuliah $kelas, Rps|false|null $rps = false): array
     {
         $rencana = (int) config('academic.attendance.meetings_per_term', 16);
 
-        $pertemuan = $kelas->pertemuan()->get();
+        /*
+         * Uses the eager-loaded register when the caller supplied one, and only
+         * queries when it did not.
+         *
+         * Reading the property unconditionally would lazy-load here, which the
+         * strict-mode guard turns into an exception the moment the caller passes
+         * a collection — and querying unconditionally is the N+1 this exists to
+         * avoid.
+         */
+        $pertemuan = $kelas->relationLoaded('pertemuan')
+            ? $kelas->pertemuan
+            : $kelas->pertemuan()->get();
 
         $terlaksana = $pertemuan->where('is_terlaksana', true)->count();
         $berjurnal = $pertemuan->whereNotNull('jurnal_diisi_at')->count();
 
-        $rps = Rps::untuk($kelas->mata_kuliah_id, $kelas->tahun_akademik_id);
+        if ($rps === false) {
+            $rps = Rps::untuk($kelas->mata_kuliah_id, $kelas->tahun_akademik_id);
+        }
 
         return [
             'rencana' => $rencana,
@@ -133,10 +152,28 @@ class JurnalService
      */
     public function tertinggal(Collection $kelas, int $selisihMinimum = 2): Collection
     {
+        /*
+         * Every plan for these classes in one query.
+         *
+         * This runs over a whole programme, so a lookup per class is the one
+         * place where the count scales with the size of the campus rather than
+         * the size of the screen.
+         */
+        $rps = Rps::query()
+            ->with('pertemuan')
+            ->whereIn('mata_kuliah_id', $kelas->pluck('mata_kuliah_id')->unique())
+            ->whereIn('tahun_akademik_id', $kelas->pluck('tahun_akademik_id')->unique())
+            ->aktif()
+            ->get()
+            ->keyBy(fn (Rps $r): string => $r->mata_kuliah_id.':'.$r->tahun_akademik_id);
+
         return $kelas
             ->map(fn (KelasKuliah $k): array => [
                 'kelas' => $k,
-                'keterlaksanaan' => $this->keterlaksanaan($k),
+                'keterlaksanaan' => $this->keterlaksanaan(
+                    $k,
+                    $rps->get($k->mata_kuliah_id.':'.$k->tahun_akademik_id),
+                ),
             ])
             ->filter(fn (array $b): bool => $b['keterlaksanaan']['terlaksana']
                 - $b['keterlaksanaan']['berjurnal'] >= $selisihMinimum)

@@ -52,6 +52,50 @@
         <x-alert tone="warning" class="mb-5">{{ $ringkasan->alasanTidakDapatDiajukan }}</x-alert>
     @endif
 
+    {{-- Alasan tiap mata kuliah yang dilewati paket. Satu angka
+         ("6 ditambahkan") menyembunyikan justru bagian yang perlu
+         ditindaklanjuti mahasiswa. --}}
+    @if (session('paket_dilewati'))
+        <x-alert tone="warning" class="mb-5">
+            <strong>Sebagian mata kuliah paket tidak dapat ditambahkan.</strong>
+            <ul class="mt-2 list-disc space-y-1 pl-5 text-[12.5px]">
+                @foreach (session('paket_dilewati') as $lewat)
+                    <li>{{ $lewat['mata_kuliah'] }} — {{ $lewat['alasan'] }}</li>
+                @endforeach
+            </ul>
+        </x-alert>
+    @endif
+
+    {{-- Hanya untuk prodi yang menerbitkan rencana studi. Yang lain tidak
+         melihat apa pun di sini. --}}
+    @if ($paket && $paket['paket'])
+        <x-card class="mb-5" title="Paket Semester" :meta="$paket['paket']->nama">
+            <p class="text-[13px] text-ink-muted">
+                Program studi Anda menerbitkan rencana studi. Menerapkan paket menambahkan
+                {{ $paket['baris']->count() }} mata kuliah sekaligus — aturan yang sama tetap
+                berlaku, jadi mata kuliah yang sudah Anda lulusi atau yang kelasnya penuh akan
+                dilewati beserta alasannya.
+            </p>
+
+            <ul class="tabular mt-3 grid gap-1 text-[12.5px] text-ink-muted sm:grid-cols-2">
+                @foreach ($paket['baris'] as $baris)
+                    <li class="flex items-center gap-2">
+                        <span class="font-semibold">{{ $baris['mata_kuliah']->kode }}</span>
+                        <span class="truncate">{{ $baris['mata_kuliah']->nama }}</span>
+                        @if (! $baris['kelas'])
+                            <x-chip tone="neutral">belum ada kelas</x-chip>
+                        @endif
+                    </li>
+                @endforeach
+            </ul>
+
+            <form method="POST" action="{{ route('mahasiswa.krs.paket') }}" class="mt-4">
+                @csrf
+                <x-button type="submit" class="px-4 py-2 text-xs">Terapkan paket</x-button>
+            </form>
+        </x-card>
+    @endif
+
     <div class="grid gap-5 lg:grid-cols-[1.6fr_1fr]">
         {{-- ============ KATALOG ============ --}}
         <x-card title="Katalog Mata Kuliah" :meta="$term->nama" flush>
@@ -111,6 +155,19 @@
                                     Prasyarat belum lulus: {{ implode(', ', $baris['belum_prasyarat']) }}
                                 </div>
                             @endif
+
+                            {{-- Dua sebab, dan mahasiswa hanya dapat menindaklanjuti
+                                 salah satunya — jadi keduanya dibedakan di sini. --}}
+                            @if ($baris['luar_konsentrasi'] && ! $baris['sudah_diambil'])
+                                <div class="mt-2 text-[11.5px] text-muted">
+                                    @if ($krs->mahasiswa->konsentrasi_id === null)
+                                        Mata kuliah ini milik salah satu konsentrasi. Tetapkan konsentrasi
+                                        Anda lebih dulu lewat dosen wali atau bagian akademik.
+                                    @else
+                                        Bukan untuk konsentrasi {{ $krs->mahasiswa->konsentrasi?->nama }}.
+                                    @endif
+                                </div>
+                            @endif
                         </div>
 
                         <div class="flex-none">
@@ -127,7 +184,11 @@
                                 </form>
                             @else
                                 <x-chip tone="neutral">
-                                    @if ($baris['penuh']) Kuota penuh
+                                    {{-- Konsentrasi didahulukan: alasannya struktural,
+                                         dan "kuota penuh" pada mata kuliah yang memang
+                                         bukan untuk jalur ini menyesatkan. --}}
+                                    @if ($baris['luar_konsentrasi']) Luar konsentrasi
+                                    @elseif ($baris['penuh']) Kuota penuh
                                     @elseif ($baris['melebihi_batas']) Melebihi batas SKS
                                     @elseif ($baris['belum_prasyarat']) Terkunci prasyarat
                                     @else Tidak tersedia

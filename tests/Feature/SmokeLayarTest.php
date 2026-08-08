@@ -86,7 +86,10 @@ it('membuka layar mahasiswa dalam anggaran kueri', function (string $url, int $a
     );
 })->with([
     ['/mahasiswa', 25],
-    ['/mahasiswa/krs', 34],
+    // 34 → 36: peta kurikulum (gerbang konsentrasi), konsentrasi mahasiswa,
+    // dan prodinya. Ketiganya satu kueri apa pun panjang katalognya — bukan
+    // per baris, jadi tidak tumbuh bersama jumlah kelas yang ditawarkan.
+    ['/mahasiswa/krs', 36],
     ['/mahasiswa/jadwal', 20],
     ['/mahasiswa/khs', 25],
     ['/mahasiswa/tagihan', 20],
@@ -120,7 +123,11 @@ it('membuka layar dosen dalam anggaran kueri', function (string $url, int $angga
     // dosen1 punya laporan BKD yang sudah disahkan, jadi jalur ini membaca
     // cuplikan beku. Jalur lembar kerja hidup — yang jauh lebih mahal — diuji
     // terpisah di bawah.
-    ['/dosen/rps', 20],
+    // 20 → 12, dan yang penting bukan angkanya: dulu tumbuh per kelas yang
+    // diampu (RPS dan pertemuan dicari satu per satu), sekarang tidak. Anggaran
+    // longgar hanya menyembunyikan kembalinya N+1 itu sampai ada dosen dengan
+    // beban penuh.
+    ['/dosen/rps', 12],
     ['/dosen/analitik', 12],
     ['/dosen/bkd', 12],
     ['/dosen/bkd/penilaian', 13],

@@ -39,10 +39,27 @@ class RpsController extends Controller
         $term = Portal::term();
 
         $kelas = KelasKuliah::query()
-            ->with('mataKuliah')
+            // pertemuan is counted per row; without this the register is one
+            // query per class and the screen grows with the teaching load.
+            ->with(['mataKuliah', 'pertemuan'])
             ->where('tahun_akademik_id', $term->id)
             ->whereHas('dosen', fn ($q) => $q->where('dosen.id', $dosen->id))
             ->get();
+
+        /*
+         * Every plan for these courses in one query, keyed by course.
+         *
+         * Both this screen and keterlaksanaan() need the plan, so looking it up
+         * per row cost two queries per class — and a lecturer with a full load
+         * pays that twice over.
+         */
+        $rps = Rps::query()
+            ->with('pertemuan')
+            ->where('tahun_akademik_id', $term->id)
+            ->whereIn('mata_kuliah_id', $kelas->pluck('mata_kuliah_id')->unique())
+            ->aktif()
+            ->get()
+            ->keyBy('mata_kuliah_id');
 
         return view('dosen.rps', [
             'judul' => 'RPS & Jurnal Perkuliahan',
@@ -51,8 +68,8 @@ class RpsController extends Controller
 
             'daftar' => $kelas->map(fn (KelasKuliah $k): array => [
                 'kelas' => $k,
-                'rps' => Rps::untuk($k->mata_kuliah_id, $k->tahun_akademik_id),
-                'keterlaksanaan' => $this->jurnal->keterlaksanaan($k),
+                'rps' => $rps->get($k->mata_kuliah_id),
+                'keterlaksanaan' => $this->jurnal->keterlaksanaan($k, $rps->get($k->mata_kuliah_id)),
             ]),
         ]);
     }

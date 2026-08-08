@@ -66,11 +66,17 @@ function keKurikulum(MataKuliah $mk, ?Konsentrasi $konsentrasi = null, int $seme
 
 function mahasiswaUji(?Konsentrasi $konsentrasi = null): Mahasiswa
 {
-    return Mahasiswa::factory()->create([
+    $mahasiswa = Mahasiswa::factory()->create([
         'prodi_id' => test()->prodi->id,
         'kurikulum_id' => test()->kurikulum->id,
         'konsentrasi_id' => $konsentrasi?->id,
     ]);
+
+    // Kepemilikan saja cukup untuk membaca KRS sendiri, tapi tidak untuk
+    // mengubahnya — tanpa peran ini rute paket menjawab 403.
+    $mahasiswa->assignRole('mahasiswa');
+
+    return $mahasiswa;
 }
 
 /** Records a finalised pass for a student on a course, in the closed term. */
@@ -303,6 +309,62 @@ describe('kurikulum konsentrasi', function () {
 
         expect($this->krsService->tambahKelas($krs, kelasKurikulumUji($khususA))->exists)->toBeTrue();
     });
+
+    it('melihat mata kuliah yang baru ditambahkan ke kurikulum', function () {
+        /*
+         * Versi pertama gerbang ini memoisasi peta kurikulum pada objek
+         * servicenya. Cepat, dan basi begitu ada mata kuliah baru ditambahkan
+         * dalam proses yang sama — dua tes KRS yang sudah ada langsung gagal,
+         * dan sebuah queue worker atau proses Octane akan rusak dengan cara yang
+         * sama tanpa ada yang menyadarinya.
+         */
+        $mahasiswa = mahasiswaUji();
+        $pertama = mkUji('AWAL101');
+        keKurikulum($pertama);
+
+        $krs = $this->krsService->bukaAtauAmbil($mahasiswa, $this->term);
+        $this->krsService->tambahKelas($krs, kelasKurikulumUji($pertama));
+
+        // Ditambahkan ke kurikulum sesudah pemeriksaan pertama berjalan.
+        $kemudian = mkUji('SUSUL101');
+        keKurikulum($kemudian);
+
+        expect($this->krsService->tambahKelas($krs->refresh(), kelasKurikulumUji($kemudian))->exists)
+            ->toBeTrue();
+    });
+
+    /*
+     * Katalog KRS memfilter kurikulum lewat SQL-nya sendiri dan tidak tahu apa
+     * pun tentang konsentrasi. Tanpa tes ini, mata kuliah jalur lain tampil
+     * dengan tombol "Ambil" yang hidup lalu ditolak saat ditekan — persis
+     * kegagalan yang layar itu ada untuk mencegahnya.
+     */
+    it('tidak menawarkan tombol ambil untuk mata kuliah jalur lain', function () {
+        $khususA = mkUji('RPL201');
+        keKurikulum($khususA, $this->jalurA);
+        $kelas = kelasKurikulumUji($khususA);
+
+        $mahasiswa = mahasiswaUji($this->jalurB);
+
+        $this->actingAs($mahasiswa, 'mahasiswa')
+            ->get('/mahasiswa/krs')
+            ->assertOk()
+            ->assertSee('Luar konsentrasi')
+            ->assertDontSee(route('mahasiswa.krs.tambah', $kelas), false);
+    });
+
+    it('memberi tahu mahasiswa tanpa jalur apa yang harus dilakukan', function () {
+        // Dua sebab yang tampak sama di layar, tapi hanya satu yang dapat
+        // ditindaklanjuti mahasiswa.
+        $khususA = mkUji('RPL201');
+        keKurikulum($khususA, $this->jalurA);
+        kelasKurikulumUji($khususA);
+
+        $this->actingAs(mahasiswaUji(), 'mahasiswa')
+            ->get('/mahasiswa/krs')
+            ->assertOk()
+            ->assertSee('Tetapkan konsentrasi');
+    });
 });
 
 describe('kuliah paket', function () {
@@ -405,5 +467,50 @@ describe('kuliah paket', function () {
 
         expect(fn () => $this->paketService->terapkan($krs->refresh()))
             ->toThrow(AturanAkademikException::class, 'Belum ada paket kuliah untuk semester 7');
+    });
+
+    /*
+     * Servicenya sudah lengkap dan teruji sejak awal, tapi tidak ada satu pun
+     * pemanggilnya di aplikasi — mahasiswa di prodi berpaket tetap harus memilih
+     * satu per satu. Fitur yang hanya dapat dijalankan oleh tes bukan fitur.
+     */
+    it('menawarkan penerapan paket di layar KRS prodi berpaket', function () {
+        test()->prodi->update(['mode_krs' => 'paket']);
+        kelasKurikulumUji($this->mkA);
+        kelasKurikulumUji($this->mkB);
+
+        $this->actingAs(mahasiswaUji(), 'mahasiswa')
+            ->get('/mahasiswa/krs')
+            ->assertOk()
+            ->assertSee('Paket Semester')
+            ->assertSee('Terapkan paket');
+    });
+
+    it('tidak menawarkan apa pun di prodi yang mahasiswanya memilih sendiri', function () {
+        kelasKurikulumUji($this->mkA);
+
+        $this->actingAs(mahasiswaUji(), 'mahasiswa')
+            ->get('/mahasiswa/krs')
+            ->assertOk()
+            ->assertDontSee('Terapkan paket');
+    });
+
+    it('menerapkan paket lewat layar dan menyebutkan yang dilewati', function () {
+        test()->prodi->update(['mode_krs' => 'paket']);
+
+        $mahasiswa = mahasiswaUji();
+        lulusUji($mahasiswa, $this->mkA);
+
+        kelasKurikulumUji($this->mkA);
+        kelasKurikulumUji($this->mkB);
+
+        $this->actingAs($mahasiswa, 'mahasiswa')
+            ->post('/mahasiswa/krs/paket')
+            ->assertRedirect()
+            ->assertSessionHas('paket_dilewati');
+
+        expect(Krs::where('mahasiswa_id', $mahasiswa->id)
+            ->where('tahun_akademik_id', test()->term->id)
+            ->first()->total_sks)->toBe($this->mkB->sks);
     });
 });

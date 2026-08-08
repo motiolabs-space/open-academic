@@ -94,6 +94,7 @@ Route::middleware(['auth:mahasiswa', 'term.active'])->prefix('mahasiswa')->name(
     Route::get('/krs', [Mahasiswa\KrsController::class, 'index'])->name('krs');
     Route::post('/krs/kelas/{kelas}', [Mahasiswa\KrsController::class, 'tambah'])->name('krs.tambah');
     Route::delete('/krs/detail/{detail}', [Mahasiswa\KrsController::class, 'hapus'])->name('krs.hapus');
+    Route::post('/krs/paket', [Mahasiswa\KrsController::class, 'paket'])->name('krs.paket');
     Route::post('/krs/ajukan', [Mahasiswa\KrsController::class, 'ajukan'])->name('krs.ajukan');
 
     Route::get('/jadwal', Mahasiswa\JadwalController::class)->name('jadwal');
