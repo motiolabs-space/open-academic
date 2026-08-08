@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Database\Seeders;
 
 use App\Models\System\Setting;
+use Database\Seeders\Demo\BeasiswaSeeder;
 use Database\Seeders\Demo\IntegrasiSeeder;
 use Database\Seeders\Demo\KelulusanSeeder;
 use Database\Seeders\Demo\KemahasiswaanSeeder;
@@ -65,6 +66,11 @@ class DemoCampusSeeder extends Seeder
             PerkuliahanSeeder::class,
             RiwayatAkademikSeeder::class,
             KeuanganSeeder::class,
+
+            // Sesudah KeuanganSeeder: beasiswa mendarat pada tagihan yang sudah
+            // terbit, dan itu justru alur yang paling sering terjadi — seleksi
+            // selesai berminggu-minggu setelah penagihan.
+            BeasiswaSeeder::class,
 
             // Sesudah RiwayatAkademikSeeder: konversi ditolak untuk mata kuliah
             // yang sudah ditempuh, jadi calonnya dipilih dari yang belum bernilai.

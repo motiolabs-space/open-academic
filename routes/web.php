@@ -356,6 +356,13 @@ Route::middleware(['auth:staff', 'term.active'])->prefix('admin')->name('admin.'
     Route::post('/keuangan/terbitkan', [Admin\KeuanganController::class, 'terbitkan'])->name('keuangan.terbitkan');
     Route::post('/keuangan/tagihan/{tagihan}/pembayaran', [Admin\KeuanganController::class, 'catatPembayaran'])->name('keuangan.pembayaran');
     Route::post('/keuangan/pembayaran/{pembayaran}/batal', [Admin\KeuanganController::class, 'batalkanPembayaran'])->name('keuangan.pembayaran.batal');
+    Route::post('/keuangan/tagihan/{tagihan}/keringanan', [Admin\KeuanganController::class, 'keringanan'])->name('keuangan.keringanan');
+    Route::post('/keuangan/potongan/{item}/hapus', [Admin\KeuanganController::class, 'hapusPotongan'])->name('keuangan.potongan.hapus');
+
+    Route::get('/beasiswa', [Admin\BeasiswaController::class, 'index'])->name('beasiswa');
+    Route::post('/beasiswa', [Admin\BeasiswaController::class, 'simpanSkema'])->name('beasiswa.skema');
+    Route::post('/beasiswa/{beasiswa}/tetapkan', [Admin\BeasiswaController::class, 'tetapkan'])->name('beasiswa.tetapkan');
+    Route::post('/beasiswa/penerima/{penerima}/cabut', [Admin\BeasiswaController::class, 'cabut'])->name('beasiswa.cabut');
 
     Route::get('/cuti', [Admin\CutiController::class, 'index'])->name('cuti');
     Route::post('/cuti', [Admin\CutiController::class, 'ajukan'])->name('cuti.ajukan');

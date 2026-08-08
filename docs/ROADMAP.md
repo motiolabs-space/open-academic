@@ -21,7 +21,7 @@
 | Layar terpakai | 21 dari 32 di bundel desain |
 | Endpoint Bridge API | 12 |
 | Perintah artisan | 4 (`openacademic:feeder-*`, `bridge-token`) |
-| Tes Pest | 583 hijau (1.291 asersi) |
+| Tes Pest | 606 hijau (1.336 asersi) |
 
 **Basis data: sudah ada dan terisi.** `open_academic` di MariaDB, seluruh
 47 tabel domain ter-migrasi, dan `php artisan migrate --seed` mengisi kampus
@@ -36,10 +36,13 @@ sehingga tangga batas SKS berbasis IPS akhirnya menyala di instalasi sungguhan.
 Begitu pula layar Jadwal & Kelas (§2).
 
 **Dibandingkan cakupan SIAKAD yang lazim dipakai kampus Indonesia**, tercatat
-tujuh kesenjangan pada 8 Agustus 2026. **Empat sudah ditutup:** G1 Tugas Akhir,
-G2 Notifikasi, G3 Surat & SKPI, dan G5 Konversi Kredit. Tiga sisanya di
-[§Perbandingan dengan SIAKAD Lain](#perbandingan-dengan-siakad-lain) — dan yang
-paling mendesak adalah **G4**, satu-satunya yang menuntut migrasi skema keuangan.
+tujuh kesenjangan pada 8 Agustus 2026. **Lima sudah ditutup:** G1 Tugas Akhir,
+G2 Notifikasi, G3 Surat & SKPI, G4 Keringanan & Beasiswa, dan G5 Konversi Kredit.
+
+Dua sisanya di [§Perbandingan dengan SIAKAD Lain](#perbandingan-dengan-siakad-lain),
+dan keduanya menunggu keputusan sebelum kode: **G6 EDOM** perlu penetapan batas
+terhadap Open Campus, **G7 SISTER/BKD** perlu akses ke sistem kementerian sisi
+dosen.
 
 **Repo sudah di bawah Git** sejak 11 Agustus 2026, satu commit awal atas
 sembilan belas sesi kerja. Belum ada remote — itu keputusan pemilik repo.
@@ -687,17 +690,50 @@ Dependensi kedelapan proyek ini.
 
 ### Kesenjangan Tingkat 2 — akreditasi & keuangan
 
-#### G4. Keringanan, beasiswa, potongan UKT ⬜ — *tidak mungkin secara struktural*
+#### G4. Keringanan, beasiswa, potongan UKT ✅ selesai 12 Agustus 2026
 
-Bukan sekadar layar yang belum dibuat. `tagihan_item.nominal` bertipe
-`unsignedBigInteger`, jadi **baris potongan tidak dapat disimpan sama sekali**.
+Sebelumnya bukan sekadar layar yang belum dibuat: `tagihan_item.nominal` bertipe
+`unsignedBigInteger`, jadi **baris potongan tidak dapat ada**.
 
-`dispensasi_sampai` yang sudah ada hanya menunda jatuh tempo; ia tidak mengurangi
-nominal. Padahal keringanan UKT dan beasiswa adalah dua cara paling umum sebuah
-tagihan berkurang di kampus Indonesia — dan keduanya perlu jejak audit tentang
-siapa yang menyetujui.
+##### Bentuk yang dipilih, dan alasannya
 
-Perbaikannya memerlukan migrasi, bukan hanya controller.
+Potongan adalah **baris bernilai negatif pada tagihan**, bukan tabel terpisah
+yang dikurangkan saat dibaca. Sepuluh tempat membaca `tagihan.total` dan
+`tagihan.terbayar` — gerbang pembayaran KRS, daftar periksa kelulusan, pengingat
+tunggakan, syarat surat keterangan aktif kuliah, dasbor. Mempertahankan
+`total = jumlah baris` berarti **tak satu pun dari kesepuluhnya berubah**, dan
+tak satu pun dapat menyimpang darinya.
+
+Diverifikasi pada kampus demo: nol ketidakcocokan antara `total` dan jumlah
+barisnya, atas seluruh tagihan.
+
+##### Tiga cara kehilangan uang tanpa ada yang tahu
+
+| Aturan | Kegagalan yang dicegah |
+|---|---|
+| Total tidak pernah di bawah nol | `total` unsigned — nilai negatif terbaca sebagai angka positif raksasa |
+| Kelebihan bayar **ditampilkan**, bukan ditelan | Mahasiswa bayar Agustus, beasiswa disetujui September; uangnya nyata dan harus dapat dipertanggungjawabkan |
+| Penerapan bersifat idempoten | Penerbitan ulang menjadi beasiswa kedua — dan totalnya tetap seimbang, jadi tak ada yang tampak salah |
+
+Ditambah: alasan wajib pada setiap keringanan, kuota per skema dihitung atas
+penerima aktif, dan dua beasiswa 60% tidak menjadi 120%.
+
+##### Bug lama yang tersingkap
+
+Aturan status pembayaran menuntut `total > 0` untuk berstatus lunas. Pembebasan
+penuh karenanya menghasilkan tagihan **"belum bayar" senilai Rp0** — yang akan
+menahan surat keterangan aktif kuliah dan memicu pengingat jatuh tempo. Dibuktikan
+dengan mengembalikan aturan lamanya.
+
+##### Batas yang dinyatakan
+
+Pencabutan beasiswa bersifat **ke depan**. Membalik semester yang lalu akan
+memunculkan kembali utang atas tagihan yang sudah dianggap selesai berbulan-bulan
+sebelumnya; pembalikan satu baris tetap tersedia untuk kasus yang memang harus.
+
+Menagih penyandang dana beasiswa eksternal adalah **piutang di sistem keuangan**,
+bukan di sini. Yang dijamin modul ini: setiap potongan dapat ditelusuri ke pihak
+yang menanggungnya.
 
 #### G5. Konversi nilai & transfer kredit (RPL / pindahan) ✅ selesai 11 Agustus 2026
 
@@ -780,7 +816,7 @@ data yang harus punya satu pemilik.
 | ~~1~~ | ~~**G1 Tugas Akhir**~~ | ✅ selesai 8 Agustus 2026 |
 | ~~2~~ | ~~**G2 Notifikasi**~~ | ✅ selesai 9 Agustus 2026 |
 | ~~3~~ | ~~**G3 Surat & SKPI**~~ | ✅ selesai 10 Agustus 2026 |
-| 4 | **G4 Keringanan/beasiswa** | Perlu migrasi; makin lama makin mahal |
+| ~~4~~ | ~~**G4 Keringanan/beasiswa**~~ | ✅ selesai 12 Agustus 2026 |
 | ~~5~~ | ~~**G5 Konversi kredit**~~ | ✅ selesai 11 Agustus 2026 |
 | 6 | **G6 EDOM** | Putuskan batasnya lebih dulu |
 | 7 | **G7 SISTER/BKD** | Terbesar cakupannya, paling sedikit ketergantungannya |

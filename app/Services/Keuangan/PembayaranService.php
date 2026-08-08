@@ -162,7 +162,17 @@ class PembayaranService
         $total = (int) $tagihan->total;
 
         return match (true) {
-            $terbayar >= $total && $total > 0 => InvoiceStatus::Lunas,
+            /*
+             * Nothing owed is settled, including when nothing was ever paid.
+             *
+             * A full waiver produces exactly this: total zero, paid zero. The
+             * previous rule required `total > 0` and so left such an invoice
+             * marked unpaid — which would have blocked a certificate of
+             * enrolment and sent a due-date reminder about a bill of Rp0.
+             */
+            $total <= 0 => InvoiceStatus::Lunas,
+
+            $terbayar >= $total => InvoiceStatus::Lunas,
             $terbayar > 0 => InvoiceStatus::Sebagian,
             default => InvoiceStatus::BelumBayar,
         };

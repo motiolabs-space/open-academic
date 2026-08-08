@@ -4,6 +4,76 @@
 
 ---
 
+## Sesi 21 — 2026-08-12 · G4 Keringanan & Beasiswa
+
+**606 tes hijau (1.336 asersi)**, naik dari 583.
+
+Yang selama empat sesi saya sebut "mustahil secara struktural":
+`tagihan_item.nominal` bertipe `unsignedBigInteger`, sehingga baris potongan
+bukan belum dibuat, melainkan **tidak dapat ada**.
+
+Satu `->change()` membuka seluruh modul.
+
+### Bentuk yang dipilih, dan mengapa itu yang menentukan
+
+Potongan adalah **baris bernilai negatif pada tagihan**, bukan tabel terpisah
+yang dikurangkan saat dibaca.
+
+Sepuluh tempat membaca `tagihan.total` dan `tagihan.terbayar` — gerbang
+pembayaran KRS, daftar periksa kelulusan, pengingat tunggakan, syarat surat
+keterangan aktif kuliah, beberapa dasbor. Mempertahankan `total = jumlah baris`
+berarti **tak satu pun dari kesepuluhnya perlu diubah**, dan tak satu pun dapat
+menyimpang darinya.
+
+Diverifikasi pada kampus demo dengan SQL: nol ketidakcocokan atas seluruh tagihan.
+
+### Tiga cara kehilangan uang tanpa ada yang menyadari
+
+| Aturan | Kegagalan yang dicegah |
+|---|---|
+| Total tidak pernah di bawah nol | `total` unsigned — negatif akan terbaca sebagai angka positif raksasa |
+| Kelebihan bayar **ditampilkan**, bukan ditelan | Bayar Agustus, beasiswa disetujui September. Uangnya nyata dan harus dapat dipertanggungjawabkan |
+| Penerapan idempoten | Penerbitan ulang menjadi beasiswa kedua — totalnya tetap seimbang, jadi tak ada yang tampak salah |
+
+Ditambah alasan wajib pada setiap keringanan. Menurunkan tagihan adalah tindakan
+paling bernilai yang dapat disalahgunakan di sistem ini, dan potongan tanpa
+alasan tertulis tidak dapat dibedakan dari penyalahgunaan.
+
+### Bug lama yang tersingkap
+
+Aturan status pembayaran menuntut `total > 0` untuk berstatus lunas. Pembebasan
+penuh karenanya menghasilkan tagihan **"belum bayar" senilai Rp0** — yang akan
+menahan surat keterangan aktif kuliah dan memicu pengingat jatuh tempo atas utang
+nol rupiah.
+
+Dibuktikan dengan mengembalikan aturan lamanya: tesnya langsung gagal. Begitu
+pula batas "tidak pernah negatif".
+
+### Batas yang dinyatakan, bukan diam-diam dipilih
+
+**Pencabutan beasiswa bersifat ke depan.** Membalik semester yang lalu akan
+memunculkan kembali utang atas tagihan yang sudah dianggap selesai berbulan-bulan
+sebelumnya. Pembalikan satu baris tetap tersedia untuk kasus yang memang harus —
+tindakan sengaja pada tagihan bernama, bukan efek samping mengakhiri skema.
+
+**Menagih penyandang dana beasiswa eksternal adalah piutang di sistem keuangan**,
+bukan di sini. Yang dijamin modul ini: setiap potongan dapat ditelusuri ke pihak
+yang menanggungnya.
+
+### Yang hanya tertangkap suite penuh
+
+Helper tes `tagihanUji()` bertabrakan dengan nama yang sudah ada di berkas tes
+lain — fungsi Pest bersifat global. Run terfilter hijau, suite penuh fatal error.
+Diganti nama.
+
+### Berikutnya
+
+Lima dari tujuh kesenjangan tertutup. Dua sisanya **menunggu keputusan sebelum
+kode**: G6 EDOM perlu penetapan batas terhadap Open Campus, G7 SISTER/BKD perlu
+akses ke sistem kementerian sisi dosen.
+
+---
+
 ## Sesi 20 — 2026-08-11 · Git + G5 Konversi Kredit
 
 **583 tes hijau (1.291 asersi)**, naik dari 560.

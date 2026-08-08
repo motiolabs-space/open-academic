@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\Keuangan;
 
 use App\Enums\InvoiceStatus;
+use App\Enums\JenisItemTagihan;
 use App\Enums\StudentStatus;
 use App\Models\Akademik\TahunAkademik;
 use App\Models\Kemahasiswaan\Mahasiswa;
@@ -37,6 +38,7 @@ class PenerbitanTagihanService
     public function __construct(
         private readonly TarifResolver $tarif,
         private readonly Notifier $notifier,
+        private readonly PotonganService $potongan,
     ) {}
 
     /**
@@ -119,13 +121,24 @@ class PenerbitanTagihanService
                     TagihanItem::create([
                         'tagihan_id' => $tagihan->id,
                         'tarif_id' => $baris->id,
+                        'jenis' => JenisItemTagihan::Tagihan,
                         'nama' => $baris->nama,
                         'nominal' => $baris->nominal,
                     ]);
                 }
 
+                /*
+                 * Reductions are applied before the invoice is announced.
+                 *
+                 * A scholarship holder must never receive a bill for the gross
+                 * amount followed by a correction — they will have paid the
+                 * first one, and the overpayment then has to be chased back out
+                 * of the system by hand.
+                 */
+                $this->potongan->terapkan($tagihan);
+
                 $hasil['terbit']++;
-                $hasil['total_rupiah'] += $total;
+                $hasil['total_rupiah'] += (int) $tagihan->fresh()->total;
 
                 $terbit[] = $tagihan;
             });
