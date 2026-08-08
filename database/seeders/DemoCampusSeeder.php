@@ -6,6 +6,7 @@ namespace Database\Seeders;
 
 use App\Models\System\Setting;
 use Database\Seeders\Demo\BeasiswaSeeder;
+use Database\Seeders\Demo\EdomSeeder;
 use Database\Seeders\Demo\IntegrasiSeeder;
 use Database\Seeders\Demo\KelulusanSeeder;
 use Database\Seeders\Demo\KemahasiswaanSeeder;
@@ -87,6 +88,11 @@ class DemoCampusSeeder extends Seeder
             // Sesudah KelulusanSeeder: SKPI hanya dapat diterbitkan untuk
             // kelulusan yang sudah ditetapkan.
             SuratSeeder::class,
+
+            // Sesudah RiwayatAkademikSeeder: hanya mahasiswa dengan KRS
+            // disetujui yang punya kelas untuk dinilai.
+            EdomSeeder::class,
+
             PmbSeeder::class,
             IntegrasiSeeder::class,
 

@@ -93,6 +93,7 @@ it('membuka layar mahasiswa dalam anggaran kueri', function (string $url, int $a
     ['/notifikasi', 25],
     ['/notifikasi/preferensi', 25],
     ['/mahasiswa/surat', 30],
+    ['/mahasiswa/edom', 15],
 ]);
 
 it('membuka layar dosen dalam anggaran kueri', function (string $url, int $anggaran) {
@@ -110,6 +111,10 @@ it('membuka layar dosen dalam anggaran kueri', function (string $url, int $angga
     ['/dosen/persetujuan-krs', 25],
     ['/dosen/bimbingan', 25],
     ['/dosen/tugas-akhir', 25],
+    // Sengaja ketat: layar ini melisting seluruh kelas yang diampu, dan
+    // menghitung tiap kelas satu per satu adalah godaan yang paling wajar di
+    // sini. Anggaran ini yang menahannya.
+    ['/dosen/edom', 14],
     ['/notifikasi', 25],
 ]);
 
@@ -131,6 +136,7 @@ it('membuka layar admin dalam anggaran kueri', function (string $url, int $angga
     ['/admin/surat', 25],
     ['/admin/konversi', 25],
     ['/admin/beasiswa', 25],
+    ['/admin/edom', 24],
     ['/notifikasi', 25],
 ]);
 
@@ -152,6 +158,7 @@ it('melayani endpoint Bridge dalam anggaran kueri', function (string $url, int $
     ['/api/bridge/v1/academic-terms', 20],
     ['/api/bridge/v1/academic-terms/current', 20],
     ['/api/bridge/v1/iku-data', 35],
+    ['/api/bridge/v1/teaching-evaluations', 14],
 ]);
 
 it('membuka halaman publik tanpa menyentuh basis data berlebihan', function (string $url, int $anggaran) {

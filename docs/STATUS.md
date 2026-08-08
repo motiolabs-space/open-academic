@@ -4,6 +4,98 @@
 
 ---
 
+## Sesi 22 — 2026-08-13 · G6 EDOM
+
+**638 tes hijau (1.412 asersi)**, naik dari 606.
+
+Kesenjangan keenam dari tujuh tertutup. Yang tersisa hanya G7 SISTER/BKD, dan itu
+menunggu akses ke sistem kementerian sisi dosen — bukan menunggu keputusan.
+
+### Batas terhadap Open Campus, akhirnya diputuskan
+
+Pertanyaan, jawaban, ambang, dan gerbang tinggal di sini, karena semuanya melekat
+pada `kelas_kuliah`, daftar peserta, dan KRS. Open Campus membaca **agregatnya**
+lewat `GET /teaching-evaluations`. Tidak ada lapisan kuesioner yang terduplikasi:
+yang berpindah hanyalah angka jadi.
+
+### Anonimitas sebagai bentuk tabel, bukan sebagai kebijakan
+
+Ini inti modulnya, dan bagian yang paling mudah dirusak oleh permintaan yang
+terdengar wajar.
+
+```
+edom_partisipasi  — SIAPA sudah mengisi APA.   Tidak memuat jawaban.
+edom_jawaban      — APA yang dijawab.          Tidak memuat mahasiswa.
+```
+
+Keduanya **tidak berbagi kunci apa pun**. Bukan yang nullable, bukan yang tak
+langsung, dan bukan pula pengenal respons — pengenal respons akan mengorelasikan
+pendapat satu orang lintas pertanyaan, cukup untuk merekonstruksi individu pada
+kelas kecil.
+
+Harganya dibayar sadar: jawaban tidak dapat diubah maupun dicabut, karena untuk
+itu sistem harus tahu jawaban mana milik siapa.
+
+Sifat ini dibuktikan mengikat dengan cara yang sama seperti pengaman lain di repo
+ini: menambahkan `mahasiswa_id` ke `edom_jawaban` membuat tesnya gagal seketika.
+
+### Empat keputusan yang berpihak, dan alasannya
+
+| Keputusan | Alternatifnya, dan mengapa tidak |
+|---|---|
+| Gerbang bawaan `krs`, bukan `khs` | Menahan KHS memakai catatan yang **sudah diperoleh** mahasiswa sebagai alat tukar untuk sebuah survei. Menahan pengajuan KRS menahan tindakan yang belum terjadi. Praktik `khs` lazim di Indonesia dan tetap disediakan |
+| Di bawah ambang, **tidak ada apa pun** yang ditampilkan | Termasuk cacah respondennya. "Data tidak cukup (n=3)" pada kelas berisi empat orang adalah petunjuk, bukan penyembunyian |
+| Komentar bawaan ke **prodi**, bukan ke dosen | Angka dapat dirata-ratakan sampai tak seorang pun dikenali; kalimat tidak. Satu komentar tajam pada kelas kecil menunjuk penulisnya lewat isinya sendiri |
+| Instrumen terkunci begitu satu jawaban masuk | Mengubah rumusan menulis ulang arti angka yang sudah tersimpan. Revisi = periode baru, dengan pertanyaan **disalin**, bukan dipakai bersama |
+
+`pimpinan` memperoleh `edom.view` tanpa `edom.manage`: instrumen yang
+pertanyaannya dapat disunting oleh orang yang dinilai olehnya tidak mengukur
+apa-apa.
+
+### Yang tertangkap anggaran kueri
+
+Layar hasil dosen mula-mula memanggil `HasilEdom::kelas()` sekali per kelas yang
+diampu — dua kueri per baris, dan **tak terlihat oleh `preventLazyLoading`**
+karena tidak ada relasi yang di-lazy-load; kodenya sekadar bertanya lagi ke basis
+data di dalam loop. Persis defect kedua yang dicari `SmokeLayarTest`.
+
+Diganti `beberapaKelas()`: dua kueri, berapa pun jumlah kelasnya. Anggarannya
+diketatkan ke 14 supaya versi per-baris tidak dapat kembali diam-diam.
+
+### Dibuktikan dengan dicabut
+
+Pembatas kelas ke dosen yang sedang masuk dilepas → tes "hanya memperlihatkan
+hasil dosen yang sedang masuk" langsung gagal. Layar dosen tidak memuat pengenal
+dosen di URL-nya sama sekali; tidak ada bentuk permintaan yang mengembalikan
+nilai kolega, bukan karena ada pemeriksaan yang menolaknya, melainkan karena
+tidak ada parameter yang dapat diubah.
+
+### Kampus demo
+
+Periode terbuka di tengah jendela, ambang **3** (bukan bawaan 5): kampus demo
+hanya punya lima peserta disetujui per kelas, jadi pada ambang 5 tak satu pun
+kelas akan pernah lolos dan setiap layar hasil menampilkan empty state yang sama.
+Menurunkannya justru membuat **aturannya** terlihat — 20 dari 25 baris kelas
+lolos, lima tidak.
+
+`mahasiswa1@demo.test` sengaja belum mengisi, supaya layar mahasiswa punya
+pekerjaan dan gerbang KRS benar-benar dapat dilihat menyala.
+
+### Catatan pinggir
+
+`docs/openapi/bridge.yaml` tidak memuat `/iku-data`, padahal endpointnya ada sejak
+Fase 4 dan spesifikasinya menyatakan diri *spec-first*. Bukan bagian G6, jadi
+tidak disentuh — tetapi itu satu-satunya endpoint Bridge yang kontraknya tidak
+tertulis.
+
+### Berikutnya
+
+**G7 SISTER/BKD** — satu-satunya kesenjangan yang tersisa, dan yang paling luas:
+BKD per semester (pendidikan, penelitian, pengabdian, penunjang) plus sertifikasi.
+`PenugasanDosen` saat ini mencatat mengajar saja, yaitu satu dari empat unsur.
+
+---
+
 ## Sesi 21 — 2026-08-12 · G4 Keringanan & Beasiswa
 
 **606 tes hijau (1.336 asersi)**, naik dari 583.
@@ -71,6 +163,8 @@ Diganti nama.
 Lima dari tujuh kesenjangan tertutup. Dua sisanya **menunggu keputusan sebelum
 kode**: G6 EDOM perlu penetapan batas terhadap Open Campus, G7 SISTER/BKD perlu
 akses ke sistem kementerian sisi dosen.
+
+> Ditinjau ulang di Sesi 22: batas G6 diputuskan dan modulnya dibangun di sini.
 
 ---
 

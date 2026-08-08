@@ -257,6 +257,13 @@ Satu hal lagi yang harus diputuskan sebelum surat pertama terbit, bukan sesudah:
 konvensi hidup berdampingan di lemari arsip yang sama —
 [`docs/SURAT.md`](docs/SURAT.md).
 
+Begitu pula dua pengaturan EDOM, yang keduanya adalah posisi dan bukan sekadar
+konfigurasi: **gerbang pengisian** (`EDOM_GERBANG`, bawaan `krs` — menahan KHS
+memakai nilai yang sudah diperoleh mahasiswa sebagai alat tukar) dan **siapa
+membaca komentar bebas** (`EDOM_KOMENTAR`, bawaan `prodi`). Anonimitas jawabannya
+sendiri tidak dapat dikonfigurasi: ia melekat pada bentuk tabelnya —
+[`docs/EDOM.md`](docs/EDOM.md).
+
 ## Kontribusi
 
 Baca [`CONTRIBUTING.md`](CONTRIBUTING.md) dan [`CLAUDE.md`](CLAUDE.md) — keduanya

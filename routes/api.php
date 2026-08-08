@@ -89,6 +89,14 @@ Route::prefix('bridge/v1')
             'bridge.scope:graduates.read',
         ])->get('iku-data', Bridge\IkuDataController::class)->name('iku-data');
 
+        // Menyebut dosen, jadi butuh scope dosen juga — endpoint agregat tidak
+        // boleh menjadi jalan memetakan nama dosen yang scope-nya tidak diberikan.
+        Route::middleware([
+            'bridge.scope:evaluations.read',
+            'bridge.scope:lecturers.read',
+        ])->get('teaching-evaluations', Bridge\TeachingEvaluationController::class)
+            ->name('teaching-evaluations');
+
         Route::middleware('bridge.scope:terms.read')->group(function (): void {
             Route::get('academic-terms', [Bridge\AcademicTermController::class, 'index'])->name('terms.index');
             Route::get('academic-terms/current', [Bridge\AcademicTermController::class, 'current'])->name('terms.current');

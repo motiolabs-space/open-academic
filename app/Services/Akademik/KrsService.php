@@ -20,6 +20,7 @@ use App\Models\Keuangan\Tagihan;
 use App\Models\Sdm\Dosen;
 use App\Notifications\Akademik\KrsDiputus;
 use App\Services\Bridge\BridgeEventPublisher;
+use App\Services\Edom\EdomService;
 use App\Services\Notifikasi\Notifier;
 use Illuminate\Support\Facades\DB;
 
@@ -43,6 +44,7 @@ class KrsService
         private readonly PrasyaratChecker $prasyarat,
         private readonly BridgeEventPublisher $bridge,
         private readonly Notifier $notifier,
+        private readonly EdomService $edom,
     ) {}
 
     /**
@@ -320,7 +322,16 @@ class KrsService
             )->getMessage();
         }
 
-        return null;
+        /*
+         * The teaching-evaluation gate, when the campus has chosen this lever.
+         *
+         * Last, and phrased as a sentence rather than a refusal, because it is
+         * the only blocker here the student can clear themselves in five
+         * minutes. EdomService returns null when the gate is off or nothing is
+         * outstanding — see config('edom.gerbang') for why "krs" is the default
+         * rather than withholding a KHS the student has already earned.
+         */
+        return $this->edom->penghalang($mahasiswa, 'krs');
     }
 
     /* ---------------------------------------------------------------------
