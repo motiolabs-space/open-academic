@@ -9,8 +9,10 @@ use App\DTOs\Akademik\RingkasanKrs;
 use App\Enums\KrsStatus;
 use App\Exceptions\AturanAkademikException;
 use App\Models\Akademik\KelasKuliah;
+use App\Models\Akademik\KonversiKredit;
 use App\Models\Akademik\Krs;
 use App\Models\Akademik\KrsDetail;
+use App\Models\Akademik\MataKuliah;
 use App\Models\Akademik\TahunAkademik;
 use App\Models\Kemahasiswaan\Mahasiswa;
 use App\Models\Kemahasiswaan\StatusMahasiswa;
@@ -109,6 +111,23 @@ class KrsService
             throw AturanAkademikException::mataKuliahSudahLulus($mataKuliah->nama);
         }
 
+        /*
+         * The other half of the double-counting rule.
+         *
+         * KonversiService refuses to recognise a course already studied here;
+         * this refuses to enrol in one already recognised. Without both, a
+         * transfer student credited for Basis Data can sit it anyway and finish
+         * with the credits counted twice — and nothing downstream notices,
+         * because the total simply comes out higher than the courses behind it.
+         */
+        if ($this->sudahDikonversi($mahasiswa, $mataKuliah)) {
+            throw new AturanAkademikException(sprintf(
+                'Mata kuliah %s sudah diakui lewat konversi kredit, sehingga tidak perlu diambil lagi. '
+                    .'Hubungi bagian akademik bila konversi itu keliru.',
+                $mataKuliah->nama,
+            ));
+        }
+
         if (config('academic.krs.enforce_prerequisites')) {
             $belum = $this->prasyarat->belumTerpenuhi($mahasiswa, $mataKuliah);
 
@@ -143,6 +162,16 @@ class KrsService
 
             return $detail;
         });
+    }
+
+    /** Whether this course has already been granted through credit recognition. */
+    private function sudahDikonversi(Mahasiswa $mahasiswa, MataKuliah $mataKuliah): bool
+    {
+        return KonversiKredit::query()
+            ->where('mahasiswa_id', $mahasiswa->id)
+            ->where('mata_kuliah_id', $mataKuliah->id)
+            ->diakui()
+            ->exists();
     }
 
     /** Removes a class and releases its seat. */

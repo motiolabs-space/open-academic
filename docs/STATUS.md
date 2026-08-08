@@ -4,6 +4,89 @@
 
 ---
 
+## Sesi 20 — 2026-08-11 · Git + G5 Konversi Kredit
+
+**583 tes hijau (1.291 asersi)**, naik dari 560.
+
+### Git, akhirnya
+
+Sembilan belas sesi kerja masuk ke satu commit awal di `main`. Diperiksa lebih
+dulu bahwa `.env`, kunci OAuth Passport, dan seluruh isi `storage/app/private`
+terabaikan — direktori terakhir itu berisi KTP, kartu keluarga, dan surat
+keterangan sakit. 515 berkas, nol rahasia.
+
+Belum ada remote. Itu keputusan pemilik repo, bukan saya.
+
+Modul ini dikerjakan pada `feature/konversi-kredit` mengikuti konvensi di
+CLAUDE.md.
+
+### G5 — dan pekerjaan yang harus didahulukan
+
+`pmb_gelombang.jalur` menerima `rpl` dan `transfer` sejak modul PMB dibangun,
+tanpa tempat mencatat apa yang diakui. Pintunya terbuka tanpa lantai di baliknya:
+mahasiswa pindahan semester lima masuk dengan transkrip kosong dan syarat
+kelulusan yang mustahil dicapai.
+
+Sebelum menambahkan apa pun, satu temuan menghentikan saya.
+
+#### Tiga salinan logika yang sama
+
+**"Ambil percobaan terbaik per mata kuliah" ditulis tiga kali** — di
+`YudisiumService`, `IndeksPrestasiCalculator`, dan `TranskripService` — nyaris
+identik. Menambahkan konversi ke masing-masing akan menjadikannya empat salinan,
+dan driftnya akan senyap: transkrip menampilkan kredit yang tidak dihitung layar
+kelulusan.
+
+Disatukan dulu menjadi `PerolehanAkademik`, baru konversinya ditambahkan sekali.
+
+#### Bug yang tersingkap saat menyatukannya
+
+Ketiganya ternyata **sudah** tidak sepakat. IPK tersimpan dihitung atas seluruh
+mata kuliah final; IPK pada daftar periksa kelulusan hanya atas yang lulus.
+
+Dua angka berbeda dengan nama yang sama. Seorang mahasiswa bisa melihat 2,0 pada
+catatannya dan 4,0 pada layar kelulusan, dan tidak ada satu pun tes yang
+menyadarinya karena masing-masing diuji terpisah. Sekarang satu — dihitung atas
+seluruh mata kuliah, karena membuang yang gagal berarti IPK naik dengan cara
+menggagalkan lebih banyak.
+
+#### Aturan inti: kredit ganda, dari dua sisi
+
+`KonversiService` menolak mengonversi mata kuliah yang sudah ditempuh di sini;
+`KrsService` menolak mengambil yang sudah dikonversi. **Keduanya harus ada.**
+Tanpa salah satunya, mahasiswa pindahan yang sudah diakui Basis Data tetap dapat
+mengambilnya, dan kreditnya terhitung dua kali — tanpa ada yang menyadari, karena
+totalnya hanya keluar lebih besar daripada mata kuliah di belakangnya.
+
+Dibuktikan dengan mencabut sisi KRS: tesnya langsung gagal.
+
+#### Batas yang menjaga arti gelar
+
+Pengakuan dibatasi persentase terhadap syarat kelulusan prodi. Tanpa batas,
+seseorang dapat diakui masuk ke dalam gelar. Angkanya harus ditetapkan tiap
+kampus secara sadar.
+
+#### Keputusan yang saya ambil dan alasannya
+
+Nilai konversi **tidak masuk IPK secara bawaan**. Itu posisi, bukan
+ketidakpedulian: IPK adalah penilaian institusi ini, sedangkan nilai konversi
+diberikan pihak lain dengan standar lain. Dapat dinyalakan per kampus. Kreditnya
+selalu masuk total SKS — itulah arti pengakuan.
+
+Saat dikeluarkan dari IPK, ia juga keluar dari penyebutnya. Ikut di bawah tetapi
+tidak di atas akan menekan IPK setiap mahasiswa pindahan secara diam-diam.
+
+Transkrip menandai barisnya (**T** dan **R**) dan mencantumkan totalnya. Pembaca
+luar perlu tahu mana yang dinilai kampus ini.
+
+### Berikutnya
+
+**G4 Keringanan & beasiswa** — tersisa tiga, dan G4 satu-satunya yang menuntut
+migrasi: `tagihan_item.nominal` bertipe `unsignedBigInteger`, sehingga baris
+potongan mustahil disimpan.
+
+---
+
 ## Sesi 19 — 2026-08-10 · G3 Surat Keterangan, Legalisir & SKPI
 
 **560 tes hijau (1.245 asersi)**, naik dari 505.

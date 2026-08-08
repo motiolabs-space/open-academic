@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\Kemahasiswaan;
 
+use App\DTOs\Akademik\PerolehanBaris;
 use App\DTOs\Kemahasiswaan\SyaratKelulusan;
 use App\Enums\GradeLetter;
 use App\Enums\StudentStatus;
@@ -19,6 +20,7 @@ use App\Models\Keuangan\Tagihan;
 use App\Models\Sdm\Staff;
 use App\Models\TugasAkhir\TugasAkhir;
 use App\Notifications\Kemahasiswaan\KelulusanDitetapkan;
+use App\Services\Akademik\PerolehanAkademik;
 use App\Services\Bridge\BridgeEventPublisher;
 use App\Services\Notifikasi\Notifier;
 use App\Services\Surat\SuratService;
@@ -41,6 +43,7 @@ class YudisiumService
         private readonly BridgeEventPublisher $bridge,
         private readonly Notifier $notifier,
         private readonly SuratService $surat,
+        private readonly PerolehanAkademik $perolehan,
     ) {}
 
     /**
@@ -83,13 +86,10 @@ class YudisiumService
             return collect();
         }
 
-        $nilaiPerMahasiswa = Nilai::query()
-            ->with(['krsDetail', 'kelasKuliah:id,mata_kuliah_id'])
-            ->whereIn('mahasiswa_id', $ids)
-            ->final()
-            ->whereNotNull('nilai_huruf')
-            ->get()
-            ->groupBy('mahasiswa_id');
+        // One source for "what has this student earned", shared with the
+        // transcript and the IPK. See PerolehanAkademik: this used to be a
+        // third copy of the same best-attempt-per-course logic.
+        $perolehan = $this->perolehan->untukBanyak($mahasiswa);
 
         $tunggakanPerMahasiswa = Tagihan::query()
             ->whereIn('mahasiswa_id', $ids)
@@ -118,7 +118,7 @@ class YudisiumService
         return $mahasiswa->mapWithKeys(fn (Mahasiswa $m): array => [
             $m->id => $this->susunSyarat(
                 $m,
-                $nilaiPerMahasiswa->get($m->id) ?? collect(),
+                $perolehan->get($m->id) ?? collect(),
                 (int) ($tunggakanPerMahasiswa[$m->id] ?? 0),
                 $adaNilaiBelumFinal->has($m->id),
                 $tugasAkhirSelesai->get($m->id),
@@ -129,26 +129,19 @@ class YudisiumService
     /**
      * The requirement rules themselves, over data that is already in memory.
      *
-     * @param Collection<int, Nilai> $nilai
+     * @param Collection<int, PerolehanBaris> $perolehan
      */
     private function susunSyarat(
         Mahasiswa $mahasiswa,
-        Collection $nilai,
+        Collection $perolehan,
         int $tunggakan,
         bool $belumFinal,
         ?TugasAkhir $tugasAkhir = null,
     ): SyaratKelulusan {
-        // Best attempt per course, matching how the IPK and the transcript
-        // count a repeat.
-        $terbaik = $nilai
-            ->groupBy(fn (Nilai $n): int => (int) $n->kelasKuliah->mata_kuliah_id)
-            ->map(fn ($percobaan): Nilai => $percobaan->sortByDesc(fn (Nilai $n): float => (float) $n->bobot)->first());
+        $angka = $this->perolehan->ringkas($perolehan);
 
-        $lulusan = $terbaik->filter(fn (Nilai $n): bool => $n->nilai_huruf->isPassing());
-
-        $sks = (int) $lulusan->sum(fn (Nilai $n): int => (int) ($n->krsDetail->sks ?? 0));
-        $mutu = (float) $lulusan->sum(fn (Nilai $n): float => (float) $n->bobot * (int) ($n->krsDetail->sks ?? 0));
-        $ipk = $sks > 0 ? round($mutu / $sks, 2) : 0.0;
+        $sks = $angka['sksLulus'];
+        $ipk = $angka['ipk'];
 
         $sksSyarat = (int) ($mahasiswa->prodi->sks_lulus ?: config('academic.graduation.min_credits'));
         $ipkSyarat = (float) config('academic.graduation.min_gpa');

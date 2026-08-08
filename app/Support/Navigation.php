@@ -98,6 +98,7 @@ final class Navigation
                     self::item('Cuti Mahasiswa', '◐', 'admin.cuti'),
                     self::item('Tugas Akhir', '✍', 'admin.tugas-akhir'),
                     self::item('Surat & Dokumen', '✉', 'admin.surat'),
+                    self::item('Konversi Kredit', '⇄', 'admin.konversi'),
                     self::item('Yudisium', '✦', 'admin.yudisium'),
                     self::item('Wisuda', '✧', 'admin.wisuda'),
                     self::item('Verifikasi Data IKU', '◈', 'admin.iku-records'),

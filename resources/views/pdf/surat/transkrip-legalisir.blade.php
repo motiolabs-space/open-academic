@@ -28,11 +28,16 @@
             <tbody>
                 @foreach ($baris as $n)
                     <tr>
-                        <td>{{ $n->kelasKuliah->mataKuliah->kode }}</td>
-                        <td>{{ $n->kelasKuliah->mataKuliah->nama }}</td>
-                        <td style="text-align: center;">{{ $n->krsDetail->sks }}</td>
-                        <td style="text-align: center;">{{ $n->nilai_huruf?->value }}</td>
-                        <td style="text-align: center;">{{ Format::angka($n->bobot) }}</td>
+                        <td>{{ $n->kode }}</td>
+                        <td>
+                            {{ $n->nama }}
+                            @if ($n->konversi)
+                                <sup style="color:#8A6D1F; font-weight:bold;">{{ $n->tanda }}</sup>
+                            @endif
+                        </td>
+                        <td style="text-align: center;">{{ $n->sks }}</td>
+                        <td style="text-align: center;">{{ $n->huruf ?? '—' }}</td>
+                        <td style="text-align: center;">{{ $n->huruf === null ? '—' : Format::angka($n->bobot) }}</td>
                     </tr>
                 @endforeach
             </tbody>
@@ -47,5 +52,10 @@
     <p class="catatan-kecil">
         Transkrip ini memuat nilai yang telah difinalisasi. Untuk mata kuliah yang
         diulang, ditampilkan hasil terbaik — aturan yang sama dengan perhitungan IPK.
+        @if ($transkrip['adaKonversi'])
+            Tanda <sup style="color:#8A6D1F; font-weight:bold;">T</sup> menandai kredit alih dari
+            perguruan tinggi lain dan <sup style="color:#8A6D1F; font-weight:bold;">R</sup> menandai
+            rekognisi pembelajaran lampau, seluruhnya {{ $transkrip['sksKonversi'] }} SKS.
+        @endif
     </p>
 @endsection

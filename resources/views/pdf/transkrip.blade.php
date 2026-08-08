@@ -124,12 +124,21 @@
                     <tbody>
                         @foreach ($daftar as $baris)
                             <tr>
-                                <td>{{ $baris->kelasKuliah->mataKuliah->kode }}</td>
-                                <td>{{ $baris->kelasKuliah->mataKuliah->nama }}</td>
-                                <td class="tengah">{{ $baris->krsDetail->sks }}</td>
-                                <td class="tengah"><strong>{{ $baris->nilai_huruf->value }}</strong></td>
-                                <td class="tengah">{{ Format::angka($baris->bobot) }}</td>
-                                <td class="kanan">{{ Format::angka($baris->mutu()) }}</td>
+                                <td>{{ $baris->kode }}</td>
+                                <td>
+                                    {{ $baris->nama }}
+                                    {{-- Penanda konversi tercetak pada barisnya, bukan hanya
+                                         pada catatan kaki. Pembaca luar perlu tahu mata kuliah
+                                         mana yang dinilai kampus ini dan mana yang diakui dari
+                                         tempat lain — itu pertanyaan pertama mereka. --}}
+                                    @if ($baris->konversi)
+                                        <sup style="color:#8A6D1F; font-weight:bold;">{{ $baris->tanda }}</sup>
+                                    @endif
+                                </td>
+                                <td class="tengah">{{ $baris->sks }}</td>
+                                <td class="tengah"><strong>{{ $baris->huruf ?? '—' }}</strong></td>
+                                <td class="tengah">{{ $baris->huruf === null ? '—' : Format::angka($baris->bobot) }}</td>
+                                <td class="kanan">{{ $baris->huruf === null ? '—' : Format::angka($baris->mutu()) }}</td>
                             </tr>
                         @endforeach
                     </tbody>
@@ -180,6 +189,19 @@
              Versi bernomor dan dapat diverifikasi adalah Transkrip Legalisir,
              yang diminta lewat portal. --}}
         <div class="verifikasi">
+            @if ($adaKonversi)
+                {{-- Dinyatakan berapa banyak dan atas dasar apa, bukan sekadar
+                     memberi tanda. Angka inilah yang ditimbang pembaca. --}}
+                <strong>Kredit alih/rekognisi:</strong>
+                {{ $sksKonversi }} SKS diakui dari pembelajaran di luar institusi ini
+                (ditandai <sup style="color:#8A6D1F; font-weight:bold;">T</sup> untuk transfer,
+                <sup style="color:#8A6D1F; font-weight:bold;">R</sup> untuk rekognisi pembelajaran lampau).
+                @if (! config('academic.konversi.hitung_ipk'))
+                    Kredit tersebut dihitung ke dalam total SKS, tetapi tidak ke dalam IPK —
+                    IPK mencerminkan penilaian institusi ini.
+                @endif
+                <br>
+            @endif
             <strong>Salinan tidak resmi.</strong> Lembar ini dicetak sendiri dari portal akademik
             dan tidak bernomor, sehingga keasliannya tidak dapat diperiksa pihak ketiga.
             Untuk keperluan resmi, mintalah <strong>Transkrip Legalisir</strong> melalui portal —
