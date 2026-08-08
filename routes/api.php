@@ -97,6 +97,14 @@ Route::prefix('bridge/v1')
         ])->get('teaching-evaluations', Bridge\TeachingEvaluationController::class)
             ->name('teaching-evaluations');
 
+        // Alasan yang sama: bentuk per-dosen dari endpoint ini adalah berkas
+        // kepegawaian seseorang, bukan sekadar cacahan.
+        Route::middleware([
+            'bridge.scope:workload.read',
+            'bridge.scope:lecturers.read',
+        ])->get('lecturer-workload', Bridge\LecturerWorkloadController::class)
+            ->name('lecturer-workload');
+
         Route::middleware('bridge.scope:terms.read')->group(function (): void {
             Route::get('academic-terms', [Bridge\AcademicTermController::class, 'index'])->name('terms.index');
             Route::get('academic-terms/current', [Bridge\AcademicTermController::class, 'current'])->name('terms.current');

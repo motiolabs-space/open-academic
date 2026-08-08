@@ -10,6 +10,7 @@ use Database\Seeders\Demo\EdomSeeder;
 use Database\Seeders\Demo\IntegrasiSeeder;
 use Database\Seeders\Demo\KelulusanSeeder;
 use Database\Seeders\Demo\KemahasiswaanSeeder;
+use Database\Seeders\Demo\KepegawaianSeeder;
 use Database\Seeders\Demo\KeuanganSeeder;
 use Database\Seeders\Demo\KonversiSeeder;
 use Database\Seeders\Demo\MasterAkademikSeeder;
@@ -92,6 +93,11 @@ class DemoCampusSeeder extends Seeder
             // Sesudah RiwayatAkademikSeeder: hanya mahasiswa dengan KRS
             // disetujui yang punya kelas untuk dinilai.
             EdomSeeder::class,
+
+            // Sesudah TugasAkhirSeeder: unsur pendidikan pada BKD ditarik dari
+            // kelas, bimbingan, dan pengujian — melapor sebelum semua itu ada
+            // akan membekukan laporan yang isinya cuma mengajar.
+            KepegawaianSeeder::class,
 
             PmbSeeder::class,
             IntegrasiSeeder::class,

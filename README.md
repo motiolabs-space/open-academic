@@ -264,6 +264,13 @@ membaca komentar bebas** (`EDOM_KOMENTAR`, bawaan `prodi`). Anonimitas jawabanny
 sendiri tidak dapat dikonfigurasi: ia melekat pada bentuk tabelnya —
 [`docs/EDOM.md`](docs/EDOM.md).
 
+Untuk **BKD**, yang perlu disepakati sebelum semester pertama dilaporkan adalah
+**rubrik ekuivalensi SKS** di [`config/bkd.php`](config/bkd.php). Itu tafsir
+kampus atas pedoman yang berubah, bukan fakta — Open Academic menjamin cacahnya
+benar dan menyerahkan pembobotannya. Sambungan ke **SISTER belum ada** (menunggu
+kredensial); yang sudah siap adalah datanya, beserta ekspor PDF/CSV/JSON —
+[`docs/BKD-SISTER.md`](docs/BKD-SISTER.md).
+
 ## Kontribusi
 
 Baca [`CONTRIBUTING.md`](CONTRIBUTING.md) dan [`CLAUDE.md`](CLAUDE.md) — keduanya

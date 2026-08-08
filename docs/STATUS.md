@@ -4,6 +4,116 @@
 
 ---
 
+## Sesi 23 — 2026-08-14 · G7 SISTER & BKD
+
+**684 tes hijau (1.509 asersi)**, naik dari 638.
+
+Kesenjangan ketujuh dan terakhir. Yang dibangun adalah **bahannya**; klien SISTER
+belum ada karena kredensialnya belum tersedia, dan itu dinyatakan di layar admin
+alih-alih disamarkan sebagai "terintegrasi".
+
+Alasan mengerjakannya sekarang: bagian mahal sebuah integrasi tidak pernah
+panggilan HTTP-nya, melainkan menemukan dua minggu setelah mulai bahwa kampus
+tidak pernah mencatat ijazah seseorang berasal dari negara mana atau perannya di
+sebuah penelitian apa. Menyiapkan datanya lebih dulu memindahkan penemuan itu ke
+sekarang.
+
+### Unsur pendidikan dihitung, bukan diketik
+
+Apa yang diajarkan beserta SKS-nya, berapa mahasiswa dibimbing, berapa sidang
+diuji, berapa mahasiswa diwalikan — semuanya sudah tersimpan sebagai efek samping
+menjalankan semester. `BebanKerjaService` menurunkannya.
+
+Satu keputusan di dalamnya bukan detail: **SKS kelas dibagi antar pengampu**.
+Tanpa itu, satu kelas 4 SKS yang diampu berdua terhitung 8 SKS di tingkat
+kampus — angka yang tidak pernah benar dan tidak pernah kentara pada satu laporan
+pun. `porsi_sks` pada pivot menang bila terisi; kampus sudah memutuskan, dan
+menghitung ulang di atasnya menghapus keputusan itu.
+
+Tiga unsur lainnya tidak pernah melewati sistem akademik, dan tidak ada
+kepintaran yang mengubah itu. Semuanya dilaporkan sendiri beserta bukti.
+
+### Pengajuan membekukan laporan
+
+Aturan yang menentukan seluruh bentuk tabelnya. Laporan dinilai asesor dan
+penilaiannya menentukan tunjangan; data yang mendasarinya terus bergerak. Bila
+baris laporan membaca data hidup, kelas yang dialihkan bulan depan diam-diam
+menulis ulang penilaian yang sudah ditandatangani.
+
+`bkd_baris` karenanya cuplikan, ditulis saat pengajuan dan tidak pernah dihitung
+ulang. Dibuktikan mengikat di dua tempat: di service (kelas dilepas setelah
+diajukan → total tetap), dan di layar (cabang `status->beku()` dilepas → tesnya
+langsung gagal).
+
+### Satu catatan kegiatan, tiga pembaca
+
+`penugasan_dosen` diperluas alih-alih dibuatkan tabel kedua. IKU 3/4 mencacahnya,
+BKD memilah dan menimbangnya, portofolio SISTER melaporkan luarannya. Tabel
+`kegiatan_bkd` terpisah berarti satu penelitian dicatat dua kali dan kedua
+salinannya berbeda pada semester kedua — pelajaran yang sama dengan menyatukan
+tiga perhitungan IPK menjadi `PerolehanAkademik`.
+
+`unsur` sengaja tidak diturunkan dari `jenis`: perjalanan konferensi yang sama
+adalah penelitian bila mempresentasikan makalah dan penunjang bila mengetuai
+panitianya. Hanya orang yang pergi yang tahu.
+
+### Yang ditolak, dan yang sengaja tidak
+
+| Ditolak | Sebabnya |
+|---|---|
+| Menjadi asesor laporan sendiri | Bukan konflik yang perlu dikelola, melainkan ketiadaan penilaian |
+| Menilai laporan yang bukan tugasnya | Haknya melekat pada kolom asesor, bukan pada peran — sama seperti `tugas_akhir.bimbing` |
+| Kesimpulan bukan "memenuhi" tanpa catatan | Alasannya justru satu-satunya hal yang harus dihasilkan asesor |
+| Mengesahkan sebelum dinilai | Menjadikan asesor hiasan |
+
+**Tidak** ditolak: laporan di bawah 12 SKS. Semester yang kurang harus
+terlaporkan apa adanya — menolaknya menghasilkan semester yang tidak terlaporkan
+sama sekali. Kelebihan beban juga dilaporkan: dosen yang memikul dua puluh SKS
+punya masalah yang layak terlihat oleh yang membagi kelas.
+
+### Bobot SKS di config, bukan di service
+
+Seluruh rubrik di `config/bkd.php`. Angka-angka itu tafsir kampus atas pedoman
+yang berubah tiap beberapa tahun dan berbeda antar perguruan tinggi untuk pedoman
+yang sama. Yang dijamin Open Academic adalah cacahnya benar — sikap yang sama
+dengan `IkuDataController` yang menolak menerapkan ambang.
+
+Rentang 12–16 SKS pun diperlakukan begitu di Bridge: dilaporkan sebagai
+pengaturan kampus di samping angkanya, bukan diubah menjadi lulus/tidak.
+
+Semuanya perseratus SKS sebagai integer, alasannya sama dengan uang: selisih 0,01
+di sekitar 12,00 adalah beda antara dibayar dan tidak.
+
+### Dua hal yang tertangkap saat mengukur
+
+Layar BKD dosen menghitung lembar kerja **dua kali** — sekali untuk barisnya,
+sekali lagi untuk totalnya. Tidak tertangkap anggaran kueri karena dosen demo
+punya laporan yang sudah disahkan, sehingga layarnya mengambil cabang beku yang
+murah. Ditemukan saat membaca hasil pengukuran, bukan saat ada yang gagal.
+
+Karena itu ditambahkan satu entri anggaran tersendiri untuk **jalur lembar kerja
+hidup**, memakai dosen yang belum punya laporan — jalur termahal modul ini, dan
+sebelumnya tidak teruji sama sekali.
+
+### Yang belum ada, dinyatakan
+
+- **Klien SISTER** — menunggu kredensial. Tidak dibuat mode `fake` seperti Neo
+  Feeder, karena kontraknya belum dapat diuji dan menulisnya melawan tebakan akan
+  membekukan tebakan itu ke dalam model data.
+- **Riwayat perwalian** — dihitung dari daftar bimbingan hari ini, bukan keadaan
+  pada semester yang dilaporkan.
+- **Aturan dosen dengan tugas tambahan** — tidak diterapkan otomatis; asesor yang
+  memutuskan, dan lembar penilaian menyediakan tempat menuliskan alasannya.
+
+### Berikutnya
+
+Tujuh dari tujuh kesenjangan SIAKAD tertutup. Yang tersisa menunggu keputusan
+atau akses di luar repo: klien SISTER (kredensial), adaptor Midtrans (kredensial
+merchant), federasi IdP eksternal, 2FA staf, dan **remote Git / rilis publik**,
+yang tetap keputusan pemilik repo.
+
+---
+
 ## Sesi 22 — 2026-08-13 · G6 EDOM
 
 **638 tes hijau (1.412 asersi)**, naik dari 606.

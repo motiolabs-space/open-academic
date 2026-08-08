@@ -36,12 +36,14 @@ sehingga tangga batas SKS berbasis IPS akhirnya menyala di instalasi sungguhan.
 Begitu pula layar Jadwal & Kelas (§2).
 
 **Dibandingkan cakupan SIAKAD yang lazim dipakai kampus Indonesia**, tercatat
-tujuh kesenjangan pada 8 Agustus 2026. **Enam sudah ditutup:** G1 Tugas Akhir,
-G2 Notifikasi, G3 Surat & SKPI, G4 Keringanan & Beasiswa, G5 Konversi Kredit,
-dan G6 EDOM.
+tujuh kesenjangan pada 8 Agustus 2026. **Ketujuhnya sudah ditutup:** G1 Tugas
+Akhir, G2 Notifikasi, G3 Surat & SKPI, G4 Keringanan & Beasiswa, G5 Konversi
+Kredit, G6 EDOM, dan G7 SISTER/BKD.
 
-Sisanya satu, di [§Perbandingan dengan SIAKAD Lain](#perbandingan-dengan-siakad-lain):
-**G7 SISTER/BKD**, yang menunggu akses ke sistem kementerian sisi dosen.
+Satu catatan pada yang terakhir: **bahan** BKD dan portofolio SISTER lengkap —
+skema, perhitungan, alur asesor, layar, dan ekspor — tetapi **klien SISTER-nya
+belum ada**, karena kredensialnya belum tersedia. Itu dinyatakan di layar admin,
+bukan disamarkan.
 
 **Repo sudah di bawah Git** sejak 11 Agustus 2026, satu commit awal atas
 sembilan belas sesi kerja. Belum ada remote — itu keputusan pemilik repo.
@@ -800,11 +802,33 @@ Rincian di [`EDOM.md`](EDOM.md).
 
 ### Kesenjangan Tingkat 3 — pelaporan sisi dosen
 
-#### G7. SISTER & BKD ⬜
+#### G7. SISTER & BKD ✅ bahan siap 14 Agustus 2026 — *klien menunggu kredensial*
 
-Neo Feeder melaporkan mahasiswa. Sisi dosen — BKD per semester (pendidikan,
-penelitian, pengabdian, penunjang) dan sertifikasi — tidak punya padanan di sini.
-`PenugasanDosen` mencatat mengajar saja, yaitu satu dari empat unsur.
+Seluruh bahannya dibangun; yang belum ada hanyalah klien SISTER-nya, dan itu
+dinyatakan terus terang di layar alih-alih disamarkan sebagai "terintegrasi".
+
+**Unsur pendidikan dihitung, bukan diketik.** Kelas beserta SKS, bimbingan tugas
+akhir, pengujian sidang, dan perwalian sudah tersimpan sebagai efek samping
+menjalankan semester; `BebanKerjaService` menurunkannya. SKS kelas **dibagi**
+antar pengampu — tanpa itu satu kelas 4 SKS yang diampu berdua terhitung 8 SKS di
+tingkat kampus.
+
+**Pengajuan membekukan laporan.** `bkd_baris` adalah cuplikan, ditulis saat
+diajukan dan tidak pernah dihitung ulang. Laporan dinilai asesor dan penilaiannya
+menentukan tunjangan; bila barisnya membaca data hidup, kelas yang dialihkan
+bulan depan diam-diam menulis ulang penilaian yang sudah ditandatangani.
+
+**Bobot SKS ada di `config/bkd.php`, tidak satu pun di dalam service** — tafsir
+kampus atas pedoman yang berubah. Yang dijamin Open Academic adalah cacahnya
+benar; sikap yang sama dengan `IkuDataController`.
+
+Ditambah: `penugasan_dosen` diperluas menjadi satu catatan kegiatan yang melayani
+BKD, portofolio SISTER, dan IKU 3/4/5 sekaligus (bukan tiga tabel paralel); tiga
+tabel riwayat kepegawaian; alur asesor–pengesahan dengan empat penolakan yang
+mengikat; dan ekspor PDF/CSV/JSON yang membuat modul ini berguna hari ini juga.
+
+Rincian, termasuk tiga hal yang belum ada dan dinyatakan, di
+[`BKD-SISTER.md`](BKD-SISTER.md).
 
 ### Sengaja **bukan** di sini
 
@@ -831,7 +855,7 @@ data yang harus punya satu pemilik.
 | ~~4~~ | ~~**G4 Keringanan/beasiswa**~~ | ✅ selesai 12 Agustus 2026 |
 | ~~5~~ | ~~**G5 Konversi kredit**~~ | ✅ selesai 11 Agustus 2026 |
 | ~~6~~ | ~~**G6 EDOM**~~ | ✅ selesai 13 Agustus 2026 |
-| 7 | **G7 SISTER/BKD** | Terbesar cakupannya, paling sedikit ketergantungannya |
+| ~~7~~ | ~~**G7 SISTER/BKD**~~ | ✅ bahan siap 14 Agustus 2026; klien menunggu kredensial |
 
 ---
 

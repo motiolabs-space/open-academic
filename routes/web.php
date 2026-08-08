@@ -150,6 +150,19 @@ Route::middleware(['auth:dosen', 'term.active'])->prefix('dosen')->name('dosen.'
     // wali membimbing rencana studi, pembimbing tugas akhir membimbing karya.
     Route::get('/edom', Dosen\EdomController::class)->name('edom');
 
+    Route::get('/bkd', [Dosen\BkdController::class, 'index'])->name('bkd');
+    Route::post('/bkd/ajukan', [Dosen\BkdController::class, 'ajukan'])->name('bkd.ajukan');
+    Route::get('/bkd/{laporan}/unduh', [Dosen\BkdController::class, 'unduh'])->name('bkd.unduh');
+    Route::get('/bkd/penilaian', [Dosen\BkdController::class, 'penilaian'])->name('bkd.penilaian');
+    Route::post('/bkd/{laporan}/nilai', [Dosen\BkdController::class, 'nilai'])->name('bkd.nilai');
+    Route::post('/bkd/{laporan}/kembalikan', [Dosen\BkdController::class, 'kembalikan'])->name('bkd.kembalikan');
+
+    Route::get('/portofolio', [Dosen\PortofolioController::class, 'index'])->name('portofolio');
+    Route::post('/portofolio/pendidikan', [Dosen\PortofolioController::class, 'simpanPendidikan'])->name('portofolio.pendidikan');
+    Route::post('/portofolio/jabatan', [Dosen\PortofolioController::class, 'simpanJabatan'])->name('portofolio.jabatan');
+    Route::post('/portofolio/sertifikasi', [Dosen\PortofolioController::class, 'simpanSertifikasi'])->name('portofolio.sertifikasi');
+    Route::post('/portofolio/kegiatan', [Dosen\PortofolioController::class, 'simpanKegiatan'])->name('portofolio.kegiatan');
+
     Route::get('/tugas-akhir', [Dosen\TugasAkhirController::class, 'index'])->name('tugas-akhir');
     Route::get('/tugas-akhir/{tugasAkhir}', [Dosen\TugasAkhirController::class, 'show'])->name('tugas-akhir.show');
     Route::post('/tugas-akhir/bimbingan/{bimbingan}/setujui', [Dosen\TugasAkhirController::class, 'setujuiBimbingan'])->name('tugas-akhir.bimbingan.setujui');
@@ -345,6 +358,14 @@ Route::middleware(['auth:staff', 'term.active'])->prefix('admin')->name('admin.'
     Route::post('/surat/{surat}/tolak', [Admin\SuratController::class, 'tolak'])->name('surat.tolak');
     Route::post('/surat/{surat}/cabut', [Admin\SuratController::class, 'cabut'])->name('surat.cabut');
     Route::get('/surat/{surat}/unduh', [Admin\SuratController::class, 'unduh'])->name('surat.unduh');
+
+    Route::get('/bkd', [Admin\BkdController::class, 'index'])->name('bkd.index');
+    Route::post('/bkd/{laporan}/asesor', [Admin\BkdController::class, 'tetapkanAsesor'])->name('bkd.asesor');
+    Route::post('/bkd/{laporan}/sahkan', [Admin\BkdController::class, 'sahkan'])->name('bkd.sahkan');
+    Route::get('/bkd/{laporan}/unduh', [Admin\BkdController::class, 'unduh'])->name('bkd.unduh');
+    Route::get('/bkd/ekspor/rekap', [Admin\BkdController::class, 'eksporRekap'])->name('bkd.ekspor.rekap');
+    Route::get('/bkd/ekspor/kegiatan', [Admin\BkdController::class, 'eksporKegiatan'])->name('bkd.ekspor.kegiatan');
+    Route::get('/bkd/ekspor/portofolio/{dosen}', [Admin\BkdController::class, 'eksporPortofolio'])->name('bkd.ekspor.portofolio');
 
     Route::get('/edom', [Admin\EdomController::class, 'index'])->name('edom.index');
     Route::get('/edom/{periode}/kelas/{kelas}', [Admin\EdomController::class, 'kelas'])->name('edom.kelas');

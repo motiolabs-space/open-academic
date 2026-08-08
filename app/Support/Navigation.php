@@ -75,6 +75,14 @@ final class Navigation
                     self::item('Aplikasi Terhubung', '⌘', 'sso.aplikasi'),
                 ],
             ],
+            [
+                'title' => 'KEPEGAWAIAN',
+                'items' => [
+                    self::item('Beban Kerja (BKD)', '⊞', 'dosen.bkd'),
+                    self::item('Penilaian BKD', '✓', 'dosen.bkd.penilaian'),
+                    self::item('Portofolio', '◈', 'dosen.portofolio'),
+                ],
+            ],
         ];
     }
 
@@ -102,6 +110,7 @@ final class Navigation
                     self::item('Surat & Dokumen', '✉', 'admin.surat'),
                     self::item('Konversi Kredit', '⇄', 'admin.konversi'),
                     self::item('Evaluasi Dosen', '☆', 'admin.edom.index'),
+                    self::item('Beban Kerja Dosen', '⊞', 'admin.bkd.index'),
                     self::item('Yudisium', '✦', 'admin.yudisium'),
                     self::item('Wisuda', '✧', 'admin.wisuda'),
                     self::item('Verifikasi Data IKU', '◈', 'admin.iku-records'),

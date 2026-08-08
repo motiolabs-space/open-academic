@@ -35,6 +35,7 @@ class RolePermissionSeeder extends Seeder
             'tugas_akhir.view', 'tugas_akhir.manage',
             'surat.view', 'surat.manage',
             'edom.view', 'edom.manage',
+            'bkd.view', 'bkd.manage',
             'wisuda.view', 'wisuda.manage',
             'feeder.view', 'feeder.sync',
             'bridge.view', 'bridge.manage',
@@ -61,6 +62,21 @@ class RolePermissionSeeder extends Seeder
             // controller, not by this permission — there is no version of this
             // grant that opens a colleague's scores.
             'edom.hasil',
+
+            // Filing one's own workload report and maintaining one's own record.
+            'bkd.lapor',
+            'portofolio.kelola',
+
+            /*
+             * Assessing somebody else's report.
+             *
+             * Held by every lecturer, because which reports a person may assess
+             * is decided per report by the asesor_1/asesor_2 columns — not by
+             * the role. A role-level grant would let any lecturer sign off any
+             * colleague's workload, which is the same mistake avoided in
+             * tugas_akhir.bimbing.
+             */
+            'bkd.nilai',
         ],
         UserRole::Mahasiswa->value => [
             'krs.submit',
@@ -107,11 +123,13 @@ class RolePermissionSeeder extends Seeder
                 // rows, not by the role — a role-level grant would let any
                 // lecturer sign off any student's consultation log.
                 'tugas_akhir.bimbing', 'tugas_akhir.uji', 'edom.hasil',
+                'bkd.lapor', 'bkd.nilai', 'portofolio.kelola',
             ],
             'dosen-wali' => [
                 'kelas.view', 'nilai.view', 'nilai.manage', 'presensi.view', 'presensi.manage',
                 'krs.approve', 'bimbingan.view',
                 'tugas_akhir.bimbing', 'tugas_akhir.uji', 'edom.hasil',
+                'bkd.lapor', 'bkd.nilai', 'portofolio.kelola',
             ],
         ],
         UserRole::Mahasiswa->value => [

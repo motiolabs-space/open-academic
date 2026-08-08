@@ -44,6 +44,7 @@ tags:
   - name: Graduates
   - name: Terms
   - name: Evaluations
+  - name: Workload
 
 paths:
   /students:
@@ -253,6 +254,51 @@ paths:
                             rerata: { type: [number, 'null'], example: 4.21 }
         '403': { $ref: '#/components/responses/ScopeDitolak' }
         '404': { description: Tidak ada semester aktif; sertakan parameter semester }
+
+  /lecturer-workload:
+    get:
+      tags: [Workload]
+      summary: Portofolio & beban kerja dosen (bahan SISTER/BKD)
+      description: |
+        Membutuhkan scope `workload.read` **dan** `lecturers.read`.
+
+        Dua bentuk dari satu endpoint. Tanpa `nidn`, mengembalikan cacahan
+        se-kampus untuk dasbor. Dengan `nidn`, mengembalikan berkas satu dosen —
+        granularitas yang dipakai SISTER, sehingga pengiriman yang gagal dapat
+        diulang untuk satu orang alih-alih untuk semuanya.
+
+        Konsisten dengan `/iku-data`: ini cacahan catatan yang ada. Tidak ada
+        indikator yang dihitung dan tidak ada ambang yang diterapkan. Rentang
+        12–16 SKS disertakan sebagai **pengaturan kampus** di samping angkanya,
+        bukan diubah menjadi lulus/tidak — konsumen boleh memegang tafsir lain.
+
+        **NIK dan alamat rumah tidak pernah ikut**, di bentuk mana pun. Bentuk
+        yang sama dipakai ekspor CSV dan berkas JSON yang dikirim lewat surel;
+        payload yang aman di satu kanal dan tidak di kanal lain akan bocor lewat
+        kanal yang paling ceroboh.
+      parameters:
+        - $ref: '#/components/parameters/Semester'
+        - name: nidn
+          in: query
+          schema: { type: string }
+          description: Bila diisi, mengembalikan berkas satu dosen alih-alih cacahan kampus.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    description: |
+                      Bentuk kampus memuat `pelaporan_bkd`, `beban_kerja`,
+                      `kegiatan_dosen`, `luaran`, dan `batas_kampus`. Bentuk
+                      per-dosen memuat `dosen` (riwayat pendidikan, jabatan,
+                      sertifikasi) dan `semester` (kegiatan beserta laporan BKD).
+        '403': { $ref: '#/components/responses/ScopeDitolak' }
+        '404': { description: NIDN tidak ditemukan, atau tidak ada semester aktif }
 
   /academic-terms:
     get:
