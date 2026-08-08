@@ -6,6 +6,7 @@ namespace App\Models\Kemahasiswaan;
 
 use App\Enums\Gender;
 use App\Enums\StudentStatus;
+use App\Models\Akademik\Konsentrasi;
 use App\Models\Akademik\Krs;
 use App\Models\Akademik\Kurikulum;
 use App\Models\Akademik\Nilai;
@@ -91,6 +92,17 @@ class Mahasiswa extends Authenticatable implements OAuthenticatable
     public function kurikulum(): BelongsTo
     {
         return $this->belongsTo(Kurikulum::class);
+    }
+
+    /**
+     * The track within that curriculum, once chosen.
+     *
+     * Null through most of the first half of a degree, so callers must read it
+     * as "not yet" rather than "none exists".
+     */
+    public function konsentrasi(): BelongsTo
+    {
+        return $this->belongsTo(Konsentrasi::class);
     }
 
     public function dosenWali(): BelongsTo

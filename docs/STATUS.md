@@ -4,6 +4,72 @@
 
 ---
 
+## Sesi 26 — 2026-08-17 · Padanan, Konsentrasi, dan Paket Kuliah
+
+Tiga dari lima sisa P1 perkuliahan. Ketiganya ada karena alasan yang sama:
+kurikulum bukan daftar yang diam. Ia diganti, ia bercabang jadi jalur, dan di
+vokasi ia diserahkan kepada mahasiswa alih-alih dipilihnya.
+
+### Padanan mendarat di satu tempat
+
+`PrasyaratChecker::mataKuliahLulus` adalah satu-satunya metode yang menjawab
+"apa yang sudah dilulusi mahasiswa ini" — prasyarat, aturan sudah-ambil di KRS,
+dan daftar periksa kelulusan semuanya lewat sana. Memperluas himpunannya di situ
+membuat ketiganya menghormati pergantian kurikulum **tanpa satu pun tahu padanan
+itu ada**, dan yang lebih penting: tanpa satu pun bisa berselisih tentangnya.
+
+**Arahnya mengikat, dan itu dibuktikan.** Membuat resolvernya simetris membuat
+tes "tidak berlaku terbalik" gagal seketika. Mata kuliah pengganti biasanya
+mencakup lebih banyak; menerimanya mundur akan meloloskan mahasiswa sekarang
+dari prasyarat yang silabus lama tidak pernah ajarkan.
+
+Transitif, karena 2018 → 2022 → 2026 itu bentuk biasa. Lingkaran ditolak saat
+ditulis: cincin padanan membuat setiap mata kuliah di dalamnya setara dengan
+semua yang lain, dan mustahil terlihat setelahnya.
+
+### Paket mendelegasi, tidak menulis sendiri
+
+`PaketKuliahService` memanggil `KrsService::tambahKelas`, bukan menyisipkan
+`krs_detail`. Itu seluruh desainnya: paket yang menulis barisnya sendiri akan
+melewati kunci kuota, deteksi bentrok, prasyarat, dan penjaga hitung-ganda —
+diam-diam, untuk satu angkatan sekaligus. Ada tesnya yang memaku persis itu.
+
+Kegagalan dikumpulkan per mata kuliah alih-alih menggugurkan seluruh penerapan.
+Satu mahasiswa mengulang yang sudah memegang satu mata kuliah tidak boleh
+menghentikan tujuh lainnya.
+
+### Jalur menggerbang katalog
+
+Mata kuliah bersama (jalur null) terbuka untuk semua — itu sebagian besar gelar.
+Mata kuliah jalur ditolak bagi yang **belum** memilih jalur, bukan diloloskan:
+meloloskannya berarti ia menempuh sesuatu yang dihitung ke syarat yang tidak
+berlaku baginya, dan menemukannya saat yudisium jauh lebih mahal.
+
+### Tes yang memeriksa test suite
+
+Tabrakan nama helper Pest terjadi **ketiga kalinya** (`tagihanUji`,
+`pesertaKelas`, `kelasUji`), dan tiap kali ditemukan dengan cara mahal: run
+tersaring hijau, suite penuh fatal — bukan satu tes gagal, melainkan galat fatal
+yang menghentikan semua tes sesudahnya.
+
+Sekarang suite memeriksa dirinya sendiri. Satu detik waktu jalan, dan tabrakan
+berikutnya disebut namanya di titik ia diperkenalkan.
+
+Penjaga lazy-loading ketat juga menangkap N+1 sungguhan di pengirim paket.
+
+### Yang belum dikerjakan
+
+Dua sisa P1: **cetak** (KTM, kartu ujian, absensi, jurnal) dan **pengaturan
+dokumen**.
+
+Untuk yang kedua, item roadmap-nya semula berbunyi "kustomisasi templat
+dokumen". Templat Blade yang dapat disunting pengguna berarti mengeksekusi kode
+yang tersimpan di basis data. Bentuk yang aman adalah kop, logo, penandatangan,
+dan catatan kaki yang dapat dikonfigurasi per jenis dokumen — dan itulah yang
+kini tertulis di ROADMAP.
+
+---
+
 ## Sesi 25 — 2026-08-16 · RPS, Jurnal Perkuliahan, dan Analitik
 
 **743 tes hijau (1.632 asersi)**, naik dari 715.
