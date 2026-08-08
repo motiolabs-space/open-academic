@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\Akademik;
 
-use App\Models\Akademik\Nilai;
+use App\DTOs\Akademik\PerolehanBaris;
 use App\Models\Kemahasiswaan\Mahasiswa;
 use App\Models\Kemahasiswaan\Yudisium;
 use App\Services\Branding\BrandingService;
@@ -22,26 +22,32 @@ use Illuminate\Support\Collection;
  */
 class TranskripService
 {
-    public function __construct(private readonly BrandingService $brand) {}
+    public function __construct(
+        private readonly BrandingService $brand,
+        private readonly PerolehanAkademik $perolehan,
+    ) {}
 
     /** @return array<string, mixed> */
     public function data(Mahasiswa $mahasiswa): array
     {
         $mahasiswa->loadMissing(['prodi.fakultas', 'kurikulum']);
 
-        $nilai = $this->nilaiTranskrip($mahasiswa);
-
-        $sks = (int) $nilai->sum(fn (Nilai $n): int => (int) $n->krsDetail->sks);
-        $mutu = (float) $nilai->sum(fn (Nilai $n): float => (float) $n->bobot * (int) $n->krsDetail->sks);
+        // Same source as the IPK and the graduation checklist. This method used
+        // to work out best-attempt-per-course for itself, which is how a
+        // transcript comes to show credits the graduation screen does not count.
+        $baris = $this->perolehan->untuk($mahasiswa);
+        $angka = $this->perolehan->ringkas($baris);
 
         return [
             'mahasiswa' => $mahasiswa,
             'institusi' => $this->brand->institutionName(),
             'kodeInstitusi' => $this->brand->institutionCode(),
-            'perSemester' => $this->kelompokPerSemester($nilai),
-            'totalSks' => $sks,
-            'ipk' => $sks > 0 ? round($mutu / $sks, 2) : 0.0,
-            'predikat' => Yudisium::predikatUntuk($sks > 0 ? $mutu / $sks : 0),
+            'perSemester' => $this->kelompokPerPeriode($baris),
+            'totalSks' => $angka['sksLulus'],
+            'sksKonversi' => $angka['sksKonversi'],
+            'adaKonversi' => $angka['sksKonversi'] > 0,
+            'ipk' => $angka['ipk'],
+            'predikat' => Yudisium::predikatUntuk($angka['ipk']),
             'diterbitkan' => now(),
 
             /*
@@ -74,34 +80,28 @@ class TranskripService
     }
 
     /**
-     * Finalised grades, best attempt per course.
+     * Groups the rows under the heading they were earned in.
      *
-     * @return Collection<int, Nilai>
+     * For taught courses that is the academic term. For recognised credit there
+     * is no term — the study happened before this campus was involved — so it
+     * groups under the source institution, or the kind of recognition when the
+     * source was employment rather than a campus.
+     *
+     * @param Collection<int, PerolehanBaris> $baris
+     * @return Collection<string, Collection<int, PerolehanBaris>>
      */
-    private function nilaiTranskrip(Mahasiswa $mahasiswa): Collection
+    private function kelompokPerPeriode(Collection $baris): Collection
     {
-        return Nilai::query()
-            ->with(['krsDetail.krs.tahunAkademik', 'kelasKuliah.mataKuliah'])
-            ->where('mahasiswa_id', $mahasiswa->id)
-            ->final()
-            ->whereNotNull('nilai_huruf')
-            ->get()
-            ->groupBy(fn (Nilai $n): int => (int) $n->kelasKuliah->mata_kuliah_id)
-            ->map(fn (Collection $percobaan): Nilai => $percobaan->sortByDesc(
-                fn (Nilai $n): float => (float) $n->bobot,
-            )->first())
-            ->values();
-    }
-
-    /**
-     * @param Collection<int, Nilai> $nilai
-     * @return Collection<string, Collection<int, Nilai>>
-     */
-    private function kelompokPerSemester(Collection $nilai): Collection
-    {
-        return $nilai
-            ->sortBy(fn (Nilai $n): string => $n->krsDetail->krs->tahunAkademik->kode
-                .$n->kelasKuliah->mataKuliah->kode)
-            ->groupBy(fn (Nilai $n): string => $n->krsDetail->krs->tahunAkademik->nama);
+        return $baris
+            ->sortBy(fn (PerolehanBaris $b): string => sprintf(
+                // Conversions sort last: a reader works down the terms and then
+                // meets the recognised block, rather than finding it wedged
+                // between two semesters it did not happen in.
+                '%d-%s-%s',
+                $b->konversi ? 1 : 0,
+                $b->periode ?? '',
+                $b->kode,
+            ))
+            ->groupBy(fn (PerolehanBaris $b): string => $b->periode ?? 'Lainnya');
     }
 }

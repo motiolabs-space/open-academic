@@ -20,6 +20,8 @@ use Illuminate\Support\Collection;
  */
 class IndeksPrestasiCalculator
 {
+    public function __construct(private readonly PerolehanAkademik $perolehan) {}
+
     /**
      * Recomputes the term's IPS and the student's cumulative IPK, then stores
      * them. Returns the updated enrolment row.
@@ -38,14 +40,23 @@ class IndeksPrestasiCalculator
             fn (Nilai $n): bool => $n->krsDetail?->krs?->tahun_akademik_id === $term->id,
         );
 
-        $ips = $this->rerataTerbobot($nilaiTerm);
-        $kumulatif = $this->terbaikPerMataKuliah($this->nilaiFinal($mahasiswa));
+        /*
+         * The term's own figures stay here; the cumulative ones come from
+         * PerolehanAkademik.
+         *
+         * The split follows the data. An IPS is about one semester, and
+         * recognised credit has no semester — a transfer student's prior study
+         * did not happen in any term of this campus's calendar. The cumulative
+         * totals are exactly where that credit belongs, and exactly where the
+         * transcript and the graduation checklist read from too.
+         */
+        $kumulatif = $this->perolehan->ringkasUntuk($mahasiswa);
 
         $status->update([
             'sks_semester' => $this->totalSks($nilaiTerm),
-            'sks_kumulatif' => $this->totalSks($kumulatif),
-            'ips' => $ips,
-            'ipk' => $this->rerataTerbobot($kumulatif),
+            'sks_kumulatif' => $kumulatif['sks'],
+            'ips' => $this->rerataTerbobot($nilaiTerm),
+            'ipk' => $kumulatif['ipk'],
         ]);
 
         return $status->refresh();
@@ -92,21 +103,11 @@ class IndeksPrestasiCalculator
             ->get();
     }
 
-    /**
-     * Keeps only the best attempt per course.
-     *
-     * @param Collection<int, Nilai> $nilai
-     * @return Collection<int, Nilai>
+    /*
+     * The best-attempt-per-course rule used to live here as well. It now lives
+     * once, in PerolehanAkademik, alongside the two other copies it had grown
+     * in YudisiumService and TranskripService.
      */
-    private function terbaikPerMataKuliah(Collection $nilai): Collection
-    {
-        return $nilai
-            ->groupBy(fn (Nilai $n): int => (int) $n->kelasKuliah->mata_kuliah_id)
-            ->map(fn (Collection $percobaan): Nilai => $percobaan->sortByDesc(
-                fn (Nilai $n): float => (float) $n->bobot,
-            )->first())
-            ->values();
-    }
 
     /** @param Collection<int, Nilai> $nilai */
     private function rerataTerbobot(Collection $nilai): float

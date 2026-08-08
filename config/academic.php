@@ -132,6 +132,39 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Konversi Kredit (Transfer & RPL)
+    |--------------------------------------------------------------------------
+    */
+
+    'konversi' => [
+        /*
+         * Whether recognised grades enter the IPK.
+         *
+         * Off by default, and the default is a position rather than a shrug: the
+         * IPK is *this* institution's assessment of a student, and a converted
+         * grade was awarded by somebody else against somebody else's standard.
+         * Counting it means the number on the diploma partly measures a campus
+         * that did not issue it.
+         *
+         * Practice differs, so it can be turned on. Recognised credits always
+         * count towards the credit total either way — that is what recognition
+         * means.
+         */
+        'hitung_ipk' => (bool) env('ACADEMIC_KONVERSI_HITUNG_IPK', false),
+
+        /*
+         * Ceiling on recognised credits, as a percentage of what the programme
+         * requires to graduate.
+         *
+         * Without a ceiling somebody can be recognised into a degree. The number
+         * is the point at which a qualification stops being a statement about
+         * study done here; every campus should set it deliberately.
+         */
+        'maks_persen' => (int) env('ACADEMIC_KONVERSI_MAKS_PERSEN', 50),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Graduation
     |--------------------------------------------------------------------------
     */

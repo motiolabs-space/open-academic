@@ -21,7 +21,7 @@
 | Layar terpakai | 21 dari 32 di bundel desain |
 | Endpoint Bridge API | 12 |
 | Perintah artisan | 4 (`openacademic:feeder-*`, `bridge-token`) |
-| Tes Pest | 560 hijau (1.245 asersi) |
+| Tes Pest | 583 hijau (1.291 asersi) |
 
 **Basis data: sudah ada dan terisi.** `open_academic` di MariaDB, seluruh
 47 tabel domain ter-migrasi, dan `php artisan migrate --seed` mengisi kampus
@@ -36,12 +36,13 @@ sehingga tangga batas SKS berbasis IPS akhirnya menyala di instalasi sungguhan.
 Begitu pula layar Jadwal & Kelas (§2).
 
 **Dibandingkan cakupan SIAKAD yang lazim dipakai kampus Indonesia**, tercatat
-tujuh kesenjangan pada 8 Agustus 2026. **Tiga sudah ditutup:** G1 Tugas Akhir
-(judul pada ijazah kini berasal dari karya yang benar-benar diuji), G2 Notifikasi
-(sebelumnya sistem ini tidak pernah memberi tahu siapa pun tentang apa pun), dan
-G3 Surat & SKPI (antrean loket tertinggi menjadi swalayan, dan dokumennya dapat
-diperiksa pihak ketiga). Empat sisanya di
-[§Perbandingan dengan SIAKAD Lain](#perbandingan-dengan-siakad-lain).
+tujuh kesenjangan pada 8 Agustus 2026. **Empat sudah ditutup:** G1 Tugas Akhir,
+G2 Notifikasi, G3 Surat & SKPI, dan G5 Konversi Kredit. Tiga sisanya di
+[§Perbandingan dengan SIAKAD Lain](#perbandingan-dengan-siakad-lain) — dan yang
+paling mendesak adalah **G4**, satu-satunya yang menuntut migrasi skema keuangan.
+
+**Repo sudah di bawah Git** sejak 11 Agustus 2026, satu commit awal atas
+sembilan belas sesi kerja. Belum ada remote — itu keputusan pemilik repo.
 
 **Portabilitas basis data:** mesin basis data adalah pilihan konfigurasi.
 Seluruh akses lewat Eloquent, pencarian teks memakai satu scope yang menghasilkan
@@ -698,13 +699,47 @@ siapa yang menyetujui.
 
 Perbaikannya memerlukan migrasi, bukan hanya controller.
 
-#### G5. Konversi nilai & transfer kredit (RPL / pindahan) ⬜
+#### G5. Konversi nilai & transfer kredit (RPL / pindahan) ✅ selesai 11 Agustus 2026
 
-`pmb_gelombang.jalur` sudah menerima `rpl` dan `transfer`. Tetapi tidak ada cara
-mencatat SKS yang diakui — sehingga mahasiswa pindahan semester 5 masuk dengan
-transkrip kosong, dan syarat kelulusannya menjadi mustahil.
+`pmb_gelombang.jalur` sudah menerima `rpl` dan `transfer` sejak modul PMB
+dibangun, tanpa tempat mencatat apa yang diakui. Pintunya terbuka tanpa lantai di
+baliknya.
 
-Jalurnya sudah dibuka tanpa jalan keluarnya.
+##### Yang lebih dulu harus dibereskan
+
+Logika **"ambil percobaan terbaik per mata kuliah"** ternyata ditulis **tiga
+kali** — di `YudisiumService`, `IndeksPrestasiCalculator`, dan `TranskripService`
+— nyaris identik. Menambahkan konversi ke masing-masing akan menjadikannya empat
+salinan yang perlahan berbeda: transkrip menampilkan kredit yang tidak dihitung
+layar kelulusan.
+
+Disatukan lebih dulu menjadi `PerolehanAkademik`, baru konversinya ditambahkan
+sekali.
+
+**Penyatuan itu menyingkap bug yang sudah ada.** IPK tersimpan dihitung atas
+seluruh mata kuliah final; IPK pada daftar periksa kelulusan hanya atas yang
+lulus. Dua angka berbeda, nama sama — seorang mahasiswa bisa melihat 2,0 pada
+catatannya dan 4,0 pada layar kelulusan. Sekarang satu.
+
+##### Aturan yang membuatnya bukan sekadar formulir
+
+| Aturan | Kegagalan yang dicegah |
+|---|---|
+| **Kredit ganda dicegah dari dua sisi** — konversi menolak MK yang sudah ditempuh; KRS menolak MK yang sudah dikonversi | Mahasiswa pindahan mengambil MK yang sudah diakui, kreditnya terhitung dua kali, dan totalnya hanya keluar lebih besar |
+| Satu konversi disetujui per MK, dijaga indeks unik portabel | Pengakuan kedua atas MK yang sama |
+| SKS diakui ≤ bobot MK di kurikulum ini | Enam SKS dari luar menjadi enam SKS di sini padahal MK-nya tiga |
+| **Batas persentase terhadap syarat kelulusan** | Seseorang diakui masuk ke dalam gelar |
+| Pencabutan ditolak setelah lulus | Transkrip terbit tidak lagi cocok dengan catatannya |
+
+##### Keputusan yang perlu diambil kampus
+
+Nilai konversi **tidak masuk IPK secara bawaan**, dan itu posisi, bukan
+ketidakpedulian: IPK adalah penilaian institusi ini, sedangkan nilai konversi
+diberikan pihak lain dengan standar lain. Dapat dinyalakan. Kreditnya selalu
+masuk ke total SKS — itulah arti pengakuan.
+
+Transkrip menandai barisnya (**T** transfer, **R** rekognisi) dan mencantumkan
+totalnya pada catatan kaki. Pembaca luar perlu tahu mana yang dinilai kampus ini.
 
 #### G6. EDOM / kuesioner evaluasi dosen ⬜ — *perlu keputusan batas*
 
@@ -746,7 +781,7 @@ data yang harus punya satu pemilik.
 | ~~2~~ | ~~**G2 Notifikasi**~~ | ✅ selesai 9 Agustus 2026 |
 | ~~3~~ | ~~**G3 Surat & SKPI**~~ | ✅ selesai 10 Agustus 2026 |
 | 4 | **G4 Keringanan/beasiswa** | Perlu migrasi; makin lama makin mahal |
-| 5 | **G5 Konversi kredit** | Menutup jalur PMB yang sudah terbuka |
+| ~~5~~ | ~~**G5 Konversi kredit**~~ | ✅ selesai 11 Agustus 2026 |
 | 6 | **G6 EDOM** | Putuskan batasnya lebih dulu |
 | 7 | **G7 SISTER/BKD** | Terbesar cakupannya, paling sedikit ketergantungannya |
 

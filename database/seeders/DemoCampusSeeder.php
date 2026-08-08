@@ -9,6 +9,7 @@ use Database\Seeders\Demo\IntegrasiSeeder;
 use Database\Seeders\Demo\KelulusanSeeder;
 use Database\Seeders\Demo\KemahasiswaanSeeder;
 use Database\Seeders\Demo\KeuanganSeeder;
+use Database\Seeders\Demo\KonversiSeeder;
 use Database\Seeders\Demo\MasterAkademikSeeder;
 use Database\Seeders\Demo\NotifikasiSeeder;
 use Database\Seeders\Demo\PerkuliahanSeeder;
@@ -64,6 +65,10 @@ class DemoCampusSeeder extends Seeder
             PerkuliahanSeeder::class,
             RiwayatAkademikSeeder::class,
             KeuanganSeeder::class,
+
+            // Sesudah RiwayatAkademikSeeder: konversi ditolak untuk mata kuliah
+            // yang sudah ditempuh, jadi calonnya dipilih dari yang belum bernilai.
+            KonversiSeeder::class,
 
             // Sebelum KelulusanSeeder: lulusan perlu tugas akhir untuk
             // diluluskan *dari*. Urutan terbalik menghasilkan kampus demo yang

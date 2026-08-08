@@ -328,6 +328,12 @@ Route::middleware(['auth:staff', 'term.active'])->prefix('admin')->name('admin.'
     Route::post('/tugas-akhir/{tugasAkhir}/selesai', [Admin\TugasAkhirController::class, 'selesaikan'])->name('tugas-akhir.selesai');
     Route::post('/tugas-akhir/{tugasAkhir}/batal', [Admin\TugasAkhirController::class, 'batalkan'])->name('tugas-akhir.batal');
 
+    Route::get('/konversi', [Admin\KonversiController::class, 'index'])->name('konversi');
+    Route::post('/konversi/{mahasiswa}', [Admin\KonversiController::class, 'ajukan'])->name('konversi.ajukan');
+    Route::post('/konversi/{konversi}/setujui', [Admin\KonversiController::class, 'setujui'])->name('konversi.setujui');
+    Route::post('/konversi/{konversi}/tolak', [Admin\KonversiController::class, 'tolak'])->name('konversi.tolak');
+    Route::post('/konversi/{konversi}/cabut', [Admin\KonversiController::class, 'cabut'])->name('konversi.cabut');
+
     Route::get('/surat', [Admin\SuratController::class, 'index'])->name('surat');
     Route::post('/surat/skpi', [Admin\SuratController::class, 'terbitkanSkpi'])->name('surat.skpi');
     Route::post('/surat/{surat}/terbitkan', [Admin\SuratController::class, 'terbitkan'])->name('surat.terbitkan');
