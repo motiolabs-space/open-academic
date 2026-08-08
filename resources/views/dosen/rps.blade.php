@@ -60,6 +60,16 @@
                     <x-button href="{{ route('dosen.analitik.kelas', $kelas) }}" variant="ghost" size="sm">
                         Analitik
                     </x-button>
+
+                    {{-- Dua lembar yang dibawa ke ruangan. Kolom tanda tangannya
+                         sengaja kosong: tanda tangan basah itu buktinya. --}}
+                    <x-button href="{{ route('dosen.kelas.absensi', $kelas) }}" variant="ghost" size="sm">
+                        Cetak absensi
+                    </x-button>
+
+                    <x-button href="{{ route('dosen.kelas.jurnal', $kelas) }}" variant="ghost" size="sm">
+                        Cetak jurnal
+                    </x-button>
                 </div>
             </x-card>
         @empty

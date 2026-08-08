@@ -9,6 +9,12 @@
         <div class="mb-5"><x-alert tone="success">{{ session('sukses') }}</x-alert></div>
     @endif
 
+    {{-- Alasan kartu ujian tertahan mendarat di sini. Tanpa ini, penolakannya
+         hilang tanpa bekas dan tombolnya tampak sekadar tidak berfungsi. --}}
+    @if (session('galat'))
+        <div class="mb-5"><x-alert tone="danger">{{ session('galat') }}</x-alert></div>
+    @endif
+
     @if ($errors->any())
         <div class="mb-5"><x-alert tone="danger">{{ $errors->first() }}</x-alert></div>
     @endif
@@ -52,6 +58,20 @@
                 <p class="mt-4 border-t border-line pt-3 text-[11.5px] leading-relaxed text-ink-faint">
                     Data di atas adalah keterangan resmi kampus dan tidak dapat diubah sendiri.
                     Bila ada yang keliru, hubungi BAAK.
+                </p>
+
+                <div class="mt-4 flex flex-wrap gap-2">
+                    <x-button href="{{ route('mahasiswa.ktm') }}" variant="outline" size="sm">
+                        Cetak KTM
+                    </x-button>
+
+                    <x-button href="{{ route('mahasiswa.kartu-ujian') }}" variant="outline" size="sm">
+                        Cetak kartu ujian
+                    </x-button>
+                </div>
+
+                <p class="mt-2 text-[11.5px] text-ink-faint">
+                    KTM dicetak tanpa pas foto — tempelkan foto 3×4 pada kotak yang disediakan.
                 </p>
             </x-card>
 

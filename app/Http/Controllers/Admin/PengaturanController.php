@@ -6,6 +6,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\System\Setting;
+use App\Services\Dokumen\PengaturanDokumen;
 use App\Support\Portal;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -24,6 +25,8 @@ use Illuminate\View\View;
  */
 class PengaturanController extends Controller
 {
+    public function __construct(private readonly PengaturanDokumen $dokumen) {}
+
     public function index(): View
     {
         $this->izin('pengaturan.view');
@@ -33,6 +36,7 @@ class PengaturanController extends Controller
             'konteks' => 'Identitas institusi & kebijakan',
             'breadcrumb' => ['Dasbor' => route('admin.dashboard'), 'Pengaturan'],
             'branding' => Setting::group('branding'),
+            'dokumen' => $this->dokumen->medan(),
 
             // Shown read-only so an operator can see what is in force without
             // being invited to change it from a web form.
@@ -72,6 +76,43 @@ class PengaturanController extends Controller
         }
 
         return back()->with('sukses', 'Pengaturan disimpan. Muat ulang halaman untuk melihat perubahan warna.');
+    }
+
+    /**
+     * Letterhead, signatory and footer per document type.
+     *
+     * Every field is free text, and every one of them is *content* — never a
+     * template. Nothing written here is compiled or evaluated; the layout that
+     * surrounds it lives in Blade files under version control. That boundary is
+     * the whole reason this screen is safe to expose.
+     */
+    public function simpanDokumen(Request $request): RedirectResponse
+    {
+        $this->izin('pengaturan.manage');
+
+        $aturan = [
+            'kop_alamat' => ['nullable', 'string', 'max:255'],
+            'kop_kontak' => ['nullable', 'string', 'max:255'],
+        ];
+
+        foreach ($this->dokumen->jenis() as $jenis => $definisi) {
+            $aturan[$jenis.'_judul'] = ['nullable', 'string', 'max:120'];
+            $aturan[$jenis.'_catatan_kaki'] = ['nullable', 'string', 'max:500'];
+
+            if (!$definisi['penandatangan']) {
+                continue;
+            }
+
+            $aturan[$jenis.'_ttd_nama'] = ['nullable', 'string', 'max:120'];
+            $aturan[$jenis.'_ttd_jabatan'] = ['nullable', 'string', 'max:120'];
+            $aturan[$jenis.'_ttd_nip'] = ['nullable', 'string', 'max:40'];
+        }
+
+        foreach ($request->validate($aturan) as $kunci => $nilai) {
+            Setting::put(PengaturanDokumen::GRUP, $kunci, (string) $nilai);
+        }
+
+        return back()->with('sukses', 'Pengaturan dokumen disimpan.');
     }
 
     private function izin(string $permission): void

@@ -85,8 +85,8 @@ Apa yang ada hari ini, dikelompokkan menurut siapa yang memakainya.
 | Kuliah paket | ✅ | Mendelegasi ke `KrsService`, jadi tak satu pun aturan dilewati |
 | **Evaluasi mahasiswa (peringatan & DO)** | ⬜ | Ada penutupan semester, belum ada aturan evaluasi bertingkat |
 | **Monitoring pemakaian ruang** | ⬜ | Bentrok terdeteksi; pemanfaatannya belum terlihat |
-| **Cetak KTM, kartu ujian, absensi** | ⬜ | Pola PDF sudah ada dari transkrip/SKPI/BKD |
-| **Kustomisasi templat dokumen** | ⬜ | Transkrip, ijazah, KHS — kini masih Blade, bukan templat per kampus |
+| Cetak KTM, kartu ujian, absensi, jurnal | ✅ | Kolom tanda tangan sengaja kosong; KTM tanpa NIK maupun alamat — [`CETAK.md`](CETAK.md) |
+| Pengaturan dokumen | ✅ | Kop, penandatangan, catatan kaki per jenis. **Bukan** templat Blade yang dapat disunting |
 
 ### Kemahasiswaan
 
@@ -183,8 +183,6 @@ akademik ada di tabel berikutnya.
 | **Kepegawaian mendalam & unit kerja** | Dosen | Sedang — sebagian ditutup G7 |
 | **Kuesioner umum** | Perkuliahan | Sedang — kita hanya punya EDOM |
 | **Komparasi data SIAKAD ↔ Neo Feeder** | Pelaporan | Sedang |
-| **Cetak KTM, kartu ujian, absensi, jurnal** | Perkuliahan | Kecil–sedang |
-| **Kustomisasi templat dokumen** | Perkuliahan | Kecil–sedang |
 | **Denda keterlambatan** | Keuangan | Kecil–sedang |
 | **Aplikasi mobile native** | Semua | Sedang — web responsif sudah jalan |
 
@@ -258,8 +256,12 @@ Inti produk. Semuanya menempel pada kelas dan kurikulum yang sudah ada.
 | ~~5~~ | ~~**Padanan mata kuliah**~~ | ✅ 17 Agustus 2026 |
 | ~~6~~ | ~~**Kuliah paket**~~ | ✅ 17 Agustus 2026 |
 | ~~7~~ | ~~**Kurikulum konsentrasi**~~ | ✅ 17 Agustus 2026 |
-| 8 | **Cetak KTM, kartu ujian, absensi, jurnal** | Pola PDF sudah ada dari transkrip/SKPI/BKD. Jurnal kini punya isinya |
-| 9 | **Pengaturan dokumen** | Kop, logo, penandatangan, dan catatan kaki per jenis dokumen. **Bukan** templat Blade yang dapat disunting pengguna — itu berarti mengeksekusi kode yang tersimpan di basis data, dan risikonya tidak sebanding dengan keluwesan yang didapat |
+| ~~8~~ | ~~**Cetak KTM, kartu ujian, absensi, jurnal**~~ | ✅ 17 Agustus 2026 |
+| ~~9~~ | ~~**Pengaturan dokumen**~~ | ✅ 17 Agustus 2026 — kop, penandatangan, catatan kaki per jenis. Templat Blade yang dapat disunting pengguna ditolak sebagai rancangan: itu berarti mengeksekusi kode yang tersimpan di basis data |
+
+**P1 perkuliahan tuntas.** Yang berikutnya P2 — memperdalam data mahasiswa dan
+dosen, dan satu-satunya kekalahan kompetitif yang tersisa di dalam cakupan kita
+tetap **payment gateway**, yang terhalang kredensial merchant.
 
 ### P2 — memperdalam data mahasiswa & dosen
 

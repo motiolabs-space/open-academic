@@ -77,6 +77,30 @@ function dalamAnggaranKueri(Closure $panggil, int $anggaran): void
     );
 }
 
+/*
+ * Layar jadwal pada hari Minggu.
+ *
+ * Ditemukan dengan cara paling menjengkelkan: suite yang hijau kemarin gagal
+ * hari ini, karena hari ini Minggu.
+ *
+ * `kelompokPerHari` mengisi Senin–Sabtu meski kosong, jadi hanya kunci 7 yang
+ * benar-benar tidak ada — dan kartu "Hari Ini" mengindeksnya langsung. Setiap
+ * mahasiswa, setiap Minggu, layarnya melempar "Undefined array key".
+ *
+ * Hanya Minggu yang diuji: hari lain selalu punya kuncinya, jadi menyertakannya
+ * berarti menambah kasus yang tidak bisa gagal. Waktunya dibekukan supaya bug
+ * bergantung tanggal ini tidak lagi menunggu kalender untuk terlihat.
+ */
+it('membuka layar jadwal pada hari Minggu', function () {
+    Carbon\Carbon::setTestNow(Carbon\Carbon::parse('2026-08-09')->startOfWeek()->addDays(6));
+
+    $mahasiswa = Mahasiswa::query()->whereHas('krs')->orderBy('id')->firstOrFail();
+
+    $this->actingAs($mahasiswa, 'mahasiswa')->get('/mahasiswa/jadwal')->assertOk();
+
+    Carbon\Carbon::setTestNow();
+});
+
 it('membuka layar mahasiswa dalam anggaran kueri', function (string $url, int $anggaran) {
     $mahasiswa = Mahasiswa::query()->whereHas('krs')->orderBy('id')->firstOrFail();
 

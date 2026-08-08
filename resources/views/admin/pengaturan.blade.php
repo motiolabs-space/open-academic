@@ -63,4 +63,61 @@
             </dl>
         </x-card>
     </div>
+
+    <x-card class="mt-5" title="Dokumen Cetak" meta="kop, penandatangan, dan catatan kaki">
+        <p class="mb-4 text-[12.5px] leading-relaxed text-ink-muted">
+            Yang dapat diubah di sini adalah <em>isi</em>: baris kop, siapa yang bertanda
+            tangan, dan catatan di kaki halaman. Tata letaknya tetap di berkas Blade dan
+            ikut kendali versi — templat yang dapat disunting dari layar berarti
+            mengeksekusi kode yang tersimpan di basis data, dan keluwesannya tidak
+            sebanding dengan itu.
+        </p>
+
+        <form method="POST" action="{{ route('admin.pengaturan.dokumen') }}" class="flex flex-col gap-5">
+            @csrf @method('PUT')
+
+            <div class="grid gap-3.5 sm:grid-cols-2">
+                <x-field label="Alamat pada kop" name="kop_alamat"
+                    :value="$dokumen->first()['nilai']['alamat'] ?? ''"
+                    hint="Satu baris di bawah nama institusi." />
+                <x-field label="Kontak pada kop" name="kop_kontak"
+                    :value="$dokumen->first()['nilai']['kontak'] ?? ''"
+                    hint="Telepon, surel, atau laman." />
+            </div>
+
+            @foreach ($dokumen as $jenis)
+                <div class="border-t border-line pt-4">
+                    <h3 class="mb-3 text-[13px] font-semibold">{{ $jenis['label'] }}</h3>
+
+                    <div class="grid gap-3.5 sm:grid-cols-2">
+                        <x-field label="Judul tercetak" :name="$jenis['jenis'].'_judul'"
+                            :value="$jenis['nilai']['judul']" />
+                        <x-field label="Catatan kaki" :name="$jenis['jenis'].'_catatan_kaki'"
+                            :value="$jenis['nilai']['catatan_kaki']" />
+                    </div>
+
+                    @if ($jenis['bertanda_tangan'])
+                        <div class="mt-3.5 grid gap-3.5 sm:grid-cols-3">
+                            <x-field label="Nama penandatangan" :name="$jenis['jenis'].'_ttd_nama'"
+                                :value="$jenis['nilai']['penandatangan']['nama']" />
+                            <x-field label="Jabatan" :name="$jenis['jenis'].'_ttd_jabatan'"
+                                :value="$jenis['nilai']['penandatangan']['jabatan']" />
+                            <x-field label="NIP" :name="$jenis['jenis'].'_ttd_nip'"
+                                :value="$jenis['nilai']['penandatangan']['nip']" />
+                        </div>
+                    @else
+                        {{-- Ditandatangani di kertas oleh yang hadir. Nama tercetak di
+                             sini justru salah: yang dibutuhkan ruang kosong, bukan
+                             pejabat yang tidak ada di ruangan itu. --}}
+                        <p class="mt-3 text-[12px] text-ink-faint">
+                            Ditandatangani di kertas oleh dosen pengampu, jadi tidak ada
+                            penandatangan tetap yang dicetak.
+                        </p>
+                    @endif
+                </div>
+            @endforeach
+
+            <x-button type="submit" class="self-start">Simpan Pengaturan Dokumen</x-button>
+        </form>
+    </x-card>
 @endsection

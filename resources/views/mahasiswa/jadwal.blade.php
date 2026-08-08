@@ -12,7 +12,11 @@
         <x-stat-card label="Sesi per Pekan" :value="Format::bulat($perHari->flatten()->count())" />
         <x-stat-card feature label="Total SKS" :value="Format::bulat($totalSks)" meta="Dari rencana studi disetujui" />
         <x-stat-card label="Hari Ini" :value="JadwalKuliah::HARI[$hariIni] ?? '—'"
-            :meta="Format::bulat($perHari[$hariIni]?->count() ?? 0).' sesi terjadwal'" />
+            {{-- ->get(), bukan [$hariIni]: kunci harinya tidak ada sama sekali
+                 ketika tidak ada kuliah pada hari itu, dan indeks langsung
+                 melempar "Undefined array key". Muncul tiap hari Minggu, yang
+                 juga sebabnya baru sekarang terlihat. --}}
+            :meta="Format::bulat($perHari->get($hariIni)?->count() ?? 0).' sesi terjadwal'" />
     </div>
 
     <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
