@@ -10,8 +10,10 @@ use App\Models\Akademik\Prodi;
 use App\Models\Akademik\TahunAkademik;
 use App\Models\Keuangan\Pembayaran;
 use App\Models\Keuangan\Tagihan;
+use App\Models\Keuangan\TagihanItem;
 use App\Services\Keuangan\PembayaranService;
 use App\Services\Keuangan\PenerbitanTagihanService;
+use App\Services\Keuangan\PotonganService;
 use App\Support\Portal;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -30,7 +32,54 @@ class KeuanganController extends Controller
     public function __construct(
         private readonly PenerbitanTagihanService $penerbitan,
         private readonly PembayaranService $pembayaran,
+        private readonly PotonganService $potongan,
     ) {}
+
+    /**
+     * A one-off reduction on one invoice.
+     *
+     * Lives beside the payment actions because it is the same kind of decision:
+     * somebody is changing what a student owes, and the record of who and why is
+     * the whole point. Scholarships have their own screen; this is the
+     * discretionary case that has no scheme behind it.
+     */
+    public function keringanan(Request $request, Tagihan $tagihan): RedirectResponse
+    {
+        $this->izin('keuangan.manage');
+
+        $data = $request->validate([
+            'nominal' => ['required', 'integer', 'min:1'],
+            'alasan' => ['required', 'string', 'max:500'],
+        ], [
+            'alasan.required' => 'Alasan keringanan wajib diisi — potongan tanpa alasan tertulis '
+                .'tidak dapat dibedakan dari penyalahgunaan.',
+        ]);
+
+        $this->potongan->keringanan(
+            $tagihan,
+            (int) $data['nominal'],
+            $data['alasan'],
+            Portal::user(),
+        );
+
+        $lebih = $tagihan->fresh()->kelebihanBayar();
+
+        return back()->with('sukses', $lebih > 0
+            ? 'Keringanan dicatat. Pembayaran mahasiswa kini melebihi tagihan sebesar Rp'
+                .number_format($lebih, 0, ',', '.').' — perlu dikembalikan atau dipindahkan.'
+            : 'Keringanan dicatat dan tagihan diperbarui.');
+    }
+
+    public function hapusPotongan(Request $request, TagihanItem $item): RedirectResponse
+    {
+        $this->izin('keuangan.manage');
+
+        $data = $request->validate(['alasan' => ['required', 'string', 'max:500']]);
+
+        $this->potongan->hapus($item, Portal::user(), $data['alasan']);
+
+        return back()->with('sukses', 'Potongan dibatalkan dan nominalnya kembali ke tagihan.');
+    }
 
     public function index(Request $request): View
     {

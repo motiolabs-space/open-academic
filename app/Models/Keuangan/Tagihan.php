@@ -79,6 +79,33 @@ class Tagihan extends Model
         return $this->total > 0 ? round($this->terbayar / $this->total * 100, 2) : 100.0;
     }
 
+    /**
+     * Money paid beyond what is now owed.
+     *
+     * Arises when a reduction lands after payment: a student settles in full in
+     * August and their scholarship is confirmed in September. The payment rows
+     * are not rewritten — the money did change hands — so the excess sits here
+     * for the finance office to refund or carry forward.
+     *
+     * Surfaced rather than absorbed. An overpayment that quietly disappears into
+     * a recalculated total is money the campus took and cannot account for.
+     */
+    public function kelebihanBayar(): int
+    {
+        return max(0, (int) $this->terbayar - (int) $this->total);
+    }
+
+    /** Charges before any reduction, for a screen that shows both. */
+    public function totalKotor(): int
+    {
+        return (int) $this->item()->tagihan()->sum('nominal');
+    }
+
+    public function totalPotongan(): int
+    {
+        return abs((int) $this->item()->potongan()->sum('nominal'));
+    }
+
     public function terlambat(): bool
     {
         return $this->status !== InvoiceStatus::Lunas

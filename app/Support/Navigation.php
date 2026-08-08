@@ -111,6 +111,7 @@ final class Navigation
                 'items' => [
                     self::item('Matriks Tarif', '⊞', 'admin.tarif'),
                     self::item('Tagihan & Rekonsiliasi', '◈', 'admin.keuangan'),
+                    self::item('Beasiswa & Keringanan', '◍', 'admin.beasiswa'),
                 ],
             ],
             [
