@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Models\Akademik\KelasKuliah;
 use App\Models\Bridge\BridgeConsumer;
 use App\Models\Kemahasiswaan\Mahasiswa;
 use App\Models\Sdm\Dosen;
@@ -94,6 +95,7 @@ it('membuka layar mahasiswa dalam anggaran kueri', function (string $url, int $a
     ['/notifikasi/preferensi', 25],
     ['/mahasiswa/surat', 30],
     ['/mahasiswa/edom', 15],
+    ['/mahasiswa/capaian', 12],
 ]);
 
 it('membuka layar dosen dalam anggaran kueri', function (string $url, int $anggaran) {
@@ -118,6 +120,8 @@ it('membuka layar dosen dalam anggaran kueri', function (string $url, int $angga
     // dosen1 punya laporan BKD yang sudah disahkan, jadi jalur ini membaca
     // cuplikan beku. Jalur lembar kerja hidup — yang jauh lebih mahal — diuji
     // terpisah di bawah.
+    ['/dosen/rps', 20],
+    ['/dosen/analitik', 12],
     ['/dosen/bkd', 12],
     ['/dosen/bkd/penilaian', 13],
     ['/dosen/portofolio', 13],
@@ -192,6 +196,28 @@ it('membuka layar kelola tugas akhir dalam anggaran kueri', function () {
     dalamAnggaranKueri(
         fn () => $this->actingAs($staff, 'staff')->get('/admin/tugas-akhir/'.$ta->uuid)->assertOk(),
         30,
+    );
+});
+
+it('menyusun analitik satu kelas dalam anggaran kueri', function () {
+    /*
+     * Kandidat N+1 paling jelas di seluruh repo: tiga lensa atas satu kelas,
+     * masing-masing menggoda untuk berjalan per mahasiswa. Kehadiran memang
+     * memanggil PresensiService per peserta — itu harga dari satu perhitungan
+     * bersama alih-alih dua yang berselisih — sehingga anggarannya naik seiring
+     * jumlah peserta, dan itu yang diawasi angka ini.
+     */
+    $dosen = Dosen::where('email', 'dosen1@demo.test')->firstOrFail();
+
+    $kelas = KelasKuliah::query()
+        ->whereHas('dosen', fn ($q) => $q->where('dosen.id', $dosen->id))
+        ->whereHas('komponenNilai')
+        ->orderBy('id')
+        ->firstOrFail();
+
+    dalamAnggaranKueri(
+        fn () => $this->actingAs($dosen, 'dosen')->get('/dosen/analitik/'.$kelas->uuid)->assertOk(),
+        60,
     );
 });
 

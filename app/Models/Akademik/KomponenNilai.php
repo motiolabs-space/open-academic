@@ -9,6 +9,7 @@ use App\Traits\HasUuid;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
@@ -34,5 +35,19 @@ class KomponenNilai extends Model
     public function nilai(): HasMany
     {
         return $this->hasMany(NilaiKomponen::class);
+    }
+
+    /**
+     * Which programme outcomes this component measures, and in what share.
+     *
+     * Many-to-many because one midterm routinely measures two or three. A single
+     * foreign key would force somebody to pick one, and the outcomes they
+     * discarded are precisely the ones that then look unmeasured.
+     */
+    public function cpl(): BelongsToMany
+    {
+        return $this->belongsToMany(ProdiCpl::class, 'komponen_nilai_cpl', 'komponen_nilai_id', 'prodi_cpl_id')
+            ->withPivot('porsi')
+            ->withTimestamps();
     }
 }

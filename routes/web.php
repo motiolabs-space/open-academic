@@ -109,6 +109,8 @@ Route::middleware(['auth:mahasiswa', 'term.active'])->prefix('mahasiswa')->name(
     Route::post('/tugas-akhir/bimbingan', [Mahasiswa\TugasAkhirController::class, 'catatBimbingan'])->name('tugas-akhir.bimbingan');
     Route::delete('/tugas-akhir/bimbingan/{bimbingan}', [Mahasiswa\TugasAkhirController::class, 'hapusBimbingan'])->name('tugas-akhir.bimbingan.hapus');
 
+    Route::get('/capaian', Mahasiswa\PenguasaanController::class)->name('capaian');
+
     Route::get('/edom', [Mahasiswa\EdomController::class, 'index'])->name('edom');
     Route::post('/edom', [Mahasiswa\EdomController::class, 'kirim'])->name('edom.kirim');
 
@@ -149,6 +151,16 @@ Route::middleware(['auth:dosen', 'term.active'])->prefix('dosen')->name('dosen.'
     // Bimbingan tugas akhir — hal yang berbeda, dan sengaja terpisah: dosen
     // wali membimbing rencana studi, pembimbing tugas akhir membimbing karya.
     Route::get('/edom', Dosen\EdomController::class)->name('edom');
+
+    Route::get('/rps', [Dosen\RpsController::class, 'index'])->name('rps');
+    Route::get('/rps/susun/{mataKuliah}', [Dosen\RpsController::class, 'susun'])->name('rps.susun');
+    Route::put('/rps/{rps}', [Dosen\RpsController::class, 'simpan'])->name('rps.simpan');
+    Route::post('/rps/{rps}/terbitkan', [Dosen\RpsController::class, 'terbitkan'])->name('rps.terbitkan');
+    Route::get('/rps/jurnal/{kelas}', [Dosen\RpsController::class, 'jurnal'])->name('rps.jurnal');
+    Route::post('/rps/jurnal/{pertemuan}/simpan', [Dosen\RpsController::class, 'simpanJurnal'])->name('rps.jurnal.simpan');
+
+    Route::get('/analitik', [Dosen\AnalitikController::class, 'index'])->name('analitik');
+    Route::get('/analitik/{kelas}', [Dosen\AnalitikController::class, 'kelas'])->name('analitik.kelas');
 
     Route::get('/bkd', [Dosen\BkdController::class, 'index'])->name('bkd');
     Route::post('/bkd/ajukan', [Dosen\BkdController::class, 'ajukan'])->name('bkd.ajukan');

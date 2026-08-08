@@ -4,6 +4,79 @@
 
 ---
 
+## Sesi 25 — 2026-08-16 · RPS, Jurnal Perkuliahan, dan Analitik
+
+**743 tes hijau (1.632 asersi)**, naik dari 715.
+
+P1 perkuliahan, dengan analitik yang diminta menyertainya. Urutannya ditentukan
+oleh permintaan itu sendiri: **"potensi penguasaan materi" hanya bermakna kalau
+ada peta materi untuk mengukurnya**, jadi RPS harus lebih dulu — tanpa peta
+MK→CPL, penguasaan materi hanya dapat dijawab dengan nilainya, yaitu
+pertanyaannya diulang dan bukan dijawab.
+
+### Yang menopang angkanya
+
+Komponen nilai dipetakan ke CPL lewat pivot berbobot, bukan kolom tunggal. Satu
+UTS lazim mengukur dua atau tiga CPL; memaksa memilih satu membuat CPL yang
+dibuang justru tampak tidak pernah diukur.
+
+Penguasaan = rerata nilai ditimbang **bobot komponen × porsi CPL**. UTS berbobot
+30% yang 60%-nya mengukur CPL-01 menyumbang 18 satuan — bukan 30, bukan 1.
+Dibuktikan mengikat: mengabaikan `porsi` mengubah hasil dari 66,21 menjadi 68,57
+dan tesnya gagal seketika.
+
+RPS terbit dibekukan. Nilai yang dicatat pekan keempat terhadap CPL-01 harus
+tetap milik CPL-01 pada pekan kedua belas — prinsip yang sama dengan isi surat
+terbit, rumusan EDOM, dan baris BKD.
+
+### Yang modul ini menolak lakukan
+
+**Tidak ada prediksi.** Permintaannya menyebut "potensi", dan itu godaan paling
+jelas untuk mengarang statistik. Yang dibangun dua jenis saja: **fakta**
+(persentase, rerata, ketercapaian — dicacah) dan **aturan** (peringatan saat
+angka melewati ambang yang dikonfigurasi kampus).
+
+Daftar "perlu perhatian" berisi alasan tertulis, bukan skor risiko. Indeks
+berperingkat mengundang pembacanya memperlakukan kombinasi aritmetik dua angka
+tak sejenis sebagai ramalan; daftar beralasan mengundangnya memeriksa.
+
+Dan ketika komponen belum dipetakan, layarnya berkata **belum dipetakan** — tidak
+menampilkan nol. Nol akan terbaca "mahasiswa tidak menguasai apa pun", padahal
+artinya "belum ada yang menyatakan ujian ini mengukur apa".
+
+### Dua angka, dan jaraknya
+
+Jurnal melaporkan `terlaksana` dan `berjurnal` terpisah. Kelas dengan empat belas
+terlaksana dan empat berjurnal bukan mengajar lebih sedikit — ia
+mendokumentasikan lebih sedikit, dan satu angka gabungan menyembunyikan mana dari
+dua masalah itu yang dipunyai kampusnya.
+
+Jurnal juga sengaja boleh berbeda dari RPS. Libur menggeser pekan, materi
+digabung — memaksa keduanya cocok justru menghapus informasi yang dicari orang
+yang bertanya kenapa hanya dua belas dari enam belas tersampaikan.
+
+### Tiga hal yang ditemukan, bukan dipikirkan
+
+- **Tabrakan nama scope, untuk kedua kalinya.** `Rps::berlaku()` sebagai scope
+  bertabrakan dengan instance method bernama sama — persis seperti
+  `JabatanFungsionalDosen` di G7. Diseragamkan menjadi `scopeAktif`.
+- **`nilai_huruf` ternyata enum `GradeLetter`**, bukan string. Perbandingan
+  `=== 'E'` diganti `isPassing()` — ambang kelulusan properti skala huruf yang
+  dapat dikonfigurasi kampus, dan literal di sini akan diam-diam salah begitu
+  ada yang menambah D- atau mengganti nama huruf gagalnya.
+- **Seeder awal menghasilkan layar kosong.** Pemetaan CPL hanya menyentuh
+  semester berjalan, padahal mid-semester belum punya nilai sama sekali — 687
+  nilai komponen seluruhnya di semester lampau. Pemetaan diperluas ke semua
+  semester, yang juga persis yang dilakukan kampus saat mengadopsi modul ini:
+  tanpa baseline tidak ada yang dapat dibandingkan.
+
+### Berikutnya
+
+Sisa P1 perkuliahan: padanan mata kuliah, kuliah paket, kurikulum konsentrasi,
+cetak KTM/kartu ujian, kustomisasi templat dokumen.
+
+---
+
 ## Sesi 24 — 2026-08-15 · Integrasi Easy Accounting
 
 **715 tes hijau (1.573 asersi)**, naik dari 684.

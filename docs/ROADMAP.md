@@ -13,7 +13,7 @@
 
 **Legenda** — ✅ Selesai · 🟡 Sebagian · ⬜ Belum · 🚫 Sengaja di luar cakupan
 
-Diverifikasi terhadap kode dan basis data pada **15 Agustus 2026**.
+Diverifikasi terhadap kode dan basis data pada **16 Agustus 2026**.
 
 ---
 
@@ -42,16 +42,16 @@ tersendiri dengan siklus hidup, beban, dan model datanya sendiri — lihat
 
 | | |
 |---|---|
-| Tabel domain | 84 |
-| Migrasi | 38 |
-| Model Eloquent | 66 |
-| Enum | 43 |
-| Service | 66 |
+| Tabel domain | 88 |
+| Migrasi | 40 |
+| Model Eloquent | 68 |
+| Enum | 44 |
+| Service | 69 |
 | Policy | 7 |
-| Layar (rute GET berportal) | 77 |
+| Layar (rute GET berportal) | 83 |
 | Endpoint Campus Bridge | 11 |
 | Perintah artisan | 8 |
-| **Tes Pest** | **715 hijau (1.573 asersi)** |
+| **Tes Pest** | **743 hijau (1.632 asersi)** |
 
 Seluruh fase (0–5), SSO OAuth2, tujuh kesenjangan SIAKAD (G1–G7), dan integrasi
 akuntansi sudah selesai. `php artisan migrate:fresh --seed` membangun kampus demo
@@ -77,12 +77,13 @@ Apa yang ada hari ini, dikelompokkan menurut siapa yang memakainya.
 | Presensi + sesi QR | ✅ | 16 pertemuan; ambang kelayakan UAS |
 | KHS, transkrip, PDF | ✅ | Konversi kredit ditandai terpisah |
 | Penutupan semester | ✅ | Pembekuan catatan yang menyalakan tangga batas SKS |
-| **RPS & SAP** | ⬜ | Kontrak belajar per kelas; ditanya saat akreditasi |
+| RPS & SAP | ✅ | Peta MK→CPL yang membuat penguasaan materi terukur — [`RPS-ANALITIK.md`](RPS-ANALITIK.md) |
+| Jurnal perkuliahan (BAP) | ✅ | Terlaksana dan berjurnal dilaporkan terpisah; jaraknya adalah temuannya |
+| Analitik kelas & mahasiswa | ✅ | Kehadiran, penilaian, penguasaan CPL. Fakta dan aturan — tanpa prediksi |
 | **Padanan mata kuliah** | ⬜ | Ekuivalensi antar kurikulum; berbeda dari konversi RPL |
 | **Kurikulum konsentrasi / peminatan** | ⬜ | Satu prodi, beberapa jalur wajib |
 | **Kuliah paket** | ⬜ | Lazim di vokasi/diploma: KRS ditetapkan, bukan dipilih |
 | **Evaluasi mahasiswa (peringatan & DO)** | ⬜ | Ada penutupan semester, belum ada aturan evaluasi bertingkat |
-| **Berita acara & jurnal perkuliahan** | ⬜ | Presensi ada; catatan materi tiap pertemuan belum |
 | **Monitoring pemakaian ruang** | ⬜ | Bentrok terdeteksi; pemanfaatannya belum terlihat |
 | **Cetak KTM, kartu ujian, absensi** | ⬜ | Pola PDF sudah ada dari transkrip/SKPI/BKD |
 | **Kustomisasi templat dokumen** | ⬜ | Transkrip, ijazah, KHS — kini masih Blade, bukan templat per kampus |
@@ -174,7 +175,6 @@ akademik ada di tabel berikutnya.
 | Modul | Poros | Beratnya |
 |---|---|---|
 | **Payment gateway aktif** | Keuangan | **Besar** — kita hanya punya pencatatan manual |
-| **RPS & SAP** | Perkuliahan | Sedang — ditanya saat akreditasi |
 | **Padanan mata kuliah** | Perkuliahan | Sedang — dibutuhkan tiap kurikulum berganti |
 | **Kurikulum konsentrasi** | Perkuliahan | Sedang |
 | **Kuliah paket** | Perkuliahan | Sedang — normal di vokasi/diploma |
@@ -252,13 +252,14 @@ Inti produk. Semuanya menempel pada kelas dan kurikulum yang sudah ada.
 
 | # | Pekerjaan | Kenapa, dan apa yang sudah menopangnya |
 |---|---|---|
-| 2 | **Padanan mata kuliah** | Setiap pergantian kurikulum menuntutnya, dan tanpanya transkrip mahasiswa lama tidak dapat dibaca oleh aturan kurikulum baru. `KonversiKredit` sudah menyediakan pola "diakui setara" — ini saudaranya di tingkat kurikulum, bukan tingkat orang |
-| 3 | **RPS & SAP** | Kontrak belajar per kelas, dan bahan akreditasi. `prodi_cpl` dari G3 sudah menyimpan capaian pembelajaran; RPS yang memetakan MK ke CPL menutup rantainya |
-| 4 | **Berita acara & jurnal perkuliahan** | Presensi mencatat *siapa hadir*; jurnal mencatat *apa yang diajarkan*. Yang kedua yang ditanya saat monitoring, dan yang kini masih ditulis tangan |
-| 5 | **Kuliah paket** | Di vokasi/diploma KRS ditetapkan, bukan dipilih. `KrsService` tinggal menerima mode kedua: paket disalin, mahasiswa tidak memilih |
-| 6 | **Kurikulum konsentrasi** | Satu prodi beberapa jalur wajib; berpengaruh ke prasyarat dan syarat kelulusan |
-| 7 | **Cetak KTM, kartu ujian, absensi, jurnal** | Pola PDF sudah ada dari transkrip/SKPI/BKD. Murah, dan tiap semester dicari |
-| 8 | **Kustomisasi templat dokumen** | Transkrip dan ijazah kini Blade tetap. Tiap kampus punya kop dan tata letaknya sendiri |
+| ~~2~~ | ~~**RPS & SAP**~~ | ✅ 16 Agustus 2026 — memetakan MK ke CPL, yang membuat penguasaan materi dapat diukur |
+| ~~3~~ | ~~**Berita acara & jurnal perkuliahan**~~ | ✅ 16 Agustus 2026 |
+| ~~4~~ | ~~**Analitik perkuliahan**~~ | ✅ 16 Agustus 2026 — kehadiran, penilaian, penguasaan CPL |
+| 5 | **Padanan mata kuliah** | Setiap pergantian kurikulum menuntutnya, dan tanpanya transkrip mahasiswa lama tidak dapat dibaca oleh aturan kurikulum baru. `KonversiKredit` sudah menyediakan pola "diakui setara" — ini saudaranya di tingkat kurikulum, bukan tingkat orang |
+| 6 | **Kuliah paket** | Di vokasi/diploma KRS ditetapkan, bukan dipilih. `KrsService` tinggal menerima mode kedua: paket disalin, mahasiswa tidak memilih |
+| 7 | **Kurikulum konsentrasi** | Satu prodi beberapa jalur wajib; berpengaruh ke prasyarat dan syarat kelulusan |
+| 8 | **Cetak KTM, kartu ujian, absensi, jurnal** | Pola PDF sudah ada dari transkrip/SKPI/BKD. Jurnal kini punya isinya |
+| 9 | **Kustomisasi templat dokumen** | Transkrip dan ijazah kini Blade tetap. Tiap kampus punya kop dan tata letaknya sendiri |
 
 ### P2 — memperdalam data mahasiswa & dosen
 
@@ -434,3 +435,4 @@ Rinciannya — termasuk cacat yang ditemukan dan keputusan yang diambil — ada 
 | G6 EDOM | 13 Agustus 2026 |
 | G7 SISTER & BKD | 14 Agustus 2026 |
 | Integrasi akuntansi Easy Accounting | 15 Agustus 2026 |
+| RPS, jurnal perkuliahan, analitik | 16 Agustus 2026 |

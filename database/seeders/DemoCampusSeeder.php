@@ -19,6 +19,7 @@ use Database\Seeders\Demo\NotifikasiSeeder;
 use Database\Seeders\Demo\PerkuliahanSeeder;
 use Database\Seeders\Demo\PmbSeeder;
 use Database\Seeders\Demo\RiwayatAkademikSeeder;
+use Database\Seeders\Demo\RpsSeeder;
 use Database\Seeders\Demo\SdmSeeder;
 use Database\Seeders\Demo\SuratSeeder;
 use Database\Seeders\Demo\TugasAkhirSeeder;
@@ -94,6 +95,11 @@ class DemoCampusSeeder extends Seeder
             // Sesudah RiwayatAkademikSeeder: hanya mahasiswa dengan KRS
             // disetujui yang punya kelas untuk dinilai.
             EdomSeeder::class,
+
+            // Sesudah SuratSeeder (yang membuat prodi_cpl) dan sesudah nilai
+            // terisi: penguasaan CPL dihitung dari komponen yang sudah bernilai,
+            // dan tanpa CPL tidak ada yang dapat dipetakan.
+            RpsSeeder::class,
 
             // Sesudah TugasAkhirSeeder: unsur pendidikan pada BKD ditarik dari
             // kelas, bimbingan, dan pengujian — melapor sebelum semua itu ada
