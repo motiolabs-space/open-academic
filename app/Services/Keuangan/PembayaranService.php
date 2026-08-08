@@ -11,6 +11,7 @@ use App\Models\Keuangan\Pembayaran;
 use App\Models\Keuangan\Tagihan;
 use App\Models\Sdm\Staff;
 use App\Notifications\Keuangan\PembayaranDiterima;
+use App\Services\Akuntansi\PenjurnalanService;
 use App\Services\Notifikasi\Notifier;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -29,7 +30,10 @@ use Illuminate\Support\Str;
  */
 class PembayaranService
 {
-    public function __construct(private readonly Notifier $notifier) {}
+    public function __construct(
+        private readonly Notifier $notifier,
+        private readonly PenjurnalanService $penjurnalan,
+    ) {}
 
     /**
      * Records a payment taken at the counter.
@@ -93,6 +97,11 @@ class PembayaranService
         // it is the student's evidence that the office recorded what they paid.
         $this->notifier->kirim($tagihan->mahasiswa, new PembayaranDiterima($pembayaran->refresh()));
 
+        // Dr Kas/Bank, Cr Piutang — queued, not posted. Outside the transaction
+        // above for the same reason the receipt is: the money was taken, and
+        // nothing downstream of that fact may undo it.
+        $this->penjurnalan->pembayaranDiterima($pembayaran->refresh()->load('tagihan'));
+
         return $pembayaran;
     }
 
@@ -128,6 +137,12 @@ class PembayaranService
                 ),
             );
         });
+
+        // A reversing entry, not a deletion of the original. The receipt
+        // happened and was booked; erasing it leaves an audit trail that cannot
+        // explain itself, and does not work at all once the far side has closed
+        // the period.
+        $this->penjurnalan->pembayaranDibatalkan($pembayaran->refresh()->load('tagihan'));
 
         return $pembayaran->refresh();
     }

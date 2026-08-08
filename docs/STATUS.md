@@ -4,6 +4,101 @@
 
 ---
 
+## Sesi 24 — 2026-08-15 · Integrasi Easy Accounting
+
+**715 tes hijau (1.573 asersi)**, naik dari 684.
+
+Open Academic mencatat tagihan dan pembayaran; ia tidak menyusun jurnal
+berpasangan dan tidak akan pernah. Sesi ini membangun jembatannya ke Easy
+Accounting (easyERP).
+
+**Berbeda dari SISTER, klien sungguhannya ditulis sekarang.** API v1 easyERP
+memang dirancang untuk kasus ini — dokumennya sendiri menyebut "integrasi
+aplikasi vertikal ... mapping akuntansi dikerjakan otomatis server-side" — jadi
+kontraknya terdokumentasi dan dapat diuji. Tidak ada satu baris pun yang ditulis
+melawan tebakan.
+
+### Tiga keputusan yang diambil pemilik repo
+
+Ditanyakan lebih dulu karena ketiganya mengubah angka di laporan keuangan, bukan
+sekadar cara kode ditulis: invoice **per mahasiswa per semester**, beasiswa
+dibukukan **bruto + beban**, pembayaran lewat **jurnal Dr Kas/Cr Piutang**.
+
+### Outbox, bukan panggilan langsung
+
+Peristiwa ditulis ke `akuntansi_dokumen` lebih dulu, dikirim tiap lima menit.
+Menerbitkan tagihan untuk lima ribu mahasiswa tidak boleh menunggu lima ribu
+panggilan HTTP, dan sistem akuntansi yang mati tidak boleh dapat menggagalkan
+penagihan — utangnya ada, terbukukan atau tidak.
+
+Bentuknya mengikuti `feeder_sync_logs`, bukan pola ketiga untuk pekerjaan yang
+sama.
+
+### Kunci idempotensi
+
+Kolom paling menentukan di modul ini, dan diturunkan dari peristiwanya
+(`oa-inv-<uuid>`), tidak pernah diacak. Kunci acak yang dibuat ulang saat retry
+bukan kunci idempotensi — ia jaminan duplikat pertama kali jaringan menjatuhkan
+respons setelah easyERP terlanjur commit.
+
+Dibuktikan mengikat: menggantinya jadi acak membuat dua tes gagal seketika, dan
+salah satunya menagih mahasiswa dua kali.
+
+Untuk potongan, kuncinya baris tagihan — bukan nominal. Satu mahasiswa bisa
+menerima dua keringanan bernilai persis sama, dan kunci berbasis nominal akan
+menelan yang kedua sebagai duplikat: kampus sudah memberikan uangnya tanpa pernah
+membukukannya.
+
+### Satu cacat yang ditemukan tes, bukan pemikiran
+
+Versi pertama memperlakukan **semua** kegagalan dependensi sebagai terminal.
+Artinya gangguan jaringan lima detik saat membuat kontak akan mematikan invoice
+di belakangnya secara permanen — antrean dokumen mati yang harus dikembalikan
+manusia satu per satu.
+
+Ketahuan karena tes backoff gagal dengan pesan yang salah, bukan karena
+angkanya. Diperbaiki dengan `DependensiGagal` yang membawa `HasilKirim`-nya,
+sehingga pengirim tetap dapat bertanya apakah sebabnya layak diulang.
+
+### Yang belum ada di sisi easyERP, dinyatakan
+
+API v1-nya belum punya endpoint pembayaran. Penerimaan kas karenanya dikirim
+sebagai jurnal: buku besarnya benar, tetapi status invoice di sana tidak ikut
+lunas. Layar Akuntansi mengatakan itu alih-alih membiarkannya ditemukan saat
+rekonsiliasi pertama.
+
+Bila endpoint itu ada nanti, yang berubah hanya satu metode di
+`PenjurnalanService`.
+
+### Opsional, dan mati sampai dinyalakan
+
+Diminta setelah modulnya jadi, dan benar: versi pertama mengikat semua orang —
+dokumen tetap tertulis, menu tetap muncul, penjadwal tetap jalan, untuk kampus
+yang mungkin tidak memakai Easy Accounting sama sekali.
+
+`AKUNTANSI_DRIVER` kini punya tiga nilai dengan bawaan **`nonaktif`**: tidak ada
+yang dicatat, tidak ada menu, tidak ada proses tiap lima menit. Penagihan
+berjalan sama persis pada ketiganya, dan itu yang diuji.
+
+Dua hal ketahuan saat menulis tesnya, bukan saat memikirkannya:
+
+- `AKUNTANSI_DRIVER=` yang kosong tadinya terbaca sebagai driver tak dikenal,
+  yang berarti **exception pada setiap penerbitan tagihan**. Sekarang dibaca
+  sebagai nonaktif — arah tebakan yang aman.
+- Tes "nonaktif secara bawaan" versi pertama saya menguji `config()` yang sudah
+  disetel `beforeEach`, jadi ia menguji dirinya sendiri. Diganti dengan membaca
+  ulang berkas config-nya, sehingga yang diuji adalah nilai yang benar-benar
+  dikirimkan repo ini.
+
+### Berikutnya
+
+Dua hal yang ditemukan saat menelusuri modul keuangan dan **belum dikerjakan**:
+`config/payment.php` menjanjikan driver `fake` yang kelasnya tidak ada, dan
+`app/Services/Payment/{Contracts,Gateways}` adalah direktori kosong sisa
+scaffolding Fase 1 yang menyesatkan.
+
+---
+
 ## Sesi 23 — 2026-08-14 · G7 SISTER & BKD
 
 **684 tes hijau (1.509 asersi)**, naik dari 638.

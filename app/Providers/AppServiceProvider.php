@@ -5,9 +5,13 @@ declare(strict_types=1);
 namespace App\Providers;
 
 use App\Notifications\Channels\DatabaseKategoriChannel;
+use App\Services\Akuntansi\AkuntansiPalsu;
+use App\Services\Akuntansi\Contracts\AkuntansiClientInterface;
+use App\Services\Akuntansi\EasyAccountingClient;
 use App\Services\Notifikasi\Contracts\WhatsAppGatewayInterface;
 use App\Services\Notifikasi\LogWhatsAppGateway;
 use App\Services\Notifikasi\Preferensi;
+use App\Support\Akuntansi;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
@@ -54,6 +58,37 @@ class AppServiceProvider extends ServiceProvider
                         .'adaptor penyedia mana pun — daftarkan implementasi WhatsAppGatewayInterface '
                         .'Anda sendiri, atau setel NOTIFIKASI_WHATSAPP_DRIVER=nonaktif.',
                 ),
+            };
+        });
+
+        /*
+         * Easy Accounting: a real client, unlike the two seams above.
+         *
+         * Its contract is documented and testable, so there was nothing to
+         * guess at. "palsu" is the default because posting journal entries into
+         * a live ledger is not something an installation should start doing by
+         * accident on first boot — switching it on is a deliberate act.
+         *
+         * Singleton so the fake accumulates its record of sent documents across
+         * one request or one test, which is the whole basis of asserting on it.
+         */
+        $this->app->singleton(AkuntansiClientInterface::class, function (): AkuntansiClientInterface {
+            $driver = Akuntansi::driver();
+
+            return match ($driver) {
+                // Nothing is ever queued while inactive, so nothing should ever
+                // reach a client. Binding the fake rather than throwing keeps
+                // an accidental resolution — a health check, a tinker session —
+                // from taking down a request over a module nobody enabled.
+                Akuntansi::NONAKTIF, Akuntansi::PALSU => new AkuntansiPalsu,
+
+                Akuntansi::EASYERP => new EasyAccountingClient,
+
+                default => throw new InvalidArgumentException(sprintf(
+                    'Driver akuntansi "%s" tidak dikenal. Pilih salah satu: %s.',
+                    $driver,
+                    implode(', ', Akuntansi::driverDikenal()),
+                )),
             };
         });
     }

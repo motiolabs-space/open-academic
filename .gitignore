@@ -1,5 +1,11 @@
 *.log
 .DS_Store
+
+# Benih entropi OpenSSL yang ditulis ulang tiap kali alat kripto berjalan di
+# Windows. Sempat ikut terlacak, sehingga tiap commit membawa derau — atau
+# memaksa pathspec pengecualian yang harus diingat setiap kali.
+.rnd
+
 .env
 .env.backup
 .env.production

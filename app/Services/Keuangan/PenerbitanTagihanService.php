@@ -13,6 +13,7 @@ use App\Models\Keuangan\Tagihan;
 use App\Models\Keuangan\TagihanItem;
 use App\Models\Keuangan\Tarif;
 use App\Notifications\Keuangan\TagihanDiterbitkan;
+use App\Services\Akuntansi\PenjurnalanService;
 use App\Services\Notifikasi\Notifier;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -39,6 +40,7 @@ class PenerbitanTagihanService
         private readonly TarifResolver $tarif,
         private readonly Notifier $notifier,
         private readonly PotonganService $potongan,
+        private readonly PenjurnalanService $penjurnalan,
     ) {}
 
     /**
@@ -154,6 +156,17 @@ class PenerbitanTagihanService
          */
         foreach ($terbit as $tagihan) {
             $this->notifier->kirim($tagihan->mahasiswa, new TagihanDiterbitkan($tagihan));
+
+            /*
+             * Queued here for the same reason and after the discount has landed
+             * — the accounting document must describe the invoice as issued,
+             * not as it looked one line earlier.
+             *
+             * Only an outbox row is written; nothing is posted yet. An
+             * accounting system that is down must not be able to fail a billing
+             * run, because the debt exists whether or not anybody booked it.
+             */
+            $this->penjurnalan->tagihanTerbit($tagihan->fresh(['mahasiswa', 'item']));
         }
 
         return $hasil;

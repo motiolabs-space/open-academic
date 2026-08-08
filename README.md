@@ -264,6 +264,14 @@ membaca komentar bebas** (`EDOM_KOMENTAR`, bawaan `prodi`). Anonimitas jawabanny
 sendiri tidak dapat dikonfigurasi: ia melekat pada bentuk tabelnya —
 [`docs/EDOM.md`](docs/EDOM.md).
 
+**Integrasi akuntansi (Easy Accounting) bersifat opsional dan mati sampai
+dinyalakan.** Bawaan `AKUNTANSI_DRIVER=nonaktif` berarti tidak ada yang dicatat,
+tidak ada menu, dan tidak ada proses terjadwal — penagihan berjalan sama persis
+tanpanya. Kampus yang memakainya menyepakati dulu **bagan akun** di
+[`config/akuntansi.php`](config/akuntansi.php); kode di sana harus sudah ada di
+seberang, dan itu penyebab kegagalan tersering —
+[`docs/AKUNTANSI.md`](docs/AKUNTANSI.md).
+
 Untuk **BKD**, yang perlu disepakati sebelum semester pertama dilaporkan adalah
 **rubrik ekuivalensi SKS** di [`config/bkd.php`](config/bkd.php). Itu tafsir
 kampus atas pedoman yang berubah, bukan fakta — Open Academic menjamin cacahnya

@@ -12,6 +12,7 @@ use App\Models\Keuangan\Tagihan;
 use App\Models\Keuangan\TagihanItem;
 use App\Models\Sdm\Staff;
 use App\Notifications\Keuangan\PotonganDiberikan;
+use App\Services\Akuntansi\PenjurnalanService;
 use App\Services\Notifikasi\Notifier;
 use Illuminate\Support\Facades\DB;
 
@@ -32,6 +33,7 @@ class PotonganService
     public function __construct(
         private readonly PembayaranService $pembayaran,
         private readonly Notifier $notifier,
+        private readonly PenjurnalanService $penjurnalan,
     ) {}
 
     /**
@@ -155,6 +157,16 @@ class PotonganService
         });
 
         $this->notifier->kirim($tagihan->mahasiswa, new PotonganDiberikan($tagihan->refresh()));
+
+        /*
+         * Dr Beban Beasiswa, Cr Piutang.
+         *
+         * Only for waivers granted after the invoice was issued. The ones
+         * applied at issue time are journalled by PenerbitanTagihanService,
+         * which sees the whole invoice at once — and the idempotency key is the
+         * line's own id, so neither path can book the same waiver twice.
+         */
+        $this->penjurnalan->potonganDiberikan($item->refresh()->load('tagihan'));
 
         return $item;
     }

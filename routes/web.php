@@ -359,6 +359,12 @@ Route::middleware(['auth:staff', 'term.active'])->prefix('admin')->name('admin.'
     Route::post('/surat/{surat}/cabut', [Admin\SuratController::class, 'cabut'])->name('surat.cabut');
     Route::get('/surat/{surat}/unduh', [Admin\SuratController::class, 'unduh'])->name('surat.unduh');
 
+    Route::get('/akuntansi', [Admin\AkuntansiController::class, 'index'])->name('akuntansi.index');
+    Route::post('/akuntansi/kirim', [Admin\AkuntansiController::class, 'kirim'])->name('akuntansi.kirim');
+    Route::post('/akuntansi/ulangi-semua', [Admin\AkuntansiController::class, 'ulangiSemua'])->name('akuntansi.ulangi-semua');
+    Route::post('/akuntansi/{dokumen}/ulangi', [Admin\AkuntansiController::class, 'ulangi'])->name('akuntansi.ulangi');
+    Route::get('/akuntansi/ekspor/jurnal', [Admin\AkuntansiController::class, 'eksporJurnal'])->name('akuntansi.ekspor');
+
     Route::get('/bkd', [Admin\BkdController::class, 'index'])->name('bkd.index');
     Route::post('/bkd/{laporan}/asesor', [Admin\BkdController::class, 'tetapkanAsesor'])->name('bkd.asesor');
     Route::post('/bkd/{laporan}/sahkan', [Admin\BkdController::class, 'sahkan'])->name('bkd.sahkan');

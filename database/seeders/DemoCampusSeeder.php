@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Database\Seeders;
 
 use App\Models\System\Setting;
+use Database\Seeders\Demo\AkuntansiSeeder;
 use Database\Seeders\Demo\BeasiswaSeeder;
 use Database\Seeders\Demo\EdomSeeder;
 use Database\Seeders\Demo\IntegrasiSeeder;
@@ -101,6 +102,11 @@ class DemoCampusSeeder extends Seeder
 
             PmbSeeder::class,
             IntegrasiSeeder::class,
+
+            // Sesudah KeuanganSeeder dan BeasiswaSeeder: outbox akuntansi
+            // menyusuri tagihan dan pembayaran yang sudah ada, jadi keduanya
+            // harus lengkap lebih dulu — termasuk potongannya.
+            AkuntansiSeeder::class,
 
             // Terakhir: menulis notifikasi langsung ke tabel, karena antrean
             // sedang diarahkan ke driver null di sini dan pengiriman sungguhan
