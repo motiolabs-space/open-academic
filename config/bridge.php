@@ -40,6 +40,10 @@ return [
         // or a free-text comment, because no endpoint exists that could serve
         // one — see TeachingEvaluationController.
         'evaluations.read' => 'Baca rekap agregat evaluasi dosen (EDOM)',
+
+        // Portofolio & beban kerja sisi dosen — bahan SISTER/BKD dan sisi dosen
+        // dari IKU 3, 4, dan 5.
+        'workload.read' => 'Baca portofolio & beban kerja dosen (BKD)',
     ],
 
     /*

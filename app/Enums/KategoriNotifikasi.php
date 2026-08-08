@@ -26,6 +26,17 @@ enum KategoriNotifikasi: string
     case Akademik = 'akademik';
     case TugasAkhir = 'tugas_akhir';
     case Kemahasiswaan = 'kemahasiswaan';
+
+    /*
+     * The lecturer's own employment record — workload assessment above all.
+     *
+     * Its own category rather than folded into Akademik, which is about
+     * students. A BKD conclusion decides whether a certification allowance is
+     * paid; a lecturer who muted it and then missed a returned report would lose
+     * a semester's allowance over a preference they set once.
+     */
+    case Kepegawaian = 'kepegawaian';
+
     case Pengingat = 'pengingat';
     case Sistem = 'sistem';
 
@@ -36,6 +47,7 @@ enum KategoriNotifikasi: string
             self::Akademik => 'Akademik',
             self::TugasAkhir => 'Tugas Akhir',
             self::Kemahasiswaan => 'Kemahasiswaan',
+            self::Kepegawaian => 'Kepegawaian',
             self::Pengingat => 'Pengingat Tenggat',
             self::Sistem => 'Sistem & Integrasi',
         };
@@ -54,6 +66,7 @@ enum KategoriNotifikasi: string
             self::Akademik => 'Keputusan rencana studi dan nilai yang sudah final.',
             self::TugasAkhir => 'Keputusan judul, penetapan pembimbing, dan jadwal ujian.',
             self::Kemahasiswaan => 'Keputusan cuti dan penetapan kelulusan.',
+            self::Kepegawaian => 'Hasil penilaian beban kerja dosen (BKD) dan laporan yang dikembalikan asesor.',
             self::Pengingat => 'Pengingat sebelum tenggat: batas pengisian KRS, jatuh tempo tagihan, batas revisi.',
             self::Sistem => 'Kegagalan sinkronisasi Neo Feeder dan pengiriman webhook.',
         };
@@ -69,7 +82,8 @@ enum KategoriNotifikasi: string
     public function wajib(): bool
     {
         return match ($this) {
-            self::Keuangan, self::Akademik, self::TugasAkhir, self::Kemahasiswaan => true,
+            self::Keuangan, self::Akademik, self::TugasAkhir,
+            self::Kemahasiswaan, self::Kepegawaian => true,
             self::Pengingat, self::Sistem => false,
         };
     }

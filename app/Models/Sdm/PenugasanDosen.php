@@ -4,7 +4,11 @@ declare(strict_types=1);
 
 namespace App\Models\Sdm;
 
+use App\Enums\JenisLuaran;
 use App\Enums\LecturerAssignmentType;
+use App\Enums\PeranKegiatan;
+use App\Enums\TingkatKegiatan;
+use App\Enums\UnsurBkd;
 use App\Models\Akademik\TahunAkademik;
 use App\Traits\HasLogAktivitas;
 use App\Traits\HasUuid;
@@ -15,8 +19,18 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
- * An external or non-teaching assignment held by a lecturer.
- * Verified rows are the evidence Open Campus reads for IKU 3 and IKU 4.
+ * Everything a lecturer did that was not standing in front of a class.
+ *
+ * One record with three readers: BKD sorts it into an element and weighs it,
+ * the SISTER portfolio reports its output, and IKU 3/4 count it as evidence.
+ * The alternative — a second table for BKD activities — means research recorded
+ * twice and two copies that disagree within a semester.
+ *
+ * @property LecturerAssignmentType $jenis
+ * @property ?UnsurBkd $unsur
+ * @property ?PeranKegiatan $peran
+ * @property ?TingkatKegiatan $tingkat
+ * @property ?JenisLuaran $luaran_jenis
  */
 class PenugasanDosen extends Model
 {
@@ -33,6 +47,11 @@ class PenugasanDosen extends Model
     {
         return [
             'jenis' => LecturerAssignmentType::class,
+            'unsur' => UnsurBkd::class,
+            'peran' => PeranKegiatan::class,
+            'tingkat' => TingkatKegiatan::class,
+            'luaran_jenis' => JenisLuaran::class,
+            'luaran_tahun' => 'integer',
             'tanggal_mulai' => 'date',
             'tanggal_selesai' => 'date',
             'sks_ekuivalen' => 'decimal:2',

@@ -115,6 +115,12 @@ it('membuka layar dosen dalam anggaran kueri', function (string $url, int $angga
     // menghitung tiap kelas satu per satu adalah godaan yang paling wajar di
     // sini. Anggaran ini yang menahannya.
     ['/dosen/edom', 14],
+    // dosen1 punya laporan BKD yang sudah disahkan, jadi jalur ini membaca
+    // cuplikan beku. Jalur lembar kerja hidup — yang jauh lebih mahal — diuji
+    // terpisah di bawah.
+    ['/dosen/bkd', 12],
+    ['/dosen/bkd/penilaian', 13],
+    ['/dosen/portofolio', 13],
     ['/notifikasi', 25],
 ]);
 
@@ -137,6 +143,7 @@ it('membuka layar admin dalam anggaran kueri', function (string $url, int $angga
     ['/admin/konversi', 25],
     ['/admin/beasiswa', 25],
     ['/admin/edom', 24],
+    ['/admin/bkd', 20],
     ['/notifikasi', 25],
 ]);
 
@@ -159,6 +166,7 @@ it('melayani endpoint Bridge dalam anggaran kueri', function (string $url, int $
     ['/api/bridge/v1/academic-terms/current', 20],
     ['/api/bridge/v1/iku-data', 35],
     ['/api/bridge/v1/teaching-evaluations', 14],
+    ['/api/bridge/v1/lecturer-workload', 14],
 ]);
 
 it('membuka halaman publik tanpa menyentuh basis data berlebihan', function (string $url, int $anggaran) {
@@ -183,6 +191,29 @@ it('membuka layar kelola tugas akhir dalam anggaran kueri', function () {
     dalamAnggaranKueri(
         fn () => $this->actingAs($staff, 'staff')->get('/admin/tugas-akhir/'.$ta->uuid)->assertOk(),
         30,
+    );
+});
+
+it('menyusun lembar kerja BKD hidup dalam anggaran kueri', function () {
+    /*
+     * Jalur yang paling mahal di modul BKD, dan yang tidak tersentuh baris
+     * dataset di atas: selama laporan masih draf, unsur pendidikan dihitung
+     * ulang dari kelas, bimbingan, pengujian, dan perwalian pada setiap
+     * pembukaan halaman.
+     *
+     * Dosen yang dipilih sengaja yang belum punya laporan — dosen1 sudah
+     * disahkan, sehingga layarnya membaca cuplikan beku dan tidak membuktikan
+     * apa pun tentang jalur ini.
+     */
+    $dosen = Dosen::query()
+        ->whereDoesntHave('laporanBkd')
+        ->whereHas('kelasKuliah')
+        ->orderBy('id')
+        ->firstOrFail();
+
+    dalamAnggaranKueri(
+        fn () => $this->actingAs($dosen, 'dosen')->get('/dosen/bkd')->assertOk(),
+        20,
     );
 });
 

@@ -6,7 +6,11 @@ namespace Database\Seeders\Demo;
 
 use App\Enums\EducationLevel;
 use App\Enums\Gender;
+use App\Enums\JenisLuaran;
 use App\Enums\LecturerAssignmentType;
+use App\Enums\PeranKegiatan;
+use App\Enums\TingkatKegiatan;
+use App\Enums\UnsurBkd;
 use App\Models\Akademik\Fakultas;
 use App\Models\Akademik\Prodi;
 use App\Models\Akademik\TahunAkademik;
@@ -144,26 +148,57 @@ class SdmSeeder extends Seeder
         $term = TahunAkademik::aktif();
         $staff = Staff::where('email', 'baak@demo.test')->firstOrFail();
 
+        /*
+         * The same rows serve three readers, which is why they now carry an
+         * element, a role, a reach, and an output as well as an IKU type:
+         * IKU 3/4 count them, BKD weighs them, and the SISTER portfolio reports
+         * what they produced.
+         */
         $penugasan = [
-            [$dosen[0], LecturerAssignmentType::Penelitian, 'Riset Kolaboratif Deteksi Anomali Jaringan', 'Badan Riset dan Inovasi Nasional', 'pemerintah'],
-            [$dosen[1], LecturerAssignmentType::TugasIndustri, 'Praktisi Tamu Rekayasa Data', 'PT Nusantara Digital Teknologi', 'industri'],
-            [$dosen[2], LecturerAssignmentType::Pengabdian, 'Pendampingan Digitalisasi UMKM Desa Sukamaju', 'Pemerintah Desa Sukamaju', 'pemerintah'],
-            [$dosen[3], LecturerAssignmentType::Sertifikasi, 'Sertifikasi Kompetensi Data Analyst BNSP', 'BNSP', 'pemerintah'],
-            [$dosen[6], LecturerAssignmentType::PraktisiMengajar, 'Praktisi Mengajar — Rekayasa Perangkat Lunak', 'PT Nusantara Digital Teknologi', 'industri'],
+            [$dosen[0], LecturerAssignmentType::Penelitian, UnsurBkd::Penelitian,
+                'Riset Kolaboratif Deteksi Anomali Jaringan', 'Badan Riset dan Inovasi Nasional', 'pemerintah',
+                PeranKegiatan::Ketua, TingkatKegiatan::Nasional,
+                JenisLuaran::Jurnal, '10.1234/jnteti.2026.01'],
+
+            [$dosen[1], LecturerAssignmentType::TugasIndustri, UnsurBkd::Penunjang,
+                'Praktisi Tamu Rekayasa Data', 'PT Nusantara Digital Teknologi', 'industri',
+                PeranKegiatan::Anggota, TingkatKegiatan::Lokal, null, null],
+
+            [$dosen[2], LecturerAssignmentType::Pengabdian, UnsurBkd::Pengabdian,
+                'Pendampingan Digitalisasi UMKM Desa Sukamaju', 'Pemerintah Desa Sukamaju', 'pemerintah',
+                PeranKegiatan::Ketua, TingkatKegiatan::Lokal,
+                JenisLuaran::Laporan, 'LP-2026-014'],
+
+            [$dosen[3], LecturerAssignmentType::Sertifikasi, UnsurBkd::Penunjang,
+                'Sertifikasi Kompetensi Data Analyst BNSP', 'BNSP', 'pemerintah',
+                PeranKegiatan::Anggota, TingkatKegiatan::Nasional, null, null],
+
+            [$dosen[6], LecturerAssignmentType::PraktisiMengajar, UnsurBkd::Penunjang,
+                'Praktisi Mengajar — Rekayasa Perangkat Lunak', 'PT Nusantara Digital Teknologi', 'industri',
+                PeranKegiatan::Anggota, TingkatKegiatan::Lokal, null, null],
         ];
 
-        foreach ($penugasan as [$pengampu, $jenis, $judul, $mitra, $mitraJenis]) {
+        foreach ($penugasan as [
+            $pengampu, $jenis, $unsur, $judul, $mitra, $mitraJenis,
+            $peran, $tingkat, $luaran, $identitas,
+        ]) {
             PenugasanDosen::create([
                 'dosen_id' => $pengampu->id,
                 'tahun_akademik_id' => $term->id,
                 'jenis' => $jenis,
+                'unsur' => $unsur,
                 'judul' => $judul,
+                'peran' => $peran,
+                'tingkat' => $tingkat,
                 'mitra_nama' => $mitra,
                 'mitra_jenis' => $mitraJenis,
                 'lokasi' => fake()->city(),
                 'tanggal_mulai' => $term->tanggal_mulai,
                 'tanggal_selesai' => $term->tanggal_selesai,
                 'sks_ekuivalen' => fake()->randomElement([2.0, 3.0, 4.0]),
+                'luaran_jenis' => $luaran,
+                'luaran_identitas' => $identitas,
+                'luaran_tahun' => $luaran !== null ? (int) date('Y') : null,
                 'is_verified' => true,
                 'verified_by_staff_id' => $staff->id,
                 'verified_at' => now(),

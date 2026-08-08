@@ -115,6 +115,45 @@ class Dosen extends Authenticatable implements OAuthenticatable
         return $this->hasMany(Penguji::class);
     }
 
+    /*
+     * The SISTER side: histories rather than current values.
+     *
+     * The flat columns on this table (pendidikan_tertinggi, jabatan_fungsional)
+     * stay, because a class list and a signature block need one value and not a
+     * ladder. Where the two disagree, these win — they carry dates and decrees.
+     */
+
+    public function riwayatPendidikan(): HasMany
+    {
+        return $this->hasMany(RiwayatPendidikanDosen::class)->orderByDesc('tahun_lulus');
+    }
+
+    public function riwayatJabatan(): HasMany
+    {
+        return $this->hasMany(JabatanFungsionalDosen::class)->orderByDesc('tmt');
+    }
+
+    public function sertifikasi(): HasMany
+    {
+        return $this->hasMany(SertifikasiDosen::class)->orderByDesc('tanggal');
+    }
+
+    public function laporanBkd(): HasMany
+    {
+        return $this->hasMany(BkdLaporan::class);
+    }
+
+    /**
+     * Whether this lecturer is obliged to report BKD at all.
+     *
+     * The allowance is the reason the report exists, so a campus that demands
+     * one from every lecturer is imposing paperwork the regulation does not.
+     */
+    public function wajibBkd(): bool
+    {
+        return $this->sertifikasi()->serdos()->exists();
+    }
+
     public function namaLengkap(): string
     {
         return trim(sprintf(
