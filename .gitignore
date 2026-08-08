@@ -6,11 +6,10 @@
 # memaksa pathspec pengecualian yang harus diingat setiap kali.
 .rnd
 
-.env
-.env.backup
-.env.production
-.phpactor.json
-.phpunit.result.cache
+Homestead.json
+Homestead.yaml
+Thumbs.db
+
 /.fleet
 /.idea
 /.nova
@@ -18,13 +17,21 @@
 /.vscode
 /.zed
 /auth.json
-/node_modules
-/public/build
-/public/hot
-/public/storage
-/storage/*.key
-/storage/pail
-/vendor
-Homestead.json
-Homestead.yaml
-Thumbs.db
+.phpactor.json
+.phpunit.result.cache
+
+# Inti aplikasi. Jalurnya berawalan app-core/ sejak tata letak dipisah menjadi
+# app-core (aplikasi) dan root (berkas yang dilayani web).
+/app-core/.env
+/app-core/.env.backup
+/app-core/.env.production
+/app-core/node_modules
+/app-core/vendor
+/app-core/storage/*.key
+/app-core/storage/pail
+
+# Keluaran Vite dan tautan storage: keduanya kini mendarat di root, karena
+# root-lah direktori publiknya.
+/build
+/hot
+/storage

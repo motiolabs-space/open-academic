@@ -29,6 +29,7 @@ class MataKuliah extends Model
 
     /** @use HasFactory<MataKuliahFactory> */
     use HasFactory;
+
     use HasLogAktivitas;
     use HasUuid;
     use SoftDeletes;

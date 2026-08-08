@@ -31,6 +31,7 @@ class KelasKuliah extends Model
 
     /** @use HasFactory<KelasKuliahFactory> */
     use HasFactory;
+
     use HasLogAktivitas;
     use HasUuid;
     use SoftDeletes;

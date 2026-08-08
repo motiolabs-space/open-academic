@@ -19,6 +19,19 @@
     </source>
     <php>
         <env name="APP_ENV" value="testing"/>
+
+        <!--
+            Tes tidak boleh peduli di mana aplikasinya dipasang.
+
+            Klien tes menyusun URL relatif di atas APP_URL. Begitu .env memuat
+            awalan path — misalnya http://localhost/open-academic pada hosting
+            bersama — $this->get('/berkas/...') menjadi
+            /open-academic/berkas/... dan tidak cocok dengan rute mana pun.
+            Hasilnya 404 pada setiap tes HTTP, dengan pesan yang sama sekali
+            tidak menyebut sebab sebenarnya.
+        -->
+        <env name="APP_URL" value="http://localhost"/>
+
         <env name="APP_MAINTENANCE_DRIVER" value="file"/>
         <env name="BCRYPT_ROUNDS" value="4"/>
         <env name="BROADCAST_CONNECTION" value="null"/>

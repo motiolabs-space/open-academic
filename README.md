@@ -59,9 +59,16 @@ Engagement, evidence, analitik, jejaring → Open Campus. Jangan duplikasi fitur
 Prasyarat: PHP 8.2+ (`pdo_mysql`, `mbstring`, `intl`, `gd`, `zip`, `bcmath`),
 Composer, Node 20+, MySQL 8 atau MariaDB 10.11.
 
+> **Tata letak.** Aplikasinya ada di `app-core/`; root repo hanya berisi berkas
+> yang boleh dilayani web (`index.php`, `.htaccess`, `build/`). Pola ini dipakai
+> agar repo dapat diunggah apa adanya ke `public_html` pada hosting bersama yang
+> tidak mengizinkan document root diarahkan ke subfolder. **Semua perkakas
+> dijalankan dari `app-core/`.** Rinciannya — termasuk empat sambungan yang harus
+> diubah — di [`docs/TATA-LETAK.md`](docs/TATA-LETAK.md).
+
 ```bash
 git clone https://github.com/motiolabs-space/open-academic.git
-cd open-academic
+cd open-academic/app-core
 composer install
 npm install
 cp .env.example .env
@@ -78,11 +85,21 @@ Jalankan migrasi beserta kampus demo, lalu build aset:
 
 ```bash
 php artisan migrate --seed
-npm run build
-php artisan serve
 ```
 
-Buka `http://127.0.0.1:8000`.
+```bash
+npm run build
+```
+
+Aset mendarat di `../build`, karena root repo itulah direktori publiknya.
+Arahkan Apache/Nginx ke root repo — bukan ke `app-core` — lalu buka alamatnya.
+
+Server bawaan Laravel mengikuti sendiri: `serve` memakai `public_path()`, yang
+sudah menunjuk root repo.
+
+```bash
+php artisan serve
+```
 
 > **Worker antrean wajib menyala.** Jejak audit, sinkronisasi Feeder, dan
 > pengiriman webhook semuanya ter-antre. Tanpa worker, ketiganya **gagal diam-diam**

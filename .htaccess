@@ -1,0 +1,41 @@
+# Front controller Open Academic.
+#
+# Direktori ini adalah document root. Aplikasinya ada di app-core/, yang berarti
+# app-core berada DI DALAM jangkauan web — jadi ia harus ditolak secara eksplisit
+# di sini, dan sekali lagi di app-core/.htaccess. Dua lapis, karena lapis pertama
+# hilang begitu mod_rewrite tidak aktif.
+
+<IfModule mod_rewrite.c>
+    <IfModule mod_negotiation.c>
+        Options -MultiViews -Indexes
+    </IfModule>
+
+    RewriteEngine On
+
+    # Inti aplikasi dan berkas repo: tidak pernah dilayani.
+    # Tanpa baris ini, /app-core/.env dapat diunduh siapa saja.
+    RewriteRule ^(app-core|docs|tests)/ - [F,L]
+    RewriteRule ^(composer\.(json|lock)|package(-lock)?\.json|phpunit\.xml|pint\.json|.*\.md)$ - [F,L]
+
+    # Berkas titik, kecuali .well-known yang dipakai penerbitan sertifikat.
+    RewriteCond %{REQUEST_URI} !^/\.well-known/
+    RewriteRule (^|/)\.(?!well-known) - [F,L]
+
+    # Handle Authorization Header
+    RewriteCond %{HTTP:Authorization} .
+    RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+
+    # Handle X-XSRF-Token Header
+    RewriteCond %{HTTP:x-xsrf-token} .
+    RewriteRule .* - [E=HTTP_X_XSRF_TOKEN:%{HTTP:X-XSRF-Token}]
+
+    # Redirect Trailing Slashes If Not A Folder...
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteCond %{REQUEST_URI} (.+)/$
+    RewriteRule ^ %1 [L,R=301]
+
+    # Send Requests To Front Controller...
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteRule ^ index.php [L]
+</IfModule>

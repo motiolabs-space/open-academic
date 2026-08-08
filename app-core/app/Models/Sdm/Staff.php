@@ -24,13 +24,13 @@ use Spatie\Permission\Traits\HasRoles;
 class Staff extends Authenticatable implements OAuthenticatable
 {
     use AuthenticatesWithUuid;
-
     use DapatDicari;
 
     /** @use HasFactory<StaffFactory> */
     use HasApiTokens;
 
     use HasFactory;
+
     // A staff account is a permission grant. Changing whose account can push to
     // PDDIKTI or issue Bridge tokens is exactly what an auditor asks about
     // months later, so these rows carry a trail like academic records do.

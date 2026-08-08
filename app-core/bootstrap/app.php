@@ -11,7 +11,18 @@ use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
 
-return Application::configure(basePath: dirname(__DIR__))
+/*
+ * Tata letak app-core: aplikasinya di sini, berkas yang dilayani web satu
+ * tingkat di atas.
+ *
+ * Direktori publiknya ditetapkan di sini, bukan di index.php, karena index.php
+ * hanya dilewati permintaan web. Artisan, worker antrean, dan test runner tidak
+ * melewatinya sama sekali — dan mereka juga memanggil `public_path()`:
+ * `storage:link` menaruh tautannya, dan pembantu Vite mencari manifesnya di
+ * situ. Menetapkannya hanya di index.php membuat ketiganya menunjuk
+ * app-core/public, direktori yang bahkan tidak ada lagi.
+ */
+$app = Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
         web: __DIR__.'/../routes/web.php',
         api: __DIR__.'/../routes/api.php',
@@ -38,3 +49,7 @@ return Application::configure(basePath: dirname(__DIR__))
                 : back()->with('galat', $e->getMessage());
         });
     })->create();
+
+$app->usePublicPath(dirname(__DIR__, 2));
+
+return $app;
