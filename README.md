@@ -114,6 +114,22 @@ Kata sandi seluruh akun demo: `password`
 | Dosen praktisi | `praktisi@demo.test` |
 | Mahasiswa | `mahasiswa1@demo.test` |
 
+Memasang dan menghapusnya kembali:
+
+```bash
+php artisan openacademic:demo-pasang
+```
+
+```bash
+php artisan openacademic:demo-hapus
+```
+
+Keduanya menghapus seluruh isi basis data — demo ini satu kampus utuh, bukan
+sekumpulan baris yang bisa disisipkan atau dicabut satu per satu. Karena itu
+penjaganya yang penting: `demo-hapus` menolak basis data yang tidak ditandai
+sebagai pasangan demo, jadi ia tidak pernah bisa menghapus kampus sungguhan.
+Rinciannya di [`docs/DEMO.md`](docs/DEMO.md).
+
 > **Peringatan.** `DemoCampusSeeder` menolak berjalan bila `APP_ENV=production`.
 > Jangan pernah menjalankan `--seed` pada instalasi produksi.
 

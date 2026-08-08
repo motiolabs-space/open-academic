@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Database\Seeders;
 
 use App\Models\System\Setting;
+use App\Support\Demo;
 use Database\Seeders\Demo\AkuntansiSeeder;
 use Database\Seeders\Demo\BeasiswaSeeder;
 use Database\Seeders\Demo\EdomSeeder;
@@ -14,6 +15,7 @@ use Database\Seeders\Demo\KemahasiswaanSeeder;
 use Database\Seeders\Demo\KepegawaianSeeder;
 use Database\Seeders\Demo\KeuanganSeeder;
 use Database\Seeders\Demo\KonversiSeeder;
+use Database\Seeders\Demo\KurikulumLanjutanSeeder;
 use Database\Seeders\Demo\MasterAkademikSeeder;
 use Database\Seeders\Demo\NotifikasiSeeder;
 use Database\Seeders\Demo\PerkuliahanSeeder;
@@ -69,6 +71,13 @@ class DemoCampusSeeder extends Seeder
             KemahasiswaanSeeder::class,
             PerkuliahanSeeder::class,
             RiwayatAkademikSeeder::class,
+
+            // Sesudah RiwayatAkademikSeeder: gerbang konsentrasi berlaku saat
+            // kelas ditambahkan ke KRS, jadi menetapkan jalur mahasiswa lebih
+            // dulu akan mengubah riwayat yang sedang dibangun — bukan
+            // menggambarkan kampus, tapi mengarangnya ulang.
+            KurikulumLanjutanSeeder::class,
+
             KeuanganSeeder::class,
 
             // Sesudah KeuanganSeeder: beasiswa mendarat pada tagihan yang sudah
@@ -122,6 +131,16 @@ class DemoCampusSeeder extends Seeder
 
         Model::preventLazyLoading($ketat);
         config(['queue.default' => $queue]);
+
+        /*
+         * Marks this database as holding demo data.
+         *
+         * Written here rather than in the install command so it covers every
+         * path that seeds — including `migrate:fresh --seed`. Its only reader is
+         * openacademic:demo-hapus, which refuses to wipe a database that was
+         * never seeded by us.
+         */
+        Demo::tandai();
 
         $this->ringkasan();
     }

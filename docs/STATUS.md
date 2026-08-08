@@ -38,12 +38,78 @@ Kegagalan dikumpulkan per mata kuliah alih-alih menggugurkan seluruh penerapan.
 Satu mahasiswa mengulang yang sudah memegang satu mata kuliah tidak boleh
 menghentikan tujuh lainnya.
 
+**Dan sempat tidak ada yang memanggilnya.** Servicenya lengkap dan teruji, tapi
+`berpaket()` nol pemanggil di aplikasi — mahasiswa di prodi berpaket tetap
+memilih satu per satu. Fitur yang hanya dapat dijalankan oleh tes bukan fitur.
+Layar KRS kini menawarkannya bila prodinya berpaket dan rencana masih draf, dan
+menampilkan alasan tiap mata kuliah yang dilewati.
+
 ### Jalur menggerbang katalog
 
 Mata kuliah bersama (jalur null) terbuka untuk semua — itu sebagian besar gelar.
 Mata kuliah jalur ditolak bagi yang **belum** memilih jalur, bukan diloloskan:
 meloloskannya berarti ia menempuh sesuatu yang dihitung ke syarat yang tidak
 berlaku baginya, dan menemukannya saat yudisium jauh lebih mahal.
+
+### Layar yang setuju dengan servicenya
+
+Gerbang jalur mula-mula hanya dipasang di service. Katalog KRS punya filter
+kurikulum sendiri lewat SQL dan tidak tahu apa pun tentang konsentrasi, jadi
+mata kuliah jalur lain **tetap tampil dengan tombol "Ambil" yang hidup** lalu
+ditolak saat ditekan — persis kegagalan yang docblock layar itu klaim dicegahnya.
+
+`dalamKurikulum` kini publik dan ditanya oleh katalog, bukan diduplikasi.
+Dibuktikan mengikat: melepas penjaganya membuat tesnya gagal seketika.
+
+**Dan percobaan pertamanya salah.** Karena katalog menanyakannya sekali per
+baris, saya memoisasi peta kurikulum pada objek servicenya. Cepat — dan **basi**
+begitu ada mata kuliah ditambahkan ke kurikulum dalam proses yang sama. Dua tes
+KRS yang sudah ada langsung gagal, dan queue worker atau proses Octane akan rusak
+persis begitu tanpa ada yang menyadarinya.
+
+Cache tersembunyinya dibuang. Peta itu sekarang **dioper**: layar mengambilnya
+sekali lewat `petaKurikulum()` dan menyerahkannya per baris. Aturannya tetap satu
+tempat di service; hanya datanya yang dibagi. Ditambah satu tes yang memaku
+persis kebasian itu, supaya cachenya tidak diam-diam kembali.
+
+Dua sebab dibedakan di layar, karena hanya satu yang dapat ditindaklanjuti
+mahasiswa: "bukan untuk konsentrasi X" versus "tetapkan konsentrasi Anda dulu".
+
+### Seeder yang diam-diam tidak melakukan apa pun
+
+`KurikulumLanjutanSeeder` versi pertama mencari prodi lewat `kode` `'IF'`/`'SI'`.
+Kolom itu berisi nomor PDDIKTI (`55201`), jadi pencariannya gagal — dan karena
+ia `return` diam-diam, seluruh seeder berjalan "sukses" sambil menulis nol baris.
+Ditemukan hanya karena datanya dihitung setelahnya.
+
+Sekarang prodi ditemukan lewat mata kuliah yang memang dibutuhkan seeder ini,
+dan ketiadaannya melempar exception. Seeder demo yang diam-diam tidak melakukan
+apa pun lebih buruk daripada yang berhenti: layar kosong yang dihasilkannya
+terbaca sebagai fitur rusak.
+
+Demonya kini punya sejarah, bukan cuma fitur: satu kurikulum lama yang tidak
+berlaku dengan 3 padanan ke penggantinya, dua konsentrasi dengan 4 mata kuliah
+jalur beserta kelasnya, 17 dari 50 mahasiswa sudah memilih jalur (sisanya
+sengaja belum), dan satu prodi berpindah ke `mode_krs = paket` dengan 2 paket
+berisi 10 mata kuliah.
+
+### N+1 yang tersembunyi di balik data demo yang kurus
+
+Seeder yang lebih kaya membuat layar RPS dosen melampaui anggaran kuerinya:
+**30 > 20**. Bukan karena datanya lebih banyak, tapi karena N+1-nya sudah ada
+sejak awal dan hanya lolos selama dosen demo mengampu sedikit kelas.
+
+`Rps::untuk()` dicari per kelas — dua kali, sekali di controller dan sekali lagi
+di dalam `keterlaksanaan()` — ditambah `pertemuan` yang dimuat per baris. Kini
+semua RPS untuk term itu diambil sekali dan dikunci per mata kuliah, `pertemuan`
+di-eager-load, dan `keterlaksanaan()` menerima RPS-nya alih-alih mencarinya lagi.
+
+**30 → 10 kueri**, dan yang lebih penting: tidak lagi tumbuh mengikuti beban
+mengajar. Anggarannya diketatkan ke 12, karena anggaran longgar hanya
+menyembunyikan kembalinya N+1 itu sampai ada dosen dengan beban penuh.
+
+Anggaran `/mahasiswa/krs` naik 34 → 36 — tiga kueri konstan (peta kurikulum,
+konsentrasi, prodi), bukan per baris katalog.
 
 ### Tes yang memeriksa test suite
 
@@ -61,6 +127,12 @@ Penjaga lazy-loading ketat juga menangkap N+1 sungguhan di pengirim paket.
 
 Dua sisa P1: **cetak** (KTM, kartu ujian, absensi, jurnal) dan **pengaturan
 dokumen**.
+
+Satu batas yang perlu disebut terang: padanan mata kuliah **ada di demo tapi
+belum menyentuh siapa pun** — kurikulum lama beserta padanannya terisi, namun
+tidak ada mahasiswa demo yang memegang nilai dari kurikulum itu. Jadi layar admin
+menunjukkan pemetaannya, sedangkan efeknya pada prasyarat hanya terlihat di tes.
+Mahasiswa pindahan/angkatan lama di seeder adalah pekerjaan tersendiri.
 
 Untuk yang kedua, item roadmap-nya semula berbunyi "kustomisasi templat
 dokumen". Templat Blade yang dapat disunting pengguna berarti mengeksekusi kode

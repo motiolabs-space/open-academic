@@ -97,6 +97,17 @@ butuh daftar alasan — bukan exception pada yang pertama.
 Paket jalur mendahului paket bersama. Prodi memilih modenya lewat
 `prodi.mode_krs` (`pilih` | `paket`).
 
+### Fitur yang hanya dapat dijalankan tes bukan fitur
+
+`terapkan()` sempat lengkap dan teruji tanpa **satu pun pemanggil di aplikasi** —
+mahasiswa di prodi berpaket tetap harus memilih satu per satu. Layar KRS kini
+menawarkan penerapan paket bila `berpaket()` benar dan rencana masih draf, dan
+tidak menampilkan apa pun di prodi lain.
+
+Alasan tiap mata kuliah yang dilewati ditampilkan, bukan cuma cacah yang
+ditambahkan. "6 ditambahkan" menyembunyikan justru dua yang perlu
+ditindaklanjuti mahasiswa.
+
 ---
 
 ## Berkas

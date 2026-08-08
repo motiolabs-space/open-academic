@@ -381,7 +381,22 @@ class KrsService
      | Rule helpers
      |-------------------------------------------------------------------- */
 
-    private function dalamKurikulum(Mahasiswa $mahasiswa, KelasKuliah $kelas): bool
+    /**
+     * Whether the class is in the student's curriculum *and* open to their track.
+     *
+     * Public because the KRS catalogue has to annotate rows with the same
+     * answer. A screen that decided this for itself would eventually disagree
+     * with the service, and the visible symptom is the worst kind: an enabled
+     * button that throws when pressed.
+     *
+     * @param array<int, int|null>|null $peta a curriculum map from
+     *                                        petaKurikulum(), for callers asking about many classes at once.
+     *                                        Passed in rather than cached on this object: a memo held across
+     *                                        calls goes stale the moment a course is added to the curriculum,
+     *                                        which is not hypothetical — it broke two existing tests, and would
+     *                                        break a queue worker or an Octane process the same way.
+     */
+    public function dalamKurikulum(Mahasiswa $mahasiswa, KelasKuliah $kelas, ?array $peta = null): bool
     {
         if ($mahasiswa->kurikulum_id === null) {
             // Without a curriculum binding the only defensible check is the
@@ -389,14 +404,13 @@ class KrsService
             return $kelas->prodi_id === $mahasiswa->prodi_id;
         }
 
-        $baris = DB::table('kurikulum_mata_kuliah')
-            ->where('kurikulum_id', $mahasiswa->kurikulum_id)
-            ->where('mata_kuliah_id', $kelas->mata_kuliah_id)
-            ->first(['konsentrasi_id']);
+        $peta ??= $this->petaKurikulum((int) $mahasiswa->kurikulum_id);
 
-        if ($baris === null) {
+        if (!array_key_exists($kelas->mata_kuliah_id, $peta)) {
             return false;
         }
+
+        $konsentrasiId = $peta[$kelas->mata_kuliah_id];
 
         /*
          * Shared course — belongs to every track.
@@ -404,7 +418,7 @@ class KrsService
          * The common case by a wide margin: most of a degree is shared, and a
          * null here means "no track restriction" rather than "no track chosen".
          */
-        if ($baris->konsentrasi_id === null) {
+        if ($konsentrasiId === null) {
             return true;
         }
 
@@ -417,7 +431,25 @@ class KrsService
          * graduation is far more expensive than being told now.
          */
         return $mahasiswa->konsentrasi_id !== null
-            && (int) $baris->konsentrasi_id === (int) $mahasiswa->konsentrasi_id;
+            && $konsentrasiId === (int) $mahasiswa->konsentrasi_id;
+    }
+
+    /**
+     * course id => track id (or null for a shared course), for one curriculum.
+     *
+     * Public so a screen asking about a whole catalogue can fetch it once and
+     * hand it to dalamKurikulum() per row — a few dozen rows in one query
+     * instead of one query per offered class. Always queried, never cached.
+     *
+     * @return array<int, int|null>
+     */
+    public function petaKurikulum(int $kurikulumId): array
+    {
+        return DB::table('kurikulum_mata_kuliah')
+            ->where('kurikulum_id', $kurikulumId)
+            ->pluck('konsentrasi_id', 'mata_kuliah_id')
+            ->map(fn ($id): ?int => $id === null ? null : (int) $id)
+            ->all();
     }
 
     private function sudahMengambilMataKuliah(Krs $krs, KelasKuliah $kelas): bool
