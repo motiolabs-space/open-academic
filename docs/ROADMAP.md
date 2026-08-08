@@ -497,6 +497,9 @@ lain menjawab 200, bukan 403.
 | Item | Status |
 |---|---|
 | Adaptor Midtrans di balik `PaymentGatewayInterface` | ⬜ butuh kredensial merchant + endpoint notifikasi terverifikasi |
+| Integrasi akuntansi (Easy Accounting) | ✅ 15 Agustus 2026 — klien sungguhan, lihat [`AKUNTANSI.md`](AKUNTANSI.md) |
+| Driver `fake` pembayaran yang dijanjikan `config/payment.php` | ⬜ kelasnya tidak ada; config menjanjikan yang tidak pernah ditulis |
+| Direktori kosong `app/Services/Payment/{Contracts,Gateways}` | ⬜ sisa scaffolding Fase 1; kontrak sungguhannya di `Services/Keuangan/Contracts` |
 | Federasi ke IdP eksternal (Google/Entra/Keycloak) | ⬜ opsional per kampus; tertahan keputusan pemetaan guard |
 | 2FA akun staf | ⬜ |
 | Rilis publik v1.0 di `motiolabs-space` | ⬜ repo lokal belum di bawah Git |

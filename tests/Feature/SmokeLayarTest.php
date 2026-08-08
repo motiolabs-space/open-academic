@@ -144,6 +144,7 @@ it('membuka layar admin dalam anggaran kueri', function (string $url, int $angga
     ['/admin/beasiswa', 25],
     ['/admin/edom', 24],
     ['/admin/bkd', 20],
+    ['/admin/akuntansi', 16],
     ['/notifikasi', 25],
 ]);
 

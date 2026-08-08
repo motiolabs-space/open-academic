@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Support\Akuntansi;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schedule;
@@ -38,3 +39,24 @@ Schedule::command('openacademic:kirim-pengingat')
     // Jalannya yang berikutnya dilewati bila yang sekarang belum selesai,
     // alih-alih menumpuk pengiriman yang saling beririsan.
     ->withoutOverlapping();
+
+/*
+ * Outbox akuntansi.
+ *
+ * Tiap lima menit, bukan harian: piutang yang baru muncul di buku besar keesokan
+ * harinya membuat bagian keuangan bekerja dengan angka kemarin sepanjang hari,
+ * dan itu persis keadaan yang integrasi ini bangun untuk dihilangkan.
+ *
+ * Dokumen yang gagal tidak diulang di sini — ia menunggu tindakan manusia di
+ * layar Akuntansi, karena penyebabnya hampir selalu kode akun yang belum ada di
+ * seberang dan mengulangnya seribu kali tidak memperbaikinya.
+ */
+Schedule::command('openacademic:kirim-akuntansi')
+    ->everyFiveMinutes()
+    ->onOneServer()
+    ->withoutOverlapping()
+
+    // Tidak dijalankan sama sekali bila integrasinya nonaktif — bawaan Open
+    // Academic. Kampus yang memegang buku besarnya di tempat lain tidak perlu
+    // menanggung satu pun proses tiap lima menit untuk modul yang tidak dipakai.
+    ->skip(fn (): bool => !Akuntansi::aktif());

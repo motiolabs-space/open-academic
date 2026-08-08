@@ -124,6 +124,19 @@ final class Navigation
                     self::item('Matriks Tarif', '⊞', 'admin.tarif'),
                     self::item('Tagihan & Rekonsiliasi', '◈', 'admin.keuangan'),
                     self::item('Beasiswa & Keringanan', '◍', 'admin.beasiswa'),
+
+                    /*
+                     * Hanya muncul bila integrasinya dinyalakan.
+                     *
+                     * Berbeda dari item lain di berkas ini, yang tetap terlihat
+                     * meski rutenya belum ada supaya peta modulnya terbaca.
+                     * Yang ini bukan modul yang belum jadi, melainkan modul yang
+                     * memang tidak dipakai kampus ini — dan menu untuk sistem
+                     * yang tidak mereka miliki hanya mengundang pertanyaan.
+                     */
+                    ...(Akuntansi::aktif()
+                        ? [self::item('Integrasi Akuntansi', '⇄', 'admin.akuntansi.index')]
+                        : []),
                 ],
             ],
             [
