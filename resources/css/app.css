@@ -1,0 +1,173 @@
+@import 'tailwindcss';
+
+@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
+@source '../../storage/framework/views/*.php';
+@source '../**/*.blade.php';
+@source '../**/*.js';
+
+/*
+| ---------------------------------------------------------------------------
+| Open Academic design tokens — "Midnight Executive"
+| ---------------------------------------------------------------------------
+| Navy is the foundation, gold is spent sparingly. Semantic colours are
+| desaturated so the interface reads institutional rather than consumer.
+| Never hardcode a hex value in a Blade template; use these tokens.
+*/
+
+@theme {
+    --font-sans: 'Public Sans', ui-sans-serif, system-ui, sans-serif;
+    --font-serif: 'Source Serif 4', ui-serif, Georgia, serif;
+
+    /* Brand */
+    --color-navy: #1e2761;
+    --color-navy-hover: #171e4e;
+    --color-navy-soft: #3a4478;
+    --color-gold: #c9a961;
+    --color-gold-hover: #bd9a4e;
+
+    /* Surfaces */
+    --color-canvas: #f8f8f6;
+    --color-surface: #ffffff;
+    --color-zebra: #fbfbf9;
+    --color-highlight: #f4f1e8;
+
+    /* Ink */
+    --color-ink: #24262e;
+    --color-ink-muted: #6e7078;
+    --color-ink-faint: #9a9ca4;
+
+    /* Lines */
+    --color-line: #e6e4dc;
+    --color-line-input: #d6d3c8;
+
+    /* Semantic — muted on purpose */
+    --color-success: #2f7a52;
+    --color-success-bg: #e9f2ec;
+    --color-success-line: #c7decf;
+
+    --color-warning: #a97b1f;
+    --color-warning-bg: #f7efdd;
+    --color-warning-line: #e8d9b4;
+
+    --color-danger: #a6423c;
+    --color-danger-bg: #f6e8e6;
+    --color-danger-line: #e4c4c1;
+
+    --color-info: #1e2761;
+    --color-info-bg: #edeff8;
+    --color-info-line: #c9d0e8;
+
+    /* Shape */
+    --radius-card: 12px;
+    --radius-card-lg: 14px;
+    --radius-control: 8px;
+
+    /* Elevation — cards use borders, only overlays get a shadow */
+    --shadow-overlay: 0 24px 60px rgba(16, 20, 46, 0.4);
+    --shadow-pop: 0 12px 32px rgba(16, 20, 46, 0.16);
+
+    /* Layout */
+    --spacing-sidebar: 248px;
+    --spacing-sidebar-collapsed: 68px;
+    --spacing-topbar: 60px;
+}
+
+@layer base {
+    html {
+        -webkit-font-smoothing: antialiased;
+    }
+
+    body {
+        background-color: var(--color-canvas);
+        color: var(--color-ink);
+        font-family: var(--font-sans);
+        font-size: 13.5px;
+    }
+
+    /* Grades, credits, NIM, rupiah and dates must always line up. */
+    .tabular,
+    table td,
+    table th {
+        font-variant-numeric: tabular-nums;
+    }
+
+    [x-cloak] {
+        display: none !important;
+    }
+}
+
+@layer components {
+    /*
+    | Guilloché — the engraved motif of official documents (ijazah, transkrip).
+    | Used on navy headers, empty states and document previews.
+    */
+    .guilloche-gold {
+        background-image:
+            repeating-radial-gradient(circle at 15% 120%, transparent 0 18px, rgba(201, 169, 97, 0.13) 18px 19px),
+            repeating-radial-gradient(circle at 88% -30%, transparent 0 22px, rgba(201, 169, 97, 0.09) 22px 23px);
+    }
+
+    .guilloche-navy {
+        background-image:
+            repeating-radial-gradient(circle at 10% 110%, transparent 0 16px, rgba(30, 39, 97, 0.05) 16px 17px),
+            repeating-radial-gradient(circle at 92% -20%, transparent 0 20px, rgba(30, 39, 97, 0.04) 20px 21px);
+    }
+}
+
+/*
+| Feeder heartbeat — institutional reliability, deliberately calm.
+*/
+@keyframes oa-pulse {
+    0%,
+    100% {
+        opacity: 0.35;
+        transform: scale(1);
+    }
+    50% {
+        opacity: 1;
+        transform: scale(1.25);
+    }
+}
+
+.animate-heartbeat {
+    animation: oa-pulse 2.4s ease-in-out infinite;
+}
+
+/*
+| Mobile navigation sheet slide-up. Plain CSS rather than an Alpine transition,
+| so it cannot race the wrapper's show/hide.
+*/
+@keyframes oa-sheet-up {
+    from {
+        transform: translateY(100%);
+    }
+    to {
+        transform: translateY(0);
+    }
+}
+
+.animate-sheet {
+    animation: oa-sheet-up 0.22s ease-out both;
+}
+
+/*
+| KRS submission seal — an official document being stamped, not confetti.
+*/
+@keyframes oa-stamp {
+    0% {
+        opacity: 0;
+        transform: scale(1.6) rotate(-8deg);
+    }
+    60% {
+        opacity: 1;
+        transform: scale(0.96) rotate(-8deg);
+    }
+    100% {
+        opacity: 1;
+        transform: scale(1) rotate(-8deg);
+    }
+}
+
+.animate-stamp {
+    animation: oa-stamp 0.5s cubic-bezier(0.2, 1.4, 0.4, 1) both;
+}

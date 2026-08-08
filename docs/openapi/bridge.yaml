@@ -1,0 +1,431 @@
+openapi: 3.1.0
+
+info:
+  title: Open Academic — Campus Bridge API
+  version: "1.0.0"
+  description: |
+    Satu-satunya jalan resmi bagi sistem lain untuk membaca data akademik
+    Open Academic. Basis data tidak pernah dibagi: konsumen memegang token
+    Sanctum ber-scope dan berbicara lewat HTTPS.
+
+    **Spec-first.** Ubah berkas ini lebih dulu, baru kodenya.
+
+    ### Otorisasi
+    Setiap endpoint menyatakan scope yang dibutuhkannya. Daftar scope melekat
+    pada aplikasi konsumen, bukan pada token — mencabut scope berlaku seketika
+    tanpa perlu menerbitkan token baru.
+
+    ### Batas privasi
+    Payload sengaja lebih sempit dari model internalnya. NIK, alamat rumah,
+    nama orang tua, dan penghasilan keluarga dikumpulkan untuk pelaporan
+    PDDIKTI, bukan untuk platform engagement, dan tidak pernah dikirim lewat
+    Bridge.
+
+    ### Kunci semester
+    Semester selalu direferensikan dengan kode PDDIKTI (`20261` = 2026/2027
+    Ganjil), tidak pernah dengan id internal.
+  license:
+    name: MIT
+
+servers:
+  - url: https://{host}/api/bridge/v1
+    variables:
+      host:
+        default: akademik.kampus.ac.id
+
+security:
+  - bearerAuth: []
+
+tags:
+  - name: Students
+  - name: Lecturers
+  - name: Classes
+  - name: Activities
+  - name: Graduates
+  - name: Terms
+
+paths:
+  /students:
+    get:
+      tags: [Students]
+      summary: Daftar mahasiswa
+      description: Membutuhkan scope `students.read`.
+      parameters:
+        - { name: prodi, in: query, schema: { type: string }, description: Kode program studi }
+        - { name: angkatan, in: query, schema: { type: integer } }
+        - { name: status, in: query, schema: { type: string, enum: [A, C, N, L, D, K, G] } }
+        - { name: cari, in: query, schema: { type: string }, description: Cocokkan nama atau NIM }
+        - name: sertakan_riwayat
+          in: query
+          schema: { type: boolean }
+          description: Sertakan riwayat IPS/IPK per semester. Dibutuhkan mesin IKU; mahal untuk direktori biasa.
+        - $ref: '#/components/parameters/PerPage'
+        - $ref: '#/components/parameters/Page'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { type: array, items: { $ref: '#/components/schemas/Student' } }
+                  meta: { $ref: '#/components/schemas/PaginationMeta' }
+        '403': { $ref: '#/components/responses/ScopeDitolak' }
+
+  /students/{uuid}:
+    get:
+      tags: [Students]
+      summary: Satu mahasiswa, lengkap dengan riwayat semester
+      parameters:
+        - { name: uuid, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/Student' }
+        '404': { description: Tidak ditemukan }
+
+  /students/statistics:
+    get:
+      tags: [Students]
+      summary: Cacah agregat per status dan per program studi
+      description: Agar dasbor tidak perlu menelusuri seluruh halaman hanya untuk menghitung.
+      responses:
+        '200': { description: OK }
+
+  /lecturers:
+    get:
+      tags: [Lecturers]
+      summary: Daftar dosen
+      description: Membutuhkan scope `lecturers.read`.
+      parameters:
+        - { name: prodi, in: query, schema: { type: string } }
+        - { name: praktisi, in: query, schema: { type: boolean }, description: Hanya praktisi dari industri (populasi IKU 4) }
+        - name: sertakan_penugasan
+          in: query
+          schema: { type: boolean }
+          description: Sertakan penugasan terverifikasi beserta IKU yang disumbangnya
+        - $ref: '#/components/parameters/PerPage'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { type: array, items: { $ref: '#/components/schemas/Lecturer' } }
+
+  /lecturers/{uuid}:
+    get:
+      tags: [Lecturers]
+      summary: Satu dosen beserta penugasannya
+      parameters:
+        - { name: uuid, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        '200': { description: OK }
+        '404': { description: Tidak ditemukan }
+
+  /classes:
+    get:
+      tags: [Classes]
+      summary: Kelas kuliah pada satu semester
+      description: Membutuhkan scope `classes.read`.
+      parameters:
+        - $ref: '#/components/parameters/Semester'
+        - { name: prodi, in: query, schema: { type: string } }
+        - name: kolaboratif
+          in: query
+          schema: { type: boolean }
+          description: Hanya kelas ber-case method atau team-based project (bukti IKU 7)
+        - name: praktisi
+          in: query
+          schema: { type: boolean }
+          description: Hanya kelas yang diampu bersama praktisi (bukti IKU 4)
+        - $ref: '#/components/parameters/PerPage'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { type: array, items: { $ref: '#/components/schemas/CourseClass' } }
+        '404': { description: Kode semester tidak dikenal }
+
+  /student-activities:
+    get:
+      tags: [Activities]
+      summary: Aktivitas MBKM mahasiswa
+      description: |
+        Membutuhkan scope `activities.read`. Sumber transaksional IKU 2.
+
+        Ambang 20 SKS **tidak** diterapkan di sisi Open Academic: nilainya
+        diatur peraturan menteri dan berubah, jadi keputusannya milik konsumen.
+        Bawaannya hanya mengembalikan catatan terverifikasi.
+      parameters:
+        - $ref: '#/components/parameters/Semester'
+        - { name: jenis, in: query, schema: { type: string } }
+        - { name: prodi, in: query, schema: { type: string } }
+        - { name: min_sks, in: query, schema: { type: integer } }
+        - { name: sertakan_belum_verifikasi, in: query, schema: { type: boolean } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { type: array, items: { $ref: '#/components/schemas/StudentActivity' } }
+
+  /graduates:
+    get:
+      tags: [Graduates]
+      summary: Lulusan yang sudah ditetapkan
+      description: Membutuhkan scope `graduates.read`. Populasi awal tracer study IKU 1.
+      parameters:
+        - { name: semester, in: query, schema: { type: string } }
+        - { name: prodi, in: query, schema: { type: string } }
+        - { name: tahun_lulus, in: query, schema: { type: integer } }
+      responses:
+        '200': { description: OK }
+
+  /academic-terms:
+    get:
+      tags: [Terms]
+      summary: Seluruh tahun akademik
+      description: Membutuhkan scope `terms.read`.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { type: array, items: { $ref: '#/components/schemas/AcademicTerm' } }
+
+  /academic-terms/current:
+    get:
+      tags: [Terms]
+      summary: Semester yang sedang aktif
+      responses:
+        '200': { description: OK }
+        '404': { description: Belum ada semester aktif }
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      description: Token Sanctum yang diterbitkan `php artisan openacademic:bridge-token {slug}`
+
+  parameters:
+    Semester:
+      name: semester
+      in: query
+      schema: { type: string, example: "20261" }
+      description: Kode semester PDDIKTI. Bila dikosongkan, memakai semester aktif.
+    PerPage:
+      name: per_page
+      in: query
+      schema: { type: integer, default: 50, maximum: 200 }
+    Page:
+      name: page
+      in: query
+      schema: { type: integer, default: 1 }
+
+  responses:
+    ScopeDitolak:
+      description: Token tidak memiliki scope yang dibutuhkan
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              message: { type: string }
+
+  schemas:
+    PaginationMeta:
+      type: object
+      properties:
+        current_page: { type: integer }
+        per_page: { type: integer }
+        total: { type: integer }
+        last_page: { type: integer }
+
+    Student:
+      type: object
+      properties:
+        uuid: { type: string, format: uuid }
+        nim: { type: string }
+        nama: { type: string }
+        email: { type: string, format: email }
+        angkatan: { type: integer }
+        status:
+          type: object
+          properties:
+            kode: { type: string, example: "A" }
+            label: { type: string, example: "Aktif" }
+            aktif: { type: boolean }
+        prodi: { $ref: '#/components/schemas/ProdiRingkas' }
+        dosen_wali:
+          type: [object, "null"]
+          properties:
+            uuid: { type: string }
+            nama: { type: string }
+        foto_url: { type: [string, "null"] }
+        riwayat_semester:
+          type: array
+          description: Hanya ada bila diminta dengan sertakan_riwayat
+          items:
+            type: object
+            properties:
+              semester: { type: string }
+              semester_ke: { type: integer }
+              status: { type: string }
+              ips: { type: number }
+              ipk: { type: number }
+              sks_semester: { type: integer }
+              sks_kumulatif: { type: integer }
+              final: { type: boolean }
+
+    Lecturer:
+      type: object
+      properties:
+        uuid: { type: string, format: uuid }
+        nidn: { type: [string, "null"] }
+        nama: { type: string }
+        nama_lengkap: { type: string }
+        jabatan_fungsional: { type: [string, "null"] }
+        praktisi:
+          type: object
+          properties:
+            ya: { type: boolean }
+            instansi: { type: [string, "null"] }
+        penugasan:
+          type: array
+          items:
+            type: object
+            properties:
+              jenis: { type: string }
+              judul: { type: string }
+              mitra: { type: [string, "null"] }
+              sks_ekuivalen: { type: [number, "null"] }
+              terverifikasi: { type: boolean }
+              iku:
+                type: array
+                description: IKU yang disumbang catatan ini
+                items: { type: integer, enum: [3, 4] }
+
+    CourseClass:
+      type: object
+      properties:
+        uuid: { type: string, format: uuid }
+        semester: { type: string, example: "20261" }
+        kode_kelas: { type: string }
+        mata_kuliah:
+          type: object
+          properties:
+            kode: { type: string }
+            nama: { type: string }
+            sks: { type: integer }
+        prodi: { $ref: '#/components/schemas/ProdiRingkas' }
+        kuota: { type: integer }
+        terisi: { type: integer }
+        metode_pembelajaran:
+          type: object
+          description: Bukti IKU 7
+          properties:
+            case_method: { type: boolean }
+            team_based_project: { type: boolean }
+            kolaboratif: { type: boolean }
+        pengajar:
+          type: array
+          items:
+            type: object
+            properties:
+              uuid: { type: string }
+              nama: { type: string }
+              peran: { type: string, enum: [pengampu, pendamping, praktisi] }
+              praktisi: { type: boolean }
+
+    StudentActivity:
+      type: object
+      properties:
+        uuid: { type: string, format: uuid }
+        semester: { type: string }
+        mahasiswa:
+          type: object
+          properties:
+            uuid: { type: string }
+            nim: { type: string }
+            nama: { type: string }
+        jenis: { type: string, example: magang }
+        jenis_label: { type: string }
+        judul: { type: string }
+        sks_konversi: { type: integer }
+        terverifikasi: { type: boolean }
+
+    AcademicTerm:
+      type: object
+      properties:
+        kode: { type: string, example: "20261" }
+        nama: { type: string, example: "2026/2027 Ganjil" }
+        semester: { type: string, enum: [Ganjil, Genap, Antara] }
+        aktif: { type: boolean }
+        jendela:
+          type: object
+          properties:
+            krs_dibuka: { type: boolean }
+            penilaian_dibuka: { type: boolean }
+
+    ProdiRingkas:
+      type: object
+      properties:
+        kode: { type: string }
+        nama: { type: string }
+        jenjang: { type: string }
+
+  # ---------------------------------------------------------------------------
+  # Webhook — sisi dorong dari kontrak ini
+  # ---------------------------------------------------------------------------
+  x-webhooks:
+    description: |
+      Konsumen mendaftarkan satu URL dan daftar event. Setiap kiriman
+      ditandatangani HMAC-SHA256 atas `{timestamp}.{body}` memakai rahasia
+      milik konsumen, dikirim pada header:
+
+        X-OpenAcademic-Signature: <hex hmac>
+        X-OpenAcademic-Timestamp: <unix timestamp>
+
+      Timestamp ikut ditandatangani agar kiriman yang tertangkap tidak dapat
+      diputar ulang dengan timestamp baru. Verifikasi wajib memakai perbandingan
+      waktu-tetap (`hash_equals`), bukan `==`.
+
+      Balasan 2xx dianggap berhasil. Selain itu dicoba ulang dengan jeda
+      bertingkat 60s, 5m, 15m, 1j, 6j lalu menyerah dan menunggu pemutaran
+      ulang manual dari konsol.
+    events:
+      - student.enrolled
+      - student.status_changed
+      - krs.approved
+      - grade.finalized
+      - student.graduated
+      - activity.recorded
+      - lecturer.assignment_recorded
+    envelope:
+      type: object
+      properties:
+        id: { type: string, format: uuid, description: Untuk mendeteksi kiriman ganda }
+        event: { type: string }
+        occurred_at: { type: string, format: date-time }
+        institution: { type: string, description: Kode perguruan tinggi PDDIKTI }
+        data: { type: object }

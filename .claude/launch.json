@@ -1,0 +1,11 @@
+{
+    "version": "0.0.1",
+    "configurations": [
+        {
+            "name": "open-academic",
+            "runtimeExecutable": "C:\\xampp\\php\\php.exe",
+            "runtimeArgs": ["artisan", "serve", "--host=127.0.0.1", "--port=8010"],
+            "port": 8010
+        }
+    ]
+}
