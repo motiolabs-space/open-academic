@@ -4,6 +4,89 @@
 
 ---
 
+## Sesi 27 — 2026-08-17 · Cetak & Pengaturan Dokumen — P1 Perkuliahan Tuntas
+
+Dua sisa P1 sekaligus, dan urutannya menentukan: **pengaturan dokumen dulu**.
+Kebalikannya berarti membangun empat PDF dengan kop yang di-hardcode lalu
+membongkarnya lagi.
+
+### Item roadmap yang saya tolak apa adanya
+
+Bunyinya "**kustomisasi templat dokumen**". Yang dibangun bukan itu.
+
+Templat Blade yang tersimpan di basis data berarti **mengeksekusi kode yang
+tersimpan di basis data**. Satu form admin yang bocor, satu peran yang salah
+dipetakan, dan kampus kehilangan servernya — ditukar dengan keluwesan yang
+hampir tidak pernah dipakai.
+
+Yang sebenarnya berbeda antar kampus adalah **isinya**: baris alamat, siapa yang
+bertanda tangan, catatan kaki. Itu setelan. Tata letaknya tetap di Blade, ikut
+kendali versi, dan dapat ditinjau.
+
+### Penandatangan yang sengaja tidak ada
+
+Absensi dan jurnal ditandatangani **di kertas oleh yang hadir**. Nama pejabat
+tercetak di situ bukan sekadar mubazir — ia keliru, karena orang itu tidak ada di
+ruangan. Yang dibutuhkan ruang kosong.
+
+Hal yang sama pada kolom kehadiran daftar hadir: dibiarkan kosong, tidak diisi
+dari presensi digital. Tanda tangan basah adalah buktinya; mencetak apa yang
+sistem sudah percayai ke dalamnya berarti mengganti bukti dengan salinan dugaan.
+
+### Yang tidak tercetak di KTM
+
+NIK, alamat rumah, dan nama orang tua tidak pernah masuk. Kartu adalah dokumen
+yang paling sering hilang, difoto, dan diunggah.
+
+QR-nya mengkodekan **NIM**, yang sudah tercetak di sebelahnya — sengaja bukan URL
+verifikasi, karena itu berarti endpoint publik baru yang mengonfirmasi apakah
+seseorang terdaftar di sini.
+
+Tesnya memeriksa **HTML sebelum dirender**, bukan PDF-nya. dompdf memampatkan
+aliran teksnya, jadi mencari string di dalam PDF akan selalu "lolos" dan tidak
+membuktikan apa pun — tes yang berpura-pura memverifikasi.
+
+### Penembusan loket yang saya buang
+
+Rancangan awal kartu ujian punya `?paksa=1` agar loket dapat mencetak melewati
+tahanan keuangan — untuk yang membayar tunai lima menit lalu.
+
+Dibuang. **Unduhan tidak meninggalkan baris audit**, jadi penembusan itu membuat
+tahanan keuangan dapat dilewati tanpa jejak sama sekali. Dua perbaikan yang
+sebenarnya sama-sama berjejak: catat pembayarannya, atau setujui KRS-nya.
+
+Penahanannya sendiri **kebijakan, bukan fakta**, jadi dapat dimatikan lewat
+config — dan alasannya selalu disebutkan kepada mahasiswanya. Ambang kehadiran
+ditanyakan ke `PresensiService::layakUas`, bukan dihitung ulang.
+
+### Rute mahasiswa tanpa parameter
+
+`/mahasiswa/ktm` dan `/mahasiswa/kartu-ujian` tidak menerima identitas sama
+sekali. Endpoint yang menerima NIM butuh pemeriksaan kepemilikan, dan pemeriksaan
+bisa salah ditulis — tidak menerima parameternya tidak bisa.
+
+Jalur dosen memeriksa **pengampu**, bukan sekadar peran: daftar hadir memuat nama
+seluruh peserta kelas.
+
+Rinciannya di [`CETAK.md`](CETAK.md).
+
+### Bug yang menunggu hari Minggu
+
+Suite yang hijau kemarin gagal hari ini. Bukan karena pekerjaan hari ini —
+**karena hari ini Minggu.**
+
+`JadwalController::kelompokPerHari` mengisi Senin–Sabtu meski kosong agar grid
+tidak berubah bentuk, jadi hanya kunci 7 yang benar-benar tidak ada. Kartu "Hari
+Ini" mengindeksnya langsung: `$perHari[$hariIni]`. Setiap mahasiswa, setiap
+Minggu, layar jadwalnya melempar `Undefined array key`.
+
+Diperbaiki jadi `->get()`, dan ditambah tes dengan waktu dibekukan ke hari
+Minggu — bug bergantung tanggal tidak boleh menunggu kalender untuk terlihat.
+Hanya Minggu yang diuji; hari lain selalu punya kuncinya, jadi menyertakannya
+berarti menambah kasus yang tidak bisa gagal.
+
+---
+
 ## Sesi 26 — 2026-08-17 · Padanan, Konsentrasi, dan Paket Kuliah
 
 Tiga dari lima sisa P1 perkuliahan. Ketiganya ada karena alasan yang sama:

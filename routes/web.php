@@ -95,6 +95,12 @@ Route::middleware(['auth:mahasiswa', 'term.active'])->prefix('mahasiswa')->name(
     Route::post('/krs/kelas/{kelas}', [Mahasiswa\KrsController::class, 'tambah'])->name('krs.tambah');
     Route::delete('/krs/detail/{detail}', [Mahasiswa\KrsController::class, 'hapus'])->name('krs.hapus');
     Route::post('/krs/paket', [Mahasiswa\KrsController::class, 'paket'])->name('krs.paket');
+
+    // Tanpa parameter: pemiliknya adalah yang sedang masuk. Endpoint yang
+    // menerima NIM butuh pemeriksaan kepemilikan, dan pemeriksaan bisa salah
+    // ditulis — tidak menerima parameternya sama sekali tidak bisa.
+    Route::get('/ktm', [Mahasiswa\CetakController::class, 'ktm'])->name('ktm');
+    Route::get('/kartu-ujian', [Mahasiswa\CetakController::class, 'kartuUjian'])->name('kartu-ujian');
     Route::post('/krs/ajukan', [Mahasiswa\KrsController::class, 'ajukan'])->name('krs.ajukan');
 
     Route::get('/jadwal', Mahasiswa\JadwalController::class)->name('jadwal');
@@ -185,6 +191,12 @@ Route::middleware(['auth:dosen', 'term.active'])->prefix('dosen')->name('dosen.'
     Route::get('/persetujuan-krs', [Dosen\PersetujuanKrsController::class, 'index'])->name('persetujuan-krs');
     Route::post('/persetujuan-krs/{krs}', [Dosen\PersetujuanKrsController::class, 'putuskan'])
         ->name('persetujuan-krs.putuskan');
+
+    // Dibatasi kelas yang benar-benar diampu: daftar hadir memuat nama seluruh
+    // peserta, persis jenis daftar yang tidak boleh dicetak siapa pun yang
+    // menebak id kelas.
+    Route::get('/kelas/{kelas}/absensi', [Dosen\CetakController::class, 'absensi'])->name('kelas.absensi');
+    Route::get('/kelas/{kelas}/jurnal', [Dosen\CetakController::class, 'jurnal'])->name('kelas.jurnal');
 });
 
 /*
@@ -405,6 +417,14 @@ Route::middleware(['auth:staff', 'term.active'])->prefix('admin')->name('admin.'
 
     Route::get('/pengaturan', [Admin\PengaturanController::class, 'index'])->name('pengaturan');
     Route::put('/pengaturan', [Admin\PengaturanController::class, 'simpan'])->name('pengaturan.simpan');
+    Route::put('/pengaturan/dokumen', [Admin\PengaturanController::class, 'simpanDokumen'])
+        ->name('pengaturan.dokumen');
+
+    Route::get('/cetak/ktm/{mahasiswa}', [Admin\CetakController::class, 'ktm'])->name('cetak.ktm');
+    Route::get('/cetak/kartu-ujian/{krs}', [Admin\CetakController::class, 'kartuUjian'])
+        ->name('cetak.kartu-ujian');
+    Route::get('/cetak/absensi/{kelas}', [Admin\CetakController::class, 'absensi'])->name('cetak.absensi');
+    Route::get('/cetak/jurnal/{kelas}', [Admin\CetakController::class, 'jurnal'])->name('cetak.jurnal');
 
     Route::get('/tarif', [Admin\TarifController::class, 'index'])->name('tarif');
     Route::post('/tarif', [Admin\TarifController::class, 'store'])->name('tarif.store');
