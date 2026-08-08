@@ -43,6 +43,7 @@ tags:
   - name: Activities
   - name: Graduates
   - name: Terms
+  - name: Evaluations
 
 paths:
   /students:
@@ -196,6 +197,62 @@ paths:
         - { name: tahun_lulus, in: query, schema: { type: integer } }
       responses:
         '200': { description: OK }
+
+  /teaching-evaluations:
+    get:
+      tags: [Evaluations]
+      summary: Rekap agregat evaluasi dosen (EDOM)
+      description: |
+        Membutuhkan scope `evaluations.read` **dan** `lecturers.read` — responsnya
+        menyebut dosen, jadi endpoint agregat tidak boleh menjadi jalan memetakan
+        nama dosen yang scope-nya tidak diberikan.
+
+        **Yang tidak dapat dikembalikan endpoint ini adalah rancangannya.** Tidak
+        ada parameter, tidak ada scope, dan tidak ada jalur kode yang menghasilkan
+        satu jawaban, satu komentar bebas, atau identitas pengisi. Tabel jawaban
+        memang tidak menyimpan mahasiswa, dan komentar tidak pernah diseleksi di
+        sini.
+
+        Kelas yang belum mencapai ambang responden periodenya tidak menyumbang apa
+        pun — termasuk cacah respondennya. "0 dari 4 mengisi, rerata 2,1" akan
+        memberi tahu konsumen luar lebih banyak tentang kelas berisi empat orang
+        daripada yang boleh diketahui siapa pun di dalam Open Academic.
+      parameters:
+        - $ref: '#/components/parameters/Semester'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      semester: { type: string, example: "20261" }
+                      periode:
+                        type: [object, 'null']
+                        properties:
+                          nama: { type: string }
+                          mulai: { type: string, format: date }
+                          selesai: { type: string, format: date }
+                          terbuka: { type: boolean }
+                          ambang_responden: { type: integer, example: 5 }
+                      catatan: { type: string }
+                      dosen:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            uuid: { type: string, format: uuid }
+                            nidn: { type: [string, 'null'] }
+                            nama: { type: string }
+                            kelas_dinilai: { type: integer }
+                            jumlah_responden: { type: integer }
+                            rerata: { type: [number, 'null'], example: 4.21 }
+        '403': { $ref: '#/components/responses/ScopeDitolak' }
+        '404': { description: Tidak ada semester aktif; sertakan parameter semester }
 
   /academic-terms:
     get:

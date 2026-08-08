@@ -43,6 +43,7 @@ final class Navigation
                     self::item('KHS & Transkrip', '≡', 'mahasiswa.khs'),
                     self::item('Tugas Akhir', '✍', 'mahasiswa.tugas-akhir'),
                     self::item('Surat & Dokumen', '✉', 'mahasiswa.surat'),
+                    self::item('Evaluasi Dosen', '☆', 'mahasiswa.edom'),
                     self::item('Tagihan & Pembayaran', '◈', 'mahasiswa.tagihan'),
                     self::item('Profil Akademik', '○', 'mahasiswa.profil'),
                     self::item('Aplikasi Terhubung', '⌘', 'sso.aplikasi'),
@@ -62,6 +63,7 @@ final class Navigation
                     self::item('Kelas Diampu', '▤', 'dosen.kelas'),
                     self::item('Input Nilai', '≡', 'dosen.nilai'),
                     self::item('Presensi', '◫', 'dosen.presensi'),
+                    self::item('Hasil EDOM', '☆', 'dosen.edom'),
                 ],
             ],
             [
@@ -99,6 +101,7 @@ final class Navigation
                     self::item('Tugas Akhir', '✍', 'admin.tugas-akhir'),
                     self::item('Surat & Dokumen', '✉', 'admin.surat'),
                     self::item('Konversi Kredit', '⇄', 'admin.konversi'),
+                    self::item('Evaluasi Dosen', '☆', 'admin.edom.index'),
                     self::item('Yudisium', '✦', 'admin.yudisium'),
                     self::item('Wisuda', '✧', 'admin.wisuda'),
                     self::item('Verifikasi Data IKU', '◈', 'admin.iku-records'),

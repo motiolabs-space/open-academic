@@ -36,13 +36,12 @@ sehingga tangga batas SKS berbasis IPS akhirnya menyala di instalasi sungguhan.
 Begitu pula layar Jadwal & Kelas (§2).
 
 **Dibandingkan cakupan SIAKAD yang lazim dipakai kampus Indonesia**, tercatat
-tujuh kesenjangan pada 8 Agustus 2026. **Lima sudah ditutup:** G1 Tugas Akhir,
-G2 Notifikasi, G3 Surat & SKPI, G4 Keringanan & Beasiswa, dan G5 Konversi Kredit.
+tujuh kesenjangan pada 8 Agustus 2026. **Enam sudah ditutup:** G1 Tugas Akhir,
+G2 Notifikasi, G3 Surat & SKPI, G4 Keringanan & Beasiswa, G5 Konversi Kredit,
+dan G6 EDOM.
 
-Dua sisanya di [§Perbandingan dengan SIAKAD Lain](#perbandingan-dengan-siakad-lain),
-dan keduanya menunggu keputusan sebelum kode: **G6 EDOM** perlu penetapan batas
-terhadap Open Campus, **G7 SISTER/BKD** perlu akses ke sistem kementerian sisi
-dosen.
+Sisanya satu, di [§Perbandingan dengan SIAKAD Lain](#perbandingan-dengan-siakad-lain):
+**G7 SISTER/BKD**, yang menunggu akses ke sistem kementerian sisi dosen.
 
 **Repo sudah di bawah Git** sejak 11 Agustus 2026, satu commit awal atas
 sembilan belas sesi kerja. Belum ada remote — itu keputusan pemilik repo.
@@ -777,14 +776,27 @@ masuk ke total SKS — itulah arti pengakuan.
 Transkrip menandai barisnya (**T** transfer, **R** rekognisi) dan mencantumkan
 totalnya pada catatan kaki. Pembaca luar perlu tahu mana yang dinilai kampus ini.
 
-#### G6. EDOM / kuesioner evaluasi dosen ⬜ — *perlu keputusan batas*
+#### G6. EDOM / kuesioner evaluasi dosen ✅ selesai 13 Agustus 2026
 
-Dibutuhkan akreditasi, dan tidak ada umpan balik mahasiswa di mana pun saat ini.
+**Batasnya diputuskan:** pertanyaan, jawaban, ambang, dan gerbang tinggal di Open
+Academic, karena semuanya melekat pada `kelas_kuliah`, daftar peserta, dan KRS.
+Open Campus membaca **agregatnya** lewat `GET /teaching-evaluations`. Tidak ada
+lapisan kuesioner yang terduplikasi: yang berpindah hanyalah angka jadi.
 
-**Perlu diputuskan lebih dulu:** EDOM terikat pada `kelas_kuliah` dan semester,
-jadi ia berperilaku seperti catatan resmi — tetapi ia juga *engagement*, yang
-merupakan wilayah Open Campus. Membangunnya di tempat yang salah berarti
-menduplikasi lapisan kuesioner di dua sistem.
+Inti modulnya bukan kuesionernya, melainkan bentuk tabelnya. `edom_partisipasi`
+(siapa sudah mengisi) dan `edom_jawaban` (apa yang dijawab) **tidak berbagi kunci
+apa pun** — tidak ada `mahasiswa_id`, tidak ada kaitan ke partisipasi, tidak ada
+pengenal respons. Anonimitasnya bukan kebijakan yang harus diingat orang; kolom
+yang memungkinkan pemasangannya memang tidak ada. Harganya nyata dan diterima
+sadar: jawaban tak dapat diubah maupun dicabut.
+
+Ditambah: ambang responden per periode (di bawahnya tidak ditampilkan apa pun,
+termasuk cacahnya), komentar bebas dengan aturan lebih ketat daripada skor
+(bawaan: ke prodi, bukan ke dosen yang dinilai), instrumen terkunci begitu satu
+jawaban masuk, dan gerbang yang bawaannya menahan KRS — bukan KHS, karena menahan
+KHS memakai catatan yang sudah diperoleh mahasiswa sebagai alat tukar.
+
+Rincian di [`EDOM.md`](EDOM.md).
 
 ### Kesenjangan Tingkat 3 — pelaporan sisi dosen
 
@@ -818,7 +830,7 @@ data yang harus punya satu pemilik.
 | ~~3~~ | ~~**G3 Surat & SKPI**~~ | ✅ selesai 10 Agustus 2026 |
 | ~~4~~ | ~~**G4 Keringanan/beasiswa**~~ | ✅ selesai 12 Agustus 2026 |
 | ~~5~~ | ~~**G5 Konversi kredit**~~ | ✅ selesai 11 Agustus 2026 |
-| 6 | **G6 EDOM** | Putuskan batasnya lebih dulu |
+| ~~6~~ | ~~**G6 EDOM**~~ | ✅ selesai 13 Agustus 2026 |
 | 7 | **G7 SISTER/BKD** | Terbesar cakupannya, paling sedikit ketergantungannya |
 
 ---

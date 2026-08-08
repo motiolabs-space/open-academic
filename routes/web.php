@@ -109,6 +109,9 @@ Route::middleware(['auth:mahasiswa', 'term.active'])->prefix('mahasiswa')->name(
     Route::post('/tugas-akhir/bimbingan', [Mahasiswa\TugasAkhirController::class, 'catatBimbingan'])->name('tugas-akhir.bimbingan');
     Route::delete('/tugas-akhir/bimbingan/{bimbingan}', [Mahasiswa\TugasAkhirController::class, 'hapusBimbingan'])->name('tugas-akhir.bimbingan.hapus');
 
+    Route::get('/edom', [Mahasiswa\EdomController::class, 'index'])->name('edom');
+    Route::post('/edom', [Mahasiswa\EdomController::class, 'kirim'])->name('edom.kirim');
+
     Route::get('/surat', [Mahasiswa\SuratController::class, 'index'])->name('surat');
     Route::post('/surat', [Mahasiswa\SuratController::class, 'ajukan'])->name('surat.ajukan');
     Route::get('/surat/{surat}/unduh', [Mahasiswa\SuratController::class, 'unduh'])->name('surat.unduh');
@@ -145,6 +148,8 @@ Route::middleware(['auth:dosen', 'term.active'])->prefix('dosen')->name('dosen.'
 
     // Bimbingan tugas akhir — hal yang berbeda, dan sengaja terpisah: dosen
     // wali membimbing rencana studi, pembimbing tugas akhir membimbing karya.
+    Route::get('/edom', Dosen\EdomController::class)->name('edom');
+
     Route::get('/tugas-akhir', [Dosen\TugasAkhirController::class, 'index'])->name('tugas-akhir');
     Route::get('/tugas-akhir/{tugasAkhir}', [Dosen\TugasAkhirController::class, 'show'])->name('tugas-akhir.show');
     Route::post('/tugas-akhir/bimbingan/{bimbingan}/setujui', [Dosen\TugasAkhirController::class, 'setujuiBimbingan'])->name('tugas-akhir.bimbingan.setujui');
@@ -340,6 +345,14 @@ Route::middleware(['auth:staff', 'term.active'])->prefix('admin')->name('admin.'
     Route::post('/surat/{surat}/tolak', [Admin\SuratController::class, 'tolak'])->name('surat.tolak');
     Route::post('/surat/{surat}/cabut', [Admin\SuratController::class, 'cabut'])->name('surat.cabut');
     Route::get('/surat/{surat}/unduh', [Admin\SuratController::class, 'unduh'])->name('surat.unduh');
+
+    Route::get('/edom', [Admin\EdomController::class, 'index'])->name('edom.index');
+    Route::get('/edom/{periode}/kelas/{kelas}', [Admin\EdomController::class, 'kelas'])->name('edom.kelas');
+    Route::post('/edom/periode', [Admin\EdomController::class, 'simpanPeriode'])->name('edom.periode');
+    Route::post('/edom/{periode}/status', [Admin\EdomController::class, 'ubahStatus'])->name('edom.status');
+    Route::post('/edom/{periode}/pertanyaan', [Admin\EdomController::class, 'tambahPertanyaan'])->name('edom.pertanyaan');
+    Route::post('/edom/{periode}/salin', [Admin\EdomController::class, 'salinPertanyaan'])->name('edom.salin');
+    Route::delete('/edom/pertanyaan/{pertanyaan}', [Admin\EdomController::class, 'hapusPertanyaan'])->name('edom.pertanyaan.hapus');
 
     Route::get('/log', Admin\LogAktivitasController::class)->name('log');
 

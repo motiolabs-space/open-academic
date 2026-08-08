@@ -34,6 +34,7 @@ class RolePermissionSeeder extends Seeder
             'pmb.view', 'pmb.manage',
             'tugas_akhir.view', 'tugas_akhir.manage',
             'surat.view', 'surat.manage',
+            'edom.view', 'edom.manage',
             'wisuda.view', 'wisuda.manage',
             'feeder.view', 'feeder.sync',
             'bridge.view', 'bridge.manage',
@@ -55,6 +56,11 @@ class RolePermissionSeeder extends Seeder
 
             'tugas_akhir.bimbing',
             'tugas_akhir.uji',
+
+            // Reading one's own evaluation results. Scoped to self by the
+            // controller, not by this permission — there is no version of this
+            // grant that opens a colleague's scores.
+            'edom.hasil',
         ],
         UserRole::Mahasiswa->value => [
             'krs.submit',
@@ -64,6 +70,7 @@ class RolePermissionSeeder extends Seeder
             'profil.manage',
             'tugas_akhir.ajukan',
             'surat.ajukan',
+            'edom.isi',
         ],
     ];
 
@@ -77,11 +84,19 @@ class RolePermissionSeeder extends Seeder
                 'nilai.view', 'presensi.view', 'pmb.view', 'pmb.manage',
                 'tugas_akhir.view', 'tugas_akhir.manage',
                 'surat.view', 'surat.manage',
+                'edom.view', 'edom.manage',
                 'wisuda.view', 'wisuda.manage', 'feeder.view', 'feeder.sync',
             ],
             'keuangan' => ['keuangan.view', 'keuangan.manage', 'mahasiswa.view'],
             'operator-pddikti' => ['feeder.view', 'feeder.sync', 'mahasiswa.view', 'dosen.view', 'kelas.view', 'nilai.view'],
-            'pimpinan' => ['master.view', 'mahasiswa.view', 'dosen.view', 'kelas.view', 'keuangan.view', 'feeder.view'],
+
+            // Leadership reads results but does not open, close, or reword a
+            // period — an instrument whose questions can be edited by the person
+            // being judged by them measures nothing.
+            'pimpinan' => [
+                'master.view', 'mahasiswa.view', 'dosen.view', 'kelas.view',
+                'keuangan.view', 'feeder.view', 'edom.view',
+            ],
         ],
         UserRole::Dosen->value => [
             'dosen' => [
@@ -91,12 +106,12 @@ class RolePermissionSeeder extends Seeder
                 // may touch is decided per project by the pembimbing and penguji
                 // rows, not by the role — a role-level grant would let any
                 // lecturer sign off any student's consultation log.
-                'tugas_akhir.bimbing', 'tugas_akhir.uji',
+                'tugas_akhir.bimbing', 'tugas_akhir.uji', 'edom.hasil',
             ],
             'dosen-wali' => [
                 'kelas.view', 'nilai.view', 'nilai.manage', 'presensi.view', 'presensi.manage',
                 'krs.approve', 'bimbingan.view',
-                'tugas_akhir.bimbing', 'tugas_akhir.uji',
+                'tugas_akhir.bimbing', 'tugas_akhir.uji', 'edom.hasil',
             ],
         ],
         UserRole::Mahasiswa->value => [

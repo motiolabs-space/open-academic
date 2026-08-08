@@ -35,6 +35,11 @@ return [
         'activities.read' => 'Baca aktivitas mahasiswa (MBKM)',
         'graduates.read' => 'Baca data lulusan & yudisium',
         'terms.read' => 'Baca kalender & tahun akademik',
+
+        // Aggregates only. There is no scope that returns an individual answer
+        // or a free-text comment, because no endpoint exists that could serve
+        // one — see TeachingEvaluationController.
+        'evaluations.read' => 'Baca rekap agregat evaluasi dosen (EDOM)',
     ],
 
     /*
