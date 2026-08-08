@@ -56,6 +56,26 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Capaian Pembelajaran (CPL)
+    |--------------------------------------------------------------------------
+    |
+    | Ambang di bawah mana sebuah CPL dinyatakan belum tercapai.
+    |
+    | **Kebijakan kampus, bukan fakta** — sikap yang sama dengan bobot SKS BKD
+    | dan bagan akun. Open Academic menjamin perhitungannya benar: rerata
+    | terbobot atas komponen yang benar-benar mengukur CPL itu. Berapa angka
+    | yang dianggap "menguasai" diserahkan ke kampus, dan selalu ditampilkan
+    | bersama angkanya — supaya pembaca dapat berselisih dengan ambangnya,
+    | bukan dengan mahasiswanya.
+    |
+    */
+
+    'cpl' => [
+        'ambang_penguasaan' => (float) env('ACADEMIC_CPL_AMBANG', 65),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Attendance
     |--------------------------------------------------------------------------
     */
