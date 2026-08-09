@@ -203,6 +203,59 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Evaluasi Studi
+    |--------------------------------------------------------------------------
+    |
+    | Ambang bertingkat yang dipakai kampus untuk memutuskan apakah seorang
+    | mahasiswa boleh melanjutkan.
+    |
+    | Seluruhnya **kebijakan, bukan fakta**, dan berbeda antar kampus bahkan
+    | antar prodi. Karena itu ia ada di sini, dan karena itu pula setiap temuan
+    | selalu melaporkan ambang yang dipakainya — supaya pembaca dapat berselisih
+    | dengan aturannya, bukan dengan mahasiswanya.
+    |
+    | Angkanya juga **dibekukan pada baris evaluasi** saat dijalankan. Aturan
+    | yang berubah tahun depan tidak boleh menulis ulang alasan seorang mahasiswa
+    | diperingatkan tahun ini.
+    |
+    */
+
+    'evaluasi' => [
+
+        /*
+         * Titik evaluasi bertingkat, diperiksa pada akhir semester tertentu.
+         *
+         * `semester_ke` dihitung dari semester tempuh — semester cuti tidak
+         * menambahnya, karena mahasiswa yang cuti tidak diberi kesempatan
+         * mengumpulkan SKS pada semester itu.
+         */
+        'tahap' => [
+            ['nama' => 'Evaluasi Tahap I', 'semester_ke' => 2, 'min_sks' => 24, 'min_ipk' => 2.00],
+            ['nama' => 'Evaluasi Tahap II', 'semester_ke' => 4, 'min_sks' => 48, 'min_ipk' => 2.00],
+            ['nama' => 'Evaluasi Tahap III', 'semester_ke' => 8, 'min_sks' => 96, 'min_ipk' => 2.00],
+        ],
+
+        /*
+         * Batas masa studi, dalam semester tempuh.
+         *
+         * Semester cuti tidak dihitung — itu justru gunanya cuti. Menghitungnya
+         * akan menghukum mahasiswa karena sakit atau kesulitan biaya, yang
+         * merupakan alasan cuti diberikan sejak awal.
+         */
+        'masa_studi_maksimum' => (int) env('ACADEMIC_MASA_STUDI_MAKS', 14),
+
+        /*
+         * IPS di bawah angka ini memicu peringatan pada semester itu juga.
+         *
+         * Terpisah dari evaluasi bertingkat, dan sengaja: menunggu sampai akhir
+         * semester 4 untuk memberi tahu mahasiswa bahwa ia bermasalah sejak
+         * semester 1 berarti memberi tahu terlalu terlambat untuk ditindaklanjuti.
+         */
+        'peringatan_ips' => (float) env('ACADEMIC_PERINGATAN_IPS', 2.00),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Student Number (NIM) Generator
     |--------------------------------------------------------------------------
     |

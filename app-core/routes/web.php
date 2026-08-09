@@ -420,6 +420,14 @@ Route::middleware(['auth:staff', 'term.active'])->prefix('admin')->name('admin.'
     Route::put('/pengaturan/dokumen', [Admin\PengaturanController::class, 'simpanDokumen'])
         ->name('pengaturan.dokumen');
 
+    Route::get('/evaluasi-studi', [Admin\EvaluasiStudiController::class, 'index'])->name('evaluasi-studi');
+    Route::post('/evaluasi-studi/jalankan', [Admin\EvaluasiStudiController::class, 'jalankan'])
+        ->name('evaluasi-studi.jalankan');
+    Route::post('/evaluasi-studi/{evaluasi}/putuskan', [Admin\EvaluasiStudiController::class, 'putuskan'])
+        ->name('evaluasi-studi.putuskan');
+    Route::post('/evaluasi-studi/{evaluasi}/batalkan', [Admin\EvaluasiStudiController::class, 'batalkan'])
+        ->name('evaluasi-studi.batalkan');
+
     Route::get('/cetak/ktm/{mahasiswa}', [Admin\CetakController::class, 'ktm'])->name('cetak.ktm');
     Route::get('/cetak/kartu-ujian/{krs}', [Admin\CetakController::class, 'kartuUjian'])
         ->name('cetak.kartu-ujian');

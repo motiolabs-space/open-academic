@@ -120,6 +120,10 @@ final class Navigation
                     self::item('Verifikasi Data IKU', '◈', 'admin.iku-records'),
                     self::item('Koreksi Nilai', '✎', 'admin.koreksi-nilai'),
                     self::item('Penutupan Semester', '⊟', 'admin.tutup-semester'),
+
+                    // Sesudah penutupan semester, karena penutupan itulah yang
+                    // membekukan angka yang dibaca evaluasi.
+                    self::item('Evaluasi Studi', '⚖', 'admin.evaluasi-studi'),
                 ],
             ],
             [
