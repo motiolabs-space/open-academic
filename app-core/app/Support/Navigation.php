@@ -94,38 +94,72 @@ final class Navigation
     {
         return [
             [
-                'title' => 'UTAMA',
+                'title' => null,
                 'items' => [
                     self::item('Dasbor', '▦', 'admin.dashboard'),
+                ],
+            ],
+
+            /*
+             * Dikelompokkan menurut **pekerjaan**, bukan menurut entitas data.
+             *
+             * Orang datang ke sidebar sambil berpikir "saya harus membuka kelas
+             * untuk semester depan", bukan "saya ingin sebuah program studi".
+             * Kelompok per entitas memaksa mereka tahu skema basis data lebih
+             * dulu untuk menemukan layarnya.
+             *
+             * Sebelumnya ada satu grup "KEMAHASISWAAN" berisi 18 item, dan lebih
+             * dari separuhnya bukan kemahasiswaan — kepegawaian dosen, akun staf,
+             * BKD, EDOM, sampai penutupan semester. Judul yang keliru lebih buruk
+             * daripada tanpa judul: pembacanya berhenti mempercayai judul dan
+             * mulai memindai ke-31 item satu per satu.
+             */
+            [
+                // Urut mengikuti siklus semester: siapkan, buka, jalankan, tutup.
+                'title' => 'AKADEMIK',
+                'items' => [
                     self::item('Master Akademik', '▤', 'admin.master.index'),
                     self::item('Jadwal & Kelas', '◫', 'admin.kelas'),
                     self::item('Padanan & Paket', '⇄', 'admin.kurikulum-lanjutan'),
+                    self::item('Koreksi Nilai', '✎', 'admin.koreksi-nilai'),
+                    self::item('Penutupan Semester', '⊟', 'admin.tutup-semester'),
                 ],
             ],
             [
-                'title' => 'KEMAHASISWAAN',
+                /*
+                 * Layar harian didahulukan; sisanya mengikuti perjalanan
+                 * mahasiswa — masuk, menempuh, dievaluasi, lulus.
+                 *
+                 * Evaluasi Studi berada di sini, bukan di AKADEMIK, karena yang
+                 * dihasilkannya adalah temuan tentang seorang mahasiswa. Angka
+                 * yang dibacanya memang dibekukan Penutupan Semester, dan itu
+                 * ada di grup sebelumnya.
+                 */
+                'title' => 'MAHASISWA',
                 'items' => [
                     self::item('Data Mahasiswa', '○', 'admin.mahasiswa'),
+                    self::item('PMB', '◇', 'admin.pmb'),
+                    self::item('Cuti Mahasiswa', '◐', 'admin.cuti'),
+                    self::item('Konversi Kredit', '⇄', 'admin.konversi'),
+                    self::item('Evaluasi Studi', '⚖', 'admin.evaluasi-studi'),
+                    self::item('Poin Kemahasiswaan', '★', 'admin.poin-kemahasiswaan'),
+                    self::item('Tugas Akhir', '✍', 'admin.tugas-akhir'),
+                    self::item('Yudisium', '✦', 'admin.yudisium'),
+                    self::item('Wisuda', '✧', 'admin.wisuda'),
+                    self::item('Surat & Dokumen', '✉', 'admin.surat'),
+                ],
+            ],
+            [
+                // Orang yang dipekerjakan kampus, dan bagaimana kinerjanya
+                // dicatat. Sebelumnya lima item ini berada di bawah judul
+                // "KEMAHASISWAAN", yang jelas bukan tempatnya.
+                'title' => 'SDM',
+                'items' => [
                     self::item('Kepegawaian Dosen', '◎', 'admin.dosen'),
                     self::item('Akun Staf', '◉', 'admin.staff'),
                     self::item('Unit Kerja', '⌗', 'admin.unit-kerja'),
-                    self::item('PMB', '◇', 'admin.pmb'),
-                    self::item('Cuti Mahasiswa', '◐', 'admin.cuti'),
-                    self::item('Tugas Akhir', '✍', 'admin.tugas-akhir'),
-                    self::item('Surat & Dokumen', '✉', 'admin.surat'),
-                    self::item('Konversi Kredit', '⇄', 'admin.konversi'),
-                    self::item('Evaluasi Dosen', '☆', 'admin.edom.index'),
                     self::item('Beban Kerja Dosen', '⊞', 'admin.bkd.index'),
-                    self::item('Yudisium', '✦', 'admin.yudisium'),
-                    self::item('Wisuda', '✧', 'admin.wisuda'),
-                    self::item('Verifikasi Data IKU', '◈', 'admin.iku-records'),
-                    self::item('Koreksi Nilai', '✎', 'admin.koreksi-nilai'),
-                    self::item('Penutupan Semester', '⊟', 'admin.tutup-semester'),
-
-                    // Sesudah penutupan semester, karena penutupan itulah yang
-                    // membekukan angka yang dibaca evaluasi.
-                    self::item('Evaluasi Studi', '⚖', 'admin.evaluasi-studi'),
-                    self::item('Poin Kemahasiswaan', '★', 'admin.poin-kemahasiswaan'),
+                    self::item('Evaluasi Dosen', '☆', 'admin.edom.index'),
                 ],
             ],
             [
@@ -150,12 +184,27 @@ final class Navigation
                 ],
             ],
             [
-                'title' => 'INTEGRASI',
+                /*
+                 * Apa yang dikirim kampus ke luar, dan apa yang dapat dibaca
+                 * sistem lain.
+                 *
+                 * Verifikasi Data IKU ada di sini, bukan di MAHASISWA: isinya
+                 * memang tentang mahasiswa, tapi pekerjaannya menyiapkan angka
+                 * untuk dilaporkan. Log Aktivitas ikut karena ia dibuka saat
+                 * seseorang menelusuri apa yang terjadi — bukan saat mengelola.
+                 */
+                'title' => 'PELAPORAN',
                 'items' => [
                     self::item('Neo Feeder PDDIKTI', '⇅', 'admin.feeder'),
                     self::item('Campus Bridge', '⌘', 'admin.bridge'),
-                    self::item('Pengumuman', '✉', 'admin.pengumuman'),
+                    self::item('Verifikasi Data IKU', '◈', 'admin.iku-records'),
                     self::item('Log Aktivitas', '◷', 'admin.log'),
+                ],
+            ],
+            [
+                'title' => 'SISTEM',
+                'items' => [
+                    self::item('Pengumuman', '✉', 'admin.pengumuman'),
                     self::item('Pengaturan', '⚙', 'admin.pengaturan'),
                 ],
             ],
