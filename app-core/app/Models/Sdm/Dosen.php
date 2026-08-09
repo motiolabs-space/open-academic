@@ -143,6 +143,58 @@ class Dosen extends Authenticatable implements OAuthenticatable
         return $this->hasMany(BkdLaporan::class);
     }
 
+    /*
+     |---------------------------------------------------------------------
+     | Kepegawaian mendalam
+     |
+     | Typed histories rather than one generic "riwayat" table: a generic one
+     | cannot be validated, cannot be indexed usefully, and cannot be mapped to
+     | a SISTER field without a lookup nobody maintains.
+     |---------------------------------------------------------------------
+     */
+
+    /**
+     * The unit that employs this lecturer.
+     *
+     * Distinct from `prodi`, which says who they teach for. A lecturer seconded
+     * to the library still teaches, and a head count by employer must not
+     * confuse the two.
+     */
+    public function unitKerja(): BelongsTo
+    {
+        return $this->belongsTo(UnitKerja::class, 'unit_kerja_id');
+    }
+
+    public function keluarga(): HasMany
+    {
+        return $this->hasMany(KeluargaDosen::class);
+    }
+
+    public function pangkat(): HasMany
+    {
+        return $this->hasMany(PangkatDosen::class);
+    }
+
+    public function mutasi(): HasMany
+    {
+        return $this->hasMany(MutasiDosen::class);
+    }
+
+    public function penghargaanSanksi(): HasMany
+    {
+        return $this->hasMany(PenghargaanSanksiDosen::class);
+    }
+
+    public function bahasa(): HasMany
+    {
+        return $this->hasMany(BahasaDosen::class);
+    }
+
+    public function organisasi(): HasMany
+    {
+        return $this->hasMany(OrganisasiDosen::class);
+    }
+
     /**
      * Whether this lecturer is obliged to report BKD at all.
      *

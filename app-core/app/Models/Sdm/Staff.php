@@ -10,6 +10,7 @@ use App\Traits\HasLogAktivitas;
 use App\Traits\HasUuid;
 use Database\Factories\StaffFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -64,6 +65,19 @@ class Staff extends Authenticatable implements OAuthenticatable
     public function namaLengkap(): string
     {
         return $this->nama;
+    }
+
+    /**
+     * The work unit this person belongs to.
+     *
+     * The older `unit` text column is still on the row and still holds whatever
+     * was typed there before the org chart existed. It is kept as evidence of
+     * how somebody was filed, not read: everything downstream goes through this
+     * relation.
+     */
+    public function unitKerja(): BelongsTo
+    {
+        return $this->belongsTo(UnitKerja::class, 'unit_kerja_id');
     }
 
     protected static function newFactory(): StaffFactory

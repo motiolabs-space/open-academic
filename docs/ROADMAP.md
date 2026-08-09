@@ -83,7 +83,7 @@ Apa yang ada hari ini, dikelompokkan menurut siapa yang memakainya.
 | Padanan mata kuliah | ✅ | Terarah dan transitif; mendarat di satu tempat — `PrasyaratChecker` |
 | Kurikulum konsentrasi | ✅ | Menggerbang katalog KRS; mata kuliah bersama tetap terbuka untuk semua |
 | Kuliah paket | ✅ | Mendelegasi ke `KrsService`, jadi tak satu pun aturan dilewati |
-| **Evaluasi mahasiswa (peringatan & DO)** | ⬜ | Ada penutupan semester, belum ada aturan evaluasi bertingkat |
+| Evaluasi mahasiswa (peringatan & DO) | ✅ | Sistem menghitung, manusia memutuskan — [`EVALUASI-STUDI.md`](EVALUASI-STUDI.md) |
 | **Monitoring pemakaian ruang** | ⬜ | Bentrok terdeteksi; pemanfaatannya belum terlihat |
 | Cetak KTM, kartu ujian, absensi, jurnal | ✅ | Kolom tanda tangan sengaja kosong; KTM tanpa NIK maupun alamat — [`CETAK.md`](CETAK.md) |
 | Pengaturan dokumen | ✅ | Kop, penandatangan, catatan kaki per jenis. **Bukan** templat Blade yang dapat disunting |
@@ -100,7 +100,7 @@ Apa yang ada hari ini, dikelompokkan menurut siapa yang memakainya.
 | Yudisium & wisuda | ✅ | Judul diambil dari catatan TA, bukan diketik ulang |
 | Surat & SKPI (G3) | ✅ | Verifikasi publik ber-QR yang benar-benar memverifikasi |
 | PMB | ✅ | Generator NIM + provisioning akun |
-| **Poin kemahasiswaan & pelanggaran** | ⬜ | Banyak kampus mewajibkan |
+| Poin kemahasiswaan & pelanggaran | ✅ | Dua buku besar, tidak pernah dijumlahkan — [`POIN-KEMAHASISWAAN.md`](POIN-KEMAHASISWAAN.md) |
 | **Career center** (lowongan, forum & agenda alumni) | ⬜ | Tabel `alumni` ada sebagai dasar |
 | **Tracer study** | 🚫→🟡 | Instrumennya milik Open Campus; di sini hanya `alumni.status_pekerjaan` |
 
@@ -125,8 +125,8 @@ Apa yang ada hari ini, dikelompokkan menurut siapa yang memakainya.
 | Portofolio SISTER (G7) | ✅ | Riwayat pendidikan, jabatan + angka kredit, sertifikasi |
 | BKD (G7) | ✅ | Unsur pendidikan dihitung dari kelas/bimbingan/pengujian/perwalian |
 | EDOM (G6) | ✅ | Anonimitas ditegakkan skema, bukan kedisiplinan |
-| **Kepegawaian mendalam** | ⬜ | Keluarga, pangkat, mutasi, penghargaan & sanksi, bahasa, organisasi |
-| **Manajemen unit kerja** | ⬜ | `staff.unit` masih kolom teks, bukan hirarki terkelola |
+| Kepegawaian mendalam | ✅ | Enam riwayat; hanya pangkat & mutasi yang berat — [`KEPEGAWAIAN.md`](KEPEGAWAIAN.md) |
+| Manajemen unit kerja | ✅ | Pohon dengan penjaga lingkaran; kolom teks lama tetap sebagai bukti — [`UNIT-KERJA.md`](UNIT-KERJA.md) |
 
 ### Integrasi
 
@@ -152,7 +152,7 @@ Apa yang ada hari ini, dikelompokkan menurut siapa yang memakainya.
 | **CBT** | 🚫 | Platform ujian — di luar cakupan, lihat §Sengaja Bukan di Sini |
 | **LMS / forum kelas** | 🚫 | Platform belajar — idem |
 | **Helpdesk** | ⬜ | |
-| **Kuesioner umum** | ⬜ | EDOM bertujuan tetap |
+| Kuesioner umum | ✅ | Dua tabel jawaban; anonimitas jadi properti skema — [`KUESIONER.md`](KUESIONER.md) |
 | **Aplikasi mobile native** | ⬜ | Web responsif saja |
 | **2FA staf** | ⬜ | |
 
@@ -175,13 +175,6 @@ akademik ada di tabel berikutnya.
 | Modul | Poros | Beratnya |
 |---|---|---|
 | **Payment gateway aktif** | Keuangan | **Besar** — kita hanya punya pencatatan manual |
-| **Padanan mata kuliah** | Perkuliahan | Sedang — dibutuhkan tiap kurikulum berganti |
-| **Kurikulum konsentrasi** | Perkuliahan | Sedang |
-| **Kuliah paket** | Perkuliahan | Sedang — normal di vokasi/diploma |
-| **Evaluasi mahasiswa (peringatan & DO)** | Mahasiswa | Sedang |
-| **Poin kemahasiswaan & pelanggaran** | Mahasiswa | Sedang — banyak kampus mewajibkan |
-| **Kepegawaian mendalam & unit kerja** | Dosen | Sedang — sebagian ditutup G7 |
-| **Kuesioner umum** | Perkuliahan | Sedang — kita hanya punya EDOM |
 | **Komparasi data SIAKAD ↔ Neo Feeder** | Pelaporan | Sedang |
 | **Denda keterlambatan** | Keuangan | Kecil–sedang |
 | **Aplikasi mobile native** | Semua | Sedang — web responsif sudah jalan |
@@ -265,13 +258,16 @@ tetap **payment gateway**, yang terhalang kredensial merchant.
 
 ### P2 — memperdalam data mahasiswa & dosen
 
-| # | Pekerjaan | Kenapa |
+| # | Pekerjaan | Hasil |
 |---|---|---|
-| 9 | **Evaluasi mahasiswa (peringatan & DO)** | Aturan bertingkat atas IPK/SKS per evaluasi. Penutupan semester sudah membekukan angkanya — yang belum ada aturan yang membacanya, dan surat peringatan yang mengikutinya. `SuratService` sudah menyediakan penerbitannya |
-| 10 | **Poin kemahasiswaan & pelanggaran** | SKPI sudah menyediakan tempat menampilkan prestasi; poin dan pelanggaran melengkapi sisi lainnya |
-| 11 | **Kepegawaian mendalam** | Keluarga, pangkat, mutasi, penghargaan & sanksi, bahasa, organisasi — melanjutkan tiga tabel riwayat dari G7 |
-| 12 | **Manajemen unit kerja** | `staff.unit` masih kolom teks. Hirarki terkelola dibutuhkan disposisi dan pelaporan |
-| 13 | **Kuesioner umum** | Generalisasi mesin EDOM **tanpa merusak anonimitasnya** — tabel jawaban yang tidak punya penghubung ke pengisi adalah properti yang harus dipertahankan, bukan disederhanakan |
+| ~~9~~ | ~~**Evaluasi mahasiswa (peringatan & DO)**~~ | ✅ 18 Agustus 2026 — sistem menghitung, manusia memutuskan; cuti tidak dihitung sebagai semester tempuh. [`EVALUASI-STUDI.md`](EVALUASI-STUDI.md) |
+| ~~10~~ | ~~**Poin kemahasiswaan & pelanggaran**~~ | ✅ 18 Agustus 2026 — dua buku besar yang tidak pernah dijumlahkan. [`POIN-KEMAHASISWAAN.md`](POIN-KEMAHASISWAAN.md) |
+| ~~12~~ | ~~**Manajemen unit kerja**~~ | ✅ 18 Agustus 2026 — dikerjakan **sebelum** #11 karena mutasi merujuk unit. [`UNIT-KERJA.md`](UNIT-KERJA.md) |
+| ~~11~~ | ~~**Kepegawaian mendalam**~~ | ✅ 18 Agustus 2026 — enam riwayat; hanya pangkat & mutasi yang punya aturan. [`KEPEGAWAIAN.md`](KEPEGAWAIAN.md) |
+| ~~13~~ | ~~**Kuesioner umum**~~ | ✅ 18 Agustus 2026 — dua tabel jawaban, karena anonimitas harus properti skema. [`KUESIONER.md`](KUESIONER.md) |
+
+**P2 tuntas.** Yang tersisa P3 dan satu-satunya kekalahan kompetitif di dalam
+cakupan: **payment gateway**, terhalang kredensial merchant.
 
 ### P3 — pelaporan & platform
 

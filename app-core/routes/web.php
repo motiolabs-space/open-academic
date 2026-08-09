@@ -420,6 +420,25 @@ Route::middleware(['auth:staff', 'term.active'])->prefix('admin')->name('admin.'
     Route::put('/pengaturan/dokumen', [Admin\PengaturanController::class, 'simpanDokumen'])
         ->name('pengaturan.dokumen');
 
+    Route::get('/unit-kerja', [Admin\UnitKerjaController::class, 'index'])->name('unit-kerja');
+    Route::post('/unit-kerja', [Admin\UnitKerjaController::class, 'simpan'])->name('unit-kerja.simpan');
+    Route::put('/unit-kerja/{unit}', [Admin\UnitKerjaController::class, 'perbarui'])->name('unit-kerja.perbarui');
+    Route::post('/unit-kerja/{unit}/nonaktifkan', [Admin\UnitKerjaController::class, 'nonaktifkan'])
+        ->name('unit-kerja.nonaktifkan');
+    Route::post('/unit-kerja/staf/{staf}', [Admin\UnitKerjaController::class, 'pindahkanStaf'])
+        ->name('unit-kerja.pindah-staf');
+
+    Route::get('/poin-kemahasiswaan', [Admin\PoinKemahasiswaanController::class, 'index'])
+        ->name('poin-kemahasiswaan');
+    Route::post('/poin-kemahasiswaan/kategori', [Admin\PoinKemahasiswaanController::class, 'simpanKategori'])
+        ->name('poin-kemahasiswaan.kategori');
+    Route::post('/poin-kemahasiswaan/catat', [Admin\PoinKemahasiswaanController::class, 'catat'])
+        ->name('poin-kemahasiswaan.catat');
+    Route::post('/poin-kemahasiswaan/{poin}/verifikasi', [Admin\PoinKemahasiswaanController::class, 'verifikasi'])
+        ->name('poin-kemahasiswaan.verifikasi');
+    Route::post('/poin-kemahasiswaan/{poin}/tolak', [Admin\PoinKemahasiswaanController::class, 'tolak'])
+        ->name('poin-kemahasiswaan.tolak');
+
     Route::get('/evaluasi-studi', [Admin\EvaluasiStudiController::class, 'index'])->name('evaluasi-studi');
     Route::post('/evaluasi-studi/jalankan', [Admin\EvaluasiStudiController::class, 'jalankan'])
         ->name('evaluasi-studi.jalankan');
