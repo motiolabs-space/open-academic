@@ -108,6 +108,7 @@ final class Navigation
                     self::item('Data Mahasiswa', '○', 'admin.mahasiswa'),
                     self::item('Kepegawaian Dosen', '◎', 'admin.dosen'),
                     self::item('Akun Staf', '◉', 'admin.staff'),
+                    self::item('Unit Kerja', '⌗', 'admin.unit-kerja'),
                     self::item('PMB', '◇', 'admin.pmb'),
                     self::item('Cuti Mahasiswa', '◐', 'admin.cuti'),
                     self::item('Tugas Akhir', '✍', 'admin.tugas-akhir'),
@@ -124,6 +125,7 @@ final class Navigation
                     // Sesudah penutupan semester, karena penutupan itulah yang
                     // membekukan angka yang dibaca evaluasi.
                     self::item('Evaluasi Studi', '⚖', 'admin.evaluasi-studi'),
+                    self::item('Poin Kemahasiswaan', '★', 'admin.poin-kemahasiswaan'),
                 ],
             ],
             [

@@ -4,6 +4,92 @@
 
 ---
 
+## Sesi 28 — 2026-08-18 · P2 Tuntas: Evaluasi, Poin, Unit Kerja, Kepegawaian, Kuesioner
+
+Lima modul, dan tiga di antaranya memutuskan hal yang sama: **sistem
+mengamati, orang memutuskan.**
+
+### Evaluasi studi — enum tanpa case "putus studi"
+
+`HasilEvaluasi` sengaja tidak punya nilai bernama DO. Yang ada `TidakMemenuhi`.
+Sistem boleh mengamati bahwa seorang mahasiswa di bawah semua ambang; pengamatan
+itu tetap bukan keputusan mengakhiri pendidikan seseorang.
+
+Sapuan selalu menulis `keputusan = menunggu` dan tidak pernah menyentuh
+`mahasiswa.status`. Hanya `putuskan()` yang bisa, dan ia menuntut staf **plus
+alasan tertulis** — karena kampus rutin memutuskan melawan aturannya sendiri,
+dan memang seharusnya.
+
+Semester cuti tidak dihitung sebagai semester tempuh. `status_mahasiswa.semester_ke`
+menghitung semester kalender (konvensi PDDIKTI), jadi evaluasi menurunkannya
+sendiri. Melepas filternya membuat dua tes gagal.
+
+Ambang ikut dibekukan, bukan hanya angkanya: "24 SKS, gagal" kehilangan makna
+begitu kampus menurunkan syaratnya jadi 20.
+
+### Poin kemahasiswaan — dua buku besar yang tidak pernah dijumlahkan
+
+Menjumlahkan prestasi dan pelanggaran berarti membiarkan mahasiswa menebus
+sanksi dengan kemenangan lomba. Tidak ada metode yang mengembalikan selisihnya,
+dan ada tes yang memeriksa daftar metode service serta menolak nama seperti
+`bersih`, `total`, atau `saldo`.
+
+Katalog di basis data (panjang, direvisi tiap tahun); ambang di config (angka
+tunggal, keputusan kebijakan). Nilai poin disalin ke tiap catatan.
+
+### Unit kerja — kolom teks bebas yang menghitung tiga kantor jadi satu
+
+`staff.unit` berisi `BAAK`, `Baak`, `Bag. Akademik`. Kolomnya **tidak dihapus** —
+ia bukti bagaimana seseorang dulu diarsipkan. Backfill sengaja bodoh: tebakan
+salah tidak terlihat dan permanen, baris duplikat terlihat dan hilang satu klik.
+
+Pohon berbasis penunjuk induk punya tepat satu mode kegagalan struktural:
+lingkaran, dan ia senyap. Ditolak saat ditulis; melepas penjaganya membuat dua
+tes gagal.
+
+Dikerjakan **sebelum** #11 karena mutasi merujuk unit.
+
+### Kepegawaian mendalam — hanya dua yang punya aturan
+
+Keluarga, bahasa, organisasi, penghargaan dan sanksi adalah riwayat datar.
+Pangkat dan mutasi berbeda: masing-masing punya nilai berlaku yang dibaca hal
+lain.
+
+Mutasi mengambil unit asal dari penunjuk, bukan formulir — formulir bisa dikirim
+setelah orang lain memindahkannya. Dan keluar mengosongkan unitnya, karena itulah
+cara sebuah rekap terus menghitung orang yang sudah mengundurkan diri.
+
+### Kuesioner umum — anonimitas sebagai properti skema
+
+Yang paling dijaga. Anonimitas EDOM struktural: tidak ada kolom yang bisa
+menunjuk pengisi.
+
+Godaan jelasnya satu tabel jawaban dengan kolom responden nullable. Dengan bentuk
+itu anonimitas jadi properti **baris**, dan satu bug atau satu niat baik "ayo isi
+datanya siapa yang mengisi" mengakhirinya diam-diam, untuk data yang sudah
+terkumpul di bawah sebuah janji.
+
+Dua tabel jawaban. Tesnya memeriksa **daftar kolom**, bukan perilaku.
+
+### Dua tes saya yang tidak memaku apa pun
+
+Pola yang berulang cukup sering untuk dicatat:
+
+- **Poin**: versi pertama memberi 60 prestasi + 100 pelanggaran lalu memastikan
+  syarat 50 terpenuhi — lolos juga tanpa pemisahan, karena 160 pun lewat 50.
+  Arah berbahayanya justru pelanggaran ikut *menggenapi* syarat.
+- **Evaluasi**: "tidak menimpa keputusan" memeriksa kolom yang `updateOrCreate`
+  memang tidak sentuh, jadi lolos meski penjaganya dilumpuhkan.
+
+Keduanya ditulis ulang dan diverifikasi dengan melumpuhkan penjaganya.
+
+### Satu jebakan model
+
+`PoinKategori::create()` mengembalikan instance yang `is_active`-nya masih null —
+defaultnya milik kolom, bukan model. Baris berikutnya melihat kategori baru
+sebagai tidak aktif. Diperbaiki dengan `$attributes`.
+
+---
 ## Sesi 27 — 2026-08-17 · Cetak & Pengaturan Dokumen — P1 Perkuliahan Tuntas
 
 Dua sisa P1 sekaligus, dan urutannya menentukan: **pengaturan dokumen dulu**.

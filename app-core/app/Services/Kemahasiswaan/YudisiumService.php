@@ -7,6 +7,7 @@ namespace App\Services\Kemahasiswaan;
 use App\DTOs\Akademik\PerolehanBaris;
 use App\DTOs\Kemahasiswaan\SyaratKelulusan;
 use App\Enums\GradeLetter;
+use App\Enums\JenisPoin;
 use App\Enums\StudentStatus;
 use App\Enums\TugasAkhirStatus;
 use App\Exceptions\AturanAkademikException;
@@ -15,6 +16,7 @@ use App\Models\Akademik\Prodi;
 use App\Models\Akademik\TahunAkademik;
 use App\Models\Kemahasiswaan\Alumni;
 use App\Models\Kemahasiswaan\Mahasiswa;
+use App\Models\Kemahasiswaan\PoinMahasiswa;
 use App\Models\Kemahasiswaan\Yudisium;
 use App\Models\Keuangan\Tagihan;
 use App\Models\Sdm\Staff;
@@ -115,6 +117,20 @@ class YudisiumService
             ->get()
             ->keyBy('mahasiswa_id');
 
+        /*
+         * Verified achievement points, one grouped query for the cohort.
+         *
+         * Only the achievement ledger is read. Violations are a separate record
+         * with their own consequences, and subtracting them here would let a
+         * student earn their way out of a sanction.
+         */
+        $poinPrestasi = PoinMahasiswa::query()
+            ->whereIn('mahasiswa_id', $ids)
+            ->diakui()
+            ->jenis(JenisPoin::Prestasi)
+            ->groupBy('mahasiswa_id')
+            ->pluck(DB::raw('SUM(poin)'), 'mahasiswa_id');
+
         return $mahasiswa->mapWithKeys(fn (Mahasiswa $m): array => [
             $m->id => $this->susunSyarat(
                 $m,
@@ -122,6 +138,7 @@ class YudisiumService
                 (int) ($tunggakanPerMahasiswa[$m->id] ?? 0),
                 $adaNilaiBelumFinal->has($m->id),
                 $tugasAkhirSelesai->get($m->id),
+                (int) ($poinPrestasi[$m->id] ?? 0),
             ),
         ]);
     }
@@ -137,6 +154,7 @@ class YudisiumService
         int $tunggakan,
         bool $belumFinal,
         ?TugasAkhir $tugasAkhir = null,
+        int $poinPrestasi = 0,
     ): SyaratKelulusan {
         $angka = $this->perolehan->ringkas($perolehan);
 
@@ -169,6 +187,25 @@ class YudisiumService
             ]]
             : [];
 
+        /*
+         * Poin kemahasiswaan (SKKM).
+         *
+         * Omitted entirely when the campus sets no minimum, rather than shown
+         * as an automatic pass — the same reasoning as the final project above.
+         * A green row for a requirement that never existed makes
+         * persenSelesai() lie and invites somebody to trust it.
+         */
+        $poinSyarat = (int) config('kemahasiswaan.prestasi.minimum_lulus', 0);
+
+        $syaratPoin = $poinSyarat > 0
+            ? [[
+                'kode' => 'poin_kemahasiswaan',
+                'label' => 'Poin kemahasiswaan',
+                'terpenuhi' => $poinPrestasi >= $poinSyarat,
+                'keterangan' => "{$poinPrestasi} dari {$poinSyarat} poin terverifikasi",
+            ]]
+            : [];
+
         return new SyaratKelulusan(
             sksLulus: $sks,
             sksSyarat: $sksSyarat,
@@ -178,6 +215,7 @@ class YudisiumService
             adaNilaiBelumFinal: $belumFinal,
             rincian: [
                 ...$syaratTugasAkhir,
+                ...$syaratPoin,
                 [
                     'kode' => 'sks',
                     'label' => 'Total SKS lulus',
