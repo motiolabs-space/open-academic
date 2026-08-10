@@ -298,7 +298,7 @@ data yang harus punya satu pemilik.
 | **CBT / platform ujian** | Produk tersendiri — sambungkan lewat Bridge |
 | **LMS / e-learning, forum kelas, feed** | Open Campus, Moodle, atau LMS mana pun |
 | Tracer study, jejaring alumni, career center | Open Campus |
-| Dasbor 12 IKU, borang akreditasi, SPMI | Open Campus — di sini hanya faktanya |
+| Dasbor 12 IKU, borang akreditasi, SPMI penuh | Open Campus — di sini hanya faktanya. Lapisan **perencanaannya** (sasaran unit + cascade) dibangun di sini sejak 11 Agu 2026; lihat [`KINERJA.md`](KINERJA.md) |
 | Perpustakaan | SLiMS atau sejenisnya |
 | Payroll, presensi pegawai | HRIS |
 | Inventaris, sarpras, aset | Sistem aset |

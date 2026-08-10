@@ -204,6 +204,11 @@ final class Navigation
             [
                 'title' => 'SISTEM',
                 'items' => [
+                    // Lapisan perencanaan di atas struktur organisasi. Bukan
+                    // dasbor IKU dan bukan SPMI — keduanya milik Open Campus,
+                    // lihat docs/KINERJA.md.
+                    self::item('Rencana Kinerja', '◎', 'admin.kinerja'),
+
                     self::item('Pengumuman', '✉', 'admin.pengumuman'),
                     self::item('Pengaturan', '⚙', 'admin.pengaturan'),
                 ],
