@@ -4,6 +4,93 @@
 
 ---
 
+## Sesi 29 — 2026-08-11 · Rencana Kinerja & SPMI — dan sebuah batas yang turun satu tingkat
+
+Dua modul di atas pohon unit kerja. Yang menarik bukan kodenya, melainkan
+keputusan tentang **apa yang tidak dibangun.**
+
+### IKU, SPMI, dan OKR adalah tiga bentuk, bukan satu
+
+Pembedanya satu pertanyaan: **boleh tidak definisinya disunting?**
+
+| | Definisi | Kalau disatukan |
+|---|---|---|
+| IKU | Ditetapkan kementerian, tidak boleh disentuh | Seseorang menyunting rumus IKU dari layar OKR, dan pelaporan ke kementerian rusak tanpa ada yang tahu |
+| SPMI | Ditetapkan kampus, boleh direvisi antar-siklus | |
+| OKR | Disusun ulang tiap periode | |
+
+Karena itu yang dibangun adalah lapisan **perencanaan** (sasaran per unit +
+cascade + target/realisasi), bukan dasbor IKU.
+
+### Empat dari delapan IKU bukan data aplikasi ini
+
+Dipetakan satu per satu ke pemilik datanya. Keterserapan lulusan, kemanfaatan
+riset, kemitraan, dan pemeringkatan internasional tidak pernah lewat sini —
+**itulah alasan batas dasbor bertahan**, dan alasan itu berlaku juga untuk borang
+akreditasi.
+
+### Batas SPMI: bukan digeser, tapi diletakkan lebih tepat
+
+Dua dokumen yang baru ditulis di sesi ini menempatkan SPMI di Open Campus. Itu
+disebutkan lebih dulu, bukan dilewati.
+
+Penyelesaiannya: satu kata "SPMI" ternyata menutupi dua hal. **AMI** bersubjek
+unit kerja dan temuannya kualitatif — dibangun di sini. **Borang akreditasi**
+butuh data penelitian, PkM, keuangan, alumni — tetap di sana.
+
+### Yang membuatnya audit, bukan daftar tugas
+
+Tiga penolakan:
+
+1. **Auditor tidak boleh mengaudit unitnya sendiri.** Yang mengaudit kantornya
+   sendiri melaporkan pekerjaannya sendiri — dan temuan yang ia angkat terhadap
+   dirinya adalah temuan yang boleh ia tutup sendiri.
+2. **Temuan tertutup tidak dapat disunting.** Temuan yang bisa diubah setelah
+   ditutup adalah temuan yang bisa dihaluskan menjelang asesmen lapangan.
+3. **Tindak lanjut tidak diverifikasi pencatatnya.** Perbaikan yang diverifikasi
+   pelaksananya hanya pernyataan kedua dari orang yang sama.
+
+Tenggat diambil dari beratnya temuan, bukan dari formulir — mayor 30 hari, minor
+90. Observasi boleh ditutup tanpa perbaikan, karena mewajibkannya membuat auditor
+berhenti menuliskan observasi.
+
+### Verifikasi yang hampir gagal — untuk keempat kalinya
+
+Pembuktian ketiga penjaga di atas menghasilkan **`ganti=0` untuk ketiganya**:
+substitusinya tidak cocok sama sekali, dan ketiga "lolos" itu tidak berarti
+apa-apa. Pemeriksaan jumlah penggantian yang dipasang sejak modul kinerja
+menangkap ketiganya sekaligus.
+
+Ini pola yang sama dengan dua kerusakan di Sesi 28 (`KepegawaianService` yang
+tertimpa, `Navigation.php` yang terpotong): **alat melapor sukses untuk pekerjaan
+yang tidak dilakukannya.** `php -l` bilang "No syntax errors" pada berkas yang
+kehilangan satu metode; `sed` mengembalikan 0 tanpa mengeluh.
+
+### Satu N+1 yang hanya ditangkap angka
+
+Layar `/admin/spmi` menghabiskan **26 kueri untuk 3 temuan**. Sebabnya
+`rekapTemuan()` dan `temuanTerbuka()` menjalankan kueri yang identik —
+duplikasi yang sama persis dengan `/dosen/rps` di Sesi 25. Dipecah jadi
+`rekapDari(Collection)`; turun ke **21**, dan anggarannya dipaku di situ.
+
+`preventLazyLoading` tidak menangkapnya: tidak ada yang di-*lazy load*, aplikasi
+hanya bertanya dua kali.
+
+### Tiga layar yang selama ini tanpa data demo
+
+`unit-kerja`, `kinerja`, dan `spmi` tidak punya satu baris pun di
+`DemoCampusSeeder`, jadi ketiganya tidak pernah masuk `SmokeLayarTest` —
+anggaran kueri di atas tabel kosong tidak menguji apa pun. Ditambah
+`MutuSeeder`, dan ketiganya dipaku: **12 / 16 / 21**.
+
+Auditnya sengaja ditangkap di tengah siklus: satu temuan mayor lewat tenggat,
+satu minor yang perbaikannya menunggu verifikasi orang kedua, satu observasi
+yang sudah ditutup tanpa perbaikan sama sekali.
+
+**894 tes hijau (1.924 asersi)**, naik dari 875.
+
+---
+
 ## Sesi 28 — 2026-08-18 · P2 Tuntas: Evaluasi, Poin, Unit Kerja, Kepegawaian, Kuesioner
 
 Lima modul, dan tiga di antaranya memutuskan hal yang sama: **sistem

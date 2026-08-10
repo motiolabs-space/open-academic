@@ -42,16 +42,16 @@ tersendiri dengan siklus hidup, beban, dan model datanya sendiri — lihat
 
 | | |
 |---|---|
-| Tabel domain | 88 |
-| Migrasi | 40 |
-| Model Eloquent | 68 |
-| Enum | 44 |
-| Service | 69 |
+| Tabel domain | 109 |
+| Migrasi | 48 |
+| Model Eloquent | 94 |
+| Enum | 54 |
+| Service | 85 |
 | Policy | 7 |
-| Layar (rute GET berportal) | 83 |
-| Endpoint Campus Bridge | 11 |
-| Perintah artisan | 8 |
-| **Tes Pest** | **743 hijau (1.632 asersi)** |
+| Layar (rute GET berportal) | 94 |
+| Endpoint Campus Bridge | 14 |
+| Perintah artisan | 10 |
+| **Tes Pest** | **894 hijau (1.924 asersi)** |
 
 Seluruh fase (0–5), SSO OAuth2, tujuh kesenjangan SIAKAD (G1–G7), dan integrasi
 akuntansi sudah selesai. `php artisan migrate:fresh --seed` membangun kampus demo
@@ -127,6 +127,8 @@ Apa yang ada hari ini, dikelompokkan menurut siapa yang memakainya.
 | EDOM (G6) | ✅ | Anonimitas ditegakkan skema, bukan kedisiplinan |
 | Kepegawaian mendalam | ✅ | Enam riwayat; hanya pangkat & mutasi yang berat — [`KEPEGAWAIAN.md`](KEPEGAWAIAN.md) |
 | Manajemen unit kerja | ✅ | Pohon dengan penjaga lingkaran; kolom teks lama tetap sebagai bukti — [`UNIT-KERJA.md`](UNIT-KERJA.md) |
+| Rencana kinerja | ✅ | Sasaran per unit + cascade; realisasi dihitung bila datanya ada di sini — [`KINERJA.md`](KINERJA.md) |
+| SPMI — Audit Mutu Internal | ✅ | Standar + AMI + temuan + tindak lanjut. **Borang akreditasi tetap di Open Campus** — [`SPMI.md`](SPMI.md) |
 
 ### Integrasi
 
@@ -298,12 +300,27 @@ data yang harus punya satu pemilik.
 | **CBT / platform ujian** | Produk tersendiri — sambungkan lewat Bridge |
 | **LMS / e-learning, forum kelas, feed** | Open Campus, Moodle, atau LMS mana pun |
 | Tracer study, jejaring alumni, career center | Open Campus |
-| Dasbor 12 IKU, borang akreditasi, SPMI penuh | Open Campus — di sini hanya faktanya. Lapisan **perencanaannya** (sasaran unit + cascade) dibangun di sini sejak 11 Agu 2026; lihat [`KINERJA.md`](KINERJA.md) |
+| Dasbor 12 IKU, **borang akreditasi (LKPS/LED)** | Open Campus — di sini hanya faktanya. Empat dari delapan IKU pun bukan data aplikasi ini, dan itulah alasan batasnya bertahan; lihat [`KINERJA.md`](KINERJA.md) |
 | Perpustakaan | SLiMS atau sejenisnya |
 | Payroll, presensi pegawai | HRIS |
 | Inventaris, sarpras, aset | Sistem aset |
 | Buku besar & jurnal akuntansi | Sistem akuntansi; di sini hanya tagihan mahasiswa dan jembatannya |
 | Backup & pemulihan | Infrastruktur, bukan aplikasi |
+
+### Batas SPMI yang turun satu tingkat, 11 Agustus 2026
+
+Baris ini dulu berbunyi "SPMI penuh". Ternyata satu kata itu menutupi dua hal
+yang bentuk datanya berbeda, jadi batasnya diletakkan lebih tepat — **bukan
+digeser**:
+
+| | Subjeknya | Datanya | Di mana |
+|---|---|---|---|
+| **AMI** — audit mutu internal | Unit kerja | Kualitatif: temuan, akar masalah, tindak lanjut | **Open Academic** sejak 11 Agu 2026 |
+| **Borang akreditasi** | Institusi / prodi | Kuantitatif lintas domain: penelitian, PkM, keuangan, alumni | Open Campus, tetap |
+
+Subjek AMI adalah pohon unit kerja — yang sudah dimiliki aplikasi ini, dan yang
+tidak dimiliki Open Campus. Borang meminta angka yang tidak pernah lewat sini.
+Lihat [`SPMI.md`](SPMI.md).
 
 ### Kenapa CBT dan LMS tidak akan masuk
 
