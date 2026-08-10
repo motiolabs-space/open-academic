@@ -181,6 +181,13 @@ it('membuka layar admin dalam anggaran kueri', function (string $url, int $angga
     ['/admin/bkd', 20],
     ['/admin/akuntansi', 16],
     ['/admin/kurikulum-lanjutan', 18],
+    ['/admin/unit-kerja', 12],
+    ['/admin/kinerja', 16],
+
+    // 21 sesudah rekap berhenti mengulang kueri daftarnya. Sebelum itu 26 —
+    // duplikasi yang sama seperti pada /dosen/rps, dan hanya angka inilah yang
+    // menangkapnya.
+    ['/admin/spmi', 21],
     ['/notifikasi', 25],
 ]);
 

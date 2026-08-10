@@ -17,6 +17,7 @@ use Database\Seeders\Demo\KeuanganSeeder;
 use Database\Seeders\Demo\KonversiSeeder;
 use Database\Seeders\Demo\KurikulumLanjutanSeeder;
 use Database\Seeders\Demo\MasterAkademikSeeder;
+use Database\Seeders\Demo\MutuSeeder;
 use Database\Seeders\Demo\NotifikasiSeeder;
 use Database\Seeders\Demo\PerkuliahanSeeder;
 use Database\Seeders\Demo\PmbSeeder;
@@ -117,6 +118,13 @@ class DemoCampusSeeder extends Seeder
 
             PmbSeeder::class,
             IntegrasiSeeder::class,
+
+            // Sesudah SdmSeeder dan RiwayatAkademikSeeder: pohon unit kerja
+            // menempatkan staf yang sudah ada, dan indikator kinerja yang
+            // dihitung menyusuri mahasiswa serta nilai yang sudah terisi.
+            // Menjalankannya lebih awal menghasilkan rencana yang realisasinya
+            // nol — angka yang tidak menggambarkan apa pun.
+            MutuSeeder::class,
 
             // Sesudah KeuanganSeeder dan BeasiswaSeeder: outbox akuntansi
             // menyusuri tagihan dan pembayaran yang sudah ada, jadi keduanya

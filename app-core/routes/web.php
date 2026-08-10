@@ -435,6 +435,26 @@ Route::middleware(['auth:staff', 'term.active'])->prefix('admin')->name('admin.'
     Route::post('/kinerja/ukuran/{ukuran}/capaian', [Admin\KinerjaController::class, 'catatCapaian'])
         ->name('kinerja.capaian');
 
+    /*
+     * SPMI — Audit Mutu Internal. Borang akreditasi tidak di sini; ia butuh data
+     * penelitian, PkM dan keuangan yang aplikasi ini tidak punya. Lihat docs/SPMI.md.
+     */
+    Route::get('/spmi', [Admin\SpmiController::class, 'index'])->name('spmi');
+    Route::post('/spmi/standar', [Admin\SpmiController::class, 'simpanStandar'])->name('spmi.standar');
+    Route::post('/spmi/audit', [Admin\SpmiController::class, 'rencanakanAudit'])->name('spmi.audit');
+    Route::post('/spmi/audit/{audit}/mulai', [Admin\SpmiController::class, 'mulaiAudit'])
+        ->name('spmi.audit.mulai');
+    Route::post('/spmi/audit/{audit}/tutup', [Admin\SpmiController::class, 'tutupAudit'])
+        ->name('spmi.audit.tutup');
+    Route::post('/spmi/audit/{audit}/temuan', [Admin\SpmiController::class, 'catatTemuan'])
+        ->name('spmi.audit.temuan');
+    Route::post('/spmi/temuan/{temuan}/tindak-lanjut', [Admin\SpmiController::class, 'catatTindakLanjut'])
+        ->name('spmi.temuan.tindak');
+    Route::post('/spmi/temuan/{temuan}/tutup', [Admin\SpmiController::class, 'tutupTemuan'])
+        ->name('spmi.temuan.tutup');
+    Route::post('/spmi/tindak-lanjut/{tindak}/verifikasi', [Admin\SpmiController::class, 'verifikasiTindakLanjut'])
+        ->name('spmi.tindak.verifikasi');
+
     Route::get('/unit-kerja', [Admin\UnitKerjaController::class, 'index'])->name('unit-kerja');
     Route::post('/unit-kerja', [Admin\UnitKerjaController::class, 'simpan'])->name('unit-kerja.simpan');
     Route::put('/unit-kerja/{unit}', [Admin\UnitKerjaController::class, 'perbarui'])->name('unit-kerja.perbarui');

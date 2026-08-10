@@ -204,10 +204,17 @@ final class Navigation
             [
                 'title' => 'SISTEM',
                 'items' => [
-                    // Lapisan perencanaan di atas struktur organisasi. Bukan
-                    // dasbor IKU dan bukan SPMI — keduanya milik Open Campus,
-                    // lihat docs/KINERJA.md.
+                    /*
+                     * Lapisan mutu & perencanaan di atas struktur organisasi.
+                     *
+                     * Yang di sini adalah rencana kinerja dan Audit Mutu
+                     * Internal — keduanya bersubjek unit kerja. Dasbor IKU dan
+                     * borang akreditasi tidak di sini: keduanya butuh data
+                     * penelitian, PkM dan keuangan yang aplikasi ini tidak
+                     * punya. Lihat docs/KINERJA.md dan docs/SPMI.md.
+                     */
                     self::item('Rencana Kinerja', '◎', 'admin.kinerja'),
+                    self::item('SPMI & Audit Mutu', '⚖', 'admin.spmi'),
 
                     self::item('Pengumuman', '✉', 'admin.pengumuman'),
                     self::item('Pengaturan', '⚙', 'admin.pengaturan'),
