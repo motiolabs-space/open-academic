@@ -420,6 +420,21 @@ Route::middleware(['auth:staff', 'term.active'])->prefix('admin')->name('admin.'
     Route::put('/pengaturan/dokumen', [Admin\PengaturanController::class, 'simpanDokumen'])
         ->name('pengaturan.dokumen');
 
+    Route::get('/kinerja', [Admin\KinerjaController::class, 'index'])->name('kinerja');
+    Route::post('/kinerja/periode', [Admin\KinerjaController::class, 'simpanPeriode'])->name('kinerja.periode');
+    Route::post('/kinerja/periode/{periode}/jalankan', [Admin\KinerjaController::class, 'jalankan'])
+        ->name('kinerja.jalankan');
+    Route::post('/kinerja/periode/{periode}/kunci', [Admin\KinerjaController::class, 'kunci'])
+        ->name('kinerja.kunci');
+    Route::post('/kinerja/periode/{periode}/ukur', [Admin\KinerjaController::class, 'ukurOtomatis'])
+        ->name('kinerja.ukur');
+    Route::post('/kinerja/periode/{periode}/sasaran', [Admin\KinerjaController::class, 'simpanSasaran'])
+        ->name('kinerja.sasaran');
+    Route::post('/kinerja/sasaran/{sasaran}/ukuran', [Admin\KinerjaController::class, 'simpanUkuran'])
+        ->name('kinerja.ukuran');
+    Route::post('/kinerja/ukuran/{ukuran}/capaian', [Admin\KinerjaController::class, 'catatCapaian'])
+        ->name('kinerja.capaian');
+
     Route::get('/unit-kerja', [Admin\UnitKerjaController::class, 'index'])->name('unit-kerja');
     Route::post('/unit-kerja', [Admin\UnitKerjaController::class, 'simpan'])->name('unit-kerja.simpan');
     Route::put('/unit-kerja/{unit}', [Admin\UnitKerjaController::class, 'perbarui'])->name('unit-kerja.perbarui');
