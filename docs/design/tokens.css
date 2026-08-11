@@ -1,0 +1,237 @@
+/*
+| ===========================================================================
+| Open Academic — "Midnight Executive" design tokens
+| ===========================================================================
+|
+| Disalin dari app-core/resources/css/app.css. Berkas ITU tetap sumber
+| kebenaran; berkas ini salinan untuk dikirim ke proyek lain.
+|
+| Tailwind 4. Tempel isi berkas ini ke `src/app/globals.css` (Next.js) atau
+| berkas CSS masuk mana pun, langsung di bawah `@import 'tailwindcss'`.
+|
+| ---------------------------------------------------------------------------
+| TERANG SAJA — DISENGAJA
+| ---------------------------------------------------------------------------
+| Tidak ada mode gelap, dan token di bawah nilai langsung (bukan `var()` di
+| atas :root/.dark). Kalau proyek tujuan sudah memasang next-themes atau
+| sejenisnya, COPOT lebih dulu — menyisakannya berarti tombol tema yang
+| mengubah dua warna dan meninggalkan tiga puluh sisanya.
+|
+| Menambahkan mode gelap belakangan berarti menulis ulang seluruh blok @theme
+| jadi dua lapis. Itu pekerjaan sekali duduk, tapi bukan tambalan.
+|
+| ---------------------------------------------------------------------------
+| ATURAN TUNGGAL YANG MENJAGA SEMUANYA
+| ---------------------------------------------------------------------------
+| Jangan pernah menulis nilai hex di dalam komponen. Selalu token.
+| Warna yang ditulis langsung tidak akan ikut ketika paletnya bergeser, dan
+| tidak ada yang menemukannya sampai satu layar terlihat berbeda sendiri.
+*/
+
+@theme {
+    --font-sans: 'Public Sans', ui-sans-serif, system-ui, sans-serif;
+    --font-serif: 'Source Serif 4', ui-serif, Georgia, serif;
+
+    /* Merek — navy fondasi, emas dipakai hemat */
+    --color-navy: #1e2761;
+    --color-navy-hover: #171e4e;
+    --color-navy-soft: #3a4478;
+    --color-gold: #c9a961;
+    --color-gold-hover: #bd9a4e;
+
+    /* Permukaan */
+    --color-canvas: #f8f8f6;
+    --color-surface: #ffffff;
+    --color-zebra: #fbfbf9;
+    --color-highlight: #f4f1e8;
+
+    /* Tinta */
+    --color-ink: #24262e;
+    --color-ink-muted: #6e7078;
+    --color-ink-faint: #9a9ca4;
+
+    /* Garis */
+    --color-line: #e6e4dc;
+    --color-line-input: #d6d3c8;
+
+    /*
+     * Semantik — sengaja diredam.
+     *
+     * Bukan estetika. Tabel penuh chip berwarna jenuh terbaca seperti dasbor
+     * konsumer; ini catatan resmi, dan warnanya tidak boleh berteriak lebih
+     * keras daripada datanya. Tiap nada punya tiga token — teks, latar, garis —
+     * supaya chip dan alert tidak pernah mengarang kombinasi sendiri.
+     */
+    --color-success: #2f7a52;
+    --color-success-bg: #e9f2ec;
+    --color-success-line: #c7decf;
+
+    --color-warning: #a97b1f;
+    --color-warning-bg: #f7efdd;
+    --color-warning-line: #e8d9b4;
+
+    --color-danger: #a6423c;
+    --color-danger-bg: #f6e8e6;
+    --color-danger-line: #e4c4c1;
+
+    /* `info` sengaja sama dengan navy: informasi netral adalah suara aplikasi
+       itu sendiri, bukan peringatan berwarna lain. */
+    --color-info: #1e2761;
+    --color-info-bg: #edeff8;
+    --color-info-line: #c9d0e8;
+
+    /* Bentuk */
+    --radius-card: 12px;
+    --radius-card-lg: 14px;
+    --radius-control: 8px;
+
+    /*
+     * Elevasi — kartu pakai garis, hanya overlay yang boleh terangkat.
+     *
+     * Hanya ada dua bayangan, dan keduanya untuk lapisan melayang. Kalau
+     * sebuah kartu butuh bayangan supaya terlihat, yang kurang biasanya
+     * kontras garisnya, bukan ketinggiannya.
+     */
+    --shadow-overlay: 0 24px 60px rgba(16, 20, 46, 0.4);
+    --shadow-pop: 0 12px 32px rgba(16, 20, 46, 0.16);
+
+    /* Tata letak */
+    --spacing-sidebar: 248px;
+    --spacing-sidebar-collapsed: 68px;
+    --spacing-topbar: 60px;
+}
+
+@layer base {
+    html {
+        -webkit-font-smoothing: antialiased;
+    }
+
+    body {
+        background-color: var(--color-canvas);
+        color: var(--color-ink);
+        font-family: var(--font-sans);
+
+        /* 13.5px, bukan 16px. Layar administrasi menampung tabel lebar dengan
+           banyak kolom; ukuran bawaan memaksa gulir mendatar pada laptop
+           1366px yang masih umum di kantor kampus. */
+        font-size: 13.5px;
+    }
+
+    /*
+     * Angka harus lurus.
+     *
+     * Nilai, SKS, NIM, rupiah, dan tanggal dibaca dengan cara dibandingkan
+     * antar-baris. Font proporsional membuat digit bergeser dan
+     * perbandingan itu jadi pekerjaan mata.
+     */
+    .tabular,
+    table td,
+    table th {
+        font-variant-numeric: tabular-nums;
+    }
+}
+
+@layer components {
+    /*
+    | Guilloché — motif ukir dokumen resmi (ijazah, transkrip).
+    |
+    | Dipakai pada header navy, empty state, dan pratinjau dokumen. Ini satu-
+    | satunya ornamen di seluruh sistem, dan itu disengaja: ia bekerja karena
+    | jarang. Menaburkannya ke mana-mana menghapus kesan dokumennya.
+    */
+    .guilloche-gold {
+        background-image:
+            repeating-radial-gradient(circle at 15% 120%, transparent 0 18px, rgba(201, 169, 97, 0.13) 18px 19px),
+            repeating-radial-gradient(circle at 88% -30%, transparent 0 22px, rgba(201, 169, 97, 0.09) 22px 23px);
+    }
+
+    .guilloche-navy {
+        background-image:
+            repeating-radial-gradient(circle at 10% 110%, transparent 0 16px, rgba(30, 39, 97, 0.05) 16px 17px),
+            repeating-radial-gradient(circle at 92% -20%, transparent 0 20px, rgba(30, 39, 97, 0.04) 20px 21px);
+    }
+}
+
+/*
+| ---------------------------------------------------------------------------
+| Gerak
+| ---------------------------------------------------------------------------
+| Tiga animasi, semuanya pendek dan tenang. Tidak ada yang meloncat, memantul,
+| atau merayakan. Aplikasi ini memegang catatan yang harus benar puluhan tahun;
+| geraknya menegaskan itu, bukan melawannya.
+*/
+
+/* Denyut sinkronisasi — keandalan institusional, sengaja lambat. */
+@keyframes oa-pulse {
+    0%,
+    100% {
+        opacity: 0.35;
+        transform: scale(1);
+    }
+    50% {
+        opacity: 1;
+        transform: scale(1.25);
+    }
+}
+
+.animate-heartbeat {
+    animation: oa-pulse 2.4s ease-in-out infinite;
+}
+
+/* Panel navigasi mobile naik dari bawah. */
+@keyframes oa-sheet-up {
+    from {
+        transform: translateY(100%);
+    }
+    to {
+        transform: translateY(0);
+    }
+}
+
+.animate-sheet {
+    animation: oa-sheet-up 0.22s ease-out both;
+}
+
+/*
+| Segel pengiriman — dokumen resmi yang distempel, bukan konfeti.
+|
+| Dipakai ketika mahasiswa mengirim KRS. Satu-satunya momen di seluruh
+| aplikasi yang boleh terasa seremonial, karena satu-satunya yang memang
+| begitu bagi penggunanya.
+*/
+@keyframes oa-stamp {
+    0% {
+        opacity: 0;
+        transform: scale(1.6) rotate(-8deg);
+    }
+    60% {
+        opacity: 1;
+        transform: scale(0.96) rotate(-8deg);
+    }
+    100% {
+        opacity: 1;
+        transform: scale(1) rotate(-8deg);
+    }
+}
+
+.animate-stamp {
+    animation: oa-stamp 0.5s cubic-bezier(0.2, 1.4, 0.4, 1) both;
+}
+
+/*
+| ---------------------------------------------------------------------------
+| CATATAN UNTUK PROYEK TUJUAN
+| ---------------------------------------------------------------------------
+|
+| 1. `[x-cloak] { display: none }` dari berkas asli TIDAK dibawa — itu milik
+|    Alpine.js. React tidak memerlukannya.
+|
+| 2. Font Public Sans + Source Serif 4 di Open Academic masih ditarik dari
+|    Google Fonts lewat <link>. Di Next.js pakai `next/font/google` — ia
+|    meng-host sendiri, jadi tidak ada permintaan pihak ketiga dan tidak ada
+|    pergeseran tata letak saat font tiba.
+|
+| 3. Nama token mengikuti konvensi Tailwind 4: `--color-navy` menghasilkan
+|    `bg-navy`, `text-navy`, `border-navy` secara otomatis. Jangan diganti
+|    namanya — seluruh string kelas di DESIGN.md mengandalkan ini.
+*/
