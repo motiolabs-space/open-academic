@@ -2,8 +2,8 @@
 
 @section('body')
     {{-- Without this, reaching the page content by keyboard means tabbing past
-         every sidebar link first — fourteen of them on the admin portal, on
-         every single page load. --}}
+         every sidebar link first — 32 of them on the admin portal now, on every
+         single page load. --}}
     {{-- Parked off-screen with a transform rather than `sr-only`, because
          `focus:not-sr-only` loses to `sr-only`'s own width/height and the link
          stays a 1px dot even while focused. --}}
