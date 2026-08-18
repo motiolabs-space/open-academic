@@ -125,7 +125,16 @@ return new class extends Migration
 
             $table->timestamps();
 
-            $table->index(['kuesioner_id', 'kuesioner_pertanyaan_id']);
+            /*
+             * Nama indeks ditulis eksplisit, bukan dibiarkan otomatis.
+             *
+             * Nama bawaan Laravel untuk pasangan kolom ini pada tabel anonim
+             * jadi 67 karakter — melewati batas 64 karakter MySQL, dan
+             * migrasinya gagal total di sana. SQLite tidak punya batas itu,
+             * jadi seluruh suite tetap hijau sementara produksi tidak dapat
+             * dipasang sama sekali.
+             */
+            $table->index(['kuesioner_id', 'kuesioner_pertanyaan_id'], 'kj_anonim_pertanyaan_idx');
         });
 
         /*
@@ -149,7 +158,7 @@ return new class extends Migration
 
             $table->timestamps();
 
-            $table->index(['kuesioner_id', 'kuesioner_pertanyaan_id']);
+            $table->index(['kuesioner_id', 'kuesioner_pertanyaan_id'], 'kj_pertanyaan_idx');
             $table->index(['responden_type', 'responden_id']);
         });
     }

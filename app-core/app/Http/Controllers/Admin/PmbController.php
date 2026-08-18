@@ -95,7 +95,11 @@ class PmbController extends Controller
             ->get();
 
         $pendaftar = PmbPendaftar::query()
-            ->with(['gelombang', 'prodiPilihan1', 'prodiDiterima', 'mahasiswa', 'berkas'])
+            // `prodiPilihan2` ikut karena layarnya merendernya pada setiap baris
+            // yang punya pilihan kedua. Tanpa ini penjaga N+1 melempar
+            // LazyLoadingViolationException dan halamannya 500 di luar produksi;
+            // di produksi ia tidak melempar, hanya menambah satu kueri per baris.
+            ->with(['gelombang', 'prodiPilihan1', 'prodiPilihan2', 'prodiDiterima', 'mahasiswa', 'berkas'])
             ->when($request->filled('gelombang'), fn ($q) => $q->where('pmb_gelombang_id', $request->integer('gelombang')))
             ->when($request->filled('status'), fn ($q) => $q->where('status', $request->string('status')))
             ->cari($request->string('cari'), ['nama', 'nomor_pendaftaran', 'email'])
