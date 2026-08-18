@@ -16,7 +16,7 @@ beforeEach(function () {
     Passport::tokensCan(config('sso.scopes'));
     Passport::setDefaultScope(...config('sso.default_scopes'));
 
-    Artisan::call('passport:keys', ['--force' => true, '--quiet' => true]);
+    siapkanKunciPassport();
 
     $this->client = app(ClientRepository::class)->createAuthorizationCodeGrantClient(
         name: 'Open Campus',

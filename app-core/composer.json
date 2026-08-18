@@ -3,7 +3,14 @@
     "name": "motiolabs/open-academic",
     "type": "project",
     "description": "Open Academic — sistem informasi akademik (SIAKAD) open source untuk perguruan tinggi Indonesia, siap lapor PDDIKTI Neo Feeder.",
-    "keywords": ["siakad", "akademik", "pddikti", "neo-feeder", "laravel", "perguruan-tinggi"],
+    "keywords": [
+        "siakad",
+        "akademik",
+        "pddikti",
+        "neo-feeder",
+        "laravel",
+        "perguruan-tinggi"
+    ],
     "license": "MIT",
     "require": {
         "php": "^8.2",
@@ -54,6 +61,10 @@
         "test": [
             "@php artisan config:clear --ansi",
             "@php artisan test"
+        ],
+        "test:par": [
+            "@php artisan config:clear --ansi",
+            "@php vendor/bin/pest --parallel"
         ],
         "lint": [
             "@php vendor/bin/pint --test"

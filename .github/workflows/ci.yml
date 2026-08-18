@@ -46,8 +46,13 @@ jobs:
       - name: Lint (Pint)
         run: composer lint
 
-      - name: Test (Pest)
-        run: composer test
+      # Paralel: paratest membagi berkas tes ke beberapa proses. Tiap proses
+      # punya SQLite `:memory:` sendiri, tidak ada tes yang menulis ke
+      # storage_path, dan kunci Passport kini per proses (lihat tests/Pest.php
+      # siapkanKunciPassport) — tanpa itu dua proses saling menimpa kuncinya dan
+      # tesnya gagal 3 dari 5 kali.
+      - name: Test (Pest, paralel)
+        run: composer test:par
 
       - name: Setup Node
         uses: actions/setup-node@v4

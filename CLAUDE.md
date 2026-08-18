@@ -193,7 +193,12 @@ Event: `student.enrolled`, `student.status_changed`, `krs.approved`,
   Beri nama indeks eksplisit begitu nama otomatis Laravel — `{tabel}_{kolom…}_index`
   — melewati 64. Migrasi kuesioner pernah lolos seluruh suite sambil tidak dapat
   dipasang di MySQL sama sekali; lihat `docs/MODUL.md`.
-- CI: Pint → Pest → `npm run build` harus hijau sebelum merge.
+- Jalankan paralel: `composer test:par` (paratest, satu SQLite `:memory:` per
+  proses). **Apa pun yang ditulis ke jalur bersama harus di-scope per proses**
+  dengan `ParallelTesting::token()` — kunci Passport pernah membuat tes SSO
+  gagal 3 dari 5 kali sebelum dipisahkan; lihat `siapkanKunciPassport()` di
+  `tests/Pest.php`. `composer test` tetap serial untuk menelusuri kegagalan.
+- CI: Pint → Pest (paralel) → `npm run build` harus hijau sebelum merge.
 - Tidak ada PR fitur tanpa minimal satu feature test.
 
 ---
