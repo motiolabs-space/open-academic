@@ -169,6 +169,11 @@ it('membuka layar admin dalam anggaran kueri', function (string $url, int $angga
 })->with([
     ['/admin', 30],
     ['/admin/mahasiswa', 25],
+
+    // Ditambahkan 18 Agu 2026 sesudah layar ini ditemukan 500 di MySQL: view-nya
+    // merender `prodiPilihan2` yang tidak ikut di-eager-load, dan penjaga N+1
+    // melemparkannya. Lolos selama ini justru karena tidak pernah dipanggil tes.
+    ['/admin/pmb', 20],
     ['/admin/yudisium', 30],
     ['/admin/tugas-akhir', 25],
     ['/admin/data-iku', 25],

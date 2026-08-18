@@ -189,6 +189,10 @@ Event: `student.enrolled`, `student.status_changed`, `krs.approved`,
   aturan KRS (batas SKS, prasyarat, kuota), perhitungan nilai, mapper Feeder
   (snapshot payload vs fixture), penandatanganan & pengiriman webhook.
 - Suite berjalan di SQLite in-memory; jaga migrasi tetap portabel.
+  **SQLite tidak punya batas panjang identifier, MySQL punya (64 karakter).**
+  Beri nama indeks eksplisit begitu nama otomatis Laravel — `{tabel}_{kolom…}_index`
+  — melewati 64. Migrasi kuesioner pernah lolos seluruh suite sambil tidak dapat
+  dipasang di MySQL sama sekali; lihat `docs/MODUL.md`.
 - CI: Pint → Pest → `npm run build` harus hijau sebelum merge.
 - Tidak ada PR fitur tanpa minimal satu feature test.
 
