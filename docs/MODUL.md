@@ -1,9 +1,12 @@
 # MODUL.md — Daftar Modul Open Academic
 
-> Disusun 18 Agustus 2026. Daftar modul dibaca langsung dari
-> `app-core/app/Support/Navigation.php` dan `routes/web.php` — bukan dari
-> ingatan. Tangkapan layar diambil dari aplikasi yang berjalan di
-> `http://localhost/open-academic` dengan basis data demo.
+> Disusun 18 Agustus 2026. Yang **sudah dibuat** dibaca dari
+> `app-core/app/Support/Navigation.php` dan `routes/web.php`; yang **belum**
+> dibaca dari [`ROADMAP.md`](ROADMAP.md). Bukan dari ingatan.
+>
+> Tangkapan layar diambil dari aplikasi yang berjalan di
+> `http://localhost/open-academic` dengan basis data demo, dan setiap layar
+> diverifikasi **HTTP 200** — bukan sekadar "halamannya terbuka".
 
 ---
 
@@ -11,26 +14,28 @@
 
 **Open Academic** adalah SIAKAD open source untuk perguruan tinggi Indonesia —
 *system of record* untuk catatan akademik resmi dan transaksi administratif.
-Lihat [`CLAUDE.md`](../CLAUDE.md) §Batas tanggung jawab untuk apa yang **bukan**
-cakupannya.
 
 | | |
 |---|---|
 | Portal | 3 — Mahasiswa, Dosen, Staf |
-| Modul (item menu) | **59** — 12 mahasiswa · 14 dosen · 33 staf |
+| **Modul terpasang** | **59** — 12 mahasiswa · 14 dosen · 33 staf |
+| **Belum dibuat** | 9 modul · 7 sebagian · 6 utang teknis |
+| Sengaja di luar cakupan | 8 |
 | Rute GET berportal | 92 |
 | Tabel domain | 109 · 48 migrasi |
 | Model Eloquent | 94 · 54 enum · 85 service · 7 policy |
 | Perintah artisan | 10 |
-| Berkas tes Pest | 58 |
+| Tes Pest | **898 hijau** (1.936 asersi) · 58 berkas |
 | Desain | Midnight Executive — navy `#1E2761`, emas `#C9A961` |
 
-Peran ditentukan guard: `mahasiswa`, `dosen`, `staff`. Izin per modul memakai
-Spatie Permission, terpisah per guard.
+Fase 0–5, SSO OAuth2, tujuh kesenjangan SIAKAD (G1–G7), dan integrasi akuntansi
+sudah selesai.
 
 ---
 
-## Portal Mahasiswa
+# BAGIAN I — SUDAH DIBUAT
+
+## Portal Mahasiswa — 12 modul
 
 Akun demo: `mahasiswa1@demo.test` · kata sandi `password`
 
@@ -43,15 +48,13 @@ Akun demo: `mahasiswa1@demo.test` · kata sandi `password`
 | KHS & Transkrip | `/mahasiswa/khs` | Nilai per semester, transkrip PDF |
 | Capaian Pembelajaran | `/mahasiswa/capaian` | Penguasaan CPL dari komponen bernilai |
 | Tugas Akhir | `/mahasiswa/tugas-akhir` | Judul, pembimbing, log bimbingan, sidang |
-| Surat & Dokumen | `/mahasiswa/surat` | Ajukan surat, unduh SKPI |
+| Surat & Dokumen | `/mahasiswa/surat` | Ajukan surat, unduh SKPI dwibahasa |
 | Evaluasi Dosen | `/mahasiswa/edom` | Pengisian EDOM (anonim secara skema) |
 | Tagihan & Pembayaran | `/mahasiswa/tagihan` | Tagihan, potongan, riwayat bayar |
 | Profil Akademik | `/mahasiswa/profil` | Data diri, status, cuti |
 | Aplikasi Terhubung | `/aplikasi-terhubung` | Klien OAuth2 yang diberi izin |
 
----
-
-## Portal Dosen
+## Portal Dosen — 14 modul
 
 Akun demo: `dosen1@demo.test` · kata sandi `password`
 
@@ -72,9 +75,7 @@ Akun demo: `dosen1@demo.test` · kata sandi `password`
 | | Penilaian BKD | `/dosen/bkd/penilaian` |
 | | Portofolio | `/dosen/portofolio` |
 
----
-
-## Portal Staf
+## Portal Staf — 33 modul
 
 Akun demo: `admin@demo.test` · kata sandi `password`
 
@@ -116,10 +117,72 @@ Akun demo: `admin@demo.test` · kata sandi `password`
 
 ---
 
-## Tangkapan Layar
+# BAGIAN II — BELUM DIBUAT
 
-49 layar, 1440×1000, dari basis data demo. Semuanya diverifikasi **HTTP 200** —
-bukan sekadar "halamannya terbuka".
+## Modul yang belum ada — 9
+
+| Modul | Kenapa belum / catatan |
+|---|---|
+| **Klien SISTER** | **Tertahan di luar repo** — menunggu kredensial |
+| **Adaptor payment gateway** | **Tertahan di luar repo** — kontraknya sudah ada, yang kurang kredensial merchant + endpoint notifikasi yang terverifikasi tanda tangannya. Tanpa verifikasi, siapa pun yang menjangkau endpoint itu bisa melunasi tagihan mana pun |
+| Komparasi data SIAKAD ↔ Neo Feeder | Sinkron sudah jalan; pembanding selisihnya belum ada |
+| Federasi ke IdP eksternal | Google / Entra / Keycloak. Open Academic sudah jadi *penerbit* identitas; jadi *konsumen* belum |
+| Denda keterlambatan | Kecil secara kode, sering diminta |
+| Monitoring pemakaian ruang | Bentrok jadwal sudah terdeteksi; pemanfaatan ruangnya belum terlihat |
+| Career center | Lowongan, forum & agenda alumni. Tabel `alumni` sudah ada sebagai dasar — tapi instrumennya milik Open Campus |
+| 2FA staf | |
+| Helpdesk | |
+
+Aplikasi mobile native **tidak direncanakan untuk v1** — web-nya responsif, dan
+API-first sudah menyiapkan jalannya.
+
+## Selesai sebagian — 7
+
+| Hal | Yang sudah | Yang kurang |
+|---|---|---|
+| Payment gateway | Kontrak `PaymentGatewayInterface` | Adaptor sungguhan (lihat di atas) |
+| Tracer study | `alumni.status_pekerjaan` | Instrumennya milik Open Campus |
+| Seeder lewat service | Konversi, EDOM, BKD, akuntansi | Sisanya menulis langsung ke tabel, jadi aturan akademik tidak ikut ditegakkan pada data demo |
+| FormRequest | Sebagian | Validasi masih banyak di controller |
+| DTO | Sebagian | Menyusul per modul |
+| `lang/id` | auth, validation, pagination | String modul menyusul |
+| CSP | Ketat di selebihnya | Masih `'unsafe-eval'` — Alpine mengevaluasi ekspresi `x-` lewat konstruktor `Function` |
+
+## Utang teknis — 6
+
+| Hal | Keadaan |
+|---|---|
+| **Suite lambat** | Serial **2.574 detik (42,9 menit)**. Paralel lewat paratest sudah terbukti jalan dengan SQLite `:memory:`, tapi **satu tes gagal lintas proses** — jadi CI belum dialihkan |
+| Uji beban bersamaan | Puncak beban SIAKAD adalah jam pembukaan KRS. **Belum diuji sama sekali** |
+| Katalog KRS pada ±1.000 kelas | Diukur pada 63 kelas; kemungkinan perlu paginasi |
+| Perintah pembangkit data skala | Fixture 5.000 mahasiswa untuk [`KAPASITAS.md`](KAPASITAS.md) dibuat sekali pakai |
+| Font dari Google Fonts | Mengungkap IP pengunjung ke pihak ketiga; hosting sendiri menghapus itu sekaligus satu pengecualian CSP |
+| Sisa scaffolding pembayaran | `config/payment.php` menjanjikan driver `fake` yang kelasnya tidak ada — config yang berbohong. Plus direktori kosong `app/Services/Payment/*` |
+
+## Sengaja di luar cakupan — 8
+
+Bukan kesenjangan. Ini batas ekosistem; mengaburkannya akan menduplikasi data
+yang harus punya satu pemilik.
+
+| Modul | Pemiliknya |
+|---|---|
+| CBT / platform ujian | Produk tersendiri — sambungkan lewat Campus Bridge |
+| LMS / e-learning, forum kelas, feed | Open Campus, Moodle, atau LMS mana pun |
+| Tracer study, jejaring alumni, career center | Open Campus |
+| **Dasbor 12 IKU, borang akreditasi (LKPS/LED)** | Open Campus — di sini hanya faktanya. Empat dari delapan IKU pun bukan data aplikasi ini |
+| Perpustakaan | SLiMS atau sejenisnya |
+| Payroll, presensi pegawai | HRIS |
+| Inventaris, sarpras, aset | Sistem aset |
+| Buku besar & jurnal akuntansi | Sistem akuntansi; di sini hanya tagihan mahasiswa dan jembatannya |
+
+**SPMI di sini adalah AMI**, bukan borang akreditasi — batasnya turun satu
+tingkat, lihat [`SPMI.md`](SPMI.md).
+
+---
+
+# BAGIAN III — TANGKAPAN LAYAR
+
+49 layar + halaman masuk, 1440×1000, dari basis data demo.
 
 ### Masuk
 
@@ -195,7 +258,7 @@ Kredit, Wisuda, Akun Staf, Matriks Tarif, Log Aktivitas, Pengumuman.
 
 ---
 
-## Cara mengambil ulang
+## Cara mengambil ulang tangkapan layar
 
 Aplikasi harus berjalan (`http://localhost/open-academic` lewat XAMPP, atau
 `php artisan serve`) dengan basis data demo ter-seed **dan migrasi mutakhir**.
@@ -215,7 +278,8 @@ dan perlakukan apa pun selain 200 sebagai gagal.
 **1. Migrasi kuesioner tidak dapat dipasang di MySQL.** Nama indeks otomatis
 untuk `kuesioner_jawaban_anonim` jadi 67 karakter — melewati batas 64 karakter
 MySQL. Seluruh suite hijau karena tes berjalan di SQLite, yang tidak punya batas
-itu. Diperbaiki dengan nama indeks eksplisit.
+itu. Diperbaiki dengan nama indeks eksplisit; aturannya kini tertulis di
+`CLAUDE.md` §9.
 
 **2. `/admin/pmb` melempar `LazyLoadingViolationException`.** View-nya merender
 `prodiPilihan2` yang tidak ikut di-eager-load. Layar ini tidak pernah masuk
