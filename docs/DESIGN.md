@@ -28,7 +28,7 @@ tidak punya pustaka ikon, bukan keputusan desain. PD Dikti sudah punya
 
 ---
 
-## Tujuh aturan yang menjaga sistem ini tetap satu
+## Delapan aturan yang menjaga sistem ini tetap satu
 
 Semua yang lain turunan dari sini.
 
@@ -58,6 +58,29 @@ layar administrasi terbaca seperti artikel.
 
 **7. Guilloché jarang.** Motif ukir dokumen resmi — header navy, empty state,
 pratinjau dokumen. Ia bekerja justru karena jarang.
+
+**8. `ink-faint` hanya untuk teks pendukung.** Ia 3,01:1 terhadap canvas —
+sengaja di bawah ambang WCAG AA untuk teks normal (4,5:1), karena menaikkannya
+ke sana menghasilkan `#707278` yang praktis sama dengan `ink-muted` `#6e7078`,
+dan skala tinta tiga tingkat runtuh jadi dua. Harganya dibayar dengan aturan:
+pakai untuk meta, hint, placeholder, dan ruas breadcrumb yang bukan terakhir —
+**jangan pernah untuk informasi yang tidak ada di tempat lain di layar itu.**
+
+### Kontras yang sudah diukur
+
+| Pasangan | Rasio | Ambang AA |
+|---|---|---|
+| `ink` di canvas | 14,19:1 | 4,5 |
+| `ink-muted` di canvas | 4,64:1 | 4,5 |
+| `ink-faint` di canvas | **3,01:1** | 4,5 — sengaja, lihat aturan 8 |
+| chip `success` | 4,56:1 | 4,5 |
+| chip `warning` | 4,54:1 | 4,5 |
+| chip `danger` | 5,08:1 | 4,5 |
+| chip `info` | 12,06:1 | 4,5 |
+| judul kelompok sidebar `gold/90` di navy | 5,25:1 | 4,5 |
+
+Angka-angka ini hasil audit otomatis atas 53 layar, bukan taksiran. Kalau palet
+digeser, ukur ulang — jangan diperkirakan.
 
 ---
 
