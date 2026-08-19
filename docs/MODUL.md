@@ -182,11 +182,17 @@ tingkat, lihat [`SPMI.md`](SPMI.md).
 
 # BAGIAN III — TANGKAPAN LAYAR
 
-49 layar + halaman masuk, 1440×1000, dari basis data demo.
+52 layar, 1440×1000, dari basis data demo — 4 publik, 12 mahasiswa,
+13 dosen, 23 staf. Semuanya diverifikasi **HTTP 200**.
 
-### Masuk
+### Publik — tanpa masuk
 
-![Masuk](tangkapan-layar/00-masuk.png)
+| | |
+|---|---|
+| **Landing** `/` — halaman pertama yang dilihat siapa pun | ![Landing](tangkapan-layar/01-landing.png) |
+| **Masuk** `/masuk` | ![Masuk](tangkapan-layar/00-masuk.png) |
+| **Verifikasi Dokumen** `/verifikasi` — untuk dokumen yang QR-nya tidak terpindai | ![Verifikasi](tangkapan-layar/02-verifikasi.png) |
+| **Hasil verifikasi** `/verifikasi/{uuid}` — menampilkan data secukupnya untuk mencocokkan, tidak lebih | ![Hasil verifikasi](tangkapan-layar/03-verifikasi-hasil.png) |
 
 ### Portal Mahasiswa
 

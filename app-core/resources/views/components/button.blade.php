@@ -22,6 +22,17 @@
         'primary' => 'bg-navy text-canvas hover:bg-navy-hover',
         'gold' => 'bg-gold font-bold text-navy hover:bg-gold-hover',
         'outline' => 'border border-line-input bg-surface text-navy hover:border-navy',
+
+        /*
+         * Varian outline untuk permukaan GELAP (hero navy, empty state navy).
+         *
+         * Ada sebagai varian, bukan diserahkan ke pemanggil lewat class, karena
+         * `text-canvas` yang dikirim dari luar KALAH oleh `text-navy` milik
+         * varian outline: yang menentukan urutan di stylesheet, bukan urutan di
+         * atribut. Landing page sempat menampilkan tombol navy di atas hero navy
+         * — teksnya ada, warnanya sama persis dengan latarnya.
+         */
+        'outline-gelap' => 'border border-canvas/30 bg-transparent text-canvas hover:border-gold',
         'ghost' => 'text-navy hover:bg-line/60',
         'danger' => 'border border-danger-line bg-surface text-danger hover:bg-danger-bg',
     ];

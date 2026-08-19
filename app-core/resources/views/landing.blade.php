@@ -53,9 +53,8 @@
         <div class="mt-8 flex flex-wrap gap-3">
             <x-button variant="gold" :href="route('login')">Coba Demo Kampus</x-button>
             <x-button
-                variant="outline"
+                variant="outline-gelap"
                 href="https://github.com/motiolabs-space/open-academic"
-                class="border-canvas/30 bg-transparent text-canvas hover:border-gold"
             >Lihat Kode Sumber</x-button>
         </div>
     </div>

@@ -162,7 +162,7 @@ Badan: `px-5 py-4`, dihilangkan bila `flush` (untuk tabel yang menempel tepi).
 ### Button
 
 ```
-variant: primary | gold | outline | ghost | danger    size: sm | md
+variant: primary | gold | outline | outline-gelap | ghost | danger    size: sm | md
 href?: string  → render <a>, selain itu <button>
 ```
 
@@ -185,6 +185,14 @@ dipertahankan supaya tetap nyaman disentuh di mobile.
 | `outline` | `border border-line-input bg-surface text-navy hover:border-navy` |
 | `ghost` | `text-navy hover:bg-line/60` |
 | `danger` | `border border-danger-line bg-surface text-danger hover:bg-danger-bg` |
+| `outline-gelap` | `border border-canvas/30 bg-transparent text-canvas hover:border-gold` |
+
+**Jangan mengirim `text-*` sendiri lewat `class` untuk melawan warna varian.**
+Yang menentukan pemenang adalah urutan di stylesheet, bukan urutan di atribut —
+jadi `text-canvas` yang dikirim pemanggil bisa kalah oleh `text-navy` milik
+varian `outline`. Landing page Open Academic sempat menampilkan tombol navy di
+atas hero navy: teksnya ada, warnanya sama persis dengan latarnya, dan
+`assertOk()` tetap hijau. Itu sebabnya `outline-gelap` jadi varian tersendiri.
 
 `danger` berlatar terang, bukan merah pekat. Tombol merah menyala membuat orang
 ragu pada tindakan yang sebenarnya wajar (membatalkan draf), dan mati rasa pada
