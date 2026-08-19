@@ -19,13 +19,13 @@
 |---|---|
 | Portal | 3 — Mahasiswa, Dosen, Staf |
 | **Modul terpasang** | **59** — 12 mahasiswa · 14 dosen · 33 staf |
-| **Belum dibuat** | 9 modul · 7 sebagian · 6 utang teknis |
+| **Belum dibuat** | 9 modul · 7 sebagian · **4 utang teknis** (4 lunas 19 Agu 2026) |
 | Sengaja di luar cakupan | 8 |
 | Rute GET berportal | 92 |
 | Tabel domain | 109 · 48 migrasi |
 | Model Eloquent | 94 · 54 enum · 85 service · 7 policy |
-| Perintah artisan | 10 |
-| Tes Pest | **898 hijau** (1.936 asersi) · 58 berkas |
+| Perintah artisan | 12 |
+| Tes Pest | **901 hijau** (1.941 asersi) · 59 berkas |
 | Desain | Midnight Executive — navy `#1E2761`, emas `#C9A961` |
 
 Fase 0–5, SSO OAuth2, tujuh kesenjangan SIAKAD (G1–G7), dan integrasi akuntansi
@@ -148,16 +148,26 @@ API-first sudah menyiapkan jalannya.
 | `lang/id` | auth, validation, pagination | String modul menyusul |
 | CSP | Ketat di selebihnya | Masih `'unsafe-eval'` — Alpine mengevaluasi ekspresi `x-` lewat konstruktor `Function` |
 
-## Utang teknis — 6
+## Utang teknis
+
+Empat yang tersisa. Empat lainnya lunas pada 19 Agustus 2026 dan dicatat di
+bawahnya, supaya angkanya dapat diperiksa dan bukan diyakini.
 
 | Hal | Keadaan |
 |---|---|
-| **Suite lambat** | Serial **2.574 detik (42,9 menit)**. Paralel lewat paratest sudah terbukti jalan dengan SQLite `:memory:`, tapi **satu tes gagal lintas proses** — jadi CI belum dialihkan |
-| Uji beban bersamaan | Puncak beban SIAKAD adalah jam pembukaan KRS. **Belum diuji sama sekali** |
-| Katalog KRS pada ±1.000 kelas | Diukur pada 63 kelas; kemungkinan perlu paginasi |
-| Perintah pembangkit data skala | Fixture 5.000 mahasiswa untuk [`KAPASITAS.md`](KAPASITAS.md) dibuat sekali pakai |
+| **Katalog KRS 2,2 MB** | **Paginasi diperlukan.** 1.000 baris = 1,92 s dan **2.235 KB HTML**. Pada 2.000 mahasiswa serentak itu ±4,4 GB lewat jaringan kampus dalam hitungan menit — jaringan yang menyerah lebih dulu, bukan PHP |
+| Validasi muatan berisi | Sapuan rute tulis hanya mengirim muatan kosong dan id palsu: terbukti tidak ada yang meledak, **bukan** bahwa aturannya ditegakkan. Nilai di luar rentang, tanggal terbalik, SKS negatif belum pernah dicoba lewat HTTP |
 | Font dari Google Fonts | Mengungkap IP pengunjung ke pihak ketiga; hosting sendiri menghapus itu sekaligus satu pengecualian CSP |
 | Sisa scaffolding pembayaran | `config/payment.php` menjanjikan driver `fake` yang kelasnya tidak ada — config yang berbohong. Plus direktori kosong `app/Services/Payment/*` |
+
+### Lunas 19 Agustus 2026
+
+| Hal | Hasilnya |
+|---|---|
+| ~~Suite lambat~~ | Serial 2.574 detik → **paralel 319–670 detik**. CI beralih ke `composer test:par` sesudah *race* kunci Passport diperbaiki — sebelumnya gagal 3 dari 5 kali |
+| ~~Uji beban bersamaan~~ | Perebutan kuota: 19 proses, 1 kursi → **tepat 1 pemenang**; 5 kursi → tepat 5. `lockForUpdate()` bertahan di MySQL sungguhan, sesuatu yang suite SQLite tidak akan pernah buktikan. **Beban HTTP penuh masih terbuka** |
+| ~~Katalog KRS belum terukur~~ | Terukur — hasilnya jadi baris pertama tabel di atas |
+| ~~Fixture skala sekali pakai~~ | Jadi perintah: `openacademic:beban-katalog` dan `openacademic:beban-kuota` |
 
 ## Sengaja di luar cakupan — 8
 
