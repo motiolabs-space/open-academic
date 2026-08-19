@@ -98,7 +98,7 @@ Akun demo: `admin@demo.test` · kata sandi `password`
 | | Wisuda | `/admin/wisuda` |
 | | Surat & Dokumen | `/admin/surat` |
 | **SDM** | Kepegawaian Dosen | `/admin/dosen` |
-| | Akun Staf | `/admin/staff` |
+| | Akun Staf | `/admin/staf` |
 | | Unit Kerja | `/admin/unit-kerja` |
 | | Beban Kerja Dosen | `/admin/bkd` |
 | | Evaluasi Dosen | `/admin/edom` |
