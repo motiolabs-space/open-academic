@@ -33,7 +33,7 @@
             <div>
                 @if ($group['title'])
                     <div
-                        class="px-2.5 pb-[7px] text-[10px] font-bold tracking-[0.14em] text-gold/75"
+                        class="px-2.5 pb-[7px] text-[10px] font-bold tracking-[0.14em] text-gold/90"
                         x-show="! $store.ui.sidebarCollapsed"
                         x-cloak
                     >{{ $group['title'] }}</div>
