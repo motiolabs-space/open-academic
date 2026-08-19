@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Exceptions\AturanAkademikException;
+use App\Exceptions\FeederException;
 use App\Http\Middleware\EnsureBridgeScope;
 use App\Http\Middleware\EnsureTermIsActive;
 use App\Http\Middleware\SecurityHeaders;
@@ -44,6 +45,24 @@ $app = Application::configure(basePath: dirname(__DIR__))
         // A refused academic rule is a normal outcome, not a crash: the person
         // who tripped it gets the reason back on the page they were already on.
         $exceptions->renderable(function (AturanAkademikException $e, Request $request) {
+            return $request->expectsJson()
+                ? response()->json(['message' => $e->getMessage()], 422)
+                : back()->with('galat', $e->getMessage());
+        });
+
+        /*
+         * Penolakan Feeder juga hasil yang wajar, bukan kerusakan.
+         *
+         * Seluruh pesan FeederException memang ditulis untuk dibaca operator —
+         * "integrasi dinonaktifkan", "dependensi belum sinkron", "N baris tidak
+         * valid". Tanpa penanganan ini, menekan "Tarik Referensi" saat
+         * FEEDER_ENABLED=false menghasilkan halaman 500, dan operator tidak
+         * pernah tahu bahwa yang kurang cuma satu bendera konfigurasi.
+         *
+         * Ditemukan dengan menyapu seluruh rute tulis memakai muatan kosong:
+         * satu-satunya yang membalas 500 dari 57 rute tanpa parameter.
+         */
+        $exceptions->renderable(function (FeederException $e, Request $request) {
             return $request->expectsJson()
                 ? response()->json(['message' => $e->getMessage()], 422)
                 : back()->with('galat', $e->getMessage());
