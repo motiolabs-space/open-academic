@@ -50,8 +50,8 @@ tersendiri dengan siklus hidup, beban, dan model datanya sendiri — lihat
 | Policy | 7 |
 | Layar (rute GET berportal) | 94 |
 | Endpoint Campus Bridge | 14 |
-| Perintah artisan | 10 |
-| **Tes Pest** | **894 hijau (1.924 asersi)** |
+| Perintah artisan | 12 |
+| **Tes Pest** | **898 hijau (1.936 asersi)** |
 
 Seluruh fase (0–5), SSO OAuth2, tujuh kesenjangan SIAKAD (G1–G7), dan integrasi
 akuntansi sudah selesai. `php artisan migrate:fresh --seed` membangun kampus demo
@@ -368,9 +368,9 @@ yang tidak ada di sini.
 | FormRequest | 🟡 | Validasi masih banyak di controller |
 | DTO | 🟡 | Menyusul per modul |
 | `lang/id` | 🟡 | auth/validation/pagination sudah; string modul menyusul |
-| Perintah pembangkit data skala | ⬜ | Fixture 5.000 mahasiswa untuk [`KAPASITAS.md`](KAPASITAS.md) dibuat sekali pakai |
-| Katalog KRS pada ±1.000 kelas | ⬜ | Diukur pada 63 kelas; kemungkinan perlu paginasi |
-| Uji beban bersamaan | ⬜ | Puncak beban SIAKAD adalah jam pembukaan KRS; belum diuji sama sekali |
+| Perintah pembangkit data skala | ✅ | Perintah openacademic:beban-katalog & beban-kuota; fixture 5.000 mahasiswa untuk [`KAPASITAS.md`](KAPASITAS.md) dibuat sekali pakai |
+| Katalog KRS pada ±1.000 kelas | ✅ | Diukur 19 Agu 2026: 1.000 baris = 1,92 s dan 2,2 MB HTML. Paginasi diperlukan — lihat KAPASITAS.md |
+| Uji beban bersamaan | ✅ | Perebutan kuota diuji 19 Agu 2026: 19 proses, 1 kursi, tepat 1 pemenang. Beban HTTP penuh masih terbuka |
 | CSP masih `'unsafe-eval'` | 🟡 | Alpine mengevaluasi ekspresi `x-` lewat konstruktor `Function` |
 | Font dari Google Fonts | ⬜ | Mengungkap IP pengunjung ke pihak ketiga; hosting sendiri menghapus itu sekaligus pengecualian CSP |
 

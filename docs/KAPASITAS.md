@@ -133,9 +133,67 @@ membutuhkan ±1.000 kelas per semester, bukan 21. Layar yang panjangnya mengikut
 Keduanya perlu diukur ulang dengan katalog kelas berskala penuh sebelum
 dipasarkan ke kampus besar.
 
-**Belum diuji sama sekali:** beban bersamaan (misalnya 2.000 mahasiswa mengisi
-KRS pada jam yang sama saat masa KRS dibuka), yang merupakan puncak beban
-sesungguhnya sebuah SIAKAD; dan sinkronisasi Feeder pada volume penuh.
+**Belum diuji sama sekali:** sinkronisasi Feeder pada volume penuh.
+
+---
+
+## Katalog KRS pada Skala Penuh — diukur 19 Agustus 2026
+
+Diukur dengan `openacademic:beban-katalog`, server dev PHP satu utas, 1.200
+kelas se-kampus. Waktu terbaik dari tiga permintaan berturut-turut.
+
+| Baris katalog | Waktu | HTML |
+|---|---|---|
+| 10 (data demo) | 0,28 s | 60 KB |
+| 574 | 1,14 s | 1.312 KB |
+| 604 | 1,44 s | 1.377 KB |
+| **1.000** | **1,92 s** | **2.235 KB** |
+
+**Yang perlu diluruskan lebih dulu:** katalog KRS **sudah tersaring per
+kurikulum**, bukan per kampus. Seorang mahasiswa tidak pernah melihat 1.000
+kelas se-kampus; ia melihat kelas kurikulumnya sendiri. Kekhawatiran lama di
+dokumen ini tentang "1.000 kelas" karena itu salah sasaran — yang menentukan
+berat layarnya adalah **kelas per kurikulum**, dan angka di atas menumbuhkan
+tepat itu.
+
+Waktunya tumbuh mendekati linear di luar biaya tetap, ±1,7 ms per baris. Server
+produksi dengan PHP-FPM dan `config:cache` akan lebih cepat.
+
+**Ukuran HTML-nya yang tidak punya pembelaan lingkungan.** 2,2 MB tetap 2,2 MB
+di server mana pun. Pada jam pembukaan KRS dengan 2.000 mahasiswa, itu ±4,4 GB
+yang harus melewati jaringan kampus dalam hitungan menit — dan jaringan itu,
+bukan PHP, yang akan menyerah lebih dulu.
+
+**Kesimpulan: katalog perlu paginasi atau penyaringan sebelum dipakai prodi
+besar.** Dugaan lama di dokumen ini benar; sekarang ada angkanya.
+
+---
+
+## Perebutan Kuota Bersamaan — diuji 19 Agustus 2026
+
+`KrsService::tambahKelas()` mengunci baris kelas dengan `lockForUpdate()` di
+dalam transaksi. Suite tidak dapat membuktikan itu bekerja: ia berjalan di
+SQLite in-memory, satu proses, tanpa penguncian baris sungguhan.
+
+Diuji dengan `openacademic:beban-kuota` — proses PHP terpisah, berjalan
+bersamaan, berebut satu baris di MySQL:
+
+| Percobaan | Kuota | Hasil | Baris kelas sesudahnya |
+|---|---|---|---|
+| 19 proses bersamaan | 1 | **1 dapat, 18 penuh** | `terisi=1 kuota=1 detail=1` |
+| 19 proses bersamaan | 5 | **5 dapat, 14 penuh** | `terisi=5 kuota=5 detail=5` |
+
+Tidak ada kursi terjual berlebih, dan `terisi` tidak pernah kehilangan kenaikan.
+Penguncian bertahan.
+
+**Catatan cara membacanya:** percobaan pertama menghasilkan **nol** pemenang dan
+sempat terlihat seperti penguncian yang bekerja sangat baik. Ternyata seluruh
+prosesnya ditolak sebelum sempat berebut — mahasiswa demo sudah lulus mata
+kuliah itu, atau KRS-nya sudah diajukan. Penolakan yang sah, tapi bukan yang
+sedang diuji. Karena itu perintahnya menyiapkan medannya sendiri (mata kuliah
+karangan, mahasiswa aktif, KRS dikembalikan ke draf) dan membedakan `PENUH` dari
+`TOLAK` di keluarannya. **Nol pemenang tanpa membaca alasannya bukan bukti apa
+pun.**
 
 ---
 
