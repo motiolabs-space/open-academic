@@ -113,7 +113,11 @@
                     ])>
                         <div class="min-w-0 flex-1">
                             <div class="flex flex-wrap items-center gap-2">
-                                <span class="tabular text-[11.5px] font-semibold text-ink-faint">
+                                {{-- Kode mata kuliah dan sisa kursi memakai ink-muted, bukan
+                                     ink-faint: keduanya informasi yang tidak ada di tempat lain
+                                     di layar ini, dan aturan 8 di docs/DESIGN.md melarang
+                                     ink-faint untuk itu. --}}
+                                <span class="tabular text-[11.5px] font-semibold text-ink-muted">
                                     {{ $kelas->mataKuliah->kode }}
                                 </span>
                                 <span class="text-[13.5px] font-semibold">{{ $kelas->mataKuliah->nama }}</span>
@@ -142,7 +146,7 @@
                                         'bg-navy' => $persenKuota < 80,
                                     ]) style="width: {{ $persenKuota }}%"></div>
                                 </div>
-                                <span class="tabular text-[11.5px] text-ink-faint">
+                                <span class="tabular text-[11.5px] text-ink-muted">
                                     {{ $kelas->terisi }}/{{ $kelas->kuota }} kursi
                                 </span>
                             </div>

@@ -34,7 +34,19 @@
     /* Ink */
     --color-ink: #24262e;
     --color-ink-muted: #6e7078;
-    --color-ink-faint: #9a9ca4;
+    /*
+     * Tingkat paling redup, 3,01:1 terhadap canvas.
+     *
+     * SENGAJA belum memenuhi WCAG AA untuk teks normal (butuh 4,5:1).
+     * Menaikkannya ke sana berarti #707278, yang praktis sama dengan
+     * --color-ink-muted #6e7078 — skala tinta tiga tingkat runtuh jadi dua.
+     *
+     * Harganya dibayar dengan aturan, bukan dengan angka: ink-faint hanya
+     * untuk teks PENDUKUNG — meta, hint, placeholder, breadcrumb yang bukan
+     * ruas terakhir. Jangan pernah dipakai untuk informasi yang tidak ada di
+     * tempat lain di layar itu.
+     */
+    --color-ink-faint: #8e9097;
 
     /* Lines */
     --color-line: #e6e4dc;
@@ -45,7 +57,9 @@
     --color-success-bg: #e9f2ec;
     --color-success-line: #c7decf;
 
-    --color-warning: #a97b1f;
+    /* Digelapkan dari #a97b1f: nada itu 3,31:1 di chip-nya sendiri,
+       satu-satunya nada semantik yang gagal AA. Sekarang 4,54:1. */
+    --color-warning: #8c661a;
     --color-warning-bg: #f7efdd;
     --color-warning-line: #e8d9b4;
 
