@@ -89,7 +89,7 @@
             @foreach ($groups as $group)
                 <div>
                     @if ($group['title'])
-                        <div class="px-3 pb-2 text-[10px] font-bold tracking-[0.14em] text-gold/75">
+                        <div class="px-3 pb-2 text-[10px] font-bold tracking-[0.14em] text-gold/90">
                             {{ $group['title'] }}
                         </div>
                     @endif
