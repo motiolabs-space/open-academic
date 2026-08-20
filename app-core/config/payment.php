@@ -2,46 +2,44 @@
 
 declare(strict_types=1);
 
+/*
+|--------------------------------------------------------------------------
+| Perilaku Tagihan
+|--------------------------------------------------------------------------
+|
+| Berkas ini sengaja hanya memuat yang benar-benar dibaca kode.
+|
+| Sebelumnya ia juga menjanjikan pemilihan gateway — `gateway` (bawaan "fake"),
+| `midtrans` beserta kunci merchant dan daftar kanal pembayaran, dan
+| `currency`. Tidak satu pun pernah dibaca: nol pemanggil, tidak ada kelas
+| driver, tidak ada binding. Config yang menjanjikan sesuatu yang tidak ada
+| lebih buruk daripada tidak ada config — seseorang akan menyetel
+| PAYMENT_GATEWAY=midtrans, mengisi kunci merchantnya, lalu menunggu sesuatu
+| terjadi.
+|
+| **Pembayaran sebagian.** Dulu ada `invoice.allow_partial` di sini, juga tanpa
+| pembaca — padahal perilakunya MEMANG berjalan: `PembayaranService` menandai
+| tagihan `InvoiceStatus::Sebagian` begitu ada pembayaran yang kurang dari
+| totalnya. Kampus yang menyetelnya `false` tetap menerima cicilan tanpa
+| pemberitahuan apa pun. Benderanya dicabut, bukan disambungkan —
+| menyambungkannya berarti mengubah perilaku keuangan yang sudah berjalan atas
+| dasar tebakan. Kalau memang dibutuhkan, ia layak jadi permintaan fitur dengan
+| aturannya sendiri: apa yang terjadi pada tagihan yang sudah separuh terbayar
+| ketika benderanya dimatikan?
+|
+| Kontrak gateway yang sungguhan hidup di
+| `app/Services/Keuangan/Contracts/PaymentGatewayInterface.php`. Ketika
+| adaptornya dibangun — tertahan pada kredensial merchant, lihat ROADMAP
+| §Menunggu di Luar Repo — konfigurasinya kembali ke sini BERSAMA kodenya,
+| bukan mendahuluinya.
+|
+*/
+
 return [
 
-    /*
-    |--------------------------------------------------------------------------
-    | Payment Gateway
-    |--------------------------------------------------------------------------
-    |
-    | Every gateway sits behind PaymentGatewayInterface. Driver "fake" settles
-    | invoices locally and is what the demo installation and the test suite use.
-    |
-    */
-
-    'gateway' => env('PAYMENT_GATEWAY', 'fake'), // fake | midtrans
-
-    'currency' => 'IDR',
-
-    'midtrans' => [
-        'merchant_id' => env('MIDTRANS_MERCHANT_ID'),
-        'client_key' => env('MIDTRANS_CLIENT_KEY'),
-        'server_key' => env('MIDTRANS_SERVER_KEY'),
-        'is_production' => env('MIDTRANS_IS_PRODUCTION', false),
-
-        'enabled_payments' => [
-            'bca_va', 'bni_va', 'bri_va', 'permata_va', 'other_va',
-            'gopay', 'shopeepay', 'qris',
-        ],
-    ],
-
-    /*
-    |--------------------------------------------------------------------------
-    | Invoice Behaviour
-    |--------------------------------------------------------------------------
-    */
-
     'invoice' => [
-        // Days a generated term invoice stays payable.
+        // Berapa hari tagihan semester tetap dapat dibayar sesudah terbit.
         'due_days' => 30,
-
-        // Allow paying an invoice in instalments.
-        'allow_partial' => true,
     ],
 
 ];

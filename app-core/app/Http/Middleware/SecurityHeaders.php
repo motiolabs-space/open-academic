@@ -51,12 +51,17 @@ class SecurityHeaders
             "default-src 'self'",
             "script-src 'self' 'unsafe-eval' 'unsafe-inline'",
 
-            // The display and UI faces are still served by Google Fonts, which
-            // means every page view discloses the visitor's IP to a third
-            // party. Self-hosting the two families would remove both the CSP
-            // exception and the disclosure; see docs/SECURITY.md.
-            "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-            "font-src 'self' data: https://fonts.gstatic.com",
+            // Kedua huruf di-host sendiri lewat @fontsource sejak 19 Agustus
+            // 2026, jadi pengecualian untuk fonts.googleapis.com dan
+            // fonts.gstatic.com dicabut — dan tidak ada lagi alamat IP
+            // pengunjung yang sampai ke pihak ketiga hanya karena seorang
+            // mahasiswa membuka KHS-nya.
+            //
+            // `unsafe-inline` pada style-src tetap ada dan bukan sisa yang
+            // terlupa: bar kuota menyetel lebarnya lewat atribut style, dan
+            // layout menyuntik warna per-tenant sebagai <style>:root{…}</style>.
+            "style-src 'self' 'unsafe-inline'",
+            "font-src 'self' data:",
 
             "img-src 'self' data:",
 

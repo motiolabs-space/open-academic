@@ -8,10 +8,9 @@
 
     <title>@yield('title', config('app.name')) · {{ $brand->institutionShortName() }}</title>
 
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,500;8..60,600;8..60,700&family=Public+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-
+    {{-- Font di-host sendiri lewat @fontsource, diimpor di resources/css/app.css
+         dan ikut terbundel Vite. Tidak ada lagi permintaan ke fonts.googleapis.com
+         maupun fonts.gstatic.com — alasannya ada di komentar app.css. --}}
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 
     {{-- Tenant colour overrides reach the stylesheet without recompiling Tailwind. --}}

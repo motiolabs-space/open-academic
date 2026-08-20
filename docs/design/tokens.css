@@ -240,10 +240,14 @@
 | 1. `[x-cloak] { display: none }` dari berkas asli TIDAK dibawa — itu milik
 |    Alpine.js. React tidak memerlukannya.
 |
-| 2. Font Public Sans + Source Serif 4 di Open Academic masih ditarik dari
-|    Google Fonts lewat <link>. Di Next.js pakai `next/font/google` — ia
-|    meng-host sendiri, jadi tidak ada permintaan pihak ketiga dan tidak ada
-|    pergeseran tata letak saat font tiba.
+| 2. Public Sans + Source Serif 4 di-host sendiri di kedua proyek: Open
+|    Academic lewat paket `@fontsource`, di Next.js lewat `next/font/google`.
+|    Tidak ada permintaan pihak ketiga, tidak ada pergeseran tata letak.
+|
+|    Pakai yang STATIS, bukan variabel — paket variabel mendaftarkan nama
+|    keluarga "Source Serif 4 Variable", yang tidak cocok dengan
+|    --font-serif di berkas ini, dan peramban jatuh ke huruf sistem tanpa
+|    memberi tahu.
 |
 | 3. Nama token mengikuti konvensi Tailwind 4: `--color-navy` menghasilkan
 |    `bg-navy`, `text-navy`, `border-navy` secara otomatis. Jangan diganti
