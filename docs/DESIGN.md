@@ -392,10 +392,14 @@ mati, dan tidak ada tes yang menangkapnya.
 bawaan memaksa gulir mendatar pada laptop 1366px yang masih umum di kantor
 kampus.
 
-Di Next.js muat font lewat `next/font/google` — ia meng-host sendiri, jadi
-tidak ada permintaan ke pihak ketiga dan tidak ada pergeseran tata letak saat
-font tiba. Open Academic masih memakai `<link>` ke Google Fonts; itu utang yang
-tercatat, jangan ikut disalin.
+Fontnya di-host sendiri di kedua proyek — tidak ada permintaan ke pihak
+ketiga dan tidak ada pergeseran tata letak saat font tiba. Open Academic
+memakai paket `@fontsource`, di Next.js pakai `next/font/google`.
+
+Ambil yang **statis**, bukan variabel: paket variabel mendaftarkan nama
+keluarga `Source Serif 4 Variable`, yang tidak sama dengan
+`--font-serif: 'Source Serif 4'` di tokens.css. Nilainya cocok kelihatan,
+lalu peramban diam-diam jatuh ke huruf sistem.
 
 ---
 

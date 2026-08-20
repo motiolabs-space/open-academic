@@ -19,13 +19,13 @@
 |---|---|
 | Portal | 3 — Mahasiswa, Dosen, Staf |
 | **Modul terpasang** | **59** — 12 mahasiswa · 14 dosen · 33 staf |
-| **Belum dibuat** | 9 modul · 7 sebagian · **4 utang teknis** (4 lunas 19 Agu 2026) |
+| **Belum dibuat** | 9 modul · 7 sebagian · **1 utang teknis** (7 lunas 19 Agu 2026) |
 | Sengaja di luar cakupan | 8 |
 | Rute GET berportal | 92 |
 | Tabel domain | 109 · 48 migrasi |
 | Model Eloquent | 94 · 54 enum · 85 service · 7 policy |
 | Perintah artisan | 12 |
-| Tes Pest | **901 hijau** (1.941 asersi) · 59 berkas |
+| Tes Pest | **914 hijau** (1.969 asersi) · 61 berkas |
 | Desain | Midnight Executive — navy `#1E2761`, emas `#C9A961` |
 
 Fase 0–5, SSO OAuth2, tujuh kesenjangan SIAKAD (G1–G7), dan integrasi akuntansi
@@ -150,15 +150,12 @@ API-first sudah menyiapkan jalannya.
 
 ## Utang teknis
 
-Empat yang tersisa. Empat lainnya lunas pada 19 Agustus 2026 dan dicatat di
-bawahnya, supaya angkanya dapat diperiksa dan bukan diyakini.
+**Satu yang tersisa.** Tujuh lainnya lunas pada 19 Agustus 2026 dan dicatat di
+bawahnya berikut angkanya, supaya dapat diperiksa dan bukan sekadar diyakini.
 
 | Hal | Keadaan |
 |---|---|
-| **Katalog KRS 2,2 MB** | **Paginasi diperlukan.** 1.000 baris = 1,92 s dan **2.235 KB HTML**. Pada 2.000 mahasiswa serentak itu ±4,4 GB lewat jaringan kampus dalam hitungan menit — jaringan yang menyerah lebih dulu, bukan PHP |
-| Validasi muatan berisi | Sapuan rute tulis hanya mengirim muatan kosong dan id palsu: terbukti tidak ada yang meledak, **bukan** bahwa aturannya ditegakkan. Nilai di luar rentang, tanggal terbalik, SKS negatif belum pernah dicoba lewat HTTP |
-| Font dari Google Fonts | Mengungkap IP pengunjung ke pihak ketiga; hosting sendiri menghapus itu sekaligus satu pengecualian CSP |
-| Sisa scaffolding pembayaran | `config/payment.php` menjanjikan driver `fake` yang kelasnya tidak ada — config yang berbohong. Plus direktori kosong `app/Services/Payment/*` |
+| Beban HTTP penuh saat pembukaan KRS | Perebutan kuota sudah dibuktikan aman lewat proses paralel, dan katalognya sudah dipaginasi. Yang **belum** diuji: ribuan permintaan HTTP bersamaan pada satu server — antrean PHP-FPM, kolam koneksi, dan sesi. `artisan serve` satu utas tidak dapat membuktikannya |
 
 ### Lunas 19 Agustus 2026
 
@@ -166,8 +163,11 @@ bawahnya, supaya angkanya dapat diperiksa dan bukan diyakini.
 |---|---|
 | ~~Suite lambat~~ | Serial 2.574 detik → **paralel 319–670 detik**. CI beralih ke `composer test:par` sesudah *race* kunci Passport diperbaiki — sebelumnya gagal 3 dari 5 kali |
 | ~~Uji beban bersamaan~~ | Perebutan kuota: 19 proses, 1 kursi → **tepat 1 pemenang**; 5 kursi → tepat 5. `lockForUpdate()` bertahan di MySQL sungguhan, sesuatu yang suite SQLite tidak akan pernah buktikan. **Beban HTTP penuh masih terbuka** |
-| ~~Katalog KRS belum terukur~~ | Terukur — hasilnya jadi baris pertama tabel di atas |
+| ~~Katalog KRS belum terukur~~ | Terukur, lalu **dipaginasi**: 2.235 KB → **105 KB**, 1,92 s → 0,79 s. Pada 2.000 mahasiswa serentak, ±4,4 GB menjadi ±210 MB |
 | ~~Fixture skala sekali pakai~~ | Jadi perintah: `openacademic:beban-katalog` dan `openacademic:beban-kuota` |
+| ~~Font dari Google Fonts~~ | Di-host sendiri lewat `@fontsource`. Dua pengecualian CSP dicabut. Menemukan bug tersembunyi: Vite menulis URL aset absolut dari akar domain, jadi **seluruh pemasangan subfolder** akan kehilangan hurufnya — diperbaiki dengan `base: './'` |
+| ~~Sisa scaffolding pembayaran~~ | `config/payment.php` dipangkas ke yang benar-benar dibaca. Ternyata **dua** kebohongan, bukan satu: `allow_partial` juga tak pernah dibaca padahal pembayaran sebagian memang berjalan — kampus yang mematikannya tetap menerima cicilan |
+| ~~Validasi muatan berisi~~ | 107 aturan numerik disapu. Dua cacat nyata: `target`/`nilai` kinerja tanpa batas (MySQL longgar **memotong diam-diam** 1e15 jadi 9.999.999.999,99), dan capaian bertanggal di luar periodenya diterima. Keduanya dipaku 7 tes |
 
 ## Sengaja di luar cakupan — 8
 

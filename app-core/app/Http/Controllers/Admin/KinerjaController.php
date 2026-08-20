@@ -136,7 +136,23 @@ class KinerjaController extends Controller
             'sumber_realisasi' => ['required', 'string', 'in:'.implode(',', array_keys(SumberRealisasi::options()))],
             'indikator_kunci' => ['nullable', 'string', 'max:64'],
             'satuan' => ['nullable', 'string', 'max:24'],
-            'target' => ['required', 'numeric'],
+            /*
+             * Dibatasi pada apa yang MUAT DI KOLOMNYA, bukan pada aturan bisnis
+             * karangan.
+             *
+             * `target` dan `nilai` disimpan sebagai DECIMAL(12,2). MySQL di luar
+             * mode ketat tidak menolak nilai yang melebihinya — ia memotongnya
+             * diam-diam: target 1.000.000.000.000.000 tersimpan sebagai
+             * 9.999.999.999,99. Operator mengetik satu angka, sistem menyimpan
+             * angka lain, dan tidak ada yang memberitahu. Diuji langsung pada
+             * MariaDB XAMPP; sql_mode di sana memang tanpa STRICT_TRANS_TABLES.
+             *
+             * Batas bawah 0 karena kedelapan indikator di config/kinerja.php
+             * adalah cacahan, rerata, atau persentase — tak satu pun dapat
+             * bernilai negatif. Ukuran bertanda perlu keputusan tersendiri,
+             * bukan diselundupkan lewat validasi yang longgar.
+             */
+            'target' => ['required', 'numeric', 'min:0', 'max:9999999999.99'],
             'semakin_besar_semakin_baik' => ['nullable', 'boolean'],
         ]);
 
@@ -153,7 +169,8 @@ class KinerjaController extends Controller
         $this->izin('pengaturan.manage');
 
         $data = $request->validate([
-            'nilai' => ['required', 'numeric'],
+            // Batas yang sama dengan `target` di atas, dan alasannya sama.
+            'nilai' => ['required', 'numeric', 'min:0', 'max:9999999999.99'],
             'tanggal' => ['required', 'date'],
             'catatan' => ['nullable', 'string', 'max:500'],
         ]);

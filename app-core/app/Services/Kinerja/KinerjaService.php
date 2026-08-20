@@ -13,6 +13,7 @@ use App\Models\Kinerja\SasaranKinerja;
 use App\Models\Kinerja\UkuranKinerja;
 use App\Models\Sdm\Staff;
 use App\Models\Sdm\UnitKerja;
+use Carbon\CarbonImmutable;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
@@ -195,6 +196,31 @@ class KinerjaService
                 'Ukuran "%s" bersumber %s, jadi realisasinya tidak dapat diketik.',
                 $ukuran->nama,
                 $ukuran->sumber_realisasi->label(),
+            ));
+        }
+
+        /*
+         * Tanggalnya harus jatuh di dalam periodenya.
+         *
+         * Sebelum ini tanggal apa pun diterima: capaian bertanggal 2019 atau
+         * 2099 mendarat di periode 2026 tanpa keberatan. Periode kinerja dibaca
+         * sebagai deret waktu — kapan sebuah angka bergerak, dan seberapa cepat
+         * — dan satu titik di luar rentangnya membuat seluruh deret berbohong
+         * tanpa pernah terlihat salah.
+         *
+         * Dibandingkan sebagai TANGGAL, bukan waktu: `mulai` dan `selesai`
+         * di-cast ke tengah malam, jadi capaian pada hari terakhir periode akan
+         * tertolak bila dibandingkan berikut jamnya.
+         */
+        $hari = CarbonImmutable::parse($tanggal)->toDateString();
+
+        if ($hari < $periode->mulai->toDateString() || $hari > $periode->selesai->toDateString()) {
+            throw new AturanAkademikException(sprintf(
+                'Tanggal %s berada di luar periode "%s" (%s – %s).',
+                CarbonImmutable::parse($tanggal)->translatedFormat('d M Y'),
+                $periode->nama,
+                $periode->mulai->translatedFormat('d M Y'),
+                $periode->selesai->translatedFormat('d M Y'),
             ));
         }
 
