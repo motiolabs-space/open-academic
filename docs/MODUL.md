@@ -18,14 +18,14 @@
 | | |
 |---|---|
 | Portal | 3 — Mahasiswa, Dosen, Staf |
-| **Modul terpasang** | **59** — 12 mahasiswa · 14 dosen · 33 staf |
+| **Modul terpasang** | **60** — 12 mahasiswa · 14 dosen · 34 staf |
 | **Belum dibuat** | 8 modul · 7 sebagian · **1 utang teknis** (7 lunas 19 Agu 2026) |
 | Sengaja di luar cakupan | 8 |
 | Rute GET berportal | 92 |
 | Tabel domain | 109 · 48 migrasi |
 | Model Eloquent | 94 · 54 enum · 85 service · 7 policy |
 | Perintah artisan | 12 |
-| Tes Pest | **937 hijau** (2.039 asersi) · 63 berkas |
+| Tes Pest | **958 hijau** (2.086 asersi) · 65 berkas |
 | Desain | Midnight Executive — navy `#1E2761`, emas `#C9A961` |
 
 Fase 0–5, SSO OAuth2, tujuh kesenjangan SIAKAD (G1–G7), dan integrasi akuntansi
@@ -109,6 +109,7 @@ Akun demo: `admin@demo.test` · kata sandi `password`
 | **PELAPORAN** | Neo Feeder PDDIKTI | `/admin/feeder` |
 | | Campus Bridge | `/admin/bridge` |
 | | Verifikasi Data IKU | `/admin/data-iku` |
+| | **Borang LKPS** | `/admin/lkps` |
 | | Log Aktivitas | `/admin/log` |
 | **SISTEM** | Rencana Kinerja | `/admin/kinerja` |
 | | SPMI & Audit Mutu | `/admin/spmi` |

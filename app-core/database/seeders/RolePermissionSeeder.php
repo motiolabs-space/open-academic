@@ -38,6 +38,7 @@ class RolePermissionSeeder extends Seeder
             'bkd.view', 'bkd.manage',
             'wisuda.view', 'wisuda.manage',
             'feeder.view', 'feeder.sync',
+            'lkps.view',
             'bridge.view', 'bridge.manage',
             'pengaturan.view', 'pengaturan.manage',
             'log.view',

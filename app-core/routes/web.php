@@ -522,6 +522,9 @@ Route::middleware(['auth:staff', 'term.active'])->prefix('admin')->name('admin.'
     Route::post('/pmb/berkas/{berkas}/verifikasi', [Admin\PmbController::class, 'verifikasiBerkas'])->name('pmb.berkas.verifikasi');
     Route::delete('/pmb/berkas/{berkas}', [Admin\PmbController::class, 'hapusBerkas'])->name('pmb.berkas.hapus');
 
+    Route::get('/lkps', [Admin\LkpsController::class, 'index'])->name('lkps');
+    Route::get('/lkps/ekspor', [Admin\LkpsController::class, 'ekspor'])->name('lkps.ekspor');
+
     Route::get('/feeder', [Admin\FeederController::class, 'index'])->name('feeder');
     Route::post('/feeder/validasi', [Admin\FeederController::class, 'validasi'])->name('feeder.validasi');
     Route::post('/feeder/referensi', [Admin\FeederController::class, 'tarikReferensi'])->name('feeder.referensi');
