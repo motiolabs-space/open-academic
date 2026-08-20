@@ -98,7 +98,30 @@
 
     <div class="grid gap-5 lg:grid-cols-[1.6fr_1fr]">
         {{-- ============ KATALOG ============ --}}
-        <x-card title="Katalog Mata Kuliah" :meta="$term->nama" flush>
+        <x-card title="Katalog Mata Kuliah" :meta="$katalog->total().' kelas ditawarkan'" flush>
+            {{-- Pencarian ada BERSAMA paginasi, bukan sesudahnya: layar ini
+                 dipakai untuk mencari mata kuliah tertentu, dan membolak-balik
+                 dua puluh halaman demi satu nama lebih buruk daripada halaman
+                 panjang yang bisa di-Ctrl+F. --}}
+            <form method="GET" class="flex flex-wrap items-center gap-2 border-b border-line px-5 py-3">
+                <label class="min-w-[200px] flex-1">
+                    <span class="sr-only">Cari mata kuliah</span>
+                    <input
+                        type="search"
+                        name="cari"
+                        value="{{ $cari }}"
+                        placeholder="Cari kode atau nama mata kuliah…"
+                        class="w-full rounded-control border border-line-input bg-canvas px-3 py-2 text-[13px] outline-none focus:border-navy focus:ring-4 focus:ring-navy/10"
+                    >
+                </label>
+
+                <x-button type="submit" variant="outline" size="sm">Cari</x-button>
+
+                @if ($cari !== '')
+                    <x-button :href="route('mahasiswa.krs')" variant="ghost" size="sm">Hapus filter</x-button>
+                @endif
+            </form>
+
             <div class="divide-y divide-line/60">
                 @forelse ($katalog as $baris)
                     @php
@@ -203,13 +226,31 @@
                     </div>
                 @empty
                     <div class="px-5 py-10">
-                        <x-empty-state
-                            title="Belum ada kelas ditawarkan"
-                            description="Kelas untuk kurikulum Anda pada semester ini belum dibuka oleh bagian akademik."
-                        />
+                        {{-- Dua keadaan kosong yang berbeda, dan membedakannya penting:
+                             "pencarian tidak ketemu" dapat ditindaklanjuti mahasiswa,
+                             "belum dibuka akademik" tidak. --}}
+                        @if ($cari !== '')
+                            <x-empty-state
+                                title="Tidak ada yang cocok"
+                                :description="'Tidak ada kelas yang kode atau namanya memuat &quot;'.$cari.'&quot; pada kurikulum Anda semester ini.'"
+                            >
+                                <x-button :href="route('mahasiswa.krs')" variant="outline" size="sm">
+                                    Tampilkan semua kelas
+                                </x-button>
+                            </x-empty-state>
+                        @else
+                            <x-empty-state
+                                title="Belum ada kelas ditawarkan"
+                                description="Kelas untuk kurikulum Anda pada semester ini belum dibuka oleh bagian akademik."
+                            />
+                        @endif
                     </div>
                 @endforelse
             </div>
+
+            @if ($katalog->hasPages())
+                <div class="border-t border-line px-5 py-3">{{ $katalog->links() }}</div>
+            @endif
         </x-card>
 
         {{-- ============ TRAY SKS ============ --}}

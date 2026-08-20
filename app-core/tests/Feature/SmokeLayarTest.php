@@ -113,7 +113,11 @@ it('membuka layar mahasiswa dalam anggaran kueri', function (string $url, int $a
     // 34 → 36: peta kurikulum (gerbang konsentrasi), konsentrasi mahasiswa,
     // dan prodinya. Ketiganya satu kueri apa pun panjang katalognya — bukan
     // per baris, jadi tidak tumbuh bersama jumlah kelas yang ditawarkan.
-    ['/mahasiswa/krs', 36],
+    //
+    // 36 → 37: kueri hitung milik paginasi. Satu kueri tambahan yang dibayar
+    // sekali, ditukar dengan katalog yang berhenti merender seluruh isinya —
+    // pada 1.000 kelas layarnya dulu 1,92 detik dan 2,2 MB HTML.
+    ['/mahasiswa/krs', 37],
     ['/mahasiswa/jadwal', 20],
     ['/mahasiswa/khs', 25],
     ['/mahasiswa/tagihan', 20],

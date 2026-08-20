@@ -7,12 +7,14 @@ namespace App\Http\Controllers\Mahasiswa;
 use App\Http\Controllers\Controller;
 use App\Models\Akademik\KelasKuliah;
 use App\Models\Akademik\KrsDetail;
+use App\Models\Akademik\MataKuliah;
 use App\Services\Akademik\KrsService;
 use App\Services\Akademik\PaketKuliahService;
 use App\Services\Akademik\PrasyaratChecker;
 use App\Support\Portal;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Support\Collection;
+use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 /**
@@ -29,7 +31,7 @@ class KrsController extends Controller
         private readonly PrasyaratChecker $prasyarat,
     ) {}
 
-    public function index(PaketKuliahService $paketService): View
+    public function index(Request $request, PaketKuliahService $paketService): View
     {
         $mahasiswa = Portal::user();
         $term = Portal::term();
@@ -56,7 +58,8 @@ class KrsController extends Controller
             'breadcrumb' => ['Portal Mahasiswa' => route('mahasiswa.dashboard'), 'Rencana Studi'],
             'krs' => $krs,
             'ringkasan' => $this->krsService->ringkas($krs),
-            'katalog' => $this->katalog($krs),
+            'katalog' => $this->katalog($krs, $request),
+            'cari' => $request->string('cari')->toString(),
             'term' => $term,
 
             // Only for programmes that issue plans. Everywhere else this is
@@ -126,12 +129,30 @@ class KrsController extends Controller
     }
 
     /**
-     * Offerings the student may consider, each annotated with why it is or is
-     * not takeable.
+     * Kelas yang boleh dipertimbangkan mahasiswa, masing-masing diberi catatan
+     * kenapa ia dapat atau tidak dapat diambil.
      *
-     * @return Collection<int, array<string, mixed>>
+     * Disaring dan dipaginasi di BASIS DATA, bukan di PHP.
+     *
+     * Sebelumnya seluruh kelas kurikulum ditarik dengan `get()` lalu dipetakan
+     * satu per satu. Diukur 19 Agustus 2026: pada 1.000 baris layarnya jadi
+     * **1,92 detik dan 2.235 KB HTML**. Pada jam pembukaan KRS dengan 2.000
+     * mahasiswa itu ±4,4 GB yang harus melewati jaringan kampus dalam hitungan
+     * menit — dan jaringan itu, bukan PHP, yang menyerah lebih dulu.
+     * Lihat `docs/KAPASITAS.md`.
+     *
+     * **Pencarian ada bersama paginasi, bukan sesudahnya.** Layar ini dipakai
+     * untuk MENCARI mata kuliah tertentu; paginasi tanpa pencarian memaksa
+     * mahasiswa membolak-balik dua puluh halaman untuk menemukan satu nama, dan
+     * itu lebih buruk daripada halaman panjang yang bisa di-Ctrl+F.
+     *
+     * Pengurutan pindah ke SQL lewat subkueri: mengurutkan sesudah paginasi
+     * hanya mengurutkan halaman yang sedang dibuka, sehingga "halaman 2" berisi
+     * kode yang seharusnya di halaman 5.
+     *
+     * @return LengthAwarePaginator<int, array<string, mixed>>
      */
-    private function katalog($krs): Collection
+    private function katalog($krs, Request $request): LengthAwarePaginator
     {
         $mahasiswa = $krs->mahasiswa;
 
@@ -154,10 +175,18 @@ class KrsController extends Controller
                 ),
                 fn ($query) => $query->where('prodi_id', $mahasiswa->prodi_id),
             )
-            ->get();
+            ->cari($request->string('cari'), ['mataKuliah.kode', 'mataKuliah.nama'])
+            ->orderBy(
+                MataKuliah::select('kode')->whereColumn('mata_kuliah.id', 'kelas_kuliah.mata_kuliah_id'),
+            )
+            ->orderBy('kode')
+            ->paginate(25)
+            ->withQueryString();
 
-        return $kelas
-            ->map(function (KelasKuliah $item) use ($mahasiswa, $diambil, $krs, $peta): array {
+        // Hanya baris halaman ini yang dipetakan. Inilah yang membuat kerja PHP
+        // berhenti tumbuh bersama besarnya katalog.
+        return $kelas->through(
+            function (KelasKuliah $item) use ($mahasiswa, $diambil, $krs, $peta): array {
                 $sudahDiambil = in_array($item->mata_kuliah_id, $diambil, true);
                 $sudahLulus = $this->prasyarat->sudahLulus($mahasiswa, $item->mataKuliah);
                 $belumPrasyarat = config('academic.krs.enforce_prerequisites')
@@ -192,8 +221,7 @@ class KrsController extends Controller
                         && !$luarKonsentrasi
                         && $krs->status->isEditable(),
                 ];
-            })
-            ->sortBy(fn (array $baris): string => $baris['kelas']->mataKuliah->kode)
-            ->values();
+            },
+        );
     }
 }
