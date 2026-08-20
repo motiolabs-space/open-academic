@@ -62,8 +62,19 @@ efek samping menjalankan semester.
 kelompok data SISTER: `RiwayatPendidikanDosen`, `JabatanFungsionalDosen`,
 `PangkatDosen`, `SertifikasiDosen`, `PenghargaanSanksiDosen`,
 `OrganisasiDosen`, `KeluargaDosen`, `BahasaDosen`, `MutasiDosen`,
-`PenugasanDosen`, `BkdLaporan`, `BkdBaris`. Yang belum ada hanya kliennya.
-**Ini pengembalian terbesar per satuan kerja dari seluruh daftar ini.**
+`PenugasanDosen`, `BkdLaporan`, `BkdBaris`.
+
+> **Koreksi 21 Agustus 2026.** Kalimat semula di sini berbunyi "yang belum ada
+> hanya kliennya". Itu keliru, dan ketahuan saat ekspornya dikerjakan: **enam
+> kelompok tidak punya layar pengisian sama sekali** — penghargaan & sanksi,
+> bahasa, organisasi profesi, keluarga (tanpa apa pun), serta pangkat dan
+> mutasi (servisnya ada, pemanggilnya tidak). Skemanya ada; datanya tidak.
+>
+> Perbedaannya penting: satu berarti menulis adaptor, satu lagi berarti
+> menulis formulir lebih dahulu.
+
+Tetap pengembalian besar per satuan kerja — enam kelompok siap tanpa pekerjaan
+pengumpulan data apa pun, dan keenamnya sudah dapat diekspor sekarang.
 
 **KIP Kuliah.** Yang diminta per semester — status keaktifan, IPK, SKS tempuh —
 persis isi `StatusMahasiswa`, `PerolehanAkademik`, dan modul beasiswa. Belum
@@ -175,14 +186,21 @@ diam-diam lebih buruk daripada pelaporan yang gagal berisik.
 | # | Pekerjaan | Alasan |
 |---|---|---|
 | 1 | ~~Pembanding PDDIKTI~~ | **Selesai 21 Agu 2026** — lihat di bawah |
-| 2 | **Ekspor SISTER** | Datanya lengkap; berguna tanpa kredensial |
+| 2 | ~~Ekspor SISTER~~ | **Selesai 21 Agu 2026** — 8 dari 12 kelompok; 4 sisanya perlu formulir dulu |
 | 3 | **Perakit LKPS** | Nilai tertinggi yang belum diklaim; menghapus penyalinan antar-tab menjelang tenggat |
 | 4 | **Keputusan PIN** | Risiko, bukan fitur — dan jawabannya menentukan apakah nomor ijazah boleh terus diisi sendiri |
 | 5 | **Muatan kanonis** | Dikerjakan saat menambah tujuan kedua, bukan kelima |
 | 6 | **Ekspor KIP Kuliah** | Kecil; datanya sudah ada seluruhnya |
 
-Nomor 2 dan 3 tidak menunggu kredensial siapa pun dan tidak mengandaikan
-bentuk platform PDDIKTI berikutnya.
+Nomor 3 tidak menunggu kredensial siapa pun dan tidak mengandaikan bentuk
+platform PDDIKTI berikutnya.
+
+Pekerjaan baru yang muncul dari nomor 2: **formulir untuk enam kelompok SISTER
+yang belum dapat diisi** — penghargaan & sanksi, bahasa, organisasi profesi,
+keluarga (keempatnya tanpa apa pun), serta pangkat dan mutasi (keduanya sudah
+bersevis, tinggal layarnya). Kecil masing-masing, tetapi tanpa keenamnya
+portofolio SISTER tidak akan pernah lengkap — adaptor yang mulus di atas tabel
+kosong tetap mengirim kosong.
 
 ---
 
@@ -240,3 +258,59 @@ menyunting config, sama seperti `FeederMapping` menyelesaikan perbedaan kode
 di data. Nama aksi yang keliru tidak menghasilkan laporan kosong yang
 menenangkan; ia menghasilkan galat berisi pesan Feeder, jadi ia mengoreksi
 dirinya sendiri pada percobaan pertama.
+
+---
+
+## Ekspor SISTER — selesai 21 Agustus 2026
+
+`EksporSister` menghasilkan satu CSV per kelompok data SISTER, dan tabel
+katalognya ada di layar BKD (`/admin/bkd`).
+
+| Kelompok | Keadaan |
+|---|---|
+| Biodata dosen | ✅ tanpa NIK & alamat rumah |
+| Riwayat pendidikan | ✅ |
+| Jabatan fungsional | ✅ berikut angka kredit |
+| Pangkat & golongan | ⚠️ ekspornya jalan, layar pengisiannya belum |
+| Sertifikasi & pelatihan | ✅ |
+| Mutasi & penempatan | ⚠️ ekspornya jalan, layar pengisiannya belum |
+| Penugasan tridarma | ✅ sudah ada sebelumnya |
+| Rekap BKD | ✅ sudah ada sebelumnya |
+| Penghargaan & sanksi | ⬜ belum ada layar pengisian |
+| Kemampuan bahasa | ⬜ belum ada layar pengisian |
+| Organisasi profesi | ⬜ belum ada layar pengisian |
+| Anggota keluarga | ⛔ **sengaja tidak diekspor** |
+
+### Dua penolakan yang disengaja
+
+**Kelompok yang tidak dapat direkam tidak diekspor**, dan tidak pula
+disembunyikan dari daftar. Berkas berisi baris judul saja terbaca sebagai
+"kampus ini tidak punya dosen dengan keanggotaan profesi" — padahal artinya
+"aplikasi ini belum bisa menyimpannya". Rutenya membalas 404, bukan berkas
+kosong, dan layarnya menuliskan alasannya.
+
+**Anggota keluarga tidak masuk ekspor sama sekali.** SISTER menyimpannya;
+CSV yang beredar lewat surel adalah saluran yang berbeda dari pengiriman ke
+kementerian, dan nama serta tanggal lahir anak seorang dosen tidak punya
+urusan di saluran yang ceroboh. Aturan yang sama sudah menahan NIK keluar
+dari bentuk yang dibagikan.
+
+Perbedaan antara ⬜ dan ⛔ dijaga di katalog karena keduanya menuntut
+penanganan yang berbeda: yang pertama pekerjaan yang belum dilakukan, yang
+kedua keputusan yang tidak untuk dibatalkan diam-diam.
+
+### Angka benar, kesimpulan salah
+
+Pangkat dan mutasi menandai jenis kekeliruan yang ketiga, dan yang paling
+halus. Ekspornya berfungsi dan `RiwayatKepegawaianService` dapat menulisnya —
+tetapi **tak satu pun layar memanggil servis itu**. Kampus membuka daftarnya,
+membaca "0 baris", lalu menyimpulkan tidak ada kenaikan pangkat tercatat.
+Angkanya benar; kesimpulannya salah.
+
+Karena itu catatannya menempel pada barisnya, bukan pada dokumentasi yang
+tidak akan dibuka orang saat membaca angka nol.
+
+**Jadi enam kelompok, bukan empat, yang belum punya layar pengisian.** Empat
+tanpa apa-apa, dua sudah bersevis. Itu pekerjaan yang harus mendahului
+adaptor SISTER mana pun — adaptor yang mulus di atas tabel kosong tetap
+mengirim kosong.

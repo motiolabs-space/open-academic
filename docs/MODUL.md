@@ -25,7 +25,7 @@
 | Tabel domain | 109 · 48 migrasi |
 | Model Eloquent | 94 · 54 enum · 85 service · 7 policy |
 | Perintah artisan | 12 |
-| Tes Pest | **927 hijau** (2.005 asersi) · 62 berkas |
+| Tes Pest | **937 hijau** (2.039 asersi) · 63 berkas |
 | Desain | Midnight Executive — navy `#1E2761`, emas `#C9A961` |
 
 Fase 0–5, SSO OAuth2, tujuh kesenjangan SIAKAD (G1–G7), dan integrasi akuntansi

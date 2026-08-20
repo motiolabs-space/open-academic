@@ -404,6 +404,7 @@ Route::middleware(['auth:staff', 'term.active'])->prefix('admin')->name('admin.'
     Route::get('/bkd/ekspor/rekap', [Admin\BkdController::class, 'eksporRekap'])->name('bkd.ekspor.rekap');
     Route::get('/bkd/ekspor/kegiatan', [Admin\BkdController::class, 'eksporKegiatan'])->name('bkd.ekspor.kegiatan');
     Route::get('/bkd/ekspor/portofolio/{dosen}', [Admin\BkdController::class, 'eksporPortofolio'])->name('bkd.ekspor.portofolio');
+    Route::get('/bkd/ekspor/sister/{grup}', [Admin\BkdController::class, 'eksporSister'])->name('bkd.ekspor.sister');
 
     Route::get('/edom', [Admin\EdomController::class, 'index'])->name('edom.index');
     Route::get('/edom/{periode}/kelas/{kelas}', [Admin\EdomController::class, 'kelas'])->name('edom.kelas');

@@ -168,4 +168,45 @@
             </x-card>
         </div>
     </div>
+
+    {{-- ============ KELOMPOK DATA SISTER ============ --}}
+    <x-card
+        class="mt-5"
+        title="Kelompok Data SISTER"
+        meta="Per kelompok, bukan satu berkas"
+        flush
+    >
+        {{--
+            Kelompok yang tidak menghasilkan apa-apa ikut ditampilkan beserta
+            alasannya. Daftar yang hanya memuat yang berhasil akan membuat
+            kampus mengira portofolionya lengkap karena semua yang terlihat
+            hijau.
+        --}}
+        @foreach ($sisterKatalog as $kunci => $grup)
+            <div class="flex flex-wrap items-center gap-3 border-b border-line/50 px-5 py-3 last:border-b-0">
+                <span class="w-52 flex-none truncate text-[12.5px] font-medium">{{ $grup['label'] }}</span>
+
+                @if ($grup['tersedia'])
+                    <span class="tabular w-20 flex-none text-[12px] text-ink-muted">
+                        {{ Format::bulat($grup['baris']) }} baris
+                    </span>
+
+                    {{-- Nol baris pada kelompok yang tak punya layar pengisian
+                         adalah angka yang benar dengan kesimpulan yang salah. --}}
+                    <span class="min-w-0 flex-1 text-[12px] text-ink-faint">{{ $grup['catatan'] }}</span>
+
+                    <x-button
+                        href="{{ route('admin.bkd.ekspor.sister', $kunci) }}"
+                        variant="outline"
+                        class="px-4 py-1.5 text-xs"
+                    >
+                        Unduh CSV
+                    </x-button>
+                @else
+                    <x-chip tone="neutral">Belum</x-chip>
+                    <span class="min-w-0 flex-1 text-[12.5px] text-ink-muted">{{ $grup['alasan'] }}</span>
+                @endif
+            </div>
+        @endforeach
+    </x-card>
 @endsection
