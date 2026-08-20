@@ -75,4 +75,19 @@ class FeederException extends RuntimeException
     {
         return new self('Integrasi Neo Feeder sedang dinonaktifkan (FEEDER_ENABLED=false).');
     }
+
+    /**
+     * Refuses to compare an entity that has no comparison configured.
+     *
+     * Thrown rather than answered with an empty result: "tidak ada selisih" and
+     * "tidak pernah diperiksa" look identical on a screen, and only one of them
+     * is a reason to stop worrying.
+     */
+    public static function tidakDapatDibandingkan(string $entity): self
+    {
+        return new self(
+            "Entitas \"{$entity}\" belum dapat dibandingkan dengan Feeder: aksi pembacaannya "
+            .'belum ditetapkan pada config/feeder.php (bagian reconcile).',
+        );
+    }
 }

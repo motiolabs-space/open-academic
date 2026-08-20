@@ -103,9 +103,27 @@ class FakeFeederClient implements FeederClientInterface
         return $this->request($act, ['key' => $key, 'record' => $record]);
     }
 
+    /**
+     * Reads rows back, honouring limit and offset.
+     *
+     * The paging is not decoration. A double that always answers the whole set
+     * would let a caller that never advances its offset — or one that loops
+     * forever because the last page is always full — pass every test it has.
+     */
     public function get(string $act, array $filter = [], int $limit = 0, int $offset = 0): FeederResponse
     {
-        return $this->request($act, ['filter' => $filter, 'limit' => $limit, 'offset' => $offset]);
+        $response = $this->request($act, ['filter' => $filter, 'limit' => $limit, 'offset' => $offset]);
+
+        if ($limit <= 0 || $response->gagal()) {
+            return $response;
+        }
+
+        return new FeederResponse(
+            $response->errorCode,
+            $response->errorDesc,
+            array_values(array_slice($response->rows(), $offset, $limit)),
+            $response->raw,
+        );
     }
 
     public function tersedia(): bool

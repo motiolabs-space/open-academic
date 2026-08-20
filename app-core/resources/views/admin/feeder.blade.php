@@ -106,6 +106,22 @@
                         </form>
                     @endif
 
+                    @if ($baris['dapat_dibandingkan'])
+                        <form method="POST" action="{{ route('admin.feeder.bandingkan', $baris['entity']) }}">
+                            @csrf
+                            <x-button variant="outline" type="submit" class="px-4 py-2 text-xs" :disabled="! $aktif">
+                                Bandingkan
+                            </x-button>
+                        </form>
+                    @else
+                        {{--
+                            Stated, not hidden. An entity with no compare button
+                            and no explanation reads as one that has nothing to
+                            compare — which is the opposite of the truth.
+                        --}}
+                        <span class="text-[11px] text-ink-faint">Belum dapat dibandingkan</span>
+                    @endif
+
                     @if ($baris['terakhir'])
                         <span class="tabular ml-auto text-[11px] text-ink-faint">
                             {{ Format::tanggal($baris['terakhir']) }}
@@ -133,6 +149,45 @@
                 <x-empty-state
                     title="Belum ada hasil validasi"
                     description="Jalankan validasi untuk melihat baris mana yang akan ditolak PDDIKTI — sebelum satu pun data dikirim."
+                />
+            </div>
+        @endforelse
+    </x-card>
+
+    {{-- ============ SELISIH TERHADAP FEEDER ============ --}}
+    <x-card
+        class="mb-5"
+        title="Selisih terhadap Feeder"
+        :meta="$selisih->count().' temuan'"
+        flush
+    >
+        @forelse ($selisih as $beda)
+            <div class="flex flex-wrap items-start gap-3 border-b border-line/50 px-5 py-2.5 last:border-b-0">
+                <x-chip :tone="$beda->jenis->tone()">{{ $beda->jenis->label() }}</x-chip>
+
+                <span class="tabular w-40 flex-none truncate text-[12.5px] font-medium">
+                    {{ $beda->label ?? $beda->kunci }}
+                </span>
+
+                <div class="min-w-0 flex-1 text-[12.5px] text-ink-muted">
+                    @if ($beda->selisih)
+                        <div class="tabular space-y-0.5">
+                            @foreach ($beda->ringkasSelisih() as $satu)
+                                <div>{{ $satu }}</div>
+                            @endforeach
+                        </div>
+                    @else
+                        {{ $beda->jenis->saran() }}
+                    @endif
+                </div>
+
+                <span class="tabular hidden text-[11px] text-ink-faint sm:block">{{ $beda->entity }}</span>
+            </div>
+        @empty
+            <div class="px-5 py-10">
+                <x-empty-state
+                    title="Belum ada perbandingan"
+                    description="Buku besar mencatat apa yang dikirim dari sini. Perbandingan membaca kembali isi Feeder — satu-satunya cara melihat baris yang diubah atau dimasukkan langsung di sana."
                 />
             </div>
         @endforelse

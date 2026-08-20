@@ -51,7 +51,7 @@ tersendiri dengan siklus hidup, beban, dan model datanya sendiri — lihat
 | Layar (rute GET berportal) | 94 |
 | Endpoint Campus Bridge | 14 |
 | Perintah artisan | 12 |
-| **Tes Pest** | **914 hijau (1.969 asersi)** |
+| **Tes Pest** | **927 hijau (2.005 asersi)** |
 
 Seluruh fase (0–5), SSO OAuth2, tujuh kesenjangan SIAKAD (G1–G7), dan integrasi
 akuntansi sudah selesai. `php artisan migrate:fresh --seed` membangun kampus demo
@@ -138,7 +138,7 @@ Apa yang ada hari ini, dikelompokkan menurut siapa yang memakainya.
 | Campus Bridge | ✅ | 11 endpoint ber-scope, webhook HMAC, spec OpenAPI |
 | SSO OAuth2 (Passport) | ✅ | Kampus jadi penerbit identitas |
 | Notifikasi (G2) | ✅ | Kategori wajib tidak dapat dimatikan |
-| **Komparasi data SIAKAD ↔ Neo Feeder** | ⬜ | Sinkron ada; pembanding selisih belum |
+| **Komparasi data SIAKAD ↔ Neo Feeder** | ✅ | FeederRekonsiliasi 21 Agu 2026: membaca Feeder kembali dan melaporkan hanya-lokal / hanya-Feeder / berbeda isinya. Entitas tanpa aksi pembacaan dinyatakan belum dapat dibandingkan, bukan cocok |
 | **Klien SISTER** | ⬜ | Menunggu kredensial |
 | **Federasi ke IdP eksternal** | ⬜ | Google/Entra/Keycloak |
 
@@ -177,7 +177,6 @@ akademik ada di tabel berikutnya.
 | Modul | Poros | Beratnya |
 |---|---|---|
 | **Payment gateway aktif** | Keuangan | **Besar** — kita hanya punya pencatatan manual |
-| **Komparasi data SIAKAD ↔ Neo Feeder** | Pelaporan | Sedang |
 | **Denda keterlambatan** | Keuangan | Kecil–sedang |
 | **Aplikasi mobile native** | Semua | Sedang — web responsif sudah jalan |
 
@@ -275,7 +274,6 @@ cakupan: **payment gateway**, terhalang kredensial merchant.
 
 | # | Pekerjaan |
 |---|---|
-| 14 | Komparasi data SIAKAD ↔ Neo Feeder (selisih, bukan hanya kirim) |
 | 15 | Denda keterlambatan |
 | 16 | 2FA staf; federasi IdP eksternal |
 | 17 | Aplikasi mobile native |
