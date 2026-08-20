@@ -51,7 +51,7 @@ tersendiri dengan siklus hidup, beban, dan model datanya sendiri — lihat
 | Layar (rute GET berportal) | 94 |
 | Endpoint Campus Bridge | 14 |
 | Perintah artisan | 12 |
-| **Tes Pest** | **927 hijau (2.005 asersi)** |
+| **Tes Pest** | **937 hijau (2.039 asersi)** |
 
 Seluruh fase (0–5), SSO OAuth2, tujuh kesenjangan SIAKAD (G1–G7), dan integrasi
 akuntansi sudah selesai. `php artisan migrate:fresh --seed` membangun kampus demo

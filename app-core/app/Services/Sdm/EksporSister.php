@@ -5,7 +5,15 @@ declare(strict_types=1);
 namespace App\Services\Sdm;
 
 use App\Models\Sdm\Dosen;
+use App\Models\Sdm\JabatanFungsionalDosen;
+use App\Models\Sdm\MutasiDosen;
+use App\Models\Sdm\PangkatDosen;
+use App\Models\Sdm\RiwayatPendidikanDosen;
+use App\Models\Sdm\SertifikasiDosen;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 use RuntimeException;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -47,6 +55,7 @@ class EksporSister
     public function katalog(): array
     {
         $katalog = [];
+        $jumlah = $this->jumlahSemua();
 
         foreach (self::GRUP as $kunci => $meta) {
             $katalog[$kunci] = [
@@ -58,7 +67,7 @@ class EksporSister
                 // otherwise be read as a fact about the campus.
                 'catatan' => $meta['catatan'] ?? null,
 
-                'baris' => $meta['tersedia'] ? $this->baris($kunci)->count() : 0,
+                'baris' => $meta['tersedia'] ? ($jumlah[$kunci] ?? 0) : 0,
             ];
         }
 
@@ -187,6 +196,58 @@ class EksporSister
         ],
 
     ];
+
+    /* ---------------------------------------------------------------------
+     | Counting
+     |-------------------------------------------------------------------- */
+
+    /**
+     * How many rows each group would export — every group, in one query.
+     *
+     * Two earlier versions were wrong in the same direction. The first called
+     * baris() and counted the result, hydrating every lecturer and every child
+     * row of six groups to display six numbers. The second issued one COUNT per
+     * group, which took the BKD screen from 16 queries to 22 against a budget
+     * of 20. Both were caught by the query-budget test, which is what it is
+     * for.
+     *
+     * Each count is a scalar subquery, assembled from the models themselves
+     * rather than hand-written SQL — so soft deletes and the active scope come
+     * along, and none of it drifts when they change.
+     *
+     * @return array<string, int>
+     */
+    private function jumlahSemua(): array
+    {
+        /** @var array<string, class-string<Model>> $anak */
+        $anak = [
+            'riwayat_pendidikan' => RiwayatPendidikanDosen::class,
+            'jabatan_fungsional' => JabatanFungsionalDosen::class,
+            'pangkat' => PangkatDosen::class,
+            'sertifikasi' => SertifikasiDosen::class,
+            'mutasi' => MutasiDosen::class,
+        ];
+
+        $query = DB::query()->selectSub(
+            Dosen::aktif()->selectRaw('count(*)')->getQuery(),
+            'biodata',
+        );
+
+        foreach ($anak as $kunci => $model) {
+            // Counted through the lecturer rather than on the child table
+            // alone: rows belonging to an inactive lecturer are not exported,
+            // and counting them would promise more than the file delivers.
+            $query->selectSub(
+                $model::query()
+                    ->whereHas('dosen', fn (Builder $q): Builder => $q->aktif())
+                    ->selectRaw('count(*)')
+                    ->getQuery(),
+                $kunci,
+            );
+        }
+
+        return array_map(intval(...), (array) $query->first());
+    }
 
     /* ---------------------------------------------------------------------
      | Rows
