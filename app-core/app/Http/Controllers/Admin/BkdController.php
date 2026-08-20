@@ -11,6 +11,7 @@ use App\Models\Sdm\BkdLaporan;
 use App\Models\Sdm\Dosen;
 use App\Services\Sdm\BkdService;
 use App\Services\Sdm\EksporSdm;
+use App\Services\Sdm\EksporSister;
 use App\Support\Portal;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -31,6 +32,7 @@ class BkdController extends Controller
     public function __construct(
         private readonly BkdService $bkd,
         private readonly EksporSdm $ekspor,
+        private readonly EksporSister $sister,
     ) {}
 
     public function index(Request $request): View
@@ -69,6 +71,11 @@ class BkdController extends Controller
             'asesorPilihan' => Dosen::aktif()->orderBy('nama')->pluck('nama', 'id')->all(),
             'bolehKelola' => Portal::user()?->hasPermissionTo('bkd.manage', 'staff') ?? false,
             'batas' => config('bkd.batas'),
+
+            // Includes the groups that produce nothing, with the reason. A
+            // catalogue of only what works lets a campus believe its portfolio
+            // is complete because everything visible is green.
+            'sisterKatalog' => $this->sister->katalog(),
         ]);
     }
 
@@ -122,6 +129,24 @@ class BkdController extends Controller
         $this->izin('bkd.view');
 
         return $this->ekspor->kegiatanCsv($this->term($request));
+    }
+
+    /**
+     * One SISTER data group as CSV.
+     *
+     * 404 rather than an empty file for a group this application cannot
+     * record: a file with only a header row would be read as "the campus has
+     * no data of this kind", which is a different statement.
+     */
+    public function eksporSister(string $grup): Response
+    {
+        $this->izin('bkd.view');
+
+        $meta = $this->sister->katalog()[$grup] ?? null;
+
+        abort_if($meta === null || !$meta['tersedia'], 404);
+
+        return $this->sister->csv($grup);
     }
 
     /**
