@@ -193,6 +193,12 @@ Event: `student.enrolled`, `student.status_changed`, `krs.approved`,
   Beri nama indeks eksplisit begitu nama otomatis Laravel — `{tabel}_{kolom…}_index`
   — melewati 64. Migrasi kuesioner pernah lolos seluruh suite sambil tidak dapat
   dipasang di MySQL sama sekali; lihat `docs/MODUL.md`.
+  **Identifier yang salah ketik pun tidak dikeluhkan SQLite:** identifier
+  berkutip yang tidak dikenal diperlakukan sebagai string literal, jadi
+  `whereNotNull(kolom_yang_tidak_ada)` selalu benar dan seluruh baris lolos.
+  MySQL membalas 500; SQLite membalas angka yang salah, diam-diam, dengan tes
+  hijau. Tes yang memaku MAKNA angkanya menangkap ini; tes yang memaku status
+  HTTP tidak.
 - Jalankan paralel: `composer test:par` (paratest, satu SQLite `:memory:` per
   proses). **Apa pun yang ditulis ke jalur bersama harus di-scope per proses**
   dengan `ParallelTesting::token()` — kunci Passport pernah membuat tes SSO

@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Enums\AttendanceStatus;
+use App\Enums\GradeLetter;
 use App\Enums\SemesterType;
 use App\Enums\StatusRps;
 use App\Exceptions\AturanAkademikException;
@@ -11,6 +12,7 @@ use App\Models\Akademik\KomponenNilai;
 use App\Models\Akademik\Krs;
 use App\Models\Akademik\KrsDetail;
 use App\Models\Akademik\MataKuliah;
+use App\Models\Akademik\Nilai;
 use App\Models\Akademik\NilaiKomponen;
 use App\Models\Akademik\PertemuanKelas;
 use App\Models\Akademik\Presensi;
@@ -519,5 +521,45 @@ describe('analitik kehadiran & penilaian', function () {
         NilaiKomponen::create(['komponen_nilai_id' => $k->id, 'krs_detail_id' => $detail->id, 'nilai' => 85]);
 
         expect($this->analitik->perluPerhatian($this->kelas))->toHaveCount(0);
+    });
+});
+
+describe('analitik nilai final', function () {
+    /*
+     * Dua cacat sekaligus, dan yang kedua lebih berbahaya.
+     *
+     * `AnalitikService::penilaian()` dulu menyaring `whereNotNull('nilai_akhir')`
+     * — kolom milik `tugas_akhir`, bukan `nilai`. Di MySQL layar Analitik Kelas
+     * per-kelas membalas 500. Di SQLite ia TIDAK galat sama sekali: identifier
+     * berkutip yang tidak dikenal diperlakukan sebagai string literal, dan
+     * string tidak pernah NULL — jadi penyaringnya selalu benar dan SELURUH
+     * nilai terhitung final.
+     *
+     * Karena itu tes ini memaku maknanya, bukan status HTTP-nya: satu-satunya
+     * hal yang gagal di SQLite pada kode lama adalah angkanya.
+     */
+    it('hanya menghitung nilai yang sudah final', function () {
+        $a = pesertaKelasRps('Final Satu');
+        $b = pesertaKelasRps('Final Dua');
+        $c = pesertaKelasRps('Belum Final');
+
+        foreach ([[$a, 80, true], [$b, 90, true], [$c, 40, false]] as [$detail, $angka, $final]) {
+            Nilai::create([
+                'krs_detail_id' => $detail->id,
+                'kelas_kuliah_id' => $this->kelas->id,
+                'mahasiswa_id' => $detail->krs->mahasiswa_id,
+                'nilai_angka' => $angka,
+                'nilai_huruf' => GradeLetter::B,
+                'bobot' => 3,
+                'is_final' => $final,
+            ]);
+        }
+
+        $hasil = $this->analitik->penilaian($this->kelas);
+
+        // 3 berarti yang belum final ikut terhitung — persis gejala kode lama.
+        expect($hasil['sudah_final'])->toBe(2)
+            // Rerata 70 berarti nilai 40 yang belum final ikut menyeret.
+            ->and($hasil['rerata_akhir'])->toBe(85.0);
     });
 });

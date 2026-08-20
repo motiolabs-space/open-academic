@@ -167,6 +167,29 @@ bukan PHP, yang akan menyerah lebih dulu.
 **Kesimpulan: katalog perlu paginasi atau penyaringan sebelum dipakai prodi
 besar.** Dugaan lama di dokumen ini benar; sekarang ada angkanya.
 
+### Sesudah paginasi — diukur ulang 19 Agustus 2026
+
+Katalog kini disaring, diurutkan, dan dipaginasi di SQL; 25 baris per halaman.
+Diukur pada katalog yang sama, 1.000 kelas terlihat, server dan cara yang sama:
+
+| | Sebelum | Sesudah | |
+|---|---|---|---|
+| HTML | 2.235 KB | **105 KB** | **21× lebih kecil** |
+| Waktu | 1,92 s | **0,79 s** | 2,4× lebih cepat |
+| Baris dirender | 1.000 | 25 | |
+
+Halaman ke-20 dan hasil pencarian sama-sama tetap 105 KB — ukuran halaman
+tidak lagi bergantung pada besarnya katalog.
+
+Pada 2.000 mahasiswa serentak, ±4,4 GB tadi menjadi **±210 MB**. Itu memindahkan
+titik gagal dari jaringan kampus kembali ke aplikasi, tempat ia dapat diukur
+dan ditangani.
+
+Sisa 0,79 detik bukan lagi milik katalog: 25 baris tidak mungkin memakan
+segitu. Yang tersisa adalah biaya tetap layar ini — sesi, hitungan notifikasi,
+panel keranjang KRS, dan satu kueri hitung milik paginasi. Menekannya lebih
+jauh berarti menyentuh hal lain, dan belum tentu sepadan.
+
 ---
 
 ## Perebutan Kuota Bersamaan — diuji 19 Agustus 2026

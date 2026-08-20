@@ -119,7 +119,20 @@ class AnalitikService
                 'tertinggi' => round((float) $r->tertinggi, 2),
             ]);
 
-        $final = $kelas->nilai()->whereNotNull('nilai_akhir')->get();
+        /*
+         * `is_final`, bukan `nilai_akhir`.
+         *
+         * `nilai_akhir` kolom milik `tugas_akhir` — nilai sidang, bukan nilai
+         * mata kuliah. Tabel `nilai` memakai `is_final` sebagai penanda
+         * finalisasi dan `nilai_angka` untuk angkanya; baris di bawah yang
+         * membaca `nilai_huruf` sudah membuktikan yang diambil memang baris
+         * `nilai`.
+         *
+         * Sebelum diperbaiki, layar Analitik Kelas per-kelas membalas 500
+         * dengan "Unknown column 'nilai_akhir'" — dan tidak ada satu pun tes
+         * yang pernah membuka layar itu.
+         */
+        $final = $kelas->nilai()->where('is_final', true)->get();
 
         return [
             'per_komponen' => $perKomponen,
@@ -134,7 +147,9 @@ class AnalitikService
             'komponen_terlemah' => $perKomponen->sortBy('rerata')->first(),
 
             'sudah_final' => $final->count(),
-            'rerata_akhir' => $final->isEmpty() ? null : round((float) $final->avg('nilai_akhir'), 2),
+            // `avg()` pada Collection mengabaikan null, jadi nilai final yang
+            // angkanya belum terisi tidak menyeret reratanya ke bawah.
+            'rerata_akhir' => $final->isEmpty() ? null : round((float) $final->avg('nilai_angka'), 2),
 
             'sebaran_huruf' => $final
                 ->groupBy(fn ($n): string => $n->nilai_huruf?->value ?? '—')
