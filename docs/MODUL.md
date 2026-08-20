@@ -19,13 +19,13 @@
 |---|---|
 | Portal | 3 — Mahasiswa, Dosen, Staf |
 | **Modul terpasang** | **59** — 12 mahasiswa · 14 dosen · 33 staf |
-| **Belum dibuat** | 9 modul · 7 sebagian · **1 utang teknis** (7 lunas 19 Agu 2026) |
+| **Belum dibuat** | 8 modul · 7 sebagian · **1 utang teknis** (7 lunas 19 Agu 2026) |
 | Sengaja di luar cakupan | 8 |
 | Rute GET berportal | 92 |
 | Tabel domain | 109 · 48 migrasi |
 | Model Eloquent | 94 · 54 enum · 85 service · 7 policy |
 | Perintah artisan | 12 |
-| Tes Pest | **914 hijau** (1.969 asersi) · 61 berkas |
+| Tes Pest | **927 hijau** (2.005 asersi) · 62 berkas |
 | Desain | Midnight Executive — navy `#1E2761`, emas `#C9A961` |
 
 Fase 0–5, SSO OAuth2, tujuh kesenjangan SIAKAD (G1–G7), dan integrasi akuntansi
@@ -119,13 +119,12 @@ Akun demo: `admin@demo.test` · kata sandi `password`
 
 # BAGIAN II — BELUM DIBUAT
 
-## Modul yang belum ada — 9
+## Modul yang belum ada — 8
 
 | Modul | Kenapa belum / catatan |
 |---|---|
 | **Klien SISTER** | **Tertahan di luar repo** — menunggu kredensial |
 | **Adaptor payment gateway** | **Tertahan di luar repo** — kontraknya sudah ada, yang kurang kredensial merchant + endpoint notifikasi yang terverifikasi tanda tangannya. Tanpa verifikasi, siapa pun yang menjangkau endpoint itu bisa melunasi tagihan mana pun |
-| Komparasi data SIAKAD ↔ Neo Feeder | Sinkron sudah jalan; pembanding selisihnya belum ada |
 | Federasi ke IdP eksternal | Google / Entra / Keycloak. Open Academic sudah jadi *penerbit* identitas; jadi *konsumen* belum |
 | Denda keterlambatan | Kecil secara kode, sering diminta |
 | Monitoring pemakaian ruang | Bentrok jadwal sudah terdeteksi; pemanfaatan ruangnya belum terlihat |

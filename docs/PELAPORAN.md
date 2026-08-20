@@ -174,12 +174,69 @@ diam-diam lebih buruk daripada pelaporan yang gagal berisik.
 
 | # | Pekerjaan | Alasan |
 |---|---|---|
-| 1 | **Pembanding PDDIKTI** | Prasyarat peralihan platform apa pun; berguna hari ini untuk memeriksa apa yang sudah terkirim |
+| 1 | ~~Pembanding PDDIKTI~~ | **Selesai 21 Agu 2026** — lihat di bawah |
 | 2 | **Ekspor SISTER** | Datanya lengkap; berguna tanpa kredensial |
 | 3 | **Perakit LKPS** | Nilai tertinggi yang belum diklaim; menghapus penyalinan antar-tab menjelang tenggat |
 | 4 | **Keputusan PIN** | Risiko, bukan fitur — dan jawabannya menentukan apakah nomor ijazah boleh terus diisi sendiri |
 | 5 | **Muatan kanonis** | Dikerjakan saat menambah tujuan kedua, bukan kelima |
 | 6 | **Ekspor KIP Kuliah** | Kecil; datanya sudah ada seluruhnya |
 
-Nomor 1 sampai 3 tidak menunggu kredensial siapa pun dan tidak mengandaikan
+Nomor 2 dan 3 tidak menunggu kredensial siapa pun dan tidak mengandaikan
 bentuk platform PDDIKTI berikutnya.
+
+---
+
+## Pembanding PDDIKTI — selesai 21 Agustus 2026
+
+`FeederRekonsiliasi` membaca Feeder kembali dan melaporkan empat keadaan:
+**hanya di SIAKAD**, **hanya di Feeder**, **isinya berbeda** (beserta field
+mana), dan **tidak dapat dicocokkan**.
+
+Keempatnya dipisah karena penyebab dan penanganannya berbeda. Yang paling
+penting adalah yang kedua: baris yang **hanya ada di Feeder** — diketik
+langsung di sana, atau tertinggal dari sistem sebelumnya — tidak akan pernah
+terlihat oleh sinkronisasi satu arah, sebaik apa pun buku besarnya dijaga.
+Buku besar mencatat apa yang berangkat; ia tidak dapat mencatat apa yang ada
+di seberang.
+
+### Tiga aturan yang menjaganya tetap jujur
+
+Sebuah pembanding gagal dengan cara yang khas: ia melaporkan "nol selisih"
+padahal sebetulnya tidak memeriksa apa pun. Nol selisih dan tidak pernah
+diperiksa terlihat persis sama di layar, dan hanya satu di antaranya yang
+berarti aman.
+
+1. **Entitas tanpa aksi pembacaan menolak dibandingkan** — dan berkata
+   "belum dapat dibandingkan" di layarnya, bukan diam-diam terbaca bersih.
+2. **Galat dari Feeder menghentikan perbandingan.** Nama aksi yang salah
+   akan mengembalikan nol baris, dan nol baris tampak seperti kesepakatan
+   sempurna.
+3. **Baris lokal yang kuncinya tidak lengkap dilaporkan, bukan dibuang.**
+   Baris yang tak dapat dicocokkan bukan baris yang cocok.
+
+Ketiganya diuji dengan cara dilumpuhkan satu per satu: masing-masing membuat
+tes yang bersangkutan — dan hanya itu — menjadi merah.
+
+### Yang sengaja dibatasi
+
+Baru tiga entitas yang dapat dibandingkan: **kelas kuliah, aktivitas kuliah,
+dan KRS** — yang dapat disaring per semester dan paling sering berselisih.
+
+Biodata mahasiswa **sengaja tidak** dibandingkan. Satu-satunya fieldnya yang
+unik adalah NIK, dan mencocokkan lewat NIK berarti menyalin NIK setiap
+mahasiswa ke tabel selisih dan ke layar yang menampilkannya berderet. Riwayat
+pendidikan membawa NIM dan mencakup mahasiswa yang sama tanpa itu — jalur itu
+yang perlu ditempuh, bukan NIK.
+
+Nilai perkuliahan belum dapat dibandingkan karena Feeder menyaringnya per
+kelas, bukan per semester: satu permintaan per kelas kuliah. Layak, tetapi
+bentuk pekerjaannya berbeda.
+
+### Kesiapan menghadapi platform berikutnya
+
+Nama aksi dan field kuncinya ada di `config/feeder.php` bagian `reconcile`,
+bukan di dalam kode — perbedaan antar build Feeder diselesaikan dengan
+menyunting config, sama seperti `FeederMapping` menyelesaikan perbedaan kode
+di data. Nama aksi yang keliru tidak menghasilkan laporan kosong yang
+menenangkan; ia menghasilkan galat berisi pesan Feeder, jadi ia mengoreksi
+dirinya sendiri pada percobaan pertama.

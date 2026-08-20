@@ -107,4 +107,68 @@ return [
         ],
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Reconciliation
+    |--------------------------------------------------------------------------
+    |
+    | The sync ledger records what left this building. It cannot record what
+    | PDDIKTI actually holds: a row edited by an operator inside Feeder, or one
+    | entered there directly, is invisible to a push-only sync no matter how
+    | carefully the ledger is kept. Reconciliation reads the other end back and
+    | reports where the two disagree.
+    |
+    | An entity absent from this list is reported as "belum dapat dibandingkan"
+    | — never as "cocok". A comparison that cannot run has not found agreement.
+    |
+    | Per entity:
+    |
+    |   get_action  the Feeder act that lists the entity. Act names differ
+    |               between Feeder builds; a wrong one produces a Feeder error,
+    |               which is surfaced rather than swallowed, so it corrects
+    |               itself on first run instead of quietly reporting zero.
+    |
+    |   filter      sent with the request. ":term" is replaced by the academic
+    |               term code, which is what mappers already write into
+    |               id_semester.
+    |
+    |   key         fields that identify one row. Taken from the payload we
+    |               send AND from the row Feeder returns — the same field names
+    |               on both sides, because they are Feeder's names to begin
+    |               with. Composite where no single field is unique.
+    |
+    | Biodata Mahasiswa is deliberately absent. Its only unique field is the
+    | NIK, and matching on it would copy every student's NIK into the diff
+    | table and onto a screen that lists them. The registration record carries
+    | the NIM and covers the same students without that.
+    |
+    */
+
+    'reconcile' => [
+
+        'kelas_kuliah' => [
+            'get_action' => 'GetListKelasKuliah',
+            'filter' => ['id_semester' => ':term'],
+            'key' => ['id_semester', 'id_matkul', 'nama_kelas_kuliah'],
+        ],
+
+        'aktivitas_kuliah' => [
+            'get_action' => 'GetListAktivitasKuliahMahasiswa',
+            'filter' => ['id_semester' => ':term'],
+            'key' => ['id_registrasi_mahasiswa', 'id_semester'],
+        ],
+
+        'krs' => [
+            'get_action' => 'GetListKRSMahasiswa',
+            'filter' => ['id_semester' => ':term'],
+            'key' => ['id_registrasi_mahasiswa', 'id_kelas_kuliah'],
+        ],
+
+    ],
+
+    // Rows pulled per page when reading Feeder back. Higher is fewer requests
+    // and more memory; a term of KRS at a mid-sized campus is tens of
+    // thousands of rows, so it is paged rather than fetched whole.
+    'reconcile_page_size' => 500,
+
 ];

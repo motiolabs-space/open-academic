@@ -7,8 +7,10 @@ namespace App\Http\Controllers\Admin;
 use App\Enums\FeederSyncStatus;
 use App\Http\Controllers\Controller;
 use App\Jobs\SyncFeederEntityJob;
+use App\Models\Feeder\FeederDiff;
 use App\Models\Feeder\FeederSyncLog;
 use App\Models\Feeder\FeederValidationIssue;
+use App\Services\Feeder\FeederRekonsiliasi;
 use App\Services\Feeder\FeederSyncService;
 use App\Services\Feeder\FeederValidator;
 use App\Support\Portal;
@@ -29,6 +31,7 @@ class FeederController extends Controller
     public function __construct(
         private readonly FeederSyncService $sync,
         private readonly FeederValidator $validator,
+        private readonly FeederRekonsiliasi $rekonsiliasi,
     ) {}
 
     public function index(): View
@@ -52,7 +55,44 @@ class FeederController extends Controller
                 ->limit(40)
                 ->get(),
             'validasiTerakhir' => $this->validasiTerakhir(),
+            'selisih' => $this->selisihTerakhir($term->kode),
         ]);
+    }
+
+    /**
+     * Reads PDDIKTI back and reports where it disagrees with this application.
+     *
+     * Runs in the request rather than on the queue, unlike the sync. A sync
+     * makes one HTTP call per row; a comparison makes one per page of five
+     * hundred, and the rest is a local query. The wait is seconds, and an
+     * operator who has to come back later to read the answer will not run it.
+     */
+    public function bandingkan(string $entity): RedirectResponse
+    {
+        $this->authorizeFeeder('feeder.sync');
+
+        if (!isset(FeederSyncService::MAPPERS[$entity])) {
+            abort(404);
+        }
+
+        $hasil = $this->rekonsiliasi->bandingkan($entity, Portal::term());
+
+        $selisih = $hasil['hanya_lokal'] + $hasil['hanya_feeder'] + $hasil['berbeda'] + $hasil['tanpa_kunci'];
+
+        return back()->with(
+            $selisih === 0 ? 'sukses' : 'peringatan',
+            $selisih === 0
+                ? sprintf('%s: %d baris diperiksa, seluruhnya cocok dengan Feeder.', $entity, $hasil['cocok'])
+                : sprintf(
+                    '%s: %d selisih — %d hanya di SIAKAD, %d hanya di Feeder, %d berbeda isinya, %d tanpa kunci.',
+                    $entity,
+                    $selisih,
+                    $hasil['hanya_lokal'],
+                    $hasil['hanya_feeder'],
+                    $hasil['berbeda'],
+                    $hasil['tanpa_kunci'],
+                ),
+        );
     }
 
     /** Runs the pre-flight check for every entity without sending anything. */
@@ -152,6 +192,11 @@ class FeederController extends Controller
                 'dilewati' => $jumlah(FeederSyncStatus::Skipped),
                 'gagal' => $jumlah(FeederSyncStatus::Failed),
                 'terakhir' => $baris->max('terakhir'),
+
+                // Shown on the row itself, so an entity without a comparison
+                // reads as "belum dapat dibandingkan" rather than as one that
+                // was checked and found clean.
+                'dapat_dibandingkan' => $this->rekonsiliasi->dapatDibandingkan($entity),
             ];
         })->values();
     }
@@ -170,6 +215,39 @@ class FeederController extends Controller
             ->where('created_at', '>=', FeederValidationIssue::batch($batch)->value('created_at'))
             ->orderByRaw("CASE severity WHEN 'error' THEN 0 ELSE 1 END")
             ->limit(40)
+            ->get();
+    }
+
+    /**
+     * Findings from the most recent comparison of each entity, for this term.
+     *
+     * Per entity rather than one global batch: entities are compared one at a
+     * time, and showing only the newest run would hide every finding from the
+     * five entities checked before it.
+     *
+     * @return Collection<int, FeederDiff>
+     */
+    private function selisihTerakhir(string $termKode): Collection
+    {
+        $batchTerbaru = FeederDiff::query()
+            ->where('term_kode', $termKode)
+            ->selectRaw('entity, MAX(id) as id_terakhir')
+            ->groupBy('entity')
+            ->pluck('id_terakhir');
+
+        if ($batchTerbaru->isEmpty()) {
+            return collect();
+        }
+
+        $batches = FeederDiff::query()
+            ->whereIn('id', $batchTerbaru)
+            ->pluck('batch_id');
+
+        return FeederDiff::query()
+            ->whereIn('batch_id', $batches)
+            ->orderBy('entity')
+            ->orderBy('jenis')
+            ->limit(100)
             ->get();
     }
 
