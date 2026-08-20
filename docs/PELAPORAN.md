@@ -187,13 +187,19 @@ diam-diam lebih buruk daripada pelaporan yang gagal berisik.
 |---|---|---|
 | 1 | ~~Pembanding PDDIKTI~~ | **Selesai 21 Agu 2026** — lihat di bawah |
 | 2 | ~~Ekspor SISTER~~ | **Selesai 21 Agu 2026** — 8 dari 12 kelompok; 4 sisanya perlu formulir dulu |
-| 3 | **Perakit LKPS** | Nilai tertinggi yang belum diklaim; menghapus penyalinan antar-tab menjelang tenggat |
+| 3 | ~~Perakit LKPS~~ | **Selesai 21 Agu 2026** — kalkulator kanonis + perakit borang; delapan definisinya menunggu keputusan kampus |
 | 4 | **Keputusan PIN** | Risiko, bukan fitur — dan jawabannya menentukan apakah nomor ijazah boleh terus diisi sendiri |
 | 5 | **Muatan kanonis** | Dikerjakan saat menambah tujuan kedua, bukan kelima |
 | 6 | **Ekspor KIP Kuliah** | Kecil; datanya sudah ada seluruhnya |
 
-Nomor 3 tidak menunggu kredensial siapa pun dan tidak mengandaikan bentuk
+Ketiganya tidak menunggu kredensial siapa pun dan tidak mengandaikan bentuk
 platform PDDIKTI berikutnya.
+
+Pekerjaan baru yang muncul dari nomor 3: **delapan definisi harus diputuskan
+kampus** sebelum angka LKPS boleh masuk borang sungguhan — lihat
+[`LKPS-DEFINISI.md`](LKPS-DEFINISI.md). Kalkulatornya sudah jalan memakai
+bawaan yang konservatif, dan layarnya menyatakan sendiri bahwa definisinya
+masih sementara.
 
 Pekerjaan baru yang muncul dari nomor 2: **formulir untuk enam kelompok SISTER
 yang belum dapat diisi** — penghargaan & sanksi, bahasa, organisasi profesi,
@@ -298,6 +304,51 @@ dari bentuk yang dibagikan.
 Perbedaan antara ⬜ dan ⛔ dijaga di katalog karena keduanya menuntut
 penanganan yang berbeda: yang pertama pekerjaan yang belum dilakukan, yang
 kedua keputusan yang tidak untuk dibatalkan diam-diam.
+
+## Perakit LKPS — selesai 21 Agustus 2026
+
+Dua lapis, dan pemisahannya yang menentukan.
+
+**`IndikatorLkps`** menghitung besaran kanonisnya sekali: corong penerimaan dan
+keteketatan, mahasiswa aktif, DTPS dan rasionya, sebaran IPK, masa studi,
+ketepatan waktu, putus studi.
+
+**`PerakitBorang`** menempatkannya ke tabel. Lapisan ini tipis dengan sengaja —
+LAM kedua adalah blok config kedua, bukan perakit kedua.
+
+Layarnya di `/admin/lkps`, beserta unduhan CSV.
+
+### Tiga hal yang dijaga
+
+**Nomor tabel tidak dikarang.** `lkps.borang.*.nomor` dikirim kosong. Nomor
+tabel berbeda antar-LAM dan berubah antar-revisi instrumen, dan nomor yang
+tampak masuk akal lebih berbahaya daripada yang kosong: seseorang akan
+menyalinnya ke borang sungguhan tanpa memeriksa.
+
+**Definisinya tercetak di layar.** Kelima aturan yang dipakai menghitung muncul
+di atas tabelnya. Orang yang membaca angkanya adalah orang yang perlu tahu
+aturan mana yang menghasilkannya, dan ia tidak akan membuka dokumen untuk
+mencari tahu.
+
+**Sel kosong ditulis `—`, bukan nol.** Prodi tanpa lulusan menghasilkan IPK
+rata-rata yang TIDAK ADA, bukan 0,00 — dan 0,00 di kolom IPK borang akreditasi
+adalah tuduhan terhadap prodinya. Berlaku pula untuk rasio tanpa penyebut.
+
+Tabel yang tidak dapat diisi — tracer study, penelitian/PkM, kepuasan layanan —
+muncul beserta alasannya, termasuk di dalam CSV-nya. Menghilangkannya dari
+berkas lebih buruk daripada tidak berguna: yang menempelkannya ke borang akan
+mendapati kelompok itu hilang dan mengira memang tidak ditanyakan.
+
+### Satu gejala yang tersingkap
+
+`kecualikan_alih_jenjang` bergantung pada tabel `FeederMapping`: pembedaan alih
+jenjang tidak tersimpan langsung, melainkan lewat `jalur_masuk` yang dipetakan
+ke kode `jenis_daftar` PDDIKTI. Kampus yang belum mengisi pemetaan itu tidak
+dapat membedakannya, sehingga pengecualian yang diminta config diam-diam tidak
+terjadi. Kalkulatornya mengembalikan angkanya beserta catatan bahwa pemisahan
+gagal — bukan menebak.
+
+---
 
 ### Angka benar, kesimpulan salah
 

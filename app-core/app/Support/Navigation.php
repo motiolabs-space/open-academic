@@ -198,6 +198,7 @@ final class Navigation
                     self::item('Neo Feeder PDDIKTI', '⇅', 'admin.feeder'),
                     self::item('Campus Bridge', '⌘', 'admin.bridge'),
                     self::item('Verifikasi Data IKU', '◈', 'admin.iku-records'),
+                    self::item('Borang LKPS', '▤', 'admin.lkps'),
                     self::item('Log Aktivitas', '◷', 'admin.log'),
                 ],
             ],
