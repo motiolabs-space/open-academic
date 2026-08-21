@@ -5,6 +5,8 @@ Berperan sebagai *system of record* kampus — dari penerimaan mahasiswa baru sa
 dan dirancang sejak awal untuk terhubung dengan sistem Kementerian Pendidikan Tinggi
 melalui **Neo Feeder PDDIKTI**.
 
+Dibuat dan dirawat oleh **[Humanix Academy](https://humanix.id)**.
+
 Bagian dari ekosistem **Motiolabs Open Education**, bersanding dengan
 [Open Campus](https://github.com/motiolabs-space/open-campus) sebagai lapisan
 ekosistem & engagement.
@@ -383,6 +385,55 @@ setiap PR fitur membawa minimal satu feature test.
 
 Kerentanan keamanan **jangan** dilaporkan lewat issue publik — lihat
 [`SECURITY.md`](SECURITY.md#melaporkan-kerentanan).
+
+## Dibuat oleh Humanix Academy
+
+Open Academic dibuat dan dirawat oleh **[Humanix Academy](https://humanix.id)**,
+dan dirilis penuh dengan lisensi MIT — bukan versi terbatas dari produk berbayar.
+Yang ada di repo ini adalah seluruh aplikasinya, termasuk bagian yang paling
+mahal dibangun: pelaporan.
+
+Alasannya sederhana. Pekerjaan yang paling menyita waktu kampus kecil — melapor
+ke PDDIKTI, menyiapkan borang akreditasi, merapikan berkas SISTER dan KIP
+Kuliah — bentuknya hampir sama di semua kampus. Tidak masuk akal setiap kampus
+membayar untuk menyelesaikan persoalan yang sama sendiri-sendiri.
+
+### Mari berkolaborasi
+
+Kontribusi yang paling berguna untuk proyek ini bukan yang paling besar,
+melainkan yang paling sulit didapat dari luar kampus:
+
+- **Anda menjalankannya di kampus sungguhan.** Ceritakan apa yang tidak cocok.
+  Aturan akademik berbeda antar kampus, dan yang kami anggap konfigurasi bisa
+  jadi ternyata masih tertanam di kode.
+- **Borang LAM Anda berbeda.** Perakit LKPS sengaja dipisah dua lapis: menambah
+  LAM berarti menambah satu blok config, bukan menulis perakit baru. Kirimkan
+  susunan tabel LAM Anda.
+- **Anda punya akses Neo Feeder atau SISTER sungguhan.** Sebagian nama aksi
+  masih dugaan terbaik kami. Satu laporan galat dari instalasi asli lebih
+  berharga daripada seratus baris kode dari kami.
+- **Anda menemukan angka yang salah.** Terutama pada laporan. Angka yang salah
+  di berkas akreditasi atau KIP Kuliah menimpa orang sungguhan, dan kami ingin
+  tahu sebelum asesornya yang menemukan.
+
+Cara mengirimnya ada di [`CONTRIBUTING.md`](CONTRIBUTING.md). Issue berisi
+"di kampus kami begini" sama diterimanya dengan pull request.
+
+### Butuh dukungan cloud atau pendampingan?
+
+Menjalankan SIAKAD sendiri berarti mengurus server, cadangan, pembaruan, dan
+menyiapkan orang yang paham saat tenggat pelaporan tinggal seminggu. Sebagian
+kampus memang punya tim untuk itu; sebagian lagi lebih baik memakai waktunya
+untuk hal lain.
+
+Kalau kampus Anda termasuk yang kedua, **[humanix.id](https://humanix.id)**
+menyediakan dukungan cloud dan pendampingan implementasi untuk Open Academic.
+
+Aplikasinya tetap MIT dan tetap milik Anda. Yang ditawarkan adalah waktu dan
+tanggung jawab operasionalnya — bukan kunci untuk membuka fitur, karena tidak
+ada fitur yang dikunci.
+
+---
 
 ## Lisensi
 
