@@ -22,8 +22,9 @@ Sebagian besar SIAKAD open source berhenti di pencatatan. Open Academic menangan
 bagian yang paling menyita waktu kampus kecil:
 
 1. **Neo Feeder Sync sebagai modul kelas satu** — pelaporan PDDIKTI yang idempotent,
-   ter-antre, punya buku besar sinkron, dan **validasi pra-kirim** yang menampilkan
-   baris bermasalah *sebelum* sinkronisasi dijalankan.
+   ter-antre, punya buku besar sinkron, **validasi pra-kirim** yang menampilkan
+   baris bermasalah *sebelum* sinkronisasi dijalankan, dan **pembanding** yang
+   membaca kembali isi Feeder untuk melaporkan di mana kedua sisi berbeda.
 2. **Campus Bridge** — kontrak REST + webhook bertanda tangan HMAC, sehingga
    sistem lain membaca data akademik tanpa pernah menyentuh basis data.
 3. **SSO OAuth2** — Open Academic menjadi sumber identitas kampus. Aplikasi lain
@@ -45,12 +46,52 @@ bagian yang paling menyita waktu kampus kecil:
 | Kurikulum, mata kuliah, jadwal | Review evidence berbantuan AI |
 | KRS/KHS, nilai, transkrip | Dasbor & tata kelola 12 IKU |
 | Presensi perkuliahan | Talent marketplace & industri |
-| Keuangan (tagihan, Midtrans) | Analitik eksekutif |
+| Keuangan (tagihan, pencatatan bayar) | Analitik eksekutif |
 | Sinkronisasi Neo Feeder PDDIKTI | Network mode multi-kampus |
 | Sumber identitas (SSO) | |
 
 **Aturan batas:** catatan akademik resmi & transaksi administratif → repo ini.
 Engagement, evidence, analitik, jejaring → Open Campus. Jangan duplikasi fitur.
+
+---
+
+## Pelaporan ke Kementerian
+
+Kampus tidak melapor ke satu tempat. Peta kewajibannya — beserta penilaian mana
+yang datanya sudah ada di sini — ada di [`docs/PELAPORAN.md`](docs/PELAPORAN.md).
+
+| Tujuan | Keadaan |
+|---|---|
+| **PDDIKTI / Neo Feeder** | Sinkron penuh, idempotent, berbuku besar; **plus pembanding selisih** |
+| **SISTER** | Ekspor CSV per kelompok data. Adaptornya belum ada — kredensial belum tersedia |
+| **Borang LKPS** (akreditasi) | Kalkulator indikator + perakit tabel di `/admin/lkps` |
+| **KIP Kuliah** (Puslapdik) | Laporan semester penerima, siap unggah |
+
+### Satu aturan yang berlaku di keempatnya
+
+**Tidak ada yang menghasilkan berkas kosong.** Tujuan yang belum dapat diisi
+menolak berjalan dan menyebut sebabnya — di layar dan di dalam berkasnya
+sendiri — alih-alih mengeluarkan CSV berisi baris judul saja.
+
+Alasannya sama di setiap kasus: berkas nol baris terbaca sebagai fakta tentang
+kampusnya, bukan sebagai keterangan bahwa sistemnya belum diberi tahu sesuatu.
+Nol penerima KIP Kuliah, nol dosen dengan keanggotaan profesi, nol penelitian
+di borang akreditasi — ketiganya pernyataan yang salah, dan ketiganya tampak
+rapi.
+
+Yang berlaku sebaliknya juga: angka yang tidak terukur ditulis `—`, bukan nol,
+dan rasio tanpa penyebut dibiarkan kosong alih-alih dipaksa menjadi 1,00.
+
+### Yang masih menunggu keputusan kampus, bukan kode
+
+- **SISTER** — enam kelompok data punya tabel tanpa layar pengisian. Adaptor
+  yang mulus di atas tabel kosong tetap mengirim kosong.
+- **LKPS** — delapan definisi (siapa "pendaftar", siapa "dosen tetap", apakah
+  cuti menambah masa studi) menentukan angkanya. Bawaannya konservatif dan
+  layarnya menyatakan sendiri bahwa definisinya masih sementara. Daftar
+  pertanyaannya di [`docs/LKPS-DEFINISI.md`](docs/LKPS-DEFINISI.md).
+- **KIP Kuliah** — satu baris `.env`: `KIPK_BEASISWA_KODE`, karena aplikasi ini
+  tidak dapat menebak skema beasiswa mana yang KIP Kuliah.
 
 ---
 
@@ -182,6 +223,23 @@ di tengah selalu aman diulang.
 Setel `FEEDER_DRIVER=fake` untuk menjalankan seluruh modul — validator, ledger,
 penanganan galat — tanpa instalasi Neo Feeder. Ini yang dipakai kampus demo.
 
+**Pembanding** dijalankan dari konsolnya di `/admin/feeder`, per entitas. Ia
+membaca kembali isi Feeder dan melaporkan empat keadaan: hanya di SIAKAD, hanya
+di Feeder, isinya berbeda, dan tidak dapat dicocokkan. Yang kedua itu alasannya
+ada — baris yang diketik langsung di Feeder tidak akan pernah terlihat oleh
+sinkronisasi satu arah, sebaik apa pun bukunya dijaga.
+
+Entitas yang aksi pembacaannya belum ditetapkan pada `config/feeder.php`
+dinyatakan **belum dapat dibandingkan**, bukan terbaca cocok.
+
+### Ekspor SISTER, LKPS & KIP Kuliah
+
+| Berkas | Tempatnya |
+|---|---|
+| Kelompok data SISTER (CSV per kelompok) | `/admin/bkd` |
+| Borang LKPS per prodi | `/admin/lkps` |
+| Laporan semester KIP Kuliah | `/admin/beasiswa` |
+
 ### Campus Bridge
 
 ```bash
@@ -242,7 +300,9 @@ $sah = hash_equals(
 | `config/academic.php` | Batas SKS per IPS, aturan presensi, skala nilai huruf, syarat kelulusan, pola NIM |
 | `config/feeder.php` | Koneksi Neo Feeder, tabel referensi, urutan entitas sinkron |
 | `config/bridge.php` | Scope token, daftar event webhook, backoff percobaan ulang |
-| `config/keuangan` → `config/payment.php` | Gateway pembayaran dan perilaku tagihan |
+| `config/payment.php` | Tenggat tagihan semester. **Bukan** gateway pembayaran — adaptornya belum ada, dan config yang menjanjikannya sudah dicabut |
+| `config/lkps.php` | Delapan definisi perhitungan LKPS + susunan tabel borang per LAM |
+| `config/kipk.php` | Kode skema beasiswa yang merupakan KIP Kuliah (lewat `KIPK_BEASISWA_KODE`) |
 | `config/branding.php` | Identitas institusi & warna (dapat ditimpa lewat menu Pengaturan) |
 
 Aturan bisnis yang berbeda antar kampus — batas SKS, skala huruf, persentase
@@ -260,6 +320,7 @@ kehadiran minimum, ambang pembayaran KRS — semuanya konfigurasi, bukan kode.
 | **3 — Campus Bridge** | Read API ber-scope (12 endpoint), webhook bertanda tangan HMAC, OpenAPI, konsol, **SSO OAuth2** | ✅ Selesai |
 | **4 — Data IKU** | Yudisium & alumni, layar verifikasi bukti, endpoint cacahan IKU 1/2/3/4/7/11 | ✅ Selesai |
 | **5 — Polish & Rilis** | Audit N+1 + anggaran kueri, review keamanan & pengerasan, aksesibilitas, dokumen rilis | ✅ Selesai |
+| **6 — Pelaporan Lanjutan** | Pembanding SIAKAD↔Feeder, ekspor SISTER per kelompok, kalkulator & borang LKPS, laporan KIP Kuliah | ✅ Selesai |
 
 Terukur pada **5.000 mahasiswa · 631.220 baris presensi · basis data 288 MB**:
 portal harian mahasiswa dan dosen berada di kisaran 200–300 ms. Angka lengkap,
