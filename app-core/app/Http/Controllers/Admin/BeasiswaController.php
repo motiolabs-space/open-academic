@@ -12,11 +12,13 @@ use App\Models\Kemahasiswaan\Mahasiswa;
 use App\Models\Keuangan\Beasiswa;
 use App\Models\Keuangan\BeasiswaPenerima;
 use App\Services\Keuangan\BeasiswaService;
+use App\Services\Keuangan\EksporKipk;
 use App\Support\Portal;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
  * Scholarship schemes and their recipients.
@@ -27,7 +29,10 @@ use Illuminate\View\View;
  */
 class BeasiswaController extends Controller
 {
-    public function __construct(private readonly BeasiswaService $beasiswa) {}
+    public function __construct(
+        private readonly BeasiswaService $beasiswa,
+        private readonly EksporKipk $kipk,
+    ) {}
 
     public function index(Request $request): View
     {
@@ -55,6 +60,14 @@ class BeasiswaController extends Controller
             'statusPilihan' => StatusPenerima::options(),
             'daftarTerm' => TahunAkademik::terbaru()->get(['id', 'kode', 'nama']),
             'filter' => $request->only(['skema', 'status']),
+
+            'term' => Portal::term(),
+
+            // Ditampilkan meski skemanya belum ditetapkan — justru terutama
+            // saat belum, karena itu keadaan yang perlu diperbaiki.
+            'kipkSiap' => $this->kipk->siap(),
+            'kipkSkema' => $this->kipk->siap() ? $this->kipk->skema() : [],
+            'kipkRingkas' => $this->kipk->siap() ? $this->kipk->ringkas(Portal::term()) : null,
         ]);
     }
 
@@ -143,6 +156,27 @@ class BeasiswaController extends Controller
         return back()->with('sukses',
             'Beasiswa dicabut. Tagihan yang sudah dipotong tidak dibongkar — batalkan barisnya '
                 .'satu per satu bila memang harus.');
+    }
+
+    /**
+     * The per-term KIP Kuliah report.
+     *
+     * 404 while no scheme is configured, rather than a file with a header row
+     * and nothing under it. An empty file reads as "nobody here receives KIP
+     * Kuliah"; the truth would be that the application was never told which
+     * scheme that is.
+     */
+    public function eksporKipk(Request $request): StreamedResponse
+    {
+        $this->izin('keuangan.view');
+
+        abort_unless($this->kipk->siap(), 404);
+
+        $term = $request->filled('semester')
+            ? TahunAkademik::where('kode', $request->string('semester'))->firstOrFail()
+            : Portal::term();
+
+        return $this->kipk->csv($term);
     }
 
     private function izin(string $permission): void

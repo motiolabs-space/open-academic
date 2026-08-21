@@ -506,6 +506,7 @@ Route::middleware(['auth:staff', 'term.active'])->prefix('admin')->name('admin.'
     Route::post('/beasiswa', [Admin\BeasiswaController::class, 'simpanSkema'])->name('beasiswa.skema');
     Route::post('/beasiswa/{beasiswa}/tetapkan', [Admin\BeasiswaController::class, 'tetapkan'])->name('beasiswa.tetapkan');
     Route::post('/beasiswa/penerima/{penerima}/cabut', [Admin\BeasiswaController::class, 'cabut'])->name('beasiswa.cabut');
+    Route::get('/beasiswa/kipk/ekspor', [Admin\BeasiswaController::class, 'eksporKipk'])->name('beasiswa.kipk');
 
     Route::get('/cuti', [Admin\CutiController::class, 'index'])->name('cuti');
     Route::post('/cuti', [Admin\CutiController::class, 'ajukan'])->name('cuti.ajukan');

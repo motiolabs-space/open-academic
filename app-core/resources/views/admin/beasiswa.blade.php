@@ -202,4 +202,60 @@
             </x-card>
         </div>
     </div>
+
+    {{-- ============ LAPORAN KIP KULIAH ============ --}}
+    <x-card class="mt-5" title="Laporan Semester KIP Kuliah" :meta="$term?->nama">
+        @if (! $kipkSiap)
+            {{--
+                Dinyatakan, bukan disembunyikan. Tombol yang hilang tanpa
+                keterangan terbaca sebagai fitur yang tidak ada.
+            --}}
+            <x-chip tone="neutral">Belum dapat dibuat</x-chip>
+            <p class="mt-2 text-[13px] leading-relaxed text-ink-muted">
+                Aplikasi ini tidak tahu skema beasiswa mana yang KIP Kuliah — tabel
+                <code>beasiswa</code> hanya membedakan internal dan eksternal, dan setiap kampus
+                memberi kodenya sendiri. Isi <code>kipk.beasiswa_kode</code> pada
+                <code>config/kipk.php</code> dengan kode skemanya.
+            </p>
+        @else
+            <div class="flex flex-wrap items-center gap-5">
+                @foreach ([
+                    ['Penerima', $kipkRingkas['penerima'], ''],
+                    ['Tanpa status semester ini', $kipkRingkas['tanpa_status'], $kipkRingkas['tanpa_status'] > 0 ? 'text-danger' : ''],
+                    ['Nilai belum final', $kipkRingkas['belum_final'], $kipkRingkas['belum_final'] > 0 ? 'text-warning' : ''],
+                ] as [$label, $nilai, $warna])
+                    <div>
+                        <div class="tabular font-serif text-[24px] font-semibold leading-none {{ $warna }}">
+                            {{ $nilai }}
+                        </div>
+                        <div class="mt-1 text-[10px] uppercase tracking-[0.06em] text-ink-faint">{{ $label }}</div>
+                    </div>
+                @endforeach
+
+                <x-button
+                    variant="outline"
+                    class="ml-auto"
+                    :href="route('admin.beasiswa.kipk', ['semester' => $term?->kode])"
+                >Unduh CSV</x-button>
+            </div>
+
+            @foreach ($kipkSkema as $kode => $nama)
+                @if ($nama === null)
+                    <p class="mt-3 text-[12.5px] text-danger">
+                        Kode skema <code>{{ $kode }}</code> tidak ada pada tabel beasiswa — periksa
+                        <code>config/kipk.php</code>.
+                    </p>
+                @endif
+            @endforeach
+
+            @if ($kipkRingkas['tanpa_status'] > 0)
+                <p class="mt-3 text-[12.5px] leading-relaxed text-ink-muted">
+                    {{ $kipkRingkas['tanpa_status'] }} penerima tidak punya baris status pada semester
+                    ini. Mereka tetap masuk berkas dengan keterangannya — periksa keaktifannya sebelum
+                    dilaporkan, karena penerima yang berhenti kuliah tanpa tercatat adalah penerima
+                    yang dananya terus berjalan.
+                </p>
+            @endif
+        @endif
+    </x-card>
 @endsection

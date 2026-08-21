@@ -38,7 +38,7 @@ Konsekuensinya: sebuah tujuan berstatus "berguna" jauh sebelum berstatus
 | **SISTER** | Biodata dosen, riwayat pendidikan, jabfung, pangkat, sertifikasi, penugasan | Semester & insidental | **Lengkap, adaptor belum ada** |
 | **BKD** (lewat SISTER) | Beban kerja per semester; penentu tunjangan sertifikasi | Per semester | **Dihitung, bukan diketik** |
 | **PIN & SIVIL** | Penomoran ijazah nasional & verifikasi publik | Per kelulusan | **Timpang — lihat Risiko** |
-| **KIP Kuliah** (Puslapdik) | Status aktif, IPK, SKS penerima | Per semester | Ada seluruhnya, belum dirakit |
+| **KIP Kuliah** (Puslapdik) | Status aktif, IPK, SKS penerima | Per semester | **Terakit & terekspor** |
 | **Akreditasi LKPS** (BAN-PT / LAM) | Tabel kuantitatif kinerja prodi | Per siklus | **Sebagian besar ada** |
 | **IKU PT** | Kinerja perguruan tinggi | Tahunan | Sumbernya ada & terverifikasi |
 | **MBKM** | Kegiatan luar kampus & konversi SKS | Per semester | Ada seluruhnya |
@@ -190,7 +190,7 @@ diam-diam lebih buruk daripada pelaporan yang gagal berisik.
 | 3 | ~~Perakit LKPS~~ | **Selesai 21 Agu 2026** — kalkulator kanonis + perakit borang; delapan definisinya menunggu keputusan kampus |
 | 4 | **Keputusan PIN** | Risiko, bukan fitur — dan jawabannya menentukan apakah nomor ijazah boleh terus diisi sendiri |
 | 5 | **Muatan kanonis** | Dikerjakan saat menambah tujuan kedua, bukan kelima |
-| 6 | **Ekspor KIP Kuliah** | Kecil; datanya sudah ada seluruhnya |
+| 6 | ~~Ekspor KIP Kuliah~~ | **Selesai 21 Agu 2026** — lihat di bawah |
 
 Ketiganya tidak menunggu kredensial siapa pun dan tidak mengandaikan bentuk
 platform PDDIKTI berikutnya.
@@ -365,3 +365,54 @@ tidak akan dibuka orang saat membaca angka nol.
 tanpa apa-apa, dua sudah bersevis. Itu pekerjaan yang harus mendahului
 adaptor SISTER mana pun — adaptor yang mulus di atas tabel kosong tetap
 mengirim kosong.
+
+---
+
+## Ekspor KIP Kuliah — selesai 21 Agustus 2026
+
+Laporan semester Puslapdik: NIM, prodi, status keaktifan, semester ke-, SKS
+semester dan kumulatif, IPS, IPK. Seluruhnya sudah ada di `status_mahasiswa`;
+tidak ada data baru yang perlu dikumpulkan. Layarnya menumpang pada
+`/admin/beasiswa`.
+
+### Tiga hal yang dilaporkan, bukan dirapikan
+
+**Penerima tanpa baris status semester ini tetap masuk berkas**, dengan
+keterangan `TIDAK ADA STATUS SEMESTER INI` pada barisnya. Membuangnya adalah
+cara seseorang terus menerima dana sementara tidak ada yang menyadari ia
+berhenti kuliah. Keterangannya di dalam berkas, bukan di surat pengantar: yang
+mengunggahnya tidak memegang surat itu, dan sel kosong di samping sebuah nama
+terbaca sebagai fakta tentang orangnya.
+
+**Nilai yang belum final ditandai.** `is_final` false berarti nilainya masih
+bergerak. Melaporkannya tanpa keterangan berarti mengirim angka yang akan
+dibantah kampusnya sendiri dua minggu kemudian.
+
+**Skema yang belum ditetapkan menolak berjalan.** Aplikasi ini tidak tahu skema
+mana yang KIP Kuliah — tabel `beasiswa` hanya membedakan internal dan
+eksternal. Rutenya membalas 404 dan layarnya menyebut sebabnya. Kode yang salah
+ketik muncul sebagai "kode ini tidak ada di tabel beasiswa", bukan sebagai
+laporan tanpa siapa pun di dalamnya.
+
+### Privasi
+
+KIP Kuliah berbasis kemampuan ekonomi, jadi penghasilan orang tua dan alamat
+rumah adalah data yang paling menggoda untuk ikut disertakan — dan berkas ini
+beredar lewat surel serta folder bersama, saluran yang berbeda dari pengiriman
+resmi. Keduanya tidak masuk. Pengenalnya NIM saja, konvensi yang sama dipakai
+kontak akuntansi, dan tesnya membuktikan NIK maupun alamat memang tidak ada di
+berkasnya.
+
+### Satu bug yang tertangkap tes
+
+`status_mahasiswa.status` adalah enum, dan `fputcsv` tidak dapat mengubah enum
+menjadi teks: seluruh unduhan akan gagal di produksi. Ketahuan hanya karena tes
+privasi benar-benar membaca isi berkasnya alih-alih memeriksa HTTP 200.
+Diperbaiki menjadi kode hurufnya, yang memang konvensi pelaporan.
+
+### Konfigurasi lewat .env
+
+`KIPK_BEASISWA_KODE`, bukan dengan menyunting `config/kipk.php` — berkas config
+terlacak Git, dan kampus yang mengubahnya akan bertabrakan setiap kali menarik
+pembaruan. Konflik semacam itu biasanya diselesaikan dengan mengambil versi
+hulu, yang diam-diam mengosongkan kembali skemanya.
