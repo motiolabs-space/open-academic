@@ -29,16 +29,21 @@ bagian yang paling menyita waktu kampus kecil:
    membaca kembali isi Feeder untuk melaporkan di mana kedua sisi berbeda.
 2. **Campus Bridge** — kontrak REST + webhook bertanda tangan HMAC, sehingga
    sistem lain membaca data akademik tanpa pernah menyentuh basis data.
-3. **SSO OAuth2** — Open Academic menjadi sumber identitas kampus. Aplikasi lain
+3. **Verifikasi dua langkah untuk staf** — TOTP dengan kode pemulihan, dan
+   penjagaan yang biasanya terlewat: kode yang sudah dipakai ditolak, tantangan
+   kedaluwarsa sendiri, dan pemasangan belum berlaku sampai satu kode terbukti.
+   Intinya diuji terhadap vektor resmi RFC 6238 — bukan terhadap dirinya
+   sendiri.
+4. **SSO OAuth2** — Open Academic menjadi sumber identitas kampus. Aplikasi lain
    (LMS, repositori, perpustakaan, Open Campus) memakai satu akun yang sama, dan
    menonaktifkan satu akun langsung memutus aksesnya di semua aplikasi.
    Panduannya di [`docs/SSO.md`](docs/SSO.md).
-4. **IKU Data Provider** — kebenaran transaksional untuk IKU 1/2/3/4/7/11 lewat
+5. **IKU Data Provider** — kebenaran transaksional untuk IKU 1/2/3/4/7/11 lewat
    `GET /api/bridge/v1/iku-data`. Cacahan fakta, **bukan kalkulator**: tanpa skor,
    ambang, maupun target. Angka yang bergantung peraturan menteri dikembalikan per
    bucket agar keputusannya tetap milik konsumen. Dasbor dan review evidence-nya
    milik Open Campus.
-5. **Arsitektur service-layer** — business logic di Services + DTO + Enum, bukan di Blade.
+6. **Arsitektur service-layer** — business logic di Services + DTO + Enum, bukan di Blade.
 
 ## Batas Tanggung Jawab
 
@@ -323,6 +328,7 @@ kehadiran minimum, ambang pembayaran KRS — semuanya konfigurasi, bukan kode.
 | **4 — Data IKU** | Yudisium & alumni, layar verifikasi bukti, endpoint cacahan IKU 1/2/3/4/7/11 | ✅ Selesai |
 | **5 — Polish & Rilis** | Audit N+1 + anggaran kueri, review keamanan & pengerasan, aksesibilitas, dokumen rilis | ✅ Selesai |
 | **6 — Pelaporan Lanjutan** | Pembanding SIAKAD↔Feeder, ekspor SISTER per kelompok, kalkulator & borang LKPS, laporan KIP Kuliah | ✅ Selesai |
+| **7 — Pengerasan** | Uji beban HTTP bersamaan terhadap Apache sungguhan, verifikasi dua langkah untuk akun staf (TOTP + kode pemulihan) | ✅ Selesai |
 
 Terukur pada **5.000 mahasiswa · 631.220 baris presensi · basis data 288 MB**:
 portal harian mahasiswa dan dosen berada di kisaran 200–300 ms. Angka lengkap,

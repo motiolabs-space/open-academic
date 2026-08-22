@@ -38,6 +38,7 @@ APP_DEBUG=false          # APP_DEBUG=true membocorkan isi .env pada halaman gala
 SESSION_SECURE_COOKIE=true
 BRIDGE_WEBHOOK_SECRET=<64+ karakter acak>
 BERKAS_DISK=local        # JANGAN "public" — lihat §Berkas Unggahan
+DUA_FAKTOR_WAJIB=true    # sesudah staf didampingi memasang — lihat butir di bawah
 ```
 
 1. **`php artisan key:generate`** dijalankan, dan `APP_KEY` tidak pernah
@@ -63,6 +64,20 @@ BERKAS_DISK=local        # JANGAN "public" — lihat §Berkas Unggahan
 8. **`BRIDGE_WEBHOOK_SECRET` terisi.** Sejak v1.0 pengiriman webhook dibatalkan
    bila kunci kosong, karena tanda tangan HMAC berkunci kosong dapat dipalsukan
    siapa pun — tampak aman padahal tidak.
+9. **`DUA_FAKTOR_WAJIB=true`, sesudah stafnya didampingi memasang.** Akun staf
+   memegang `nilai.manage`, `keuangan.manage`, dan `wisuda.manage`: satu kata
+   sandi bocor di sana tidak membocorkan catatan, ia **mengubahnya** — dan
+   kelulusan yang terlanjur terbit tidak dapat ditarik pulang dengan mengganti
+   kata sandi.
+
+   Bawaannya `false` bukan karena fitur ini opsional, melainkan supaya
+   pemasangan yang sudah berjalan tidak mengirim seluruh stafnya ke layar
+   pemasangan pada hari mereka menarik pembaruan. **Menyalakannya adalah
+   langkah produksi, bukan pilihan.**
+
+   Urutannya penting: dampingi staf memasang lebih dulu — mereka menyimpan
+   kode pemulihan saat itu — baru nyalakan. Terbalik, dan orang pertama yang
+   kehilangan ponsel tidak punya jalan keluar.
 
 ---
 

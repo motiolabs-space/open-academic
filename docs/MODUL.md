@@ -18,14 +18,14 @@
 | | |
 |---|---|
 | Portal | 3 — Mahasiswa, Dosen, Staf |
-| **Modul terpasang** | **60** — 12 mahasiswa · 14 dosen · 34 staf |
-| **Belum dibuat** | 9 modul · 7 sebagian · **1 utang teknis** (7 lunas 19 Agu 2026) · **1 risiko terbuka** |
+| **Modul terpasang** | **61** — 12 mahasiswa · 14 dosen · 35 staf |
+| **Belum dibuat** | 8 modul · 7 sebagian · **1 utang teknis** (7 lunas 19 Agu 2026) · **1 risiko terbuka** |
 | Sengaja di luar cakupan | 8 |
 | Rute GET berportal | 92 |
 | Tabel domain | 109 · 48 migrasi |
 | Model Eloquent | 94 · 54 enum · 85 service · 7 policy |
 | Perintah artisan | 12 |
-| Tes Pest | **967 hijau** (2.111 asersi) · 66 berkas |
+| Tes Pest | **998 hijau** (2.185 asersi) · 68 berkas |
 | Desain | Midnight Executive — navy `#1E2761`, emas `#C9A961` |
 
 Fase 0–6, SSO OAuth2, tujuh kesenjangan SIAKAD (G1–G7), dan integrasi akuntansi
@@ -76,7 +76,7 @@ Akun demo: `dosen1@demo.test` · kata sandi `password`
 | | Penilaian BKD | `/dosen/bkd/penilaian` |
 | | Portofolio | `/dosen/portofolio` |
 
-## Portal Staf — 34 modul
+## Portal Staf — 35 modul
 
 Akun demo: `admin@demo.test` · kata sandi `password`
 
@@ -111,6 +111,7 @@ Akun demo: `admin@demo.test` · kata sandi `password`
 | | Campus Bridge | `/admin/bridge` |
 | | Verifikasi Data IKU | `/admin/data-iku` |
 | | **Borang LKPS** | `/admin/lkps` |
+| **SISTEM** | **Verifikasi Dua Langkah** | `/admin/dua-langkah` |
 | | Log Aktivitas | `/admin/log` |
 | **SISTEM** | Rencana Kinerja | `/admin/kinerja` |
 | | SPMI & Audit Mutu | `/admin/spmi` |
@@ -121,7 +122,7 @@ Akun demo: `admin@demo.test` · kata sandi `password`
 
 # BAGIAN II — BELUM DIBUAT
 
-## Modul yang belum ada — 9
+## Modul yang belum ada — 8
 
 | Modul | Kenapa belum / catatan |
 |---|---|
@@ -131,7 +132,6 @@ Akun demo: `admin@demo.test` · kata sandi `password`
 | Denda keterlambatan | Kecil secara kode, sering diminta |
 | Monitoring pemakaian ruang | Bentrok jadwal sudah terdeteksi; pemanfaatan ruangnya belum terlihat |
 | Career center | Lowongan, forum & agenda alumni. Tabel `alumni` sudah ada sebagai dasar — tapi instrumennya milik Open Campus |
-| **2FA staf** | **Mendesak.** Akun staf memegang `nilai.manage`, `keuangan.manage`, dan `wisuda.manage`: satu kata sandi bocor berarti nilai dapat diubah dan kelulusan dapat diterbitkan. Pembatasan percobaan login sudah ada dan jejak audit tercatat luas — tetapi jejak audit memberi tahu *sesudah* kejadian, bukan mencegah |
 | **Enam formulir SISTER** | Penghargaan & sanksi, bahasa, organisasi profesi, keluarga (keempatnya tanpa apa pun), serta pangkat dan mutasi (servisnya ada, pemanggilnya tidak). Tabel dan relasinya ada; layar pengisiannya tidak. Adaptor SISTER yang mulus di atas tabel kosong tetap mengirim kosong |
 | Helpdesk | |
 

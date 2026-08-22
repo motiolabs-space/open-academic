@@ -48,7 +48,12 @@ class Staff extends Authenticatable implements OAuthenticatable
 
     protected $guarded = ['id', 'uuid', 'created_at', 'updated_at'];
 
-    protected $hidden = ['password', 'remember_token'];
+    /*
+     * The 2FA secret is a password equivalent — anyone holding it can mint
+     * valid codes indefinitely — so it is hidden for the same reason the
+     * password hash is: one careless toJson() should not publish it.
+     */
+    protected $hidden = ['password', 'remember_token', 'two_factor_secret', 'two_factor_recovery'];
 
     /** Spatie Permission resolves roles against this guard. */
     protected string $guard_name = 'staff';
@@ -59,7 +64,19 @@ class Staff extends Authenticatable implements OAuthenticatable
             'password' => 'hashed',
             'is_active' => 'boolean',
             'last_login_at' => 'datetime',
+
+            // Encrypted at rest: a database dump would otherwise hand over the
+            // second factor along with the first.
+            'two_factor_secret' => 'encrypted',
+            'two_factor_recovery' => 'encrypted:array',
+            'two_factor_confirmed_at' => 'datetime',
         ];
+    }
+
+    /** Whether this account has a confirmed second factor. */
+    public function duaFaktorAktif(): bool
+    {
+        return $this->two_factor_confirmed_at !== null && filled($this->two_factor_secret);
     }
 
     public function namaLengkap(): string

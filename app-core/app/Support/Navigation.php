@@ -218,6 +218,7 @@ final class Navigation
                     self::item('SPMI & Audit Mutu', '⚖', 'admin.spmi'),
 
                     self::item('Pengumuman', '✉', 'admin.pengumuman'),
+                    self::item('Verifikasi Dua Langkah', '⚿', 'dua-faktor.kelola'),
                     self::item('Pengaturan', '⚙', 'admin.pengaturan'),
                 ],
             ],

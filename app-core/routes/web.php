@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Http\Controllers\Admin;
+use App\Http\Controllers\Auth\DuaFaktorController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\BerkasController;
 use App\Http\Controllers\Dosen;
@@ -60,6 +61,30 @@ Route::prefix('verifikasi')->name('verifikasi.')->group(function (): void {
 
 Route::get('/masuk', [LoginController::class, 'show'])->name('login');
 Route::post('/masuk', [LoginController::class, 'store'])->name('login.store');
+
+/*
+ | Tantangan dua langkah untuk staf.
+ |
+ | Di luar auth:staff dengan sengaja: pemiliknya sudah membuktikan kata sandi
+ | tetapi BELUM masuk. Identitas yang menunggu ada di sesi, bukan di URL atau
+ | ruas formulir.
+ */
+Route::get('/masuk/dua-langkah', [DuaFaktorController::class, 'tantangan'])->name('dua-faktor.tantangan');
+Route::post('/masuk/dua-langkah', [DuaFaktorController::class, 'verifikasi'])->name('dua-faktor.verifikasi');
+
+/*
+ | Pemasangan, dari akun yang sudah masuk.
+ |
+ | Tanpa term.active: ketika DUA_FAKTOR_WAJIB menyala, staf digiring ke sini
+ | sebelum dapat membuka apa pun — dan tahun akademik yang belum aktif tidak
+ | boleh ikut memblokirnya.
+ */
+Route::middleware('auth:staff')->prefix('admin/dua-langkah')->name('dua-faktor.')->group(function (): void {
+    Route::get('/', [DuaFaktorController::class, 'kelola'])->name('kelola');
+    Route::post('/konfirmasi', [DuaFaktorController::class, 'konfirmasi'])->name('konfirmasi');
+    Route::post('/pemulihan', [DuaFaktorController::class, 'pemulihanBaru'])->name('pemulihan');
+    Route::post('/matikan', [DuaFaktorController::class, 'matikan'])->name('matikan');
+});
 Route::post('/keluar', [LoginController::class, 'destroy'])->name('logout');
 
 /*

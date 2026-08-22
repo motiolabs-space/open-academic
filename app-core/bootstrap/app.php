@@ -6,6 +6,7 @@ use App\Exceptions\AturanAkademikException;
 use App\Exceptions\FeederException;
 use App\Http\Middleware\EnsureBridgeScope;
 use App\Http\Middleware\EnsureTermIsActive;
+use App\Http\Middleware\PastikanDuaFaktor;
 use App\Http\Middleware\SecurityHeaders;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -37,6 +38,19 @@ $app = Application::configure(basePath: dirname(__DIR__))
         ]);
 
         $middleware->append(SecurityHeaders::class);
+
+        /*
+         * Pada grup web, bukan tumpukan global.
+         *
+         * Middleware global berjalan sebelum perutean, sehingga routeIs() di
+         * sana selalu false — dan pengecualian untuk layar pemasangan serta
+         * keluar tidak akan pernah cocok, membuat keduanya dialihkan ke diri
+         * sendiri. Pada grup web rutenya sudah terselesaikan.
+         *
+         * Tetap se-grup dan bukan per-rute admin, supaya tidak ada rute staf
+         * yang terlewat begitu rute baru ditambahkan.
+         */
+        $middleware->web(append: [PastikanDuaFaktor::class]);
 
         // Guests land on the single sign-in page whichever portal they aimed at.
         $middleware->redirectGuestsTo(fn () => route('login'));

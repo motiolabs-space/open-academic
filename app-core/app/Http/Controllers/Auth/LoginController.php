@@ -77,6 +77,29 @@ class LoginController extends Controller
                 $request->session()->regenerate();
 
                 $user = Auth::guard($guard)->user();
+
+                /*
+                 * The password was right. That is not yet a sign-in.
+                 *
+                 * Staff hold nilai.manage, keuangan.manage and wisuda.manage,
+                 * so the account is signed straight back out and only the
+                 * pending identity is kept — in the session, never in a form
+                 * field, because a hidden input naming the account to finish
+                 * logging in as is a gift to anyone who can post to the
+                 * endpoint.
+                 */
+                if ($guard === 'staff' && $user->duaFaktorAktif()) {
+                    Auth::guard($guard)->logout();
+
+                    $request->session()->put('dua_faktor', [
+                        'staff_id' => $user->id,
+                        'ingat' => $ingat,
+                        'sejak' => now()->timestamp,
+                    ]);
+
+                    return redirect()->route('dua-faktor.tantangan');
+                }
+
                 $user->forceFill(['last_login_at' => now()])->saveQuietly();
 
                 return redirect()->intended(route(UserRole::from($guard)->homeRoute()));
