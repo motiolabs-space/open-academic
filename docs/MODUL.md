@@ -19,7 +19,7 @@
 |---|---|
 | Portal | 3 — Mahasiswa, Dosen, Staf |
 | **Modul terpasang** | **60** — 12 mahasiswa · 14 dosen · 34 staf |
-| **Belum dibuat** | 8 modul · 7 sebagian · **1 utang teknis** (7 lunas 19 Agu 2026) |
+| **Belum dibuat** | 9 modul · 7 sebagian · **1 utang teknis** (7 lunas 19 Agu 2026) · **1 risiko terbuka** |
 | Sengaja di luar cakupan | 8 |
 | Rute GET berportal | 92 |
 | Tabel domain | 109 · 48 migrasi |
@@ -121,7 +121,7 @@ Akun demo: `admin@demo.test` · kata sandi `password`
 
 # BAGIAN II — BELUM DIBUAT
 
-## Modul yang belum ada — 8
+## Modul yang belum ada — 9
 
 | Modul | Kenapa belum / catatan |
 |---|---|
@@ -131,11 +131,22 @@ Akun demo: `admin@demo.test` · kata sandi `password`
 | Denda keterlambatan | Kecil secara kode, sering diminta |
 | Monitoring pemakaian ruang | Bentrok jadwal sudah terdeteksi; pemanfaatan ruangnya belum terlihat |
 | Career center | Lowongan, forum & agenda alumni. Tabel `alumni` sudah ada sebagai dasar — tapi instrumennya milik Open Campus |
-| 2FA staf | |
+| **2FA staf** | **Mendesak.** Akun staf memegang `nilai.manage`, `keuangan.manage`, dan `wisuda.manage`: satu kata sandi bocor berarti nilai dapat diubah dan kelulusan dapat diterbitkan. Pembatasan percobaan login sudah ada dan jejak audit tercatat luas — tetapi jejak audit memberi tahu *sesudah* kejadian, bukan mencegah |
+| **Enam formulir SISTER** | Penghargaan & sanksi, bahasa, organisasi profesi, keluarga (keempatnya tanpa apa pun), serta pangkat dan mutasi (servisnya ada, pemanggilnya tidak). Tabel dan relasinya ada; layar pengisiannya tidak. Adaptor SISTER yang mulus di atas tabel kosong tetap mengirim kosong |
 | Helpdesk | |
 
 Aplikasi mobile native **tidak direncanakan untuk v1** — web-nya responsif, dan
 API-first sudah menyiapkan jalannya.
+
+## Risiko terbuka — 1
+
+Bukan modul yang belum dibuat, melainkan perilaku yang sudah berjalan dan
+menghasilkan akibat di luar kampus. Ditaruh di sini supaya tidak hanya terbaca
+oleh yang membuka [`PELAPORAN.md`](PELAPORAN.md).
+
+| Hal | Keadaan |
+|---|---|
+| **Nomor ijazah diberikan lokal** | `wisuda_peserta.nomor_ijazah` diisi dari dalam aplikasi. Penomoran ijazah nasional bekerja terbalik: kampus **meminta** nomor ke layanan PIN, dan nomor itulah yang dicetak lalu terverifikasi publik lewat SIVIL. Ijazah bernomor lokal akan tercetak rapi, diserahkan pada wisuda, dan **gagal saat diperiksa** — biasanya oleh calon pemberi kerja, bertahun-tahun kemudian, dan menjadi persoalan alumninya. Perlu **keputusan kampus**, bukan tebakan: apakah ijazah dinomori lewat PIN. Bila ya, kolom itu harus berhenti diisi sendiri |
 
 ## Selesai sebagian — 7
 
@@ -156,7 +167,7 @@ bawahnya berikut angkanya, supaya dapat diperiksa dan bukan sekadar diyakini.
 
 | Hal | Keadaan |
 |---|---|
-| Beban HTTP penuh saat pembukaan KRS | Perebutan kuota sudah dibuktikan aman lewat proses paralel, dan katalognya sudah dipaginasi. Yang **belum** diuji: ribuan permintaan HTTP bersamaan pada satu server — antrean PHP-FPM, kolam koneksi, dan sesi. `artisan serve` satu utas tidak dapat membuktikannya |
+| Beban HTTP penuh saat pembukaan KRS | **Yang paling mendesak dari seluruh Bagian II.** Perebutan kuota sudah dibuktikan aman lewat proses paralel, dan katalognya sudah dipaginasi — tetapi keduanya menjawab pertanyaan yang berbeda dari ribuan permintaan HTTP bersamaan pada satu server: antrean PHP-FPM, kolam koneksi, dan sesi. `artisan serve` satu utas tidak dapat membuktikannya; perlu server ber-proses banyak. Mendesak karena ini satu-satunya kegagalan yang terjadi di depan seluruh mahasiswa sekaligus, pada hari yang paling terlihat, dan tidak dapat diperbaiki saat sedang berlangsung. **Ditutup sebelum kampus pertama, bukan sebelum rilis kode** |
 
 ### Lunas 19 Agustus 2026
 
