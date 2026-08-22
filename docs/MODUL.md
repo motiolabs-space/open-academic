@@ -167,7 +167,7 @@ bawahnya berikut angkanya, supaya dapat diperiksa dan bukan sekadar diyakini.
 
 | Hal | Keadaan |
 |---|---|
-| Beban HTTP penuh saat pembukaan KRS | **Yang paling mendesak dari seluruh Bagian II.** Perebutan kuota sudah dibuktikan aman lewat proses paralel, dan katalognya sudah dipaginasi — tetapi keduanya menjawab pertanyaan yang berbeda dari ribuan permintaan HTTP bersamaan pada satu server: antrean PHP-FPM, kolam koneksi, dan sesi. `artisan serve` satu utas tidak dapat membuktikannya; perlu server ber-proses banyak. Mendesak karena ini satu-satunya kegagalan yang terjadi di depan seluruh mahasiswa sekaligus, pada hari yang paling terlihat, dan tidak dapat diperbaiki saat sedang berlangsung. **Ditutup sebelum kampus pertama, bukan sebelum rilis kode** |
+| Beban HTTP penuh saat pembukaan KRS | **Sebagian terjawab 22 Agu 2026.** Diukur terhadap Apache sungguhan (mpm_winnt, 150 utas) sampai 40 permintaan serentak: **nol galat di setiap tingkat**. Bukan antrean, bukan kolam koneksi, bukan sesi — ketiga tersangkanya tidak tersentuh. Permintaan mengantre tertib pada langit-langit ~2,2 RPS, dan ~70% waktu tiap permintaan habis di bootstrap PHP sebelum kode aplikasi bekerja. **Pengungkitnya OPcache**, bukan perubahan kode. Yang **masih terbuka**: ribuan permintaan pada perangkat keras produksi — angka mesin pengembangan tidak boleh dipakai menentukan ukuran server. Rinciannya di [`KAPASITAS.md`](KAPASITAS.md) |
 
 ### Lunas 19 Agustus 2026
 

@@ -220,6 +220,86 @@ pun.**
 
 ---
 
+## Beban HTTP Bersamaan — diukur 22 Agustus 2026
+
+Utang terakhir dari [`MODUL.md`](MODUL.md). Suite Pest tidak dapat menutupnya
+dan `artisan serve` juga tidak: satu utas menjawab satu per satu berapa pun
+yang datang, sehingga uji beban terhadapnya mengukur kliennya sendiri.
+
+Yang dipakai di sini **Apache XAMPP** — mpm_winnt dengan 150 utas pekerja, yaitu
+antrean yang sungguhan. Harness-nya `app-core/scripts/beban-http.cjs`: login
+sebagai sejumlah mahasiswa berbeda, lalu mengulang permintaan katalog KRS pada
+konkurensi menaik.
+
+### Hasilnya
+
+Apa adanya (tanpa cache konfigurasi, `APP_DEBUG=true`, **opcache mati**):
+
+| Serentak | Sukses | Gagal | RPS | p50 | p95 |
+|---|---|---|---|---|---|
+| 1 | 40 | 0 | 0,8 | 1.279 ms | 1.435 ms |
+| 5 | 40 | 0 | 2,3 | 2.007 ms | 2.573 ms |
+| 10 | 40 | 0 | 2,2 | 4.191 ms | 5.387 ms |
+| 20 | 40 | 0 | 2,3 | 7.330 ms | 10.548 ms |
+| 40 | 40 | 0 | 2,1 | 18.099 ms | 18.581 ms |
+
+Dengan `config:cache` + `route:cache` + `view:cache`: 2,4 RPS — **naik sekitar
+sepersepuluh, dan langit-langitnya tidak bergeser.**
+
+### Tiga hal yang dijawabnya
+
+**Tidak ada yang patah.** Nol galat di setiap tingkat. Bukan antrean Apache yang
+penuh, bukan `max_connections` MySQL yang habis, bukan pula perebutan sesi —
+padahal ketiganya yang disebut sebagai tersangka. Permintaan hanya **mengantre
+dengan tertib**.
+
+**Langit-langitnya ~2,2 permintaan/detik, dan tidak bergerak.** Menambah
+konkurensi hanya menambah waktu tunggu, persis Hukum Little: 40 ÷ 2,2 = 18,2
+detik, dan yang terukur 18,1 detik. Ini tanda khas server yang jenuh pada
+kemampuan eksekusi, bukan pada salah satu batas konfigurasinya.
+
+**Biayanya di bootstrap, bukan di modul KRS.** Halaman login — yang nyaris tidak
+melakukan apa pun — berbiaya p50 **755 ms**, sementara katalog KRS 745 ms pada
+probe yang sama. Sekitar 70% waktu tiap permintaan habis sebelum kode aplikasi
+mulai bekerja.
+
+> Catatan pengukuran: probe `/mahasiswa/krs` dijalankan tanpa cookie sehingga
+> yang terukur adalah pengalihannya, bukan halaman penuhnya. Kesimpulannya tidak
+> berubah — permintaan yang nyaris tidak mengerjakan apa-apa pun berbiaya ~750
+> ms — tetapi angka itu bukan biaya katalog KRS.
+
+### Apa yang harus dilakukan
+
+**Nyalakan OPcache.** Tanpanya setiap permintaan mengompilasi ulang ratusan
+berkas PHP, dan itulah keseluruhan langit-langit di atas. Ini satu baris di
+`php.ini` dan **pengungkit terbesar dari semuanya** — jauh melampaui perubahan
+kode mana pun. Tidak dinyalakan saat pengukuran ini karena `php.ini` XAMPP
+berlaku untuk seluruh proyek di mesin tersebut.
+
+**Cache konfigurasi tetap wajib di produksi**, meski di sini hanya 10%: tanpanya
+setiap permintaan membaca ulang `.env` dari disk. Selama pengukuran, dua
+permintaan gagal dengan `SQLiteDatabaseDoesNotExistException` — `.env` gagal
+terbaca lalu `config/database.php` jatuh ke bawaannya, `'default' => env('DB_CONNECTION', 'sqlite')`.
+Tidak terulang sesudah `config:cache`.
+
+**Perhatikan 150 lawan 151.** Apache menyediakan 150 utas; `max_connections`
+MySQL 151. Selisihnya satu. Selama langit-langitnya masih ~2 RPS hal ini tidak
+pernah tersentuh — tetapi begitu OPcache menaikkannya, konkurensi nyata dapat
+mencapai 150 dan **kolam koneksi menjadi dinding berikutnya**. Naikkan
+`max_connections` sebelum, bukan sesudah.
+
+### Yang masih terbuka
+
+Ini mesin pengembangan: Apache + mod_php, MariaDB lokal, tanpa OPcache. **Ribuan
+permintaan bersamaan pada perangkat keras produksi belum diuji**, dan angka di
+atas tidak boleh dipakai untuk menentukan ukuran server.
+
+Yang sudah didapat adalah **bentuknya**: tidak ada yang runtuh, semuanya
+mengantre, dan hambatannya eksekusi PHP — bukan ketiga hal yang semula dicurigai.
+Bentuk itu bertahan meski angkanya berubah.
+
+---
+
 ## Rekomendasi Perangkat Keras
 
 Berdasarkan angka di atas, dengan Nginx + PHP-FPM + OPcache.
