@@ -28,8 +28,9 @@
 | Tes Pest | **967 hijau** (2.111 asersi) · 66 berkas |
 | Desain | Midnight Executive — navy `#1E2761`, emas `#C9A961` |
 
-Fase 0–5, SSO OAuth2, tujuh kesenjangan SIAKAD (G1–G7), dan integrasi akuntansi
-sudah selesai.
+Fase 0–6, SSO OAuth2, tujuh kesenjangan SIAKAD (G1–G7), dan integrasi akuntansi
+sudah selesai. Fase 6 — pelaporan lanjutan — menambah pembanding PDDIKTI,
+ekspor SISTER, borang LKPS, dan laporan KIP Kuliah.
 
 ---
 
@@ -75,7 +76,7 @@ Akun demo: `dosen1@demo.test` · kata sandi `password`
 | | Penilaian BKD | `/dosen/bkd/penilaian` |
 | | Portofolio | `/dosen/portofolio` |
 
-## Portal Staf — 33 modul
+## Portal Staf — 34 modul
 
 Akun demo: `admin@demo.test` · kata sandi `password`
 
