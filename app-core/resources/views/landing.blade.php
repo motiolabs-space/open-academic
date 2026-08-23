@@ -2,6 +2,10 @@
 
 @section('title', 'Sistem Akademik Terbuka')
 
+{{-- Satu-satunya halaman yang meminta diindeks; sisanya noindex secara bawaan. --}}
+@section('robots', 'index, follow')
+@section('deskripsi', 'Sistem informasi akademik untuk mahasiswa, dosen, dan staf — KRS, nilai, transkrip, keuangan, dan pelaporan PDDIKTI dalam satu tempat.')
+
 @php
     use App\Services\Branding\BrandingService;
     $brand = app(BrandingService::class);

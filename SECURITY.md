@@ -190,6 +190,28 @@ faktanya sendiri adalah salinan kedua dokumen yang tidak dapat dicabut siapa pun
 
 ---
 
+## Mesin Pencari
+
+Setiap halaman **noindex secara bawaan**; hanya halaman muka yang meminta
+sebaliknya.
+
+Terbalik dari kebiasaan, dan disengaja. `/verifikasi` menampilkan nama, NIM,
+dan program studi seseorang — memang harus, karena yang membacanya adalah
+petugas bank atau calon pemberi kerja yang mencocokkan dengan kertas di tangan.
+Seluruh pengamanannya bertumpu pada UUID yang tak dapat ditebak.
+
+Pengindeksan meniadakan itu sepenuhnya: URL-nya tidak lagi perlu ditebak karena
+sudah ada di indeks, dan nama seorang mahasiswa menjadi hasil pencarian yang
+menetap bertahun-tahun.
+
+`robots.txt` juga membatasi, tetapi ia **hanya dibaca ketika aplikasi dilayani
+di akar domain**. Pada pemasangan subfolder ia tidak pernah terjangkau, jadi
+penjagaan yang sebenarnya adalah `<meta name="robots">` di
+`layouts/base.blade.php`. Bawaannya noindex supaya setiap layar baru tertutup
+tanpa harus diingat.
+
+---
+
 ## Keterbatasan yang Diketahui
 
 Dicatat terbuka, bukan disembunyikan.
@@ -197,14 +219,14 @@ Dicatat terbuka, bukan disembunyikan.
 1. **CSP masih mengizinkan `'unsafe-eval'` dan `'unsafe-inline'` pada skrip.**
    Alpine mengevaluasi ekspresi `x-` lewat konstruktor `Function`. Menghapus
    izin ini menuntut migrasi ke Alpine CSP build lebih dulu.
-2. **Font dilayani Google Fonts.** Setiap kunjungan halaman mengungkap alamat
-   IP pengunjung ke pihak ketiga. Sebagian panduan keamanan instansi melarang
-   ini; meng-hosting sendiri kedua famili font akan menghapus sekaligus
-   pengecualian CSP dan pengungkapan tersebut.
-3. **SSO OAuth2 belum ada.** Tombolnya ada di halaman masuk tetapi belum
-   berfungsi. Disengaja: server OAuth setengah jadi lebih berbahaya daripada
-   tidak ada sama sekali.
-4. **Seeder menulis langsung ke tabel**, melewati service layer. Aman karena
+2. **Seeder menulis langsung ke tabel**, melewati service layer. Aman karena
    menolak berjalan di produksi, tetapi berarti data demo bisa melanggar aturan
    yang ditegakkan service.
-5. **Belum ada 2FA.** Direncanakan pasca-1.0 untuk akun staf.
+3. **2FA baru untuk staf.** Dosen juga memegang `nilai.manage`; mereka menyusul.
+   Mahasiswa sengaja tidak — ribuan orang terkunci pada pekan KRS adalah
+   kegagalan yang lebih besar daripada yang hendak dicegah.
+
+Dua butir lama dihapus dari daftar ini karena sudah tidak berlaku: font kini
+di-host sendiri lewat `@fontsource` (pengungkapan IP ke pihak ketiga dan dua
+pengecualian CSP ikut hilang), dan SSO OAuth2 sudah berfungsi sejak Fase 3 —
+lihat [docs/SSO.md](docs/SSO.md).

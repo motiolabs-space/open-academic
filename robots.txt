@@ -1,2 +1,20 @@
+# Hanya halaman muka yang boleh diindeks.
+#
+# Bukan sekadar kerapian. /verifikasi menampilkan nama, NIM, dan program studi
+# seseorang, dan seluruh pengamanannya bertumpu pada UUID yang tak dapat
+# ditebak — mengindeksnya meniadakan itu sepenuhnya.
+#
+# Berkas ini hanya dibaca ketika aplikasi dilayani di AKAR DOMAIN. Pada
+# pemasangan subfolder ia tidak pernah terjangkau, jadi penjagaan yang
+# sebenarnya adalah <meta name="robots"> di layouts/base.blade.php, yang
+# bawaannya noindex.
+
 User-agent: *
-Disallow:
+Disallow: /masuk
+Disallow: /verifikasi
+Disallow: /admin
+Disallow: /mahasiswa
+Disallow: /dosen
+Disallow: /oauth
+Disallow: /api
+Allow: /$
