@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace App\Services\Feeder\Mappers;
 
 use App\Models\Akademik\KelasKuliah;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Collection;
 
 /**
  * Kelas Kuliah — the course offerings of a term, with the teaching lecturer.
@@ -23,14 +23,13 @@ class KelasKuliahMapper extends FeederMapper
         return 'InsertKelasKuliah';
     }
 
-    /** @return Collection<int, KelasKuliah> */
-    public function rows(string $termCode): Collection
+    /** @return Builder<KelasKuliah> */
+    protected function query(string $termCode): Builder
     {
         return KelasKuliah::query()
             ->with(['mataKuliah', 'prodi', 'tahunAkademik', 'dosenPengampu'])
             ->whereHas('tahunAkademik', fn ($query) => $query->where('kode', $termCode))
-            ->orderBy('id')
-            ->get();
+            ->orderBy('id');
     }
 
     /** @param KelasKuliah $model */

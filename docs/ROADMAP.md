@@ -134,7 +134,7 @@ Apa yang ada hari ini, dikelompokkan menurut siapa yang memakainya.
 
 | Modul | | Catatan |
 |---|---|---|
-| Neo Feeder PDDIKTI | ✅ | Idempoten, ledger, validator pra-kirim |
+| Neo Feeder PDDIKTI | ✅ | Idempoten, ledger, validator pra-kirim. Delapan entitas sejak 22 Okt 2026: + dosen pengajar kelas, + Lulus/DO |
 | Campus Bridge | ✅ | 11 endpoint ber-scope, webhook HMAC, spec OpenAPI |
 | SSO OAuth2 (Passport) | ✅ | Kampus jadi penerbit identitas |
 | Notifikasi (G2) | ✅ | Kategori wajib tidak dapat dimatikan |
@@ -310,9 +310,9 @@ tabel lokal** — ini pekerjaan mapper dan validator, bukan model data baru.
 
 | # | Pekerjaan | Kenapa, dan apa yang sudah menopangnya |
 |---|---|---|
-| 19 | **Dosen pengajar kelas → Feeder** | `kelas_dosen` ada, mapper tidak. Padahal inilah penghitung rasio dosen:mahasiswa di PDDIKTI, pembagi SKS pada *team teaching*, dan **sumber "pengajaran" di SISTER**. Tanpa ini, BKD unsur pendidikan yang dihitung otomatis di sini tidak pernah sampai ke tempat yang menilainya |
+| ~~19~~ | ~~**Dosen pengajar kelas → Feeder**~~ | ✅ 22 Oktober 2026. `kelas_dosen` ada, mapper tidak. Padahal inilah penghitung rasio dosen:mahasiswa di PDDIKTI, pembagi SKS pada *team teaching*, dan **sumber "pengajaran" di SISTER**. Tanpa ini, BKD unsur pendidikan yang dihitung otomatis di sini tidak pernah sampai ke tempat yang menilainya |
 | 20 | **Komponen evaluasi kelas & nilai per komponen → Feeder** | Rencana evaluasi wajib dilaporkan sejak 2024 gasal. `komponen_nilai` dan `nilai_komponen` sudah berbobot per kelas — tinggal dipetakan. Satu aturan validator pra-kirim baru: **IKU 7 diakui PDDIKTI hanya bila bobot partisipatif + proyek ≥ 50 %** — kelas ber-flag *case method* yang bobotnya di bawah itu harus ditandai *sebelum* sinkron, bukan ditemukan saat rekonsiliasi IKU |
-| 21 | **Lulus/DO → Feeder** | Yudisium ada; status di PDDIKTI tetap *Aktif*. Itu salah satu dari lima penyebab tersering reservasi nomor ijazah gagal (#28) |
+| ~~21~~ | ~~**Lulus/DO → Feeder**~~ | ✅ 22 Oktober 2026. Yudisium ada; status di PDDIKTI tetap *Aktif*. Itu salah satu dari lima penyebab tersering reservasi nomor ijazah gagal (#28) |
 | 22 | **Aktivitas MBKM beserta anggota, pembimbing, penguji, dan konversinya → Feeder** | `aktivitas_mahasiswa` dan catatan bimbingan/ujian TA sudah ada. Ini juga jalur *pembimbingan* dan *pengujian* ke SISTER (lihat temuan di atas), dan jalur klaim program flagship |
 | 23 | **Prestasi & transfer kredit → Feeder** | Prestasi dari poin kemahasiswaan; transfer dari `konversi_kredit` |
 | 24 | **Kurikulum, mata kuliah, RPS & rencana evaluasi MK, skala nilai prodi, periode perkuliahan → Feeder** | Saat ini referensi ini diasumsikan sudah ada di Feeder. Kampus baru tidak punya asumsi itu |
@@ -355,10 +355,12 @@ sekarang punya rencana.
 
 ### Urutan yang disarankan
 
-**#19 dan #21 dulu.** Keduanya kecil (satu mapper, satu validator masing-masing),
-dan keduanya memperbaiki sesuatu yang hari ini **salah di luar kampus**: rasio
-dosen yang tidak terhitung dan lulusan yang masih *Aktif*. Lalu #20, karena
-wajib dan datanya sudah berbobot. #28–29 sebelum wisuda berikutnya. #32 adalah
+~~**#19 dan #21 dulu.**~~ Selesai 22 Oktober 2026 — keduanya memperbaiki sesuatu
+yang **salah di luar kampus**: rasio dosen yang tidak terhitung dan lulusan yang
+masih *Aktif*. Yang tersingkap saat mengerjakannya: `dosen.feeder_id` tidak
+pernah diisi siapa pun, karena dosen didaftarkan di PDDIKTI admin, bukan lewat
+Feeder. Kini diisi dari pembacaan `GetListDosen` yang dicocokkan NIDN. Berikutnya
+**#20**, karena wajib dan datanya sudah berbobot. #28–29 sebelum wisuda berikutnya. #32 adalah
 pekerjaan terbesar dan satu-satunya yang membuka portal keempat (calon
 mahasiswa); kerjakan setelah Feeder tuntas, supaya pendaftar yang diterima
 langsung punya riwayat pendidikan yang benar (#25).
@@ -459,6 +461,7 @@ yang tidak ada di sini.
 | Perintah pembangkit data skala | ✅ | Perintah openacademic:beban-katalog & beban-kuota; fixture 5.000 mahasiswa untuk [`KAPASITAS.md`](KAPASITAS.md) dibuat sekali pakai |
 | Katalog KRS pada ±1.000 kelas | ✅ | Diukur 19 Agu 2026: 1.000 baris = 1,92 s dan 2,2 MB HTML. **Sudah dipaginasi**: 105 KB, 0,79 s — lihat KAPASITAS.md |
 | Uji beban bersamaan | ✅ | Perebutan kuota diuji 19 Agu 2026: 19 proses, 1 kursi, tepat 1 pemenang. Beban HTTP penuh masih terbuka |
+| **8 tes gagal di `main` sejak Oktober 2026** | ⬜ | `KurikulumLanjutanTest` (kuliah paket, konsentrasi) dan `KonversiKreditTest` (kredit ganda) melempar `AturanAkademikException`. Ditemukan 22 Okt 2026 saat menjalankan suite penuh; gagal juga tanpa perubahan apa pun. Dugaan: kalender term fixture relatif ke tanggal hari ini |
 | CSP masih `'unsafe-eval'` | 🟡 | Alpine mengevaluasi ekspresi `x-` lewat konstruktor `Function` |
 | Font dari Google Fonts | ✅ | Di-host sendiri lewat `@fontsource` 19 Agu 2026; `style-src`/`font-src` pihak ketiga dicabut. Menyingkap bug terpendam: Vite menulis URL aset absolut dari akar domain, jadi setiap pemasangan subfolder kehilangan hurufnya — `base: './'` |
 

@@ -62,6 +62,11 @@ return [
         'ikatan_kerja' => 'GetIkatanKerjaDosen',
         'jenis_evaluasi' => 'GetJenisEvaluasi',
         'substansi_kuliah' => 'GetSubstansiKuliah',
+
+        // Not a code table: the lecturers PDDIKTI already knows, read back so
+        // local rows can be given their id_dosen (matched on NIDN). Lecturers
+        // are registered at PDDIKTI admin, never pushed from here.
+        'dosen' => 'GetListDosen',
     ],
 
     /*
@@ -95,6 +100,11 @@ return [
             'action' => 'InsertKelasKuliah',
             'depends_on' => [],
         ],
+        'dosen_pengajar' => [
+            'label' => 'Dosen Pengajar Kelas',
+            'action' => 'InsertDosenPengajarKelasKuliah',
+            'depends_on' => ['kelas_kuliah'],
+        ],
         'krs' => [
             'label' => 'KRS Mahasiswa',
             'action' => 'InsertKRSMahasiswa',
@@ -104,6 +114,11 @@ return [
             'label' => 'Nilai Perkuliahan Kelas',
             'action' => 'InsertNilaiPerkuliahanKelas',
             'depends_on' => ['krs'],
+        ],
+        'lulus_do' => [
+            'label' => 'Mahasiswa Lulus / DO',
+            'action' => 'InsertMahasiswaLulusDO',
+            'depends_on' => ['riwayat_pendidikan'],
         ],
     ],
 
@@ -150,6 +165,12 @@ return [
             'get_action' => 'GetListKelasKuliah',
             'filter' => ['id_semester' => ':term'],
             'key' => ['id_semester', 'id_matkul', 'nama_kelas_kuliah'],
+        ],
+
+        'dosen_pengajar' => [
+            'get_action' => 'GetListDosenPengajarKelasKuliah',
+            'filter' => ['id_semester' => ':term'],
+            'key' => ['id_kelas_kuliah', 'id_dosen'],
         ],
 
         'aktivitas_kuliah' => [

@@ -4,6 +4,67 @@
 
 ---
 
+## Sesi 31 — 2026-10-22 · Feeder: dosen pengajar kelas dan Lulus/DO — dua entitas yang selalu punya tabel
+
+Pekerjaan #19 dan #21 dari §Peta Jalan Lanjutan. Branch
+`feature/feeder-pengajar-lulus-do`.
+
+### Yang dikirim sekarang
+
+| Entitas | Aksi | Sumber lokal |
+|---|---|---|
+| `dosen_pengajar` | `InsertDosenPengajarKelasKuliah` | `kelas_dosen` — kini punya model `KelasDosen` sendiri |
+| `lulus_do` | `InsertMahasiswaLulusDO` | `mahasiswa` berstatus L/D/K, dari yudisium yang ditetapkan atau keputusan evaluasi studi |
+
+Keduanya memakai mesin yang sama: hash payload, ledger, validator pra-kirim,
+urutan dependensi. Tidak ada jalur khusus.
+
+### Yang tersingkap
+
+**`dosen.feeder_id` tidak pernah diisi.** Mapper kelas kuliah sudah mengirim
+`id_dosen` sejak Agustus — tetapi kolomnya kosong di setiap baris, dan
+`array_filter` membuangnya diam-diam. Dosen didaftarkan di PDDIKTI admin, bukan
+lewat Feeder, jadi identitasnya hanya bisa datang dari **membaca daftar dosen
+Feeder kembali** (`GetListDosen`), dicocokkan NIDN. Itu ditambahkan ke
+`tarikReferensi()`. Praktisi tanpa NIDN tetap tanpa `id_dosen`, dan validator
+mengatakannya — bukan menebak.
+
+**Dua entitas, dua cara mengunci.** Dosen pengajar mendapat id baru dari Feeder
+(`id_aktivitas_mengajar`). Lulus/DO dikunci pada `id_registrasi_mahasiswa` yang
+sudah dipegang mahasiswa, dan balasan Feeder tidak membawa apa pun yang layak
+disimpan. Tanpa penanganan, baris itu akan di-*insert* ulang tiap sinkron dan
+ditolak sebagai duplikat sejak yang kedua. Jadi `FeederMapper` punya satu kait
+baru, `feederIdBawaan()`: identitas yang dicatat bila balasan tidak membawanya.
+
+### Tiga penolakan yang disengaja
+
+1. **Team teaching tanpa porsi SKS** melaporkan seluruh SKS kelas ke tiap dosen —
+   sebagai peringatan, bukan dibagi rata diam-diam. Membagi rata adalah
+   kebijakan, dan `config/bkd.php` sudah menunjukkan kampus berbeda memilih beda.
+2. **Mahasiswa berstatus Lulus yang yudisiumnya masih "diajukan"** masuk daftar
+   dan ditolak validator — bukan jatuh dari daftar dan tetap *Aktif* di PDDIKTI
+   satu semester lagi.
+3. **Alasan tertulis keputusan DO tidak pernah dikirim.** `keterangan` berisi
+   label keputusan; `catatan` milik kampus.
+
+Pemetaan `jenis_keluar` (L→1, G→2, D→3, K→4) ditambahkan ke `IntegrasiSeeder`,
+dengan catatan yang sama seperti status mahasiswa: kampus menimpanya dari
+tarikan referensi, bukan dari kode.
+
+**Layar monitor melewati anggaran kueri** — 39 dari 30 — begitu dua entitas
+bertambah, karena `antre` dihitung dengan memuat seluruh baris beserta
+relasinya lalu `count()`. Sekarang tiap mapper mendefinisikan `query()`, dan
+`rows()` serta `jumlah()` diturunkan darinya: menghitung tidak lagi memuat.
+
+**18 tes baru** (60 asersi); folder Feeder 50 hijau. Suite penuh: 1.016 lolos,
+dan **8 kegagalan yang sudah ada di `main` sebelum sesi ini** — seluruhnya
+`KurikulumLanjutanTest` dan `KonversiKreditTest` (kuliah paket, konsentrasi,
+kredit ganda), melempar `AturanAkademikException`. Belum ditelusuri; dugaan
+terdekat kalender term pada fixture-nya relatif terhadap tanggal hari ini.
+Dicatat sebagai utang di ROADMAP, bukan diperbaiki di branch ini.
+
+---
+
 ## Sesi 30 — 2026-10-22 · Repo dibuka ke publik, dan peta jalan lanjutan dari dua kajian
 
 ### Repo publik

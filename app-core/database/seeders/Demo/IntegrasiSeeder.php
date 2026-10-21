@@ -51,6 +51,25 @@ class IntegrasiSeeder extends Seeder
             ]);
         }
 
+        // Jenis keluar: the exit kind PDDIKTI records when a registration is
+        // closed. Codes follow the published reference table; a campus whose
+        // Feeder build differs overwrites them from the reference pull.
+        $jenisKeluar = [
+            StudentStatus::Lulus->value => ['1', 'Lulus'],
+            StudentStatus::GantiProdi->value => ['2', 'Mutasi'],
+            StudentStatus::DropOut->value => ['3', 'Dikeluarkan'],
+            StudentStatus::Keluar->value => ['4', 'Mengundurkan diri'],
+        ];
+
+        foreach ($jenisKeluar as $local => [$feeder, $label]) {
+            FeederMapping::create([
+                'group' => 'jenis_keluar',
+                'local_value' => $local,
+                'feeder_code' => $feeder,
+                'feeder_label' => $label,
+            ]);
+        }
+
         $agama = [
             '1' => 'Islam', '2' => 'Kristen', '3' => 'Katholik',
             '4' => 'Hindu', '5' => 'Budha', '6' => 'Khonghucu', '99' => 'Lainnya',

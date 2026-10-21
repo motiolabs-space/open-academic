@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace App\Services\Feeder\Mappers;
 
 use App\Models\Kemahasiswaan\Mahasiswa;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Collection;
 
 /**
  * Riwayat Pendidikan Mahasiswa — the enrolment of a person into a programme.
@@ -26,9 +26,9 @@ class RiwayatPendidikanMapper extends FeederMapper
     /**
      * Students whose biodata already reached Feeder but whose enrolment has not.
      *
-     * @return Collection<int, Mahasiswa>
+     * @return Builder<Mahasiswa>
      */
-    public function rows(string $termCode): Collection
+    protected function query(string $termCode): Builder
     {
         return Mahasiswa::query()
             ->with('prodi')
@@ -36,8 +36,7 @@ class RiwayatPendidikanMapper extends FeederMapper
             ->where(fn ($query) => $query
                 ->where('term_masuk', $termCode)
                 ->orWhereNull('feeder_registrasi_id'))
-            ->orderBy('nim')
-            ->get();
+            ->orderBy('nim');
     }
 
     /** @param Mahasiswa $model */
