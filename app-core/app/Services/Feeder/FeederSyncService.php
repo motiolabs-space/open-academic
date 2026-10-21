@@ -9,11 +9,14 @@ use App\Exceptions\FeederException;
 use App\Models\Akademik\TahunAkademik;
 use App\Models\Feeder\FeederRef;
 use App\Models\Feeder\FeederSyncLog;
+use App\Models\Sdm\Dosen;
 use App\Services\Feeder\Contracts\FeederClientInterface;
 use App\Services\Feeder\Mappers\AktivitasKuliahMapper;
+use App\Services\Feeder\Mappers\DosenPengajarMapper;
 use App\Services\Feeder\Mappers\FeederMapper;
 use App\Services\Feeder\Mappers\KelasKuliahMapper;
 use App\Services\Feeder\Mappers\KrsMapper;
+use App\Services\Feeder\Mappers\LulusDoMapper;
 use App\Services\Feeder\Mappers\MahasiswaMapper;
 use App\Services\Feeder\Mappers\NilaiMapper;
 use App\Services\Feeder\Mappers\RiwayatPendidikanMapper;
@@ -51,8 +54,10 @@ class FeederSyncService
         'riwayat_pendidikan' => RiwayatPendidikanMapper::class,
         'aktivitas_kuliah' => AktivitasKuliahMapper::class,
         'kelas_kuliah' => KelasKuliahMapper::class,
+        'dosen_pengajar' => DosenPengajarMapper::class,
         'krs' => KrsMapper::class,
         'nilai' => NilaiMapper::class,
+        'lulus_do' => LulusDoMapper::class,
     ];
 
     /**
@@ -155,7 +160,9 @@ class FeederSyncService
             $jumlah = 0;
 
             foreach ($response->rows() as $baris) {
-                $kode = $this->tebakKode($baris);
+                $kode = $tipe === 'dosen'
+                    ? (isset($baris['id_dosen']) ? (string) $baris['id_dosen'] : $this->tebakKode($baris))
+                    : $this->tebakKode($baris);
 
                 if ($kode === null) {
                     continue;
@@ -174,9 +181,45 @@ class FeederSyncService
             }
 
             $hasil[$tipe] = $jumlah;
+
+            if ($tipe === 'dosen') {
+                $this->petakanDosen();
+            }
         }
 
         return $hasil;
+    }
+
+    /**
+     * Gives each local lecturer the `id_dosen` PDDIKTI knows them by.
+     *
+     * Lecturers are registered at PDDIKTI admin, never through Feeder, so the
+     * identifier can only come from reading Feeder's list back. Matched on
+     * NIDN/NIDK, which is the one field both sides hold. A lecturer without
+     * one — practitioners, typically — stays unmapped and is reported as
+     * such by the validator rather than guessed at.
+     */
+    private function petakanDosen(): int
+    {
+        $dipetakan = 0;
+
+        FeederRef::query()
+            ->where('ref_type', 'dosen')
+            ->whereNotNull('payload')
+            ->each(function (FeederRef $ref) use (&$dipetakan): void {
+                $nidn = $ref->payload['nidn'] ?? $ref->payload['nidk'] ?? null;
+
+                if (blank($nidn)) {
+                    return;
+                }
+
+                $dipetakan += Dosen::query()
+                    ->where('nidn', (string) $nidn)
+                    ->whereNull('feeder_id')
+                    ->update(['feeder_id' => $ref->code]);
+            });
+
+        return $dipetakan;
     }
 
     /** Whether the Feeder service answers right now. */
@@ -233,7 +276,7 @@ class FeederSyncService
             );
         }
 
-        if ($feederId === null && ($baru = $response->feederId()) !== null) {
+        if ($feederId === null && ($baru = $response->feederId() ?? $mapper->feederIdBawaan($model)) !== null) {
             $mapper->simpanFeederId($model, $baru);
         }
 
@@ -290,6 +333,8 @@ class FeederSyncService
             MahasiswaMapper::class => ['id_mahasiswa' => $feederId],
             RiwayatPendidikanMapper::class => ['id_registrasi_mahasiswa' => $feederId],
             KelasKuliahMapper::class => ['id_kelas_kuliah' => $feederId],
+            DosenPengajarMapper::class => ['id_aktivitas_mengajar' => $feederId],
+            LulusDoMapper::class => ['id_registrasi_mahasiswa' => $feederId],
             default => ['id' => $feederId],
         };
     }

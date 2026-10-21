@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\Feeder\Mappers;
 
 use App\Models\Feeder\FeederMapping;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
 
@@ -22,8 +23,32 @@ abstract class FeederMapper
     /** The Feeder act that carries this entity, e.g. InsertBiodataMahasiswa. */
     abstract public function act(): string;
 
+    /**
+     * The query selecting this entity's rows for the given term, eager loads
+     * included. Everything else — the rows themselves, and how many there are
+     * — derives from it.
+     *
+     * @return Builder<Model>
+     */
+    abstract protected function query(string $termCode): Builder;
+
     /** Rows of this entity that belong to the given term. */
-    abstract public function rows(string $termCode): Collection;
+    public function rows(string $termCode): Collection
+    {
+        return $this->query($termCode)->get();
+    }
+
+    /**
+     * How many rows are due, without loading one of them.
+     *
+     * The monitor screen asks this for every entity on every visit. Loading
+     * each entity's rows with their relations to count them cost nine queries
+     * per entity; a count costs one.
+     */
+    public function jumlah(string $termCode): int
+    {
+        return $this->query($termCode)->count();
+    }
 
     /** @return array<string, mixed> the record Feeder receives */
     abstract public function payload(Model $model): array;
@@ -44,6 +69,19 @@ abstract class FeederMapper
     public function feederId(Model $model): ?string
     {
         return $model->getAttribute('feeder_id');
+    }
+
+    /**
+     * The identifier to record when Feeder's reply carries none.
+     *
+     * Most entities get a fresh id back from an insert. A few are keyed on an
+     * identifier the local row already holds, and Feeder answers those with
+     * nothing worth storing. Without this hook such a row would be inserted
+     * again on every run — and rejected as a duplicate from the second one.
+     */
+    public function feederIdBawaan(Model $model): ?string
+    {
+        return null;
     }
 
     /** Records the identifier Feeder assigned, so later pushes update in place. */

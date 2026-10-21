@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace App\Services\Feeder\Mappers;
 
 use App\Models\Akademik\Nilai;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Collection;
 
 /**
  * Nilai Perkuliahan Kelas.
@@ -22,14 +22,13 @@ class NilaiMapper extends FeederMapper
         return 'InsertNilaiPerkuliahanKelas';
     }
 
-    /** @return Collection<int, Nilai> */
-    public function rows(string $termCode): Collection
+    /** @return Builder<Nilai> */
+    protected function query(string $termCode): Builder
     {
         return Nilai::query()
             ->with(['mahasiswa', 'kelasKuliah.mataKuliah', 'krsDetail.krs.tahunAkademik'])
             ->final()
-            ->whereHas('krsDetail.krs.tahunAkademik', fn ($query) => $query->where('kode', $termCode))
-            ->get();
+            ->whereHas('krsDetail.krs.tahunAkademik', fn ($query) => $query->where('kode', $termCode));
     }
 
     /** @param Nilai $model */

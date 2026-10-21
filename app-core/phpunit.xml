@@ -42,6 +42,13 @@
         <env name="MAIL_MAILER" value="array"/>
         <env name="QUEUE_CONNECTION" value="sync"/>
         <env name="SESSION_DRIVER" value="array"/>
+        <!--
+            SSO routes are registered at boot only when sso.enabled is true, so a
+            config() call inside a test comes too late: the routes are already
+            absent and every SSO request answers 404. The .env.example default
+            is false (a campus opts in), which is exactly what CI copies.
+        -->
+        <env name="SSO_ENABLED" value="true"/>
         <env name="PULSE_ENABLED" value="false"/>
         <env name="TELESCOPE_ENABLED" value="false"/>
         <env name="NIGHTWATCH_ENABLED" value="false"/>

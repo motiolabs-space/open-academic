@@ -152,6 +152,12 @@ class Mahasiswa extends Authenticatable implements OAuthenticatable
         return $this->hasOne(Alumni::class);
     }
 
+    /** Study-evaluation findings and decisions, newest first. */
+    public function evaluasiStudi(): HasMany
+    {
+        return $this->hasMany(EvaluasiStudi::class)->orderByDesc('id');
+    }
+
     /** Official letters requested by or issued to this student. */
     public function surat(): HasMany
     {

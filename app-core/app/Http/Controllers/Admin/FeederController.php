@@ -185,8 +185,10 @@ class FeederController extends Controller
                 'depends_on' => $meta['depends_on'],
 
                 // Stays per entity: each mapper reads a different table, so
-                // this is six distinct questions, not the same one repeated.
-                'antre' => app(FeederSyncService::MAPPERS[$entity])->rows($term->kode)->count(),
+                // this is eight distinct questions, not the same one repeated.
+                // A count, not the rows: loading them to count them put the
+                // screen over its query budget the moment two entities joined.
+                'antre' => app(FeederSyncService::MAPPERS[$entity])->jumlah($term->kode),
 
                 'berhasil' => $jumlah(FeederSyncStatus::Success),
                 'dilewati' => $jumlah(FeederSyncStatus::Skipped),

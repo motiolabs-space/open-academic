@@ -86,6 +86,25 @@ class TahunAkademikFactory extends Factory
         });
     }
 
+    /**
+     * Opens the KRS window around today, whatever the term's own calendar says.
+     *
+     * TahunAkademik::krsDibuka() closes the window on krs_perubahan_selesai
+     * when that is set, not on krs_selesai. A test that overrides only
+     * krs_mulai and krs_selesai keeps the factory's revision deadline — two
+     * weeks into the term — and silently stops passing once today's date
+     * moves past it. All three dates are anchored here so the window cannot
+     * drift shut.
+     */
+    public function krsDibuka(): static
+    {
+        return $this->state(fn (): array => [
+            'krs_mulai' => Carbon::today()->subWeek(),
+            'krs_selesai' => Carbon::today()->addWeek(),
+            'krs_perubahan_selesai' => Carbon::today()->addWeeks(3),
+        ]);
+    }
+
     public function terkunci(): static
     {
         return $this->state(['is_locked' => true]);

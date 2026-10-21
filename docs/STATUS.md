@@ -4,6 +4,87 @@
 
 ---
 
+## Sesi 31 — 2026-10-22 · Feeder: dosen pengajar kelas dan Lulus/DO — dua entitas yang selalu punya tabel
+
+Pekerjaan #19 dan #21 dari §Peta Jalan Lanjutan. Branch
+`feature/feeder-pengajar-lulus-do`.
+
+### Yang dikirim sekarang
+
+| Entitas | Aksi | Sumber lokal |
+|---|---|---|
+| `dosen_pengajar` | `InsertDosenPengajarKelasKuliah` | `kelas_dosen` — kini punya model `KelasDosen` sendiri |
+| `lulus_do` | `InsertMahasiswaLulusDO` | `mahasiswa` berstatus L/D/K, dari yudisium yang ditetapkan atau keputusan evaluasi studi |
+
+Keduanya memakai mesin yang sama: hash payload, ledger, validator pra-kirim,
+urutan dependensi. Tidak ada jalur khusus.
+
+### Yang tersingkap
+
+**`dosen.feeder_id` tidak pernah diisi.** Mapper kelas kuliah sudah mengirim
+`id_dosen` sejak Agustus — tetapi kolomnya kosong di setiap baris, dan
+`array_filter` membuangnya diam-diam. Dosen didaftarkan di PDDIKTI admin, bukan
+lewat Feeder, jadi identitasnya hanya bisa datang dari **membaca daftar dosen
+Feeder kembali** (`GetListDosen`), dicocokkan NIDN. Itu ditambahkan ke
+`tarikReferensi()`. Praktisi tanpa NIDN tetap tanpa `id_dosen`, dan validator
+mengatakannya — bukan menebak.
+
+**Dua entitas, dua cara mengunci.** Dosen pengajar mendapat id baru dari Feeder
+(`id_aktivitas_mengajar`). Lulus/DO dikunci pada `id_registrasi_mahasiswa` yang
+sudah dipegang mahasiswa, dan balasan Feeder tidak membawa apa pun yang layak
+disimpan. Tanpa penanganan, baris itu akan di-*insert* ulang tiap sinkron dan
+ditolak sebagai duplikat sejak yang kedua. Jadi `FeederMapper` punya satu kait
+baru, `feederIdBawaan()`: identitas yang dicatat bila balasan tidak membawanya.
+
+### Tiga penolakan yang disengaja
+
+1. **Team teaching tanpa porsi SKS** melaporkan seluruh SKS kelas ke tiap dosen —
+   sebagai peringatan, bukan dibagi rata diam-diam. Membagi rata adalah
+   kebijakan, dan `config/bkd.php` sudah menunjukkan kampus berbeda memilih beda.
+2. **Mahasiswa berstatus Lulus yang yudisiumnya masih "diajukan"** masuk daftar
+   dan ditolak validator — bukan jatuh dari daftar dan tetap *Aktif* di PDDIKTI
+   satu semester lagi.
+3. **Alasan tertulis keputusan DO tidak pernah dikirim.** `keterangan` berisi
+   label keputusan; `catatan` milik kampus.
+
+Pemetaan `jenis_keluar` (L→1, G→2, D→3, K→4) ditambahkan ke `IntegrasiSeeder`,
+dengan catatan yang sama seperti status mahasiswa: kampus menimpanya dari
+tarikan referensi, bukan dari kode.
+
+**Layar monitor melewati anggaran kueri** — 39 dari 30 — begitu dua entitas
+bertambah, karena `antre` dihitung dengan memuat seluruh baris beserta
+relasinya lalu `count()`. Sekarang tiap mapper mendefinisikan `query()`, dan
+`rows()` serta `jumlah()` diturunkan darinya: menghitung tidak lagi memuat.
+
+**18 tes baru** (60 asersi); folder Feeder 50 hijau. Suite penuh di mesin
+pengembang: 1.016 lolos dan 8 kegagalan yang sudah ada di `main` — fixture
+jendela KRS yang rapuh tanggal, diperbaiki di sesi terpisah dan di-*cherry-pick*
+ke branch ini (`krsDibuka()` pada `TahunAkademikFactory`).
+
+### CI merah sejak Agustus, dan tidak ada yang melihat
+
+PR pertama repo ini membuka hal yang lebih besar dari 8 tes: **170 kegagalan di
+CI**, dan `main` sendiri sudah merah sejak 22 Agustus. Penyebabnya bukan kode
+akademik:
+
+1. **`Vite manifest not found`.** CI menjalankan Pest *sebelum* `npm run build`,
+   dan sejak tata letak dipisah, `build/` ada di root dan di-ignore. Setiap
+   layar membalas 500. Di mesin pengembang `build/` selalu ada — itulah sebabnya
+   suite terlihat hijau dua bulan. Perbaikannya di suite, bukan di urutan CI:
+   `TestCase::setUp()` memanggil `withoutVite()`. Suite tidak boleh bergantung
+   pada artefak yang di-ignore git.
+2. **14 tes SSO membalas 404.** Rute SSO didaftarkan saat boot hanya bila
+   `sso.enabled`, jadi `config(['sso.enabled' => true])` di `beforeEach` sudah
+   terlambat. Lolos di lokal karena `.env` pengembang menyetel `SSO_ENABLED=true`
+   — temuan sesi perbaikan tes. `phpunit.xml` kini menyetelnya untuk suite.
+
+Pelajarannya sama dengan yang di CLAUDE.md §9 tentang SQLite: **lingkungan
+pengembang yang "kebetulan lengkap" menyembunyikan kegagalan yang pasti terjadi
+di tempat lain.** Diverifikasi dengan menyembunyikan `build/` lalu menjalankan
+suite penuh paralel di lokal.
+
+---
+
 ## Sesi 30 — 2026-10-22 · Repo dibuka ke publik, dan peta jalan lanjutan dari dua kajian
 
 ### Repo publik
@@ -47,6 +128,26 @@ sudah tercatat. Seluruhnya ditulis sebagai P4–P6 (#19–43) di ROADMAP.md.
 ROADMAP masih menyatakan "belum ada remote" — diperbarui. Nama produk
 pembanding dihapus dari ROADMAP dan STATUS; dokumen publik cukup menyebut
 "pembanding komersial".
+
+### Delapan tes yang gagal sendiri — kalender yang berjalan, bukan kode
+
+Suite dijalankan hari ini dan 8 tes gagal di `main` tanpa ada perubahan:
+7 di `KurikulumLanjutanTest` (`kuliah paket`, `kurikulum konsentrasi`) dan 1 di
+`KonversiKreditTest` (`kredit ganda`). Semuanya kandas di gerbang yang sama:
+"Pengisian KRS belum dibuka atau sudah ditutup".
+
+Kedua `beforeEach` membuka jendela KRS dengan menimpa `krs_mulai` dan
+`krs_selesai` ke `now() ± 1 pekan`. Tetapi `TahunAkademik::krsDibuka()` menutup
+jendela pada `krs_perubahan_selesai` bila kolom itu terisi — dan factory
+`term(2026, Ganjil)` mengisinya: dua pekan sesudah 1 September, yakni 15
+September 2026. Pada Agustus tanggal itu masih di depan; sejak 16 September
+setiap tes yang menempuh `KrsService::tambahKelas()` lewat fixture ini
+ditolak kalender. `PaketKuliahService::terapkan()` menelan pengecualian itu per
+baris, sehingga di sana gejalanya `ditambahkan = 0`, bukan exception.
+
+Aturan akademiknya benar dan tidak disentuh. Yang diperbaiki fixture-nya:
+state factory baru `krsDibuka()` menjangkarkan ketiga tanggal ke hari ini,
+dan kedua tes memakainya. Baris utangnya di ROADMAP ditandai lunas.
 
 ---
 

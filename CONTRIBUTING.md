@@ -48,6 +48,15 @@ npm run build
    luar produksi; `tests/Feature/SmokeLayarTest.php` menjaga anggaran kueri tiap
    layar. Kalau anggaran terlampaui, perbaiki kuerinya — jangan naikkan
    anggarannya tanpa alasan yang ditulis.
+8. **Materi milik kementerian tidak pernah masuk repo ini.** Repo ini publik.
+   Kode sumber, koleksi Postman, panduan, kredensial, prefill, dan data
+   apa pun dari Neo Feeder PDDIKTI, PDDIKTI admin, SISTER, PIN, atau layanan
+   kementerian lainnya **tidak boleh di-commit maupun di-push ke GitHub** —
+   walaupun hanya untuk "referensi". Yang boleh ada di sini hanya kode milik
+   proyek ini yang *berbicara* ke layanan itu, dengan nama aksi dan field
+   yang ditulis ulang di mapper. Catatan kajian disimpan lokal di `docs/lokal/`
+   (dikecualikan lewat `.git/info/exclude`). Sebaliknya juga berlaku: proyek ini
+   tidak pernah mendorong perubahan ke repositori GitHub milik kementerian.
 
 ## Kontrak Campus Bridge Bersifat *Spec-First*
 

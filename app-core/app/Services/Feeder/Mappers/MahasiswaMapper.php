@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace App\Services\Feeder\Mappers;
 
 use App\Models\Kemahasiswaan\Mahasiswa;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Collection;
 
 /**
  * Biodata Mahasiswa — the first entity that must reach Feeder, because every
@@ -25,15 +25,14 @@ class MahasiswaMapper extends FeederMapper
      * Biodata is pushed once per student, not once per term — re-pushing an
      * existing student is what the ledger's hash check is there to prevent.
      *
-     * @return Collection<int, Mahasiswa>
+     * @return Builder<Mahasiswa>
      */
-    public function rows(string $termCode): Collection
+    protected function query(string $termCode): Builder
     {
         return Mahasiswa::query()
             ->with('prodi')
             ->where(fn ($query) => $query->where('term_masuk', $termCode)->orWhereNull('feeder_id'))
-            ->orderBy('nim')
-            ->get();
+            ->orderBy('nim');
     }
 
     /** @param Mahasiswa $model */

@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace App\Services\Feeder\Mappers;
 
 use App\Models\Kemahasiswaan\StatusMahasiswa;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Collection;
 
 /**
  * Aktivitas Kuliah Mahasiswa — the per-term enrolment record: status, credits
@@ -23,13 +23,12 @@ class AktivitasKuliahMapper extends FeederMapper
         return 'InsertAktivitasKuliahMahasiswa';
     }
 
-    /** @return Collection<int, StatusMahasiswa> */
-    public function rows(string $termCode): Collection
+    /** @return Builder<StatusMahasiswa> */
+    protected function query(string $termCode): Builder
     {
         return StatusMahasiswa::query()
             ->with(['mahasiswa', 'tahunAkademik'])
-            ->whereHas('tahunAkademik', fn ($query) => $query->where('kode', $termCode))
-            ->get();
+            ->whereHas('tahunAkademik', fn ($query) => $query->where('kode', $termCode));
     }
 
     /** @param StatusMahasiswa $model */

@@ -6,8 +6,8 @@ namespace App\Services\Feeder\Mappers;
 
 use App\Enums\KrsStatus;
 use App\Models\Akademik\KrsDetail;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Collection;
 
 /**
  * KRS Mahasiswa — one row per class taken.
@@ -23,15 +23,14 @@ class KrsMapper extends FeederMapper
         return 'InsertKRSMahasiswa';
     }
 
-    /** @return Collection<int, KrsDetail> */
-    public function rows(string $termCode): Collection
+    /** @return Builder<KrsDetail> */
+    protected function query(string $termCode): Builder
     {
         return KrsDetail::query()
             ->with(['krs.mahasiswa', 'kelasKuliah.mataKuliah'])
             ->whereHas('krs', fn ($query) => $query
                 ->where('status', KrsStatus::Disetujui->value)
-                ->whereHas('tahunAkademik', fn ($sub) => $sub->where('kode', $termCode)))
-            ->get();
+                ->whereHas('tahunAkademik', fn ($sub) => $sub->where('kode', $termCode)));
     }
 
     /** @param KrsDetail $model */

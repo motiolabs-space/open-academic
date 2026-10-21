@@ -4,9 +4,12 @@ declare(strict_types=1);
 
 namespace App\Services\Feeder;
 
+use App\Enums\StudentStatus;
+use App\Models\Akademik\KelasDosen;
 use App\Models\Akademik\KelasKuliah;
 use App\Models\Akademik\KrsDetail;
 use App\Models\Akademik\Nilai;
+use App\Models\Feeder\FeederMapping;
 use App\Models\Feeder\FeederValidationIssue;
 use App\Models\Kemahasiswaan\Mahasiswa;
 use App\Models\Kemahasiswaan\StatusMahasiswa;
@@ -71,8 +74,10 @@ class FeederValidator
             'riwayat_pendidikan' => $this->riwayatPendidikan($model),
             'aktivitas_kuliah' => $this->aktivitasKuliah($model),
             'kelas_kuliah' => $this->kelasKuliah($model),
+            'dosen_pengajar' => $this->dosenPengajar($model),
             'krs' => $this->krs($model),
             'nilai' => $this->nilai($model),
+            'lulus_do' => $this->lulusDo($model),
             default => collect(),
         };
     }
@@ -178,6 +183,45 @@ class FeederValidator
         return $isu;
     }
 
+    /** @param KelasDosen $kd */
+    private function dosenPengajar(Model $kd): Collection
+    {
+        $isu = collect();
+
+        if (blank($kd->kelasKuliah?->feeder_id)) {
+            $isu->push($this->error('kelas_belum_sinkron', 'Kelas kuliah belum terkirim ke Feeder.'));
+        }
+
+        // id_dosen is PDDIKTI's identifier, not ours. It arrives only by
+        // reading Feeder's lecturer list back (tarik referensi); a lecturer
+        // never registered at PDDIKTI admin has none and cannot be reported.
+        if (blank($kd->dosen?->feeder_id)) {
+            $isu->push($this->error(
+                'dosen_belum_dipetakan',
+                "Dosen {$kd->dosen?->nama} belum dipetakan ke id_dosen PDDIKTI. "
+                .'Tarik referensi (GetListDosen) setelah dosen terdaftar di PDDIKTI admin.',
+            ));
+        }
+
+        $sksKelas = (int) ($kd->kelasKuliah?->sks ?? 0);
+
+        if ($kd->porsi_sks !== null && (float) $kd->porsi_sks > $sksKelas) {
+            $isu->push($this->error('porsi_melebihi_kelas', "Porsi SKS dosen ({$kd->porsi_sks}) melebihi SKS kelas ({$sksKelas})."));
+        }
+
+        // Team teaching without a recorded split reports the whole class to
+        // every lecturer. That may be what the campus means; it must not be
+        // what the campus gets by accident.
+        if ($kd->porsi_sks === null && $kd->kelasKuliah !== null && $kd->kelasKuliah->dosen()->count() > 1) {
+            $isu->push($this->peringatan(
+                'porsi_sks_kosong',
+                'Kelas diampu lebih dari satu dosen tetapi porsi SKS tidak diisi; seluruh SKS kelas akan dilaporkan untuk dosen ini.',
+            ));
+        }
+
+        return $isu;
+    }
+
     /** @param KrsDetail $d */
     private function krs(Model $d): Collection
     {
@@ -209,6 +253,53 @@ class FeederValidator
 
         if ($n->nilai_angka !== null && ((float) $n->nilai_angka < 0 || (float) $n->nilai_angka > 100)) {
             $isu->push($this->error('angka_di_luar_rentang', 'Nilai angka di luar rentang 0–100.'));
+        }
+
+        return $isu;
+    }
+
+    /** @param Mahasiswa $m */
+    private function lulusDo(Model $m): Collection
+    {
+        $isu = collect();
+
+        if (blank($m->feeder_registrasi_id)) {
+            $isu->push($this->error('registrasi_belum_sinkron', 'Riwayat pendidikan mahasiswa belum terkirim ke Feeder.'));
+        }
+
+        if (FeederMapping::toFeeder('jenis_keluar', $m->status->value) === null) {
+            $isu->push($this->error(
+                'jenis_keluar_belum_dipetakan',
+                "Status \"{$m->status->label()}\" belum dipetakan ke kode jenis keluar PDDIKTI (feeder_mappings, grup jenis_keluar).",
+            ));
+        }
+
+        if ($m->status === StudentStatus::Lulus) {
+            $y = $m->yudisium;
+
+            if ($y === null || $y->status !== 'ditetapkan') {
+                $isu->push($this->error('yudisium_belum_ditetapkan', 'Mahasiswa berstatus Lulus tanpa yudisium yang ditetapkan.'));
+
+                return $isu;
+            }
+
+            if ($y->tanggal_lulus === null) {
+                $isu->push($this->error('tanggal_keluar_kosong', 'Tanggal lulus pada yudisium belum diisi.'));
+            }
+
+            if ((float) $y->ipk > 4.0) {
+                $isu->push($this->error('indeks_di_luar_rentang', 'IPK yudisium melebihi 4,00.'));
+            }
+
+            if (blank($y->nomor_sk)) {
+                $isu->push($this->peringatan('nomor_sk_kosong', 'Nomor SK yudisium kosong; PDDIKTI menerimanya, tetapi reservasi nomor ijazah menanyakannya.'));
+            }
+
+            return $isu;
+        }
+
+        if ($m->evaluasiStudi->first() === null) {
+            $isu->push($this->error('keputusan_tidak_ditemukan', 'Tidak ada keputusan evaluasi studi yang mengakhiri registrasi mahasiswa ini.'));
         }
 
         return $isu;
