@@ -105,6 +105,11 @@ return [
             'action' => 'InsertDosenPengajarKelasKuliah',
             'depends_on' => ['kelas_kuliah'],
         ],
+        'komponen_evaluasi' => [
+            'label' => 'Komponen Evaluasi Kelas',
+            'action' => 'InsertKomponenEvaluasiKelas',
+            'depends_on' => ['kelas_kuliah'],
+        ],
         'krs' => [
             'label' => 'KRS Mahasiswa',
             'action' => 'InsertKRSMahasiswa',
@@ -114,6 +119,11 @@ return [
             'label' => 'Nilai Perkuliahan Kelas',
             'action' => 'InsertNilaiPerkuliahanKelas',
             'depends_on' => ['krs'],
+        ],
+        'nilai_komponen' => [
+            'label' => 'Nilai per Komponen Evaluasi',
+            'action' => 'UpdateNilaiPerkuliahanKelasKomponenEvaluasi',
+            'depends_on' => ['komponen_evaluasi', 'krs'],
         ],
         'lulus_do' => [
             'label' => 'Mahasiswa Lulus / DO',

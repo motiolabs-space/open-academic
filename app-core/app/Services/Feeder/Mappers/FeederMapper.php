@@ -84,6 +84,21 @@ abstract class FeederMapper
         return null;
     }
 
+    /**
+     * The key Feeder wants on every call for this entity, or null.
+     *
+     * Most entities are inserted once and updated by the identifier Feeder
+     * handed back. A few expose a single act that upserts by a composite of
+     * identifiers the local row already knows; for those, every push is an
+     * update keyed on this, and nothing is ever "inserted".
+     *
+     * @return array<string, string|null>|null
+     */
+    public function kunciAlami(Model $model): ?array
+    {
+        return null;
+    }
+
     /** Records the identifier Feeder assigned, so later pushes update in place. */
     public function simpanFeederId(Model $model, string $feederId): void
     {

@@ -110,10 +110,17 @@ return [
         ],
 
         // Default weighted components applied to a new kelas kuliah.
+        //
+        // `jenis` is PDDIKTI's classification of the component (JenisEvaluasi)
+        // and is what decides IKU 7: a case-method or team-based class counts
+        // only when its participatory + project components reach 50% of the
+        // marks. These defaults reach 0%, so a class flagged for IKU 7 with
+        // the default plan is reported as flagged but will not be recognised —
+        // the Feeder validator says so before anything is sent.
         'default_components' => [
-            ['name' => 'Tugas', 'weight' => 30],
-            ['name' => 'UTS', 'weight' => 30],
-            ['name' => 'UAS', 'weight' => 40],
+            ['name' => 'Tugas', 'weight' => 30, 'jenis' => 'tugas'],
+            ['name' => 'UTS', 'weight' => 30, 'jenis' => 'uts'],
+            ['name' => 'UAS', 'weight' => 40, 'jenis' => 'uas'],
         ],
     ],
 

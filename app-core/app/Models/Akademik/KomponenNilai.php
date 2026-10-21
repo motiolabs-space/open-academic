@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models\Akademik;
 
+use App\Enums\JenisEvaluasi;
 use App\Traits\HasLogAktivitas;
 use App\Traits\HasUuid;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -26,6 +27,14 @@ class KomponenNilai extends Model
     protected $table = 'komponen_nilai';
 
     protected $guarded = ['id', 'uuid', 'created_at', 'updated_at'];
+
+    protected function casts(): array
+    {
+        return [
+            'jenis_evaluasi' => JenisEvaluasi::class,
+            'feeder_synced_at' => 'datetime',
+        ];
+    }
 
     public function kelasKuliah(): BelongsTo
     {

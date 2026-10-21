@@ -58,6 +58,7 @@ class PenilaianService
                 'kelas_kuliah_id' => $kelas->id,
                 'nama' => $bawaan['name'],
                 'bobot' => $bawaan['weight'],
+                'jenis_evaluasi' => $bawaan['jenis'] ?? null,
                 'urutan' => $urutan,
             ]);
         }
@@ -68,7 +69,7 @@ class PenilaianService
     /**
      * Replaces the class's components.
      *
-     * @param array<int, array{nama: string, bobot: int}> $komponen
+     * @param array<int, array{nama: string, bobot: int, jenis?: string|null}> $komponen
      */
     public function simpanKomponen(KelasKuliah $kelas, array $komponen): Collection
     {
@@ -92,6 +93,7 @@ class PenilaianService
                     'kelas_kuliah_id' => $kelas->id,
                     'nama' => $baris['nama'],
                     'bobot' => (int) $baris['bobot'],
+                    'jenis_evaluasi' => $baris['jenis'] ?? null,
                     'urutan' => $urutan,
                 ]);
             }
