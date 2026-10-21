@@ -56,12 +56,32 @@ bertambah, karena `antre` dihitung dengan memuat seluruh baris beserta
 relasinya lalu `count()`. Sekarang tiap mapper mendefinisikan `query()`, dan
 `rows()` serta `jumlah()` diturunkan darinya: menghitung tidak lagi memuat.
 
-**18 tes baru** (60 asersi); folder Feeder 50 hijau. Suite penuh: 1.016 lolos,
-dan **8 kegagalan yang sudah ada di `main` sebelum sesi ini** — seluruhnya
-`KurikulumLanjutanTest` dan `KonversiKreditTest` (kuliah paket, konsentrasi,
-kredit ganda), melempar `AturanAkademikException`. Belum ditelusuri; dugaan
-terdekat kalender term pada fixture-nya relatif terhadap tanggal hari ini.
-Dicatat sebagai utang di ROADMAP, bukan diperbaiki di branch ini.
+**18 tes baru** (60 asersi); folder Feeder 50 hijau. Suite penuh di mesin
+pengembang: 1.016 lolos dan 8 kegagalan yang sudah ada di `main` — fixture
+jendela KRS yang rapuh tanggal, diperbaiki di sesi terpisah dan di-*cherry-pick*
+ke branch ini (`krsDibuka()` pada `TahunAkademikFactory`).
+
+### CI merah sejak Agustus, dan tidak ada yang melihat
+
+PR pertama repo ini membuka hal yang lebih besar dari 8 tes: **170 kegagalan di
+CI**, dan `main` sendiri sudah merah sejak 22 Agustus. Penyebabnya bukan kode
+akademik:
+
+1. **`Vite manifest not found`.** CI menjalankan Pest *sebelum* `npm run build`,
+   dan sejak tata letak dipisah, `build/` ada di root dan di-ignore. Setiap
+   layar membalas 500. Di mesin pengembang `build/` selalu ada — itulah sebabnya
+   suite terlihat hijau dua bulan. Perbaikannya di suite, bukan di urutan CI:
+   `TestCase::setUp()` memanggil `withoutVite()`. Suite tidak boleh bergantung
+   pada artefak yang di-ignore git.
+2. **14 tes SSO membalas 404.** Rute SSO didaftarkan saat boot hanya bila
+   `sso.enabled`, jadi `config(['sso.enabled' => true])` di `beforeEach` sudah
+   terlambat. Lolos di lokal karena `.env` pengembang menyetel `SSO_ENABLED=true`
+   — temuan sesi perbaikan tes. `phpunit.xml` kini menyetelnya untuk suite.
+
+Pelajarannya sama dengan yang di CLAUDE.md §9 tentang SQLite: **lingkungan
+pengembang yang "kebetulan lengkap" menyembunyikan kegagalan yang pasti terjadi
+di tempat lain.** Diverifikasi dengan menyembunyikan `build/` lalu menjalankan
+suite penuh paralel di lokal.
 
 ---
 
