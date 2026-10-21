@@ -27,10 +27,7 @@ use Illuminate\Support\Facades\DB;
 beforeEach(function () {
     $this->seed(RolePermissionSeeder::class);
 
-    $this->term = TahunAkademik::factory()->term(2026, SemesterType::Ganjil)->aktif()->create([
-        'krs_mulai' => now()->subWeek(),
-        'krs_selesai' => now()->addWeek(),
-    ]);
+    $this->term = TahunAkademik::factory()->term(2026, SemesterType::Ganjil)->aktif()->krsDibuka()->create();
 
     $this->lampau = TahunAkademik::factory()->term(2025, SemesterType::Ganjil)->terkunci()->create();
 

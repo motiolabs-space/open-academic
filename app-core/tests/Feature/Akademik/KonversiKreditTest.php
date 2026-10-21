@@ -29,10 +29,7 @@ beforeEach(function () {
 
     // Jendela KRS dibuka: satu tes di bawah menempuh KrsService, dan gerbang
     // kalender akademik menyala lebih dulu daripada aturan yang diuji.
-    $this->term = TahunAkademik::factory()->term(2026, SemesterType::Ganjil)->aktif()->create([
-        'krs_mulai' => now()->subWeek(),
-        'krs_selesai' => now()->addWeek(),
-    ]);
+    $this->term = TahunAkademik::factory()->term(2026, SemesterType::Ganjil)->aktif()->krsDibuka()->create();
     $this->prodi = Prodi::factory()->create(['sks_lulus' => 144]);
 
     $this->staf = Staff::factory()->create();

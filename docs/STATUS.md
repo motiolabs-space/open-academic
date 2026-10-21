@@ -109,6 +109,26 @@ ROADMAP masih menyatakan "belum ada remote" — diperbarui. Nama produk
 pembanding dihapus dari ROADMAP dan STATUS; dokumen publik cukup menyebut
 "pembanding komersial".
 
+### Delapan tes yang gagal sendiri — kalender yang berjalan, bukan kode
+
+Suite dijalankan hari ini dan 8 tes gagal di `main` tanpa ada perubahan:
+7 di `KurikulumLanjutanTest` (`kuliah paket`, `kurikulum konsentrasi`) dan 1 di
+`KonversiKreditTest` (`kredit ganda`). Semuanya kandas di gerbang yang sama:
+"Pengisian KRS belum dibuka atau sudah ditutup".
+
+Kedua `beforeEach` membuka jendela KRS dengan menimpa `krs_mulai` dan
+`krs_selesai` ke `now() ± 1 pekan`. Tetapi `TahunAkademik::krsDibuka()` menutup
+jendela pada `krs_perubahan_selesai` bila kolom itu terisi — dan factory
+`term(2026, Ganjil)` mengisinya: dua pekan sesudah 1 September, yakni 15
+September 2026. Pada Agustus tanggal itu masih di depan; sejak 16 September
+setiap tes yang menempuh `KrsService::tambahKelas()` lewat fixture ini
+ditolak kalender. `PaketKuliahService::terapkan()` menelan pengecualian itu per
+baris, sehingga di sana gejalanya `ditambahkan = 0`, bukan exception.
+
+Aturan akademiknya benar dan tidak disentuh. Yang diperbaiki fixture-nya:
+state factory baru `krsDibuka()` menjangkarkan ketiga tanggal ke hari ini,
+dan kedua tes memakainya. Baris utangnya di ROADMAP ditandai lunas.
+
 ---
 
 ## Sesi 29 — 2026-08-11 · Rencana Kinerja & SPMI — dan sebuah batas yang turun satu tingkat
