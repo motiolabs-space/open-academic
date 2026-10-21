@@ -57,8 +57,8 @@ Seluruh fase (0–5), SSO OAuth2, tujuh kesenjangan SIAKAD (G1–G7), dan integr
 akuntansi sudah selesai. `php artisan migrate:fresh --seed` membangun kampus demo
 utuh dalam ±25 detik.
 
-**Repo di bawah Git sejak 11 Agustus 2026. Belum ada remote** — itu keputusan
-pemilik repo, bukan pekerjaan yang tertinggal.
+**Repo di bawah Git sejak 11 Agustus 2026, dan publik di GitHub sejak 22 Oktober
+2026** — rahasia dan riwayatnya diaudit sebelum dibuka.
 
 ---
 
@@ -139,7 +139,7 @@ Apa yang ada hari ini, dikelompokkan menurut siapa yang memakainya.
 | SSO OAuth2 (Passport) | ✅ | Kampus jadi penerbit identitas |
 | Notifikasi (G2) | ✅ | Kategori wajib tidak dapat dimatikan |
 | **Komparasi data SIAKAD ↔ Neo Feeder** | ✅ | FeederRekonsiliasi 21 Agu 2026: membaca Feeder kembali dan melaporkan hanya-lokal / hanya-Feeder / berbeda isinya. Entitas tanpa aksi pembacaan dinyatakan belum dapat dibandingkan, bukan cocok |
-| **Klien SISTER** | ⬜ | Menunggu kredensial |
+| **Klien SISTER** | 🚫 | Tidak ada lagi web service SISTER per kampus: pengajaran, pembimbingan, dan pengujian turun ke SISTER **dari PDDIKTI**. Jalurnya Feeder — §Peta Jalan Lanjutan #19–22 |
 | **Federasi ke IdP eksternal** | ⬜ | Google/Entra/Keycloak |
 
 ### Platform
@@ -162,8 +162,8 @@ Apa yang ada hari ini, dikelompokkan menurut siapa yang memakainya.
 
 ## Perbandingan dengan Pembanding Komersial
 
-Diperiksa terhadap **[SEVIMA siAkadCloud](https://sevima.com/siakadcloud/fitur/)**
-pada 15 Agustus 2026 — pembanding yang wajar: 200+ kampus, 15+ tahun.
+Diperiksa terhadap halaman fitur publik satu SIAKAD komersial yang dipakai ratusan
+kampus, pada 15 Agustus 2026 — pembanding yang wajar.
 
 > **Halaman pemasaran bukan daftar isi produk.** Yang tidak tercantum di sana
 > belum tentu tidak ada. Yang dibandingkan di bawah adalah apa yang mereka
@@ -187,9 +187,9 @@ Bukan kalah. Batas produk.
 | Modul mereka | Kenapa di luar |
 |---|---|
 | **CBT** | Platform ujian: bank soal, sesi serentak ribuan peserta, anti-curang, penilaian otomatis. Beban dan model datanya tidak ada hubungannya dengan sistem catatan akademik |
-| **EdLink (LMS)** | Platform belajar: materi, tugas, diskusi, progres |
+| **LMS bawaan** | Platform belajar: materi, tugas, diskusi, progres |
 | Career center, forum & agenda alumni | Milik Open Campus |
-| AkreditasiCloud / SPMI / SAPTO | Produk terpisah di sisi mereka juga; di sini hanya faktanya |
+| Modul akreditasi / SPMI / ekspor SAPTO | Produk terpisah di sisi mereka juga; di sini hanya faktanya |
 | Helpdesk | Dapat dibeli terpisah dari mana pun |
 | Backup data | Urusan infrastruktur |
 
@@ -207,7 +207,7 @@ sesi ujiannya tidak perlu.
 | **BKD terhitung otomatis** | Mereka punya angka kredit; unsur pendidikan yang ditarik sendiri tidak diiklankan |
 | **Konversi RPL berplafon** | Menjaga arti gelar |
 | **Verifikasi surat publik** | QR + halaman yang benar-benar memverifikasi |
-| **Integrasi akuntansi terbuka** | Mereka mengarah ke produk sendiri (EduFin) |
+| **Integrasi akuntansi terbuka** | Mereka mengarah ke produk keuangan mereka sendiri |
 | **Sumber terbuka & portabel** | Tanpa kunci vendor |
 
 ### Penilaian
@@ -288,6 +288,96 @@ cakupan: **payment gateway**, terhalang kredensial merchant.
 
 ---
 
+## Peta Jalan Lanjutan — 22 Oktober 2026
+
+Disusun dari dua kajian pada Oktober 2026: daftar fitur publik pembanding
+komersial yang sama dengan §Perbandingan, dan perilaku terkini dua platform
+kementerian — aplikasi pelaporan PDDIKTI (Neo Feeder) dan SISTER. Hanya yang di
+dalam poros akademik yang dicatat; sisanya ada di §Yang dipelajari dan sengaja
+tidak diikuti.
+
+**Temuan yang mengubah premis: SISTER tidak lagi punya web service per kampus.**
+Pengajaran, pembimbingan, dan pengujian dosen masuk ke SISTER *dari PDDIKTI*.
+Jadi "Klien SISTER menunggu kredensial" bukan lagi pekerjaan yang tertahan —
+itu pekerjaan yang salah alamat. Alamat yang benar adalah entitas Feeder yang
+belum pernah dikirim.
+
+### P4 — Pelaporan Feeder yang ternyata belum tertutup
+
+Hari ini enam entitas dikirim: biodata, riwayat pendidikan, aktivitas kuliah,
+KRS, kelas, nilai. Semuanya `Insert`. Yang belum dikirim semuanya **sudah punya
+tabel lokal** — ini pekerjaan mapper dan validator, bukan model data baru.
+
+| # | Pekerjaan | Kenapa, dan apa yang sudah menopangnya |
+|---|---|---|
+| 19 | **Dosen pengajar kelas → Feeder** | `kelas_dosen` ada, mapper tidak. Padahal inilah penghitung rasio dosen:mahasiswa di PDDIKTI, pembagi SKS pada *team teaching*, dan **sumber "pengajaran" di SISTER**. Tanpa ini, BKD unsur pendidikan yang dihitung otomatis di sini tidak pernah sampai ke tempat yang menilainya |
+| 20 | **Komponen evaluasi kelas & nilai per komponen → Feeder** | Rencana evaluasi wajib dilaporkan sejak 2024 gasal. `komponen_nilai` dan `nilai_komponen` sudah berbobot per kelas — tinggal dipetakan. Satu aturan validator pra-kirim baru: **IKU 7 diakui PDDIKTI hanya bila bobot partisipatif + proyek ≥ 50 %** — kelas ber-flag *case method* yang bobotnya di bawah itu harus ditandai *sebelum* sinkron, bukan ditemukan saat rekonsiliasi IKU |
+| 21 | **Lulus/DO → Feeder** | Yudisium ada; status di PDDIKTI tetap *Aktif*. Itu salah satu dari lima penyebab tersering reservasi nomor ijazah gagal (#28) |
+| 22 | **Aktivitas MBKM beserta anggota, pembimbing, penguji, dan konversinya → Feeder** | `aktivitas_mahasiswa` dan catatan bimbingan/ujian TA sudah ada. Ini juga jalur *pembimbingan* dan *pengujian* ke SISTER (lihat temuan di atas), dan jalur klaim program flagship |
+| 23 | **Prestasi & transfer kredit → Feeder** | Prestasi dari poin kemahasiswaan; transfer dari `konversi_kredit` |
+| 24 | **Kurikulum, mata kuliah, RPS & rencana evaluasi MK, skala nilai prodi, periode perkuliahan → Feeder** | Saat ini referensi ini diasumsikan sudah ada di Feeder. Kampus baru tidak punya asumsi itu |
+| 25 | **Jenis daftar riwayat pendidikan yang lengkap** | Peserta didik baru · pindahan (internal / antar PT) · RPL transfer SKS · RPL perolehan · *fast track* · non-gelar. Pindahan dan RPL wajib membawa SKS diakui, PT asal, dan prodi asal. `mahasiswa` hanya punya `jalur_masuk`. Sisi akademiknya #33 |
+| 26 | **`Update*` / `Delete*` untuk koreksi** | Data yang sudah tersinkron tidak dapat diubah dari UI Feeder; koreksi hanya lewat web service atau PDDIKTI admin. Ledger `payload_hash` sudah membedakan "sama" dari "berubah" — yang kurang aksi untuk "berubah" |
+| 27 | **Perubahan Data Mahasiswa & Perubahan Jenis Keluar** | Enam kolom identitas (NIM, nama, nama ibu, tempat & tanggal lahir, periode masuk) dan tujuh kolom keluar dikunci PDDIKTI setelah sinkron; mengubahnya berarti ajuan di PDDIKTI admin dengan surat permohonan dan lampiran. Aplikasi harus **menandai kolom itu terkunci** setelah sinkron pertama, dan modul surat dapat mencetak surat permohonannya |
+
+Juga dicatat, bukan pekerjaan: sinkronisasi dari UI Feeder memerlukan OTP
+WhatsApp, jadi tidak pernah dapat diotomasi penuh. Monitor Feeder harus
+menyatakan langkah itu, bukan berpura-pura "sinkron" selesai.
+
+### P5 — Kelulusan elektronik: menutup risiko nomor ijazah
+
+Risiko terbuka di [`MODUL.md`](MODUL.md) — nomor ijazah diberikan lokal —
+sekarang punya rencana.
+
+| # | Pekerjaan | Kenapa |
+|---|---|---|
+| 28 | **Daftar periksa kesiapan PIN per calon lulusan** | Lima penyebab tersering reservasi gagal — NIK salah, SKS reguler kurang, SKS diakui pindahan kurang, status masih *Aktif* di PDDIKTI, data reservasi tidak sesuai — **semuanya terdeteksi dari data lokal** sebelum operator membuka portal PIN. Dijalankan dari yudisium |
+| 29 | **`nomor_ijazah` menjadi nilai yang diimpor, bukan dibangkitkan** | Bila kampus memakai PIN (wajib sejak akhir 2020), kolom itu berhenti diisi sendiri; verifikasi publik ijazah adalah SIVIL, bukan QR lokal. QR lokal tetap untuk surat dan SKPI. Butuh satu setelan kampus, dan bawaannya harus yang aman: *tidak membangkitkan* |
+| 30 | **Pendaftaran wisuda oleh mahasiswa** | Hari ini staf yang mendaftarkan. Syarat (yudisium, bebas tagihan, bebas pinjaman) sudah dapat dihitung |
+| 31 | **Status "Menunggu Uji Kompetensi"** | Prodi kesehatan: lulus akademik tetapi belum lulus ukom dilaporkan sebagai status aktivitas kuliah tersendiri. `StudentStatus` belum punya nilainya; tanpa itu mahasiswa seperti ini tercatat *Lulus* atau *Aktif* — keduanya salah |
+
+### P6 — Kesenjangan pembanding yang tersisa di dalam poros
+
+| # | Pekerjaan | Catatan |
+|---|---|---|
+| 32 | **Pendaftaran PMB daring oleh calon** | Satu-satunya kesenjangan *besar* yang baru. `pmb_pendaftar` tidak punya akun; rute publik PMB hanya melayani berkas. Perlu: akun pendaftar, periode & syarat, jadwal seleksi, kartu ujian pendaftar, pengumuman lewat surel, penanda calon penerima KIP. Nilai seleksi dari CBT mana pun **diimpor**, bukan diselenggarakan di sini |
+| 33 | **Mahasiswa pindahan** | Intake dengan PT dan prodi asal; SKS diakui lewat `konversi_kredit` yang ada. Pasangan #25 |
+| 34 | **Jadwal ujian (UTS/UAS)** | Entitas sendiri: sesi, ruang, pengawas, bentrok. Kartu ujian sudah dicetak, tetapi dari jadwal kuliah |
+| 35 | **Kalender akademik** | Tanggal kunci per semester sebagai data yang dibaca gerbang KRS, nilai, dan pengingat — bukan sebagai pengumuman |
+| 36 | **Pengingat mahasiswa aktif yang belum KRS** | Notifikasi ada; penerimanya belum. Dipicu menjelang jendela KRS tutup |
+| 37 | **KKN / PKL sebagai kegiatan terkelola** | Kelompok, lokasi, pembimbing lapangan, nilai. Mendarat sebagai `aktivitas_mahasiswa` agar tetap satu jalur ke Feeder (#22), bukan tabel baru |
+| 38 | **Tahap proposal tugas akhir** | Proposal → seminar proposal → bimbingan. TA hari ini mulai dari judul |
+| 39 | **Riwayat kepegawaian yang tersisa** | Diklat, pengalaman kerja, studi lanjut / tugas belajar, tugas dinas, jabatan struktural, inpassing, pensiun & kontrak — ditambah enam formulir yang sudah tercatat di MODUL.md (penghargaan & sanksi, bahasa, organisasi profesi, keluarga, pangkat, mutasi). Inilah isi "Profil Dosen" di SISTER yang masih diketik ulang dosen di sana |
+| 40 | **Buku besar angka kredit (Kum A–E)** | Dihitung dari BKD dan portofolio (kinerja sebelum 2026 dikonversi dengan faktor 4 dari SKS BKD ke AK), per dosen, per jenjang. Keluarannya: rekap kumulatif, kesiapan usulan kenaikan jabatan, dan **ekspor lembar penyetaraan** (NUPTK, jabatan, TMT, Kum A–E, total DUPAK) dalam format yang diterima SISTER. Buku besar, bukan dasbor — SISTER yang menilai, bukan aplikasi ini |
+| 41 | **Tarif per SKS / per mata kuliah** | Komponen tarif hari ini: UKT, SPP, praktikum, registrasi, wisuda. Kampus yang menagih per SKS tidak terlayani |
+| 42 | Monitoring pemakaian ruang | Sudah tercatat di §Peta Cakupan |
+| 43 | Denda, helpdesk | Sudah tercatat (#15, #18) |
+
+### Urutan yang disarankan
+
+**#19 dan #21 dulu.** Keduanya kecil (satu mapper, satu validator masing-masing),
+dan keduanya memperbaiki sesuatu yang hari ini **salah di luar kampus**: rasio
+dosen yang tidak terhitung dan lulusan yang masih *Aktif*. Lalu #20, karena
+wajib dan datanya sudah berbobot. #28–29 sebelum wisuda berikutnya. #32 adalah
+pekerjaan terbesar dan satu-satunya yang membuka portal keempat (calon
+mahasiswa); kerjakan setelah Feeder tuntas, supaya pendaftar yang diterima
+langsung punya riwayat pendidikan yang benar (#25).
+
+### Yang dipelajari dan sengaja tidak diikuti
+
+| Yang ada di pembanding | Kenapa tidak di sini |
+|---|---|
+| Forum kelas, unggah materi & tugas, konsultasi daring | Platform belajar — Campus Bridge dan SSO |
+| CBT untuk seleksi PMB | Platform ujian; #32 mengimpor nilainya |
+| Career center, kuesioner alumni | Open Campus |
+| Simulasi nilai akreditasi, ekspor SAPTO, inventaris dokumen mutu | Borang di Open Campus; AMI di sini |
+| Anggaran, hutang, aset tetap, standar akuntansi nirlaba | Sistem akuntansi; di sini hanya tagihan mahasiswa dan jembatannya |
+| Persuratan umum & disposisi | Bukan catatan akademik; surat mahasiswa sudah ada |
+| Dasbor manajemen puncak | Rekap operasional ada; IKU di Open Campus |
+| Aplikasi mobile native, hosting terkelola, cadangan data | Web responsif; infrastruktur |
+
+---
+
 ## Sengaja Bukan di Sini
 
 Bukan kesenjangan. Ini batas ekosistem, dan mengaburkannya akan menduplikasi
@@ -349,10 +439,10 @@ yang tidak ada di sini.
 | Item | Tertahan pada |
 |---|---|
 | Adaptor Midtrans | Kredensial merchant + endpoint notifikasi terverifikasi |
-| Klien SISTER | Kredensial kementerian. Tidak dibuat mode `fake` seperti Neo Feeder: kontraknya belum dapat diuji, dan menulisnya melawan tebakan akan membekukan tebakan itu ke dalam model data |
+| ~~Klien SISTER~~ | **Dicabut 22 Oktober 2026.** SISTER kini terpusat dan menarik data pengajaran, pembimbingan, dan pengujian dari PDDIKTI; tidak ada endpoint per kampus untuk dituju. Yang tersisa untuk SISTER adalah ekspor berkas (sudah ada) dan pengiriman entitas yang kurang ke Feeder (#19–22) |
 | Endpoint pembayaran Easy Accounting | Belum ada di API v1 mereka. Bila lahir, yang berubah satu metode di `PenjurnalanService` |
 | Federasi IdP eksternal | Keputusan pemetaan guard |
-| **Remote Git / rilis publik v1.0** | Keputusan pemilik repo |
+| **Rilis publik v1.0** | Keputusan pemilik repo. Remote sudah ada: repo publik di GitHub sejak 22 Oktober 2026 |
 
 ---
 

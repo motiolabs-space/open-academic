@@ -4,6 +4,52 @@
 
 ---
 
+## Sesi 30 — 2026-10-22 · Repo dibuka ke publik, dan peta jalan lanjutan dari dua kajian
+
+### Repo publik
+
+Remote GitHub dipasang dan 25 branch didorong. Sebelum itu diaudit: tidak ada
+berkas `.env`, kunci, dump, atau log yang ter-track; `.env.example` tidak pernah
+berisi nilai sepanjang riwayat; tidak ada pola token/kunci di 75 commit seluruh
+branch. Satu hal kecil yang sudah telanjur publik: benih entropi `.rnd` (1 KB
+acak, bukan kunci) ada di commit awal — tidak layak menulis ulang riwayat.
+
+### Dua kajian, satu temuan yang mengubah premis
+
+Dua hal dikaji: daftar fitur publik pembanding komersial, dan perilaku terkini
+aplikasi pelaporan PDDIKTI (Neo Feeder) serta SISTER. Catatan sumbernya disimpan
+lokal di `docs/lokal/` (dikecualikan lewat `.git/info/exclude`) — dokumen publik
+hanya memuat kesimpulannya.
+
+Temuannya: **SISTER tidak lagi punya web service per kampus.** Pengajaran,
+pembimbingan, dan pengujian dosen masuk ke SISTER dari PDDIKTI. Jadi "Klien
+SISTER menunggu kredensial" — yang bertahan di roadmap sejak 14 Agustus —
+bukan tertahan, melainkan salah alamat. Baris itu dicabut.
+
+Yang menggantikannya lebih memalukan sekaligus lebih murah: enam entitas Feeder
+yang **sudah punya tabel lokal tetapi tidak pernah dikirim** — dosen pengajar
+kelas (penghitung rasio, dan sumber pengajaran SISTER), komponen evaluasi (wajib
+sejak 2024 gasal; IKU 7 diakui hanya bila partisipatif + proyek ≥ 50 %),
+Lulus/DO (lulusan kita masih *Aktif* di PDDIKTI), aktivitas MBKM beserta
+pembimbing dan pengujinya, prestasi, transfer kredit. Ditambah tidak adanya
+`Update*`/`Delete*` sama sekali.
+
+Risiko nomor ijazah lokal yang tercatat di MODUL.md kini punya rencana: daftar
+periksa kesiapan PIN dari data lokal, dan `nomor_ijazah` yang diimpor, bukan
+dibangkitkan.
+
+Dari pembanding, kesenjangan besar yang baru hanya satu: **pendaftaran PMB
+daring oleh calon** — pendaftar hari ini tidak punya akun. Sisanya kecil atau
+sudah tercatat. Seluruhnya ditulis sebagai P4–P6 (#19–43) di ROADMAP.md.
+
+### Dua koreksi dokumen
+
+ROADMAP masih menyatakan "belum ada remote" — diperbarui. Nama produk
+pembanding dihapus dari ROADMAP dan STATUS; dokumen publik cukup menyebut
+"pembanding komersial".
+
+---
+
 ## Sesi 29 — 2026-08-11 · Rencana Kinerja & SPMI — dan sebuah batas yang turun satu tingkat
 
 Dua modul di atas pohon unit kerja. Yang menarik bukan kodenya, melainkan
@@ -1124,7 +1170,7 @@ dapat disimpan sama sekali.
 
 Rincian lengkap dulu ada di ROADMAP §Perbandingan dengan SIAKAD Lain. Bagian itu
 ditulis ulang pada 15 Agustus 2026 — ketujuh kesenjangan sudah tertutup, dan
-pembandingnya kini SEVIMA siAkadCloud.
+pembandingnya kini satu SIAKAD komersial yang dipakai ratusan kampus.
 
 ### Bagian 2 — G1 Tugas Akhir
 

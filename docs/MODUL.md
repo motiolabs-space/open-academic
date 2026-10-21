@@ -126,7 +126,7 @@ Akun demo: `admin@demo.test` · kata sandi `password`
 
 | Modul | Kenapa belum / catatan |
 |---|---|
-| **Klien SISTER** | **Tertahan di luar repo** — menunggu kredensial |
+| ~~**Klien SISTER**~~ | **Dicabut 22 Okt 2026** — SISTER kini terpusat dan menarik pengajaran, pembimbingan, dan pengujian dari PDDIKTI; tidak ada endpoint per kampus. Jalurnya Feeder — [`ROADMAP.md`](ROADMAP.md) §Peta Jalan Lanjutan #19–22 |
 | **Adaptor payment gateway** | **Tertahan di luar repo** — kontraknya sudah ada, yang kurang kredensial merchant + endpoint notifikasi yang terverifikasi tanda tangannya. Tanpa verifikasi, siapa pun yang menjangkau endpoint itu bisa melunasi tagihan mana pun |
 | Federasi ke IdP eksternal | Google / Entra / Keycloak. Open Academic sudah jadi *penerbit* identitas; jadi *konsumen* belum |
 | Denda keterlambatan | Kecil secara kode, sering diminta |

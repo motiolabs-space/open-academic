@@ -107,3 +107,33 @@
   ke tanggal hari ini (mulai 8 pekan lalu), hanya dipakai `MasterAkademikSeeder`.
 - **Konsekuensi.** Kode semester tetap benar (`20261`), tetapi tanggal kalender demo
   tidak sesuai kalender akademik nyata. Instalasi produksi tidak pernah memakai factory ini.
+
+## ADR-011 — Kajian pembanding disimpan lokal; dokumen publik hanya memuat kesimpulan (2026-10-22)
+
+- **Konteks.** Repo kini publik. Peta jalan lanjutan disusun dari daftar fitur
+  produk komersial dan bahan sosialisasi platform kementerian. Menyebut nama
+  produk pembanding di dokumen publik tidak menambah nilai bagi pembaca dan
+  mengikat dokumen ini pada pihak yang tidak punya suara di dalamnya.
+- **Keputusan.** Catatan sumber (URL, tabel fitur mentah, teks slide) hidup di
+  `docs/lokal/`, dikecualikan lewat `.git/info/exclude` — bukan `.gitignore`,
+  supaya pengecualiannya sendiri tidak ikut ter-commit. `ROADMAP.md` memuat
+  kesimpulannya dengan istilah netral: "pembanding komersial", "aplikasi
+  pelaporan PDDIKTI", "SISTER".
+- **Konsekuensi.** Kontributor di mesin lain tidak melihat folder itu dan tidak
+  tahu ia ada kecuali dari ADR ini. Nama produk yang pernah tertulis sebelum
+  tanggal ini tetap ada di riwayat Git; riwayat tidak ditulis ulang.
+
+## ADR-012 — Klien SISTER dicabut; jalur ke SISTER adalah Feeder (2026-10-22)
+
+- **Konteks.** Sejak 14 Agustus roadmap menyimpan "Klien SISTER — menunggu
+  kredensial". SISTER kini terpusat; data pengajaran, pembimbingan, dan
+  pengujian dosen masuk ke sana dari PDDIKTI, bukan dari kampus. Tidak ada
+  endpoint per kampus untuk dituju.
+- **Keputusan.** Baris itu dicabut. Yang dikerjakan untuk SISTER adalah ekspor
+  berkas (sudah ada) dan pengiriman entitas Feeder yang belum pernah dikirim:
+  dosen pengajar kelas, komponen evaluasi, Lulus/DO, aktivitas MBKM beserta
+  pembimbing dan pengujinya (ROADMAP #19–22).
+- **Konsekuensi.** BKD unsur pendidikan yang dihitung di sini baru "sampai" ke
+  SISTER setelah #19 dan #22 dikirim lewat Feeder. Portofolio yang SISTER ambil
+  lewat klaim manual tetap diekspor sebagai berkas; tidak ada janji sinkron dua
+  arah dengan SISTER.
