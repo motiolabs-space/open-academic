@@ -37,7 +37,7 @@ Konsekuensinya: sebuah tujuan berstatus "berguna" jauh sebelum berstatus
 | **PDDIKTI / Neo Feeder** | Mahasiswa, kelas, KRS, nilai, aktivitas kuliah, lulusan | Per semester | **Lengkap & tersambung** |
 | **SISTER** | Biodata dosen, riwayat pendidikan, jabfung, pangkat, sertifikasi, penugasan | Semester & insidental | **Lengkap, adaptor belum ada** |
 | **BKD** (lewat SISTER) | Beban kerja per semester; penentu tunjangan sertifikasi | Per semester | **Dihitung, bukan diketik** |
-| **PIN & SIVIL** | Penomoran ijazah nasional & verifikasi publik | Per kelulusan | **Timpang — lihat Risiko** |
+| **PIN & SIVIL** | Penomoran ijazah nasional & verifikasi publik | Per kelulusan | **Dicatat dari PIN** (bawaan sejak 22 Okt 2026); kesiapan diperiksa sebelum reservasi |
 | **KIP Kuliah** (Puslapdik) | Status aktif, IPK, SKS penerima | Per semester | **Terakit & terekspor** |
 | **Akreditasi LKPS** (BAN-PT / LAM) | Tabel kuantitatif kinerja prodi | Per siklus | **Sebagian besar ada** |
 | **IKU PT** | Kinerja perguruan tinggi | Tahunan | Sumbernya ada & terverifikasi |
@@ -129,6 +129,14 @@ bersangkutan. Kegagalannya sunyi di sisi kampus dan mahal di sisi lulusan.
 Ini perlu keputusan, bukan tebakan: apakah kampus sasaran menomori ijazah lewat
 PIN. Bila ya, kolom itu harus berhenti diisi sendiri dan mulai diisi dari hasil
 permintaan.
+
+**Ditutup 22 Oktober 2026.** Keputusannya diambil di sisi yang aman:
+`ACADEMIC_IJAZAH_SUMBER=pin` adalah bawaan. Di mode itu pembangkit nomor
+menolak berjalan dan menyebut jalurnya; nomor dicatat per baris dari hasil
+reservasi portal PIN (NIM, nomor) di layar Wisuda, tiap baris dinilai sendiri,
+dan nomor yang sudah tercatat tidak pernah ditimpa. Kesiapan reservasi per
+lulusan ditampilkan di layar Yudisium (`KesiapanPinService`). Mode `lokal`
+tetap tersedia, dengan sadar, untuk institusi di luar skema nasional.
 
 ---
 

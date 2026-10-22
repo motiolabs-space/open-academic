@@ -291,6 +291,24 @@ return [
     */
 
     'ijazah' => [
+        /*
+         * Where a diploma number comes from.
+         *
+         *   pin    (default) The national diploma-numbering service. The
+         *          campus reserves numbers at the ministry's portal and
+         *          records them here; nothing is generated. This is the
+         *          mandatory route since 21 December 2020, and the one a
+         *          graduate's employer can verify through SIVIL.
+         *   lokal  Generated here from `pattern`. For institutions outside
+         *          the national scheme only. A locally numbered diploma
+         *          prints cleanly, is handed over at the ceremony, and fails
+         *          verification years later — in the graduate's hands, not
+         *          the campus's.
+         *
+         * The default is the one that cannot produce an unverifiable
+         * document by accident.
+         */
+        'sumber' => env('ACADEMIC_IJAZAH_SUMBER', 'pin'), // pin | lokal
         'pattern' => env('ACADEMIC_IJAZAH_PATTERN', '{tahun}/{prodi}/{urut}'),
     ],
 

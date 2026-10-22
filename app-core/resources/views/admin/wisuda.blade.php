@@ -120,7 +120,7 @@
                                             @if ($ps->nomor_ijazah)
                                                 {{ $ps->nomor_ijazah }}
                                             @else
-                                                <span class="text-ink-faint">belum terbit</span>
+                                                <span class="text-ink-faint">{{ $penomoranLokal ? 'belum terbit' : 'belum dicatat dari PIN' }}</span>
                                             @endif
                                         </td>
                                         <td class="px-5 py-3 text-right">
@@ -222,21 +222,43 @@
                     @endif
                 </x-card>
 
-                <x-card title="Terbitkan Nomor Ijazah">
-                    <form method="POST" action="{{ route('admin.wisuda.ijazah', $periode) }}"
-                        onsubmit="return confirm('Terbitkan nomor ijazah? Nomor yang sudah terbit tidak akan diubah.');">
-                        @csrf
-                        <x-field label="Pola Nomor" name="pola" required :value="$polaIjazah"
-                            hint="Penanda: {tahun}, {prodi}, {urut}." />
-                        <x-button type="submit" variant="gold" class="mt-3.5 w-full">Terbitkan</x-button>
-                    </form>
+                @if ($penomoranLokal)
+                    <x-card title="Terbitkan Nomor Ijazah">
+                        <form method="POST" action="{{ route('admin.wisuda.ijazah', $periode) }}"
+                            onsubmit="return confirm('Terbitkan nomor ijazah? Nomor yang sudah terbit tidak akan diubah.');">
+                            @csrf
+                            <x-field label="Pola Nomor" name="pola" required :value="$polaIjazah"
+                                hint="Penanda: {tahun}, {prodi}, {urut}." />
+                            <x-button type="submit" variant="gold" class="mt-3.5 w-full">Terbitkan</x-button>
+                        </form>
 
-                    <p class="mt-4 border-t border-line pt-3 text-[11.5px] leading-relaxed text-ink-muted">
-                        Nomor ijazah tercetak pada dokumen yang dipegang seumur hidup dan dikutip
-                        di setiap lamaran kerja. Karena itu diterbitkan sekali, tidak pernah
-                        dipakai ulang, dan tidak pernah diterbitkan ulang diam-diam.
-                    </p>
-                </x-card>
+                        <p class="mt-4 border-t border-line pt-3 text-[11.5px] leading-relaxed text-ink-muted">
+                            Nomor ijazah tercetak pada dokumen yang dipegang seumur hidup dan dikutip
+                            di setiap lamaran kerja. Karena itu diterbitkan sekali, tidak pernah
+                            dipakai ulang, dan tidak pernah diterbitkan ulang diam-diam.
+                        </p>
+                    </x-card>
+                @else
+                    <x-card title="Catat Nomor Ijazah dari PIN">
+                        <form method="POST" action="{{ route('admin.wisuda.ijazah.catat', $periode) }}" class="flex flex-col gap-3">
+                            @csrf
+                            <label class="block">
+                                <span class="mb-1 block text-[11px] font-semibold uppercase tracking-[0.08em] text-ink-muted">Hasil reservasi PIN</span>
+                                <textarea name="isian" rows="6" required
+                                    placeholder="NIM, nomor ijazah — satu lulusan per baris&#10;2201001, 1234567890123456&#10;2201002; 1234567890123457"
+                                    class="tabular w-full rounded-control border border-line-input bg-surface px-3 py-2 text-[12.5px] outline-none focus:border-navy">{{ old('isian') }}</textarea>
+                            </label>
+                            <x-button type="submit" variant="gold" class="w-full">Catat</x-button>
+                        </form>
+
+                        <p class="mt-4 border-t border-line pt-3 text-[11.5px] leading-relaxed text-ink-muted">
+                            Nomor ijazah tidak dibangkitkan di sini. Kampus mereservasinya di portal
+                            Penomoran Ijazah Nasional, dan nomor itulah yang dicetak serta dapat
+                            diverifikasi publik lewat SIVIL. Nomor yang sudah tercatat tidak pernah
+                            ditimpa. Periksa kolom <em>Siap PIN</em> di layar Yudisium sebelum reservasi.
+                        </p>
+                    </x-card>
+                @endif
             @endif
         </div>
     </div>

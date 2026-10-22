@@ -137,3 +137,24 @@
   SISTER setelah #19 dan #22 dikirim lewat Feeder. Portofolio yang SISTER ambil
   lewat klaim manual tetap diekspor sebagai berkas; tidak ada janji sinkron dua
   arah dengan SISTER.
+
+## ADR-013 — Nomor ijazah dicatat dari PIN; bawaan tidak membangkitkan (2026-10-22)
+
+- **Konteks.** `wisuda_peserta.nomor_ijazah` dibangkitkan dari pola kampus sejak
+  Fase 1. Penomoran ijazah nasional (PIN) wajib sejak 21 Desember 2020 dan
+  bekerja terbalik: kampus mereservasi nomor di portal kementerian, nomor itu
+  yang dicetak, dan hanya nomor itu yang terverifikasi lewat SIVIL. Ijazah
+  bernomor lokal tercetak rapi dan gagal saat diperiksa pemberi kerja
+  bertahun-tahun kemudian — kegagalan yang sunyi di kampus dan mahal di lulusan.
+- **Keputusan.** `config('academic.ijazah.sumber')` dengan bawaan `pin`. Di mode
+  itu `WisudaService::terbitkanNomorIjazah()` melempar `AturanAkademikException`
+  yang menyebut jalurnya, dan nomor dicatat lewat `catatNomorIjazah()` dari
+  tempelan hasil reservasi (satu lulusan per baris; tiap baris dinilai sendiri;
+  nomor yang sudah tercatat tidak pernah ditimpa; satu nomor tidak boleh milik
+  dua lulusan). Mode `lokal` mempertahankan pembangkit untuk institusi di luar
+  skema nasional.
+- **Konsekuensi.** Instalasi yang sudah berjalan dengan nomor lokal **tidak
+  berubah** — nomor yang ada tetap tercatat — tetapi pembangkitnya berhenti
+  sampai `ACADEMIC_IJAZAH_SUMBER=lokal` disetel dengan sadar. Bawaan dipilih
+  yang tidak dapat menghasilkan dokumen tak terverifikasi karena kelalaian.
+  Verifikasi publik ijazah adalah SIVIL; QR lokal tetap untuk surat dan SKPI.
