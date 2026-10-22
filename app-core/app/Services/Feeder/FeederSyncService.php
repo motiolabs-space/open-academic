@@ -21,15 +21,22 @@ use App\Services\Feeder\Mappers\DosenPengajarMapper;
 use App\Services\Feeder\Mappers\FeederMapper;
 use App\Services\Feeder\Mappers\KelasKuliahMapper;
 use App\Services\Feeder\Mappers\KomponenEvaluasiMapper;
+use App\Services\Feeder\Mappers\KonversiMbkmMapper;
 use App\Services\Feeder\Mappers\KrsMapper;
+use App\Services\Feeder\Mappers\KurikulumMapper;
 use App\Services\Feeder\Mappers\LulusDoMapper;
 use App\Services\Feeder\Mappers\MahasiswaMapper;
+use App\Services\Feeder\Mappers\MataKuliahMapper;
+use App\Services\Feeder\Mappers\MatkulKurikulumMapper;
 use App\Services\Feeder\Mappers\NilaiKomponenMapper;
 use App\Services\Feeder\Mappers\NilaiMapper;
+use App\Services\Feeder\Mappers\PrestasiMapper;
 use App\Services\Feeder\Mappers\RiwayatPendidikanMapper;
+use App\Services\Feeder\Mappers\TransferKreditMapper;
 use App\Services\Feeder\Mappers\TugasAkhirMapper;
 use App\Services\Feeder\Mappers\UjiTugasAkhirMapper;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -59,6 +66,9 @@ class FeederSyncService
 
     /** @return array<string, class-string<FeederMapper>> */
     public const MAPPERS = [
+        'kurikulum' => KurikulumMapper::class,
+        'mata_kuliah' => MataKuliahMapper::class,
+        'matkul_kurikulum' => MatkulKurikulumMapper::class,
         'mahasiswa' => MahasiswaMapper::class,
         'riwayat_pendidikan' => RiwayatPendidikanMapper::class,
         'aktivitas_kuliah' => AktivitasKuliahMapper::class,
@@ -75,6 +85,9 @@ class FeederSyncService
         'anggota_tugas_akhir' => AnggotaTugasAkhirMapper::class,
         'bimbing_tugas_akhir' => BimbingTugasAkhirMapper::class,
         'uji_tugas_akhir' => UjiTugasAkhirMapper::class,
+        'prestasi' => PrestasiMapper::class,
+        'transfer_kredit' => TransferKreditMapper::class,
+        'konversi_mbkm' => KonversiMbkmMapper::class,
         'lulus_do' => LulusDoMapper::class,
     ];
 
@@ -240,6 +253,27 @@ class FeederSyncService
         return $dipetakan;
     }
 
+    /**
+     * How many rows each entity has due for a term, in one query.
+     *
+     * The monitor shows this number for every entity on every visit. One
+     * count per entity was fine at six entities and blew the screen's query
+     * budget at twenty-three; a single SELECT of scalar sub-selects costs the
+     * same whatever the number.
+     *
+     * @return array<string, int> entity => rows due
+     */
+    public function jumlahAntre(string $termCode): array
+    {
+        $kueri = DB::query();
+
+        foreach (self::MAPPERS as $entity => $kelas) {
+            $kueri->selectSub(app($kelas)->kueriJumlah($termCode), $entity);
+        }
+
+        return array_map('intval', (array) $kueri->first());
+    }
+
     /** Whether the Feeder service answers right now. */
     public function sehat(): bool
     {
@@ -368,6 +402,15 @@ class FeederSyncService
             AnggotaMbkmMapper::class, AnggotaTugasAkhirMapper::class => ['id_anggota' => $feederId],
             BimbingMbkmMapper::class, BimbingTugasAkhirMapper::class => ['id_bimbing_mahasiswa' => $feederId],
             UjiTugasAkhirMapper::class => ['id_uji' => $feederId],
+            PrestasiMapper::class => ['id_prestasi' => $feederId],
+            TransferKreditMapper::class => ['id_transfer' => $feederId],
+            KonversiMbkmMapper::class => ['id_konversi_aktivitas' => $feederId],
+            KurikulumMapper::class => ['id_kurikulum' => $feederId],
+            MataKuliahMapper::class => ['id_matkul' => $feederId],
+            MatkulKurikulumMapper::class => array_combine(
+                ['id_kurikulum', 'id_matkul'],
+                array_pad(explode(MatkulKurikulumMapper::PEMISAH, $feederId, 2), 2, null),
+            ),
             LulusDoMapper::class => ['id_registrasi_mahasiswa' => $feederId],
             default => ['id' => $feederId],
         };

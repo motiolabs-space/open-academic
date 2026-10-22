@@ -7,6 +7,7 @@ namespace App\Services\Feeder\Mappers;
 use App\Models\Feeder\FeederMapping;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Query\Builder as QueryBuilder;
 use Illuminate\Support\Collection;
 
 /**
@@ -48,6 +49,17 @@ abstract class FeederMapper
     public function jumlah(string $termCode): int
     {
         return $this->query($termCode)->count();
+    }
+
+    /**
+     * The same count as a bare sub-select, so the monitor can ask for every
+     * entity's queue in one round trip instead of one per entity. Eager loads
+     * and ordering are dropped: neither changes a count, and an ORDER BY
+     * inside a scalar sub-select is noise some engines refuse.
+     */
+    public function kueriJumlah(string $termCode): QueryBuilder
+    {
+        return $this->query($termCode)->toBase()->reorder()->selectRaw('count(*)');
     }
 
     /** @return array<string, mixed> the record Feeder receives */

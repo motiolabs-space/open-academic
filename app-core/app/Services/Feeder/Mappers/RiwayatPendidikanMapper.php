@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\Feeder\Mappers;
 
+use App\Enums\JenisDaftar;
 use App\Models\Kemahasiswaan\Mahasiswa;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
@@ -42,14 +43,23 @@ class RiwayatPendidikanMapper extends FeederMapper
     /** @param Mahasiswa $model */
     public function payload(Model $model): array
     {
+        $jenis = $model->jenis_daftar ?? JenisDaftar::Baru;
+
         return array_filter([
             'id_mahasiswa' => $model->feeder_id,
             'nim' => $model->nim,
             'id_prodi' => $model->prodi->kode_pddikti,
-            'id_jenis_daftar' => $this->kode('jenis_daftar', $model->jalur_masuk, '1'),
+            'id_jenis_daftar' => $this->kode('jenis_daftar', $jenis->value),
             'id_jalur_masuk' => $this->kode('jalur_masuk', $model->jalur_masuk, '1'),
             'id_periode_masuk' => $model->term_masuk,
             'tanggal_daftar' => $this->tanggal($model->created_at),
+
+            // Transfer and RPL only: what was recognised, and from where.
+            // PDDIKTI has no identifier for another institution's programme,
+            // so the origin travels as text.
+            'sks_diakui' => $jenis->butuhAsal() ? $model->sks_diakui : null,
+            'nama_perguruan_tinggi_asal' => $jenis->butuhAsal() ? $model->pt_asal : null,
+            'nama_program_studi_asal' => $jenis->butuhAsal() ? $model->prodi_asal : null,
         ], fn (mixed $nilai): bool => $nilai !== null && $nilai !== '');
     }
 

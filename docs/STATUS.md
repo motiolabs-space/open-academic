@@ -4,6 +4,62 @@
 
 ---
 
+## Sesi 36 — 2026-10-22 · Feeder: referensi dulu, baru kredit dari luar, dan cara mahasiswa masuk
+
+Pekerjaan #23, #24, #25. Branch `feature/feeder-prestasi-kurikulum`, dari `main`
+sesudah PR #5. Enam entitas baru, dua puluh empat seluruhnya.
+
+### "Referensi dulu" ternyata belum berlaku untuk referensi kita sendiri
+
+CLAUDE.md §5 mewajibkan menarik referensi Feeder sebelum mengirim apa pun. Yang
+terlewat: kurikulum dan mata kuliah adalah referensi *kita* yang harus sampai di
+Feeder lebih dulu, dan tidak pernah dikirim. Payload kelas dan KRS sejak Agustus
+mengirim `id_matkul` berisi **kode lokal** — yang Feeder tidak kenal. Instalasi
+demo tidak pernah menemukannya karena *fake client* menerima apa saja.
+
+Kini tiga entitas referensi berjalan paling awal: kurikulum, mata kuliah, dan
+penempatan mata kuliah dalam kurikulum. Payload kelas dan KRS memakai id Feeder
+begitu ada, dan validator memperingatkan kelas yang mata kuliahnya belum
+terkirim. Penempatan dikunci pada *pasangan* (kurikulum, mata kuliah) karena
+PDDIKTI tidak memberi id untuknya; pasangan itu disimpan bergabung dan dipecah
+lagi saat update — dan *fake client* yang mengembalikan UUID untuk segala hal
+sempat menggantikannya, sampai mapper memaksa pasangannya.
+
+### Tiga catatan kredit dari luar
+
+Prestasi (hanya yang terverifikasi staf), transfer kredit (hanya yang disetujui;
+asal dikirim sebagai teks karena PDDIKTI tak punya id untuk mata kuliah kampus
+lain), dan konversi MBKM — dikunci pada *anggota* aktivitas dari #22, bukan
+aktivitasnya, karena PDDIKTI mengonversi kredit untuk peserta. Baris KRS yang
+mewakilinya kini membawa dua id Feeder: milik KRS dan milik konversi.
+
+### Cara mahasiswa masuk
+
+`JenisDaftar` enam nilai dan empat kolom di `mahasiswa`. Pindahan dan RPL wajib
+membawa SKS diakui dan asal — Feeder menolaknya tanpa itu, dan portal PIN
+menolaknya lagi bila SKS-nya kurang; validator menangkap keduanya di sini.
+Hanya "peserta didik baru" yang kodenya di-seed; selebihnya dipetakan kampus
+sesudah `GetJenisPendaftaran`. Belum ada layar untuk mengisinya — itu #33.
+
+### Yang sengaja tidak ikut
+
+Skala nilai prodi dan periode perkuliahan (#24b). Keduanya baris *per prodi* di
+PDDIKTI, sedangkan di sini skala nilai satu untuk seluruh kampus dan periode
+tidak berdimensi prodi. Itu keputusan pemodelan, bukan mapper, dan ditulis
+sebagai butir sendiri alih-alih dipaksakan.
+
+### Anggaran kueri monitor, untuk kedua kalinya
+
+Pada enam entitas, satu kueri hitung per entitas tidak terasa. Pada dua puluh
+tiga, layar monitor melewati anggaran 30 kueri — dan suite penuh yang
+menangkapnya. Kini seluruh hitungan antrean dijadikan **satu** SELECT berisi
+sub-select skalar per entitas (`FeederSyncService::jumlahAntre()`), jadi
+jumlah entitas boleh terus bertambah tanpa anggaran ikut naik.
+
+**16 tes baru** (70 asersi); folder Feeder hijau seluruhnya.
+
+---
+
 ## Sesi 35 — 2026-10-22 · Layar rencana evaluasi: jenis komponen akhirnya punya tempat diisi
 
 Pekerjaan #20b. Branch `feature/rencana-evaluasi-kelas`, dari `main` sesudah
