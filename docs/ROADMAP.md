@@ -333,7 +333,7 @@ sekarang punya rencana.
 | # | Pekerjaan | Kenapa |
 |---|---|---|
 | ~~28~~ | ~~**Daftar periksa kesiapan PIN per calon lulusan**~~ | ✅ 22 Oktober 2026 — `KesiapanPinService`, delapan butir per lulusan (NIK, identitas PDM, registrasi, AKM tiap semester, nilai final, SKS, SK yudisium, Lulus/DO terkirim), ditampilkan di kolom "Siap PIN" layar Yudisium. SKS diakui pindahan menunggu #25/#33 |
-| 29 | **`nomor_ijazah` menjadi nilai yang diimpor, bukan dibangkitkan** | Bila kampus memakai PIN (wajib sejak akhir 2020), kolom itu berhenti diisi sendiri; verifikasi publik ijazah adalah SIVIL, bukan QR lokal. QR lokal tetap untuk surat dan SKPI. Butuh satu setelan kampus, dan bawaannya harus yang aman: *tidak membangkitkan* |
+| ~~29~~ | ~~**`nomor_ijazah` menjadi nilai yang diimpor, bukan dibangkitkan**~~ | ✅ 22 Oktober 2026 — `ACADEMIC_IJAZAH_SUMBER=pin` bawaan: pembangkit ditolak, nomor dicatat per baris dari hasil reservasi (NIM, nomor), tidak pernah ditimpa. `lokal` tetap ada untuk institusi di luar skema. Bila kampus memakai PIN (wajib sejak akhir 2020), kolom itu berhenti diisi sendiri; verifikasi publik ijazah adalah SIVIL, bukan QR lokal. QR lokal tetap untuk surat dan SKPI. Butuh satu setelan kampus, dan bawaannya harus yang aman: *tidak membangkitkan* |
 | 30 | **Pendaftaran wisuda oleh mahasiswa** | Hari ini staf yang mendaftarkan. Syarat (yudisium, bebas tagihan, bebas pinjaman) sudah dapat dihitung |
 | 31 | **Status "Menunggu Uji Kompetensi"** | Prodi kesehatan: lulus akademik tetapi belum lulus ukom dilaporkan sebagai status aktivitas kuliah tersendiri. `StudentStatus` belum punya nilainya; tanpa itu mahasiswa seperti ini tercatat *Lulus* atau *Aktif* — keduanya salah |
 
@@ -363,8 +363,9 @@ pernah diisi siapa pun, karena dosen didaftarkan di PDDIKTI admin, bukan lewat
 Feeder. Kini diisi dari pembacaan `GetListDosen` yang dicocokkan NIDN. **#20 selesai**
 di hari yang sama; yang tersingkap di sana: komponen nilai tidak pernah punya
 *jenis*, jadi IKU 7 selama ini hanya sebuah flag tanpa bukti. **#22 dan #28
-selesai** menyusul di PR terpisah. Berikutnya **#29** (nomor ijazah diimpor) dan
-**#20b** (layar rencana evaluasi), lalu **#26**. #29 sebelum wisuda berikutnya. #32 adalah
+selesai** menyusul di PR terpisah, lalu **#29**: nomor ijazah kini dicatat dari
+PIN, bukan dibangkitkan — risiko terbuka di MODUL.md tertutup. Berikutnya
+**#20b** (layar rencana evaluasi), lalu **#26**. #32 adalah
 pekerjaan terbesar dan satu-satunya yang membuka portal keempat (calon
 mahasiswa); kerjakan setelah Feeder tuntas, supaya pendaftar yang diterima
 langsung punya riwayat pendidikan yang benar (#25).

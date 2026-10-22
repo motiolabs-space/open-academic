@@ -138,7 +138,7 @@ Akun demo: `admin@demo.test` · kata sandi `password`
 Aplikasi mobile native **tidak direncanakan untuk v1** — web-nya responsif, dan
 API-first sudah menyiapkan jalannya.
 
-## Risiko terbuka — 1
+## Risiko terbuka — 0 (1 ditutup 22 Okt 2026)
 
 Bukan modul yang belum dibuat, melainkan perilaku yang sudah berjalan dan
 menghasilkan akibat di luar kampus. Ditaruh di sini supaya tidak hanya terbaca
@@ -146,7 +146,7 @@ oleh yang membuka [`PELAPORAN.md`](PELAPORAN.md).
 
 | Hal | Keadaan |
 |---|---|
-| **Nomor ijazah diberikan lokal** | `wisuda_peserta.nomor_ijazah` diisi dari dalam aplikasi. Penomoran ijazah nasional bekerja terbalik: kampus **meminta** nomor ke layanan PIN, dan nomor itulah yang dicetak lalu terverifikasi publik lewat SIVIL. Ijazah bernomor lokal akan tercetak rapi, diserahkan pada wisuda, dan **gagal saat diperiksa** — biasanya oleh calon pemberi kerja, bertahun-tahun kemudian, dan menjadi persoalan alumninya. Perlu **keputusan kampus**, bukan tebakan: apakah ijazah dinomori lewat PIN. Bila ya, kolom itu harus berhenti diisi sendiri |
+| ~~**Nomor ijazah diberikan lokal**~~ | **Ditutup 22 Okt 2026.** Bawaan `ACADEMIC_IJAZAH_SUMBER=pin`: pembangkit nomor ditolak, nomor dicatat dari hasil reservasi PIN di layar Wisuda, dan layar Yudisium menunjukkan kesiapan reservasi per lulusan (#28). Catatan aslinya: `wisuda_peserta.nomor_ijazah` diisi dari dalam aplikasi. Penomoran ijazah nasional bekerja terbalik: kampus **meminta** nomor ke layanan PIN, dan nomor itulah yang dicetak lalu terverifikasi publik lewat SIVIL. Ijazah bernomor lokal akan tercetak rapi, diserahkan pada wisuda, dan **gagal saat diperiksa** — biasanya oleh calon pemberi kerja, bertahun-tahun kemudian, dan menjadi persoalan alumninya. Perlu **keputusan kampus**, bukan tebakan: apakah ijazah dinomori lewat PIN. Bila ya, kolom itu harus berhenti diisi sendiri |
 
 ## Selesai sebagian — 7
 

@@ -570,6 +570,7 @@ Route::middleware(['auth:staff', 'term.active'])->prefix('admin')->name('admin.'
     Route::post('/wisuda/periode/{periode}/daftarkan', [Admin\WisudaController::class, 'daftarkan'])->name('wisuda.daftarkan');
     Route::post('/wisuda/periode/{periode}/daftarkan-massal', [Admin\WisudaController::class, 'daftarkanMassal'])->name('wisuda.daftarkan-massal');
     Route::post('/wisuda/periode/{periode}/ijazah', [Admin\WisudaController::class, 'terbitkanIjazah'])->name('wisuda.ijazah');
+    Route::post('/wisuda/periode/{periode}/ijazah/catat', [Admin\WisudaController::class, 'catatIjazah'])->name('wisuda.ijazah.catat');
     Route::delete('/wisuda/peserta/{peserta}', [Admin\WisudaController::class, 'batalkan'])->name('wisuda.peserta.batal');
 
     Route::get('/data-iku', [Admin\IkuRecordController::class, 'index'])->name('iku-records');

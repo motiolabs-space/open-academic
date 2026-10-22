@@ -143,6 +143,15 @@ class WisudaService
      */
     public function terbitkanNomorIjazah(WisudaPeriode $periode, Staff $staff, string $pola): array
     {
+        if (!$this->penomoranLokal()) {
+            throw new AturanAkademikException(
+                'Nomor ijazah kampus ini berasal dari Penomoran Ijazah Nasional (PIN) dan tidak '
+                    .'dibangkitkan di sini. Reservasi nomornya di portal PIN, lalu catat hasilnya '
+                    .'pada periode wisuda. Ubah ACADEMIC_IJAZAH_SUMBER=lokal hanya bila institusi '
+                    .'berada di luar skema nasional.',
+            );
+        }
+
         $peserta = WisudaPeserta::query()
             ->with('yudisium.mahasiswa.prodi')
             ->where('wisuda_periode_id', $periode->id)
@@ -172,6 +181,98 @@ class WisudaService
         }
 
         return ['diterbitkan' => $diterbitkan, 'dilewati' => $dilewati];
+    }
+
+    /** Whether this campus generates its own diploma numbers. */
+    public function penomoranLokal(): bool
+    {
+        return config('academic.ijazah.sumber', 'pin') === 'lokal';
+    }
+
+    /**
+     * Records diploma numbers reserved at the national service (PIN).
+     *
+     * Input is what the portal gives back: one graduate per line, NIM and
+     * number, separated by a comma, a semicolon, a tab or spaces. Each line
+     * is judged on its own — a bad line is reported, the good ones land —
+     * because the alternative, all-or-nothing, means an operator retypes the
+     * forty good lines to fix the one typo.
+     *
+     * A number already recorded is never overwritten: it may be printed on a
+     * document by now. A line that repeats the same number for the same
+     * graduate is a harmless re-import and counted as skipped.
+     *
+     * @return array{dicatat: int, dilewati: int, ditolak: array<int, string>}
+     */
+    public function catatNomorIjazah(WisudaPeriode $periode, Staff $staff, string $isian): array
+    {
+        $peserta = WisudaPeserta::query()
+            ->with('yudisium.mahasiswa')
+            ->where('wisuda_periode_id', $periode->id)
+            ->get()
+            ->keyBy(fn (WisudaPeserta $p): string => $p->yudisium->mahasiswa->nim);
+
+        $dicatat = 0;
+        $dilewati = 0;
+        $ditolak = [];
+        $terpakai = [];
+
+        foreach (preg_split('/\R/', trim($isian)) ?: [] as $nomorBaris => $baris) {
+            $baris = trim($baris);
+
+            if ($baris === '' || str_starts_with($baris, '#')) {
+                continue;
+            }
+
+            $bagian = preg_split('/[,;\t]+|\s{1,}/', $baris, 2) ?: [];
+            $nim = trim($bagian[0] ?? '');
+            $nomor = trim($bagian[1] ?? '');
+            $label = 'Baris '.($nomorBaris + 1).' ('.$nim.')';
+
+            if ($nim === '' || $nomor === '') {
+                $ditolak[] = "{$label}: butuh NIM dan nomor ijazah, dipisah koma, titik koma, atau spasi.";
+
+                continue;
+            }
+
+            $p = $peserta->get($nim);
+
+            if ($p === null) {
+                $ditolak[] = "{$label}: NIM tidak terdaftar pada periode wisuda ini.";
+
+                continue;
+            }
+
+            if (filled($p->nomor_ijazah)) {
+                if ($p->nomor_ijazah === $nomor) {
+                    $dilewati++;
+                } else {
+                    $ditolak[] = "{$label}: sudah tercatat {$p->nomor_ijazah}; nomor yang sudah tercatat tidak ditimpa.";
+                }
+
+                continue;
+            }
+
+            if (isset($terpakai[$nomor]) || WisudaPeserta::query()->where('nomor_ijazah', $nomor)->exists()) {
+                $ditolak[] = "{$label}: nomor {$nomor} sudah dipakai lulusan lain.";
+
+                continue;
+            }
+
+            $p->update(['nomor_ijazah' => $nomor]);
+            $terpakai[$nomor] = true;
+            $dicatat++;
+        }
+
+        if ($dicatat > 0) {
+            $periode->recordActivity('diploma_numbers_recorded', sprintf(
+                '%d nomor ijazah PIN dicatat oleh %s.',
+                $dicatat,
+                $staff->nama,
+            ));
+        }
+
+        return ['dicatat' => $dicatat, 'dilewati' => $dilewati, 'ditolak' => $ditolak];
     }
 
     /**

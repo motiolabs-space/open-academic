@@ -4,6 +4,41 @@
 
 ---
 
+## Sesi 34 — 2026-10-22 · Nomor ijazah dicatat dari PIN, bukan dibangkitkan
+
+Pekerjaan #29. Branch `feature/ijazah-nomor-pin`, dari `main` sesudah PR #2, di-rebase sesudah PR #3.
+Menutup satu-satunya risiko terbuka di MODUL.md.
+
+### Keputusan di sisi yang aman
+
+`ACADEMIC_IJAZAH_SUMBER` dengan bawaan `pin` (ADR-013). Pembangkit nomor tetap
+ada untuk mode `lokal`, tetapi di bawaan ia **menolak** dengan pesan yang
+menyebut jalurnya — bukan diam-diam tidak melakukan apa pun. Instalasi yang
+sudah menyimpan nomor lokal tidak kehilangan apa pun; yang berhenti hanya
+pembangkitnya.
+
+### Mencatat, bukan mengimpor berkas
+
+Portal PIN memberi daftar; operator menempelkannya ke satu kolom teks: NIM dan
+nomor per baris, pemisahnya terserah (koma, titik koma, tab, spasi). Tiap baris
+dinilai sendiri — yang baik dicatat, yang buruk dilaporkan dengan sebabnya —
+karena all-or-nothing berarti mengetik ulang empat puluh baris baik demi satu
+salah ketik. Tiga penolakan: NIM tidak ada di periode, nomor sudah tercatat
+berbeda (tidak pernah ditimpa), dan satu nomor untuk dua lulusan (di dalam
+tempelan maupun terhadap yang tersimpan). Impor ulang yang sama dihitung
+dilewati, bukan ditolak.
+
+### Dua hal kecil yang tersingkap
+
+Rute model memakai UUID, bukan id — tes layar pertama 404 karena itu. Dan
+`WisudaTest` lama memanggil pembangkit tanpa menyetel mode; kini ia menyatakan
+`lokal` secara eksplisit di `beforeEach`, karena bawaannya sudah berubah.
+
+**9 tes baru** (32 asersi). Pembanding PIN di layar Yudisium (#28) kini punya
+pasangannya: periksa dulu, reservasi, lalu catat.
+
+---
+
 ## Sesi 33 — 2026-10-22 · Aktivitas mahasiswa ke Feeder, dan daftar periksa PIN
 
 Pekerjaan #22 dan #28. Branch `feature/feeder-mbkm-pin`, dari `main` sesudah

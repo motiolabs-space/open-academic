@@ -30,6 +30,10 @@ beforeEach(function () {
     ]);
 
     $this->wisuda = app(WisudaService::class);
+
+    // The tests below exercise the campus-generated pattern. The default is
+    // PIN, under which generation is refused — see NomorIjazahPinTest.
+    config(['academic.ijazah.sumber' => 'lokal']);
 });
 
 function lulusan(string $status = 'ditetapkan'): Yudisium

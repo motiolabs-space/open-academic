@@ -56,7 +56,30 @@ class WisudaController extends Controller
                 ->get(),
 
             'polaIjazah' => (string) config('academic.ijazah.pattern', '{tahun}/{prodi}/{urut}'),
+            'penomoranLokal' => $this->wisuda->penomoranLokal(),
         ]);
+    }
+
+    /** Records numbers reserved at the national service, one graduate per line. */
+    public function catatIjazah(Request $request, WisudaPeriode $periode): RedirectResponse
+    {
+        $this->izin('wisuda.manage');
+
+        $validated = $request->validate([
+            'isian' => ['required', 'string', 'max:20000'],
+        ]);
+
+        $hasil = $this->wisuda->catatNomorIjazah($periode, Portal::user(), $validated['isian']);
+
+        $pesan = sprintf('%d nomor ijazah dicatat, %d sudah tercatat sebelumnya.', $hasil['dicatat'], $hasil['dilewati']);
+
+        if ($hasil['ditolak'] !== []) {
+            return back()
+                ->with('peringatan', $pesan.' '.count($hasil['ditolak']).' baris ditolak: '.implode(' ', array_slice($hasil['ditolak'], 0, 5)))
+                ->withInput();
+        }
+
+        return back()->with('sukses', $pesan);
     }
 
     public function storePeriode(Request $request): RedirectResponse
