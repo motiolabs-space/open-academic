@@ -67,9 +67,16 @@ class PenilaianService
     }
 
     /**
-     * Replaces the class's components.
+     * Saves the class's evaluation plan.
      *
-     * @param array<int, array{nama: string, bobot: int, jenis?: string|null}> $komponen
+     * A row with an `id` updates that component in place; a row without one
+     * is new; a component of the class that is absent from the plan is
+     * removed. Removal is refused for a component that already holds
+     * students' scores — a plan may be reshaped while grading is underway,
+     * but a column of recorded marks does not vanish because somebody
+     * renamed the plan around it. Rename, reweight or retype it instead.
+     *
+     * @param array<int, array{id?: int|null, nama: string, bobot: int, jenis?: string|null}> $komponen
      */
     public function simpanKomponen(KelasKuliah $kelas, array $komponen): Collection
     {
@@ -86,16 +93,34 @@ class PenilaianService
         }
 
         return DB::transaction(function () use ($kelas, $komponen): Collection {
-            $kelas->komponenNilai()->delete();
+            $ada = $kelas->komponenNilai()->withCount('nilai')->get()->keyBy('id');
+            $dipertahankan = collect($komponen)->pluck('id')->filter()->map(fn ($id): int => (int) $id);
+
+            foreach ($ada as $id => $lama) {
+                if ($dipertahankan->contains($id)) {
+                    continue;
+                }
+
+                if ($lama->nilai_count > 0) {
+                    throw PenilaianException::komponenBernilai($lama->nama);
+                }
+
+                $lama->delete();
+            }
 
             foreach (array_values($komponen) as $urutan => $baris) {
-                KomponenNilai::create([
-                    'kelas_kuliah_id' => $kelas->id,
+                $data = [
                     'nama' => $baris['nama'],
                     'bobot' => (int) $baris['bobot'],
                     'jenis_evaluasi' => $baris['jenis'] ?? null,
                     'urutan' => $urutan,
-                ]);
+                ];
+
+                $lama = isset($baris['id']) ? $ada->get((int) $baris['id']) : null;
+
+                $lama !== null
+                    ? $lama->update($data)
+                    : KomponenNilai::create($data + ['kelas_kuliah_id' => $kelas->id]);
             }
 
             return $kelas->komponenNilai()->get();
