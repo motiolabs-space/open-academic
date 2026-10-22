@@ -134,7 +134,7 @@ Apa yang ada hari ini, dikelompokkan menurut siapa yang memakainya.
 
 | Modul | | Catatan |
 |---|---|---|
-| Neo Feeder PDDIKTI | ✅ | Idempoten, ledger, validator pra-kirim. Sepuluh entitas sejak 22 Okt 2026: + dosen pengajar kelas, + Lulus/DO, + komponen evaluasi, + nilai per komponen |
+| Neo Feeder PDDIKTI | ✅ | Idempoten, ledger, validator pra-kirim. Tujuh belas entitas sejak 22 Okt 2026: + dosen pengajar kelas, + Lulus/DO, + komponen evaluasi, + nilai per komponen, + 7 entitas aktivitas (MBKM dan tugas akhir beserta anggota, pembimbing, penguji) |
 | Campus Bridge | ✅ | 11 endpoint ber-scope, webhook HMAC, spec OpenAPI |
 | SSO OAuth2 (Passport) | ✅ | Kampus jadi penerbit identitas |
 | Notifikasi (G2) | ✅ | Kategori wajib tidak dapat dimatikan |
@@ -314,8 +314,8 @@ tabel lokal** — ini pekerjaan mapper dan validator, bukan model data baru.
 | ~~20~~ | ~~**Komponen evaluasi kelas & nilai per komponen → Feeder**~~ | ✅ 22 Oktober 2026 — `komponen_nilai` kini punya `jenis_evaluasi`; ambang IKU 7 dihitung validator. Rencana evaluasi wajib dilaporkan sejak 2024 gasal. `komponen_nilai` dan `nilai_komponen` sudah berbobot per kelas — tinggal dipetakan. Satu aturan validator pra-kirim baru: **IKU 7 diakui PDDIKTI hanya bila bobot partisipatif + proyek ≥ 50 %** — kelas ber-flag *case method* yang bobotnya di bawah itu harus ditandai *sebelum* sinkron, bukan ditemukan saat rekonsiliasi IKU |
 | 20b | **Layar rencana evaluasi kelas** | `simpanKomponen()` menerima jenis, tetapi tidak ada layar yang memanggilnya; komponen hanya lahir dari bawaan. Dosen yang ingin kelasnya diakui IKU 7 belum punya tempat menyusun rencananya |
 | ~~21~~ | ~~**Lulus/DO → Feeder**~~ | ✅ 22 Oktober 2026. Yudisium ada; status di PDDIKTI tetap *Aktif*. Itu salah satu dari lima penyebab tersering reservasi nomor ijazah gagal (#28) |
-| 22 | **Aktivitas MBKM beserta anggota, pembimbing, penguji, dan konversinya → Feeder** | `aktivitas_mahasiswa` dan catatan bimbingan/ujian TA sudah ada. Ini juga jalur *pembimbingan* dan *pengujian* ke SISTER (lihat temuan di atas), dan jalur klaim program flagship |
-| 23 | **Prestasi & transfer kredit → Feeder** | Prestasi dari poin kemahasiswaan; transfer dari `konversi_kredit` |
+| ~~22~~ | ~~**Aktivitas MBKM beserta anggota, pembimbing, penguji → Feeder**~~ | ✅ 22 Oktober 2026 — tujuh entitas: aktivitas MBKM, anggota, pembimbing; tugas akhir sebagai aktivitas, anggota, pembimbing, penguji. Kode jenis aktivitas dan kategori kegiatan **tidak di-seed**: kampus memetakannya sesudah tarik referensi. **Konversi MBKM** (`InsertKonversiKampusMerdeka`) dan klaim program flagship belum — digeser ke #23 |
+| 23 | **Prestasi, transfer kredit, dan konversi MBKM → Feeder** | Prestasi dari poin kemahasiswaan; transfer dari `konversi_kredit`; konversi MBKM (`InsertKonversiKampusMerdeka`) dari `krs_detail.aktivitas_mahasiswa_id` — anggota aktivitasnya sudah terkirim sejak #22 |
 | 24 | **Kurikulum, mata kuliah, RPS & rencana evaluasi MK, skala nilai prodi, periode perkuliahan → Feeder** | Saat ini referensi ini diasumsikan sudah ada di Feeder. Kampus baru tidak punya asumsi itu |
 | 25 | **Jenis daftar riwayat pendidikan yang lengkap** | Peserta didik baru · pindahan (internal / antar PT) · RPL transfer SKS · RPL perolehan · *fast track* · non-gelar. Pindahan dan RPL wajib membawa SKS diakui, PT asal, dan prodi asal. `mahasiswa` hanya punya `jalur_masuk`. Sisi akademiknya #33 |
 | 26 | **`Update*` / `Delete*` untuk koreksi** | Data yang sudah tersinkron tidak dapat diubah dari UI Feeder; koreksi hanya lewat web service atau PDDIKTI admin. Ledger `payload_hash` sudah membedakan "sama" dari "berubah" — yang kurang aksi untuk "berubah" |
@@ -332,7 +332,7 @@ sekarang punya rencana.
 
 | # | Pekerjaan | Kenapa |
 |---|---|---|
-| 28 | **Daftar periksa kesiapan PIN per calon lulusan** | Lima penyebab tersering reservasi gagal — NIK salah, SKS reguler kurang, SKS diakui pindahan kurang, status masih *Aktif* di PDDIKTI, data reservasi tidak sesuai — **semuanya terdeteksi dari data lokal** sebelum operator membuka portal PIN. Dijalankan dari yudisium |
+| ~~28~~ | ~~**Daftar periksa kesiapan PIN per calon lulusan**~~ | ✅ 22 Oktober 2026 — `KesiapanPinService`, delapan butir per lulusan (NIK, identitas PDM, registrasi, AKM tiap semester, nilai final, SKS, SK yudisium, Lulus/DO terkirim), ditampilkan di kolom "Siap PIN" layar Yudisium. SKS diakui pindahan menunggu #25/#33 |
 | 29 | **`nomor_ijazah` menjadi nilai yang diimpor, bukan dibangkitkan** | Bila kampus memakai PIN (wajib sejak akhir 2020), kolom itu berhenti diisi sendiri; verifikasi publik ijazah adalah SIVIL, bukan QR lokal. QR lokal tetap untuk surat dan SKPI. Butuh satu setelan kampus, dan bawaannya harus yang aman: *tidak membangkitkan* |
 | 30 | **Pendaftaran wisuda oleh mahasiswa** | Hari ini staf yang mendaftarkan. Syarat (yudisium, bebas tagihan, bebas pinjaman) sudah dapat dihitung |
 | 31 | **Status "Menunggu Uji Kompetensi"** | Prodi kesehatan: lulus akademik tetapi belum lulus ukom dilaporkan sebagai status aktivitas kuliah tersendiri. `StudentStatus` belum punya nilainya; tanpa itu mahasiswa seperti ini tercatat *Lulus* atau *Aktif* — keduanya salah |
@@ -362,8 +362,9 @@ masih *Aktif*. Yang tersingkap saat mengerjakannya: `dosen.feeder_id` tidak
 pernah diisi siapa pun, karena dosen didaftarkan di PDDIKTI admin, bukan lewat
 Feeder. Kini diisi dari pembacaan `GetListDosen` yang dicocokkan NIDN. **#20 selesai**
 di hari yang sama; yang tersingkap di sana: komponen nilai tidak pernah punya
-*jenis*, jadi IKU 7 selama ini hanya sebuah flag tanpa bukti. Berikutnya **#22**
-bersama **#28**. #28–29 sebelum wisuda berikutnya. #32 adalah
+*jenis*, jadi IKU 7 selama ini hanya sebuah flag tanpa bukti. **#22 dan #28
+selesai** menyusul di PR terpisah. Berikutnya **#29** (nomor ijazah diimpor) dan
+**#20b** (layar rencana evaluasi), lalu **#26**. #29 sebelum wisuda berikutnya. #32 adalah
 pekerjaan terbesar dan satu-satunya yang membuka portal keempat (calon
 mahasiswa); kerjakan setelah Feeder tuntas, supaya pendaftar yang diterima
 langsung punya riwayat pendidikan yang benar (#25).

@@ -37,6 +37,7 @@ class AktivitasMahasiswa extends Model
     protected function casts(): array
     {
         return [
+            'feeder_synced_at' => 'datetime',
             'jenis' => StudentActivityType::class,
             'tanggal_mulai' => 'date',
             'tanggal_selesai' => 'date',

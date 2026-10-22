@@ -12,6 +12,11 @@ use App\Models\Feeder\FeederSyncLog;
 use App\Models\Sdm\Dosen;
 use App\Services\Feeder\Contracts\FeederClientInterface;
 use App\Services\Feeder\Mappers\AktivitasKuliahMapper;
+use App\Services\Feeder\Mappers\AktivitasMbkmMapper;
+use App\Services\Feeder\Mappers\AnggotaMbkmMapper;
+use App\Services\Feeder\Mappers\AnggotaTugasAkhirMapper;
+use App\Services\Feeder\Mappers\BimbingMbkmMapper;
+use App\Services\Feeder\Mappers\BimbingTugasAkhirMapper;
 use App\Services\Feeder\Mappers\DosenPengajarMapper;
 use App\Services\Feeder\Mappers\FeederMapper;
 use App\Services\Feeder\Mappers\KelasKuliahMapper;
@@ -22,6 +27,8 @@ use App\Services\Feeder\Mappers\MahasiswaMapper;
 use App\Services\Feeder\Mappers\NilaiKomponenMapper;
 use App\Services\Feeder\Mappers\NilaiMapper;
 use App\Services\Feeder\Mappers\RiwayatPendidikanMapper;
+use App\Services\Feeder\Mappers\TugasAkhirMapper;
+use App\Services\Feeder\Mappers\UjiTugasAkhirMapper;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Log;
 
@@ -61,6 +68,13 @@ class FeederSyncService
         'krs' => KrsMapper::class,
         'nilai' => NilaiMapper::class,
         'nilai_komponen' => NilaiKomponenMapper::class,
+        'aktivitas_mbkm' => AktivitasMbkmMapper::class,
+        'anggota_mbkm' => AnggotaMbkmMapper::class,
+        'bimbing_mbkm' => BimbingMbkmMapper::class,
+        'tugas_akhir' => TugasAkhirMapper::class,
+        'anggota_tugas_akhir' => AnggotaTugasAkhirMapper::class,
+        'bimbing_tugas_akhir' => BimbingTugasAkhirMapper::class,
+        'uji_tugas_akhir' => UjiTugasAkhirMapper::class,
         'lulus_do' => LulusDoMapper::class,
     ];
 
@@ -350,6 +364,10 @@ class FeederSyncService
             KelasKuliahMapper::class => ['id_kelas_kuliah' => $feederId],
             DosenPengajarMapper::class => ['id_aktivitas_mengajar' => $feederId],
             KomponenEvaluasiMapper::class => ['id_komponen_evaluasi' => $feederId],
+            AktivitasMbkmMapper::class, TugasAkhirMapper::class => ['id_aktivitas' => $feederId],
+            AnggotaMbkmMapper::class, AnggotaTugasAkhirMapper::class => ['id_anggota' => $feederId],
+            BimbingMbkmMapper::class, BimbingTugasAkhirMapper::class => ['id_bimbing_mahasiswa' => $feederId],
+            UjiTugasAkhirMapper::class => ['id_uji' => $feederId],
             LulusDoMapper::class => ['id_registrasi_mahasiswa' => $feederId],
             default => ['id' => $feederId],
         };

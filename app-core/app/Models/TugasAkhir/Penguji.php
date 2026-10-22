@@ -26,6 +26,7 @@ class Penguji extends Model
     protected function casts(): array
     {
         return [
+            'feeder_synced_at' => 'datetime',
             'peran' => PeranPenguji::class,
             'nilai' => 'decimal:2',
         ];
