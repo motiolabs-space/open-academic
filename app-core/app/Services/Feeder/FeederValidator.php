@@ -4,11 +4,14 @@ declare(strict_types=1);
 
 namespace App\Services\Feeder;
 
+use App\Enums\JenisEvaluasi;
 use App\Enums\StudentStatus;
 use App\Models\Akademik\KelasDosen;
 use App\Models\Akademik\KelasKuliah;
+use App\Models\Akademik\KomponenNilai;
 use App\Models\Akademik\KrsDetail;
 use App\Models\Akademik\Nilai;
+use App\Models\Akademik\NilaiKomponen;
 use App\Models\Feeder\FeederMapping;
 use App\Models\Feeder\FeederValidationIssue;
 use App\Models\Kemahasiswaan\Mahasiswa;
@@ -75,8 +78,10 @@ class FeederValidator
             'aktivitas_kuliah' => $this->aktivitasKuliah($model),
             'kelas_kuliah' => $this->kelasKuliah($model),
             'dosen_pengajar' => $this->dosenPengajar($model),
+            'komponen_evaluasi' => $this->komponenEvaluasi($model),
             'krs' => $this->krs($model),
             'nilai' => $this->nilai($model),
+            'nilai_komponen' => $this->nilaiKomponen($model),
             'lulus_do' => $this->lulusDo($model),
             default => collect(),
         };
@@ -217,6 +222,84 @@ class FeederValidator
                 'porsi_sks_kosong',
                 'Kelas diampu lebih dari satu dosen tetapi porsi SKS tidak diisi; seluruh SKS kelas akan dilaporkan untuk dosen ini.',
             ));
+        }
+
+        return $isu;
+    }
+
+    /** @param KomponenNilai $k */
+    private function komponenEvaluasi(Model $k): Collection
+    {
+        $isu = collect();
+        $kelas = $k->kelasKuliah;
+
+        if (blank($kelas?->feeder_id)) {
+            $isu->push($this->error('kelas_belum_sinkron', 'Kelas kuliah belum terkirim ke Feeder.'));
+        }
+
+        if ($k->jenis_evaluasi === null) {
+            $isu->push($this->error('jenis_evaluasi_kosong', "Komponen \"{$k->nama}\" belum punya jenis evaluasi (partisipatif, proyek, tugas, kuis, UTS, UAS)."));
+        } elseif (FeederMapping::toFeeder('jenis_evaluasi', $k->jenis_evaluasi->value) === null) {
+            $isu->push($this->error('jenis_evaluasi_belum_dipetakan', "Jenis evaluasi \"{$k->jenis_evaluasi->label()}\" belum dipetakan ke kode PDDIKTI (feeder_mappings, grup jenis_evaluasi)."));
+        }
+
+        if ($kelas === null) {
+            return $isu;
+        }
+
+        // Class-level rules, reported once: on the first component only, so a
+        // plan of five components yields one finding, not five copies.
+        $semua = $kelas->komponenNilai;
+
+        if ($semua->first()?->is($k)) {
+            $total = (int) $semua->sum('bobot');
+
+            if ($total !== 100) {
+                $isu->push($this->error('bobot_tidak_seratus', "Bobot komponen kelas berjumlah {$total}, bukan 100."));
+            }
+
+            // IKU 7 is decided here, not by the class flag. A flagged class
+            // whose plan is all exams is reported as flagged — and not counted.
+            if ($kelas->kelasKolaboratif()) {
+                $kolaboratif = (int) $semua
+                    ->filter(fn (KomponenNilai $c): bool => $c->jenis_evaluasi?->menghitungIku7() ?? false)
+                    ->sum('bobot');
+
+                if ($kolaboratif < JenisEvaluasi::AMBANG_IKU7_PERSEN) {
+                    $isu->push($this->peringatan(
+                        'iku7_bobot_kurang',
+                        sprintf(
+                            'Kelas ditandai case method / team-based project, tetapi bobot partisipatif + proyek hanya %d%% (syarat IKU 7: %d%%). PDDIKTI tidak akan mengakuinya sebagai kelas kolaboratif.',
+                            $kolaboratif,
+                            JenisEvaluasi::AMBANG_IKU7_PERSEN,
+                        ),
+                    ));
+                }
+            }
+        }
+
+        return $isu;
+    }
+
+    /** @param NilaiKomponen $n */
+    private function nilaiKomponen(Model $n): Collection
+    {
+        $isu = collect();
+
+        if (blank($n->krsDetail?->krs?->mahasiswa?->feeder_registrasi_id)) {
+            $isu->push($this->error('registrasi_belum_sinkron', 'Riwayat pendidikan mahasiswa belum terkirim ke Feeder.'));
+        }
+
+        if (blank($n->komponen?->kelasKuliah?->feeder_id)) {
+            $isu->push($this->error('kelas_belum_sinkron', 'Kelas kuliah belum terkirim ke Feeder.'));
+        }
+
+        if (blank($n->komponen?->feeder_id)) {
+            $isu->push($this->error('komponen_belum_sinkron', 'Komponen evaluasi kelas belum terkirim ke Feeder.'));
+        }
+
+        if ($n->nilai !== null && ((float) $n->nilai < 0 || (float) $n->nilai > 100)) {
+            $isu->push($this->error('angka_di_luar_rentang', 'Nilai komponen di luar rentang 0–100.'));
         }
 
         return $isu;

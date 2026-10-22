@@ -134,7 +134,7 @@ Apa yang ada hari ini, dikelompokkan menurut siapa yang memakainya.
 
 | Modul | | Catatan |
 |---|---|---|
-| Neo Feeder PDDIKTI | ✅ | Idempoten, ledger, validator pra-kirim. Delapan entitas sejak 22 Okt 2026: + dosen pengajar kelas, + Lulus/DO |
+| Neo Feeder PDDIKTI | ✅ | Idempoten, ledger, validator pra-kirim. Sepuluh entitas sejak 22 Okt 2026: + dosen pengajar kelas, + Lulus/DO, + komponen evaluasi, + nilai per komponen |
 | Campus Bridge | ✅ | 11 endpoint ber-scope, webhook HMAC, spec OpenAPI |
 | SSO OAuth2 (Passport) | ✅ | Kampus jadi penerbit identitas |
 | Notifikasi (G2) | ✅ | Kategori wajib tidak dapat dimatikan |
@@ -311,7 +311,8 @@ tabel lokal** — ini pekerjaan mapper dan validator, bukan model data baru.
 | # | Pekerjaan | Kenapa, dan apa yang sudah menopangnya |
 |---|---|---|
 | ~~19~~ | ~~**Dosen pengajar kelas → Feeder**~~ | ✅ 22 Oktober 2026. `kelas_dosen` ada, mapper tidak. Padahal inilah penghitung rasio dosen:mahasiswa di PDDIKTI, pembagi SKS pada *team teaching*, dan **sumber "pengajaran" di SISTER**. Tanpa ini, BKD unsur pendidikan yang dihitung otomatis di sini tidak pernah sampai ke tempat yang menilainya |
-| 20 | **Komponen evaluasi kelas & nilai per komponen → Feeder** | Rencana evaluasi wajib dilaporkan sejak 2024 gasal. `komponen_nilai` dan `nilai_komponen` sudah berbobot per kelas — tinggal dipetakan. Satu aturan validator pra-kirim baru: **IKU 7 diakui PDDIKTI hanya bila bobot partisipatif + proyek ≥ 50 %** — kelas ber-flag *case method* yang bobotnya di bawah itu harus ditandai *sebelum* sinkron, bukan ditemukan saat rekonsiliasi IKU |
+| ~~20~~ | ~~**Komponen evaluasi kelas & nilai per komponen → Feeder**~~ | ✅ 22 Oktober 2026 — `komponen_nilai` kini punya `jenis_evaluasi`; ambang IKU 7 dihitung validator. Rencana evaluasi wajib dilaporkan sejak 2024 gasal. `komponen_nilai` dan `nilai_komponen` sudah berbobot per kelas — tinggal dipetakan. Satu aturan validator pra-kirim baru: **IKU 7 diakui PDDIKTI hanya bila bobot partisipatif + proyek ≥ 50 %** — kelas ber-flag *case method* yang bobotnya di bawah itu harus ditandai *sebelum* sinkron, bukan ditemukan saat rekonsiliasi IKU |
+| 20b | **Layar rencana evaluasi kelas** | `simpanKomponen()` menerima jenis, tetapi tidak ada layar yang memanggilnya; komponen hanya lahir dari bawaan. Dosen yang ingin kelasnya diakui IKU 7 belum punya tempat menyusun rencananya |
 | ~~21~~ | ~~**Lulus/DO → Feeder**~~ | ✅ 22 Oktober 2026. Yudisium ada; status di PDDIKTI tetap *Aktif*. Itu salah satu dari lima penyebab tersering reservasi nomor ijazah gagal (#28) |
 | 22 | **Aktivitas MBKM beserta anggota, pembimbing, penguji, dan konversinya → Feeder** | `aktivitas_mahasiswa` dan catatan bimbingan/ujian TA sudah ada. Ini juga jalur *pembimbingan* dan *pengujian* ke SISTER (lihat temuan di atas), dan jalur klaim program flagship |
 | 23 | **Prestasi & transfer kredit → Feeder** | Prestasi dari poin kemahasiswaan; transfer dari `konversi_kredit` |
@@ -359,8 +360,10 @@ sekarang punya rencana.
 yang **salah di luar kampus**: rasio dosen yang tidak terhitung dan lulusan yang
 masih *Aktif*. Yang tersingkap saat mengerjakannya: `dosen.feeder_id` tidak
 pernah diisi siapa pun, karena dosen didaftarkan di PDDIKTI admin, bukan lewat
-Feeder. Kini diisi dari pembacaan `GetListDosen` yang dicocokkan NIDN. Berikutnya
-**#20**, karena wajib dan datanya sudah berbobot. #28–29 sebelum wisuda berikutnya. #32 adalah
+Feeder. Kini diisi dari pembacaan `GetListDosen` yang dicocokkan NIDN. **#20 selesai**
+di hari yang sama; yang tersingkap di sana: komponen nilai tidak pernah punya
+*jenis*, jadi IKU 7 selama ini hanya sebuah flag tanpa bukti. Berikutnya **#22**
+bersama **#28**. #28–29 sebelum wisuda berikutnya. #32 adalah
 pekerjaan terbesar dan satu-satunya yang membuka portal keempat (calon
 mahasiswa); kerjakan setelah Feeder tuntas, supaya pendaftar yang diterima
 langsung punya riwayat pendidikan yang benar (#25).

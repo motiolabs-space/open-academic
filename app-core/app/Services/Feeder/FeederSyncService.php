@@ -15,9 +15,11 @@ use App\Services\Feeder\Mappers\AktivitasKuliahMapper;
 use App\Services\Feeder\Mappers\DosenPengajarMapper;
 use App\Services\Feeder\Mappers\FeederMapper;
 use App\Services\Feeder\Mappers\KelasKuliahMapper;
+use App\Services\Feeder\Mappers\KomponenEvaluasiMapper;
 use App\Services\Feeder\Mappers\KrsMapper;
 use App\Services\Feeder\Mappers\LulusDoMapper;
 use App\Services\Feeder\Mappers\MahasiswaMapper;
+use App\Services\Feeder\Mappers\NilaiKomponenMapper;
 use App\Services\Feeder\Mappers\NilaiMapper;
 use App\Services\Feeder\Mappers\RiwayatPendidikanMapper;
 use Illuminate\Database\Eloquent\Model;
@@ -55,8 +57,10 @@ class FeederSyncService
         'aktivitas_kuliah' => AktivitasKuliahMapper::class,
         'kelas_kuliah' => KelasKuliahMapper::class,
         'dosen_pengajar' => DosenPengajarMapper::class,
+        'komponen_evaluasi' => KomponenEvaluasiMapper::class,
         'krs' => KrsMapper::class,
         'nilai' => NilaiMapper::class,
+        'nilai_komponen' => NilaiKomponenMapper::class,
         'lulus_do' => LulusDoMapper::class,
     ];
 
@@ -251,13 +255,18 @@ class FeederSyncService
         }
 
         try {
-            $response = $feederId === null
-                ? $this->client->insert($mapper->act(), $payload)
-                : $this->client->update(
+            $kunciAlami = $mapper->kunciAlami($model);
+
+            $response = match (true) {
+                // One upserting act, keyed on identifiers the row already holds.
+                $kunciAlami !== null => $this->client->update($mapper->act(), $kunciAlami, $payload),
+                $feederId === null => $this->client->insert($mapper->act(), $payload),
+                default => $this->client->update(
                     str_replace('Insert', 'Update', $mapper->act()),
                     $this->kunciUpdate($mapper, $feederId),
                     $payload,
-                );
+                ),
+            };
         } catch (FeederException $e) {
             return $this->catat(
                 $entity, $term, $mapper, $model, $payload, $hash,
@@ -276,7 +285,13 @@ class FeederSyncService
             );
         }
 
-        if ($feederId === null && ($baru = $response->feederId() ?? $mapper->feederIdBawaan($model)) !== null) {
+        // A naturally keyed row ignores whatever identifier the reply carries:
+        // it was never asked for one, and Feeder's answer there is noise.
+        $baru = $kunciAlami !== null
+            ? $mapper->feederIdBawaan($model)
+            : ($response->feederId() ?? $mapper->feederIdBawaan($model));
+
+        if ($feederId === null && $baru !== null) {
             $mapper->simpanFeederId($model, $baru);
         }
 
@@ -334,6 +349,7 @@ class FeederSyncService
             RiwayatPendidikanMapper::class => ['id_registrasi_mahasiswa' => $feederId],
             KelasKuliahMapper::class => ['id_kelas_kuliah' => $feederId],
             DosenPengajarMapper::class => ['id_aktivitas_mengajar' => $feederId],
+            KomponenEvaluasiMapper::class => ['id_komponen_evaluasi' => $feederId],
             LulusDoMapper::class => ['id_registrasi_mahasiswa' => $feederId],
             default => ['id' => $feederId],
         };

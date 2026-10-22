@@ -4,6 +4,57 @@
 
 ---
 
+## Sesi 32 — 2026-10-22 · Feeder: komponen evaluasi, dan IKU 7 yang akhirnya punya bukti
+
+Pekerjaan #20. Branch `feature/feeder-komponen-evaluasi`, dibuka sesudah PR #1
+di-*squash* ke `main` — CI hijau pertama repo ini sejak Agustus.
+
+### Dua entitas, satu kait baru
+
+| Entitas | Aksi | Sumber lokal |
+|---|---|---|
+| `komponen_evaluasi` | `InsertKomponenEvaluasiKelas` | `komponen_nilai` |
+| `nilai_komponen` | `UpdateNilaiPerkuliahanKelasKomponenEvaluasi` | `nilai_komponen`, hanya di balik nilai final |
+
+Yang kedua tidak punya aksi *Insert*: satu aksi yang meng-*upsert* dengan kunci
+gabungan (registrasi, kelas, komponen). Mesin sinkron selama ini berasumsi
+"insert dulu, update pakai id balasan". Tambahan kecilnya `kunciAlami()` di
+`FeederMapper`: bila mapper menyatakan kunci alami, setiap dorongan adalah
+*update* dengan kunci itu, dan balasan Feeder — yang untuk aksi ini tidak
+membawa apa pun yang berarti — diabaikan. Tes pertama gagal justru karena
+*fake client* mengembalikan UUID untuk segala hal dan mesin menyimpannya.
+
+### Yang tersingkap: IKU 7 adalah flag tanpa bukti
+
+`kelas_kuliah.is_case_method` sudah dikirim ke Feeder sejak Agustus. Tetapi
+PDDIKTI tidak mengakui flag itu; ia mengakui **rencana evaluasi** yang bobot
+partisipatif + proyeknya mencapai 50 %. Dan `komponen_nilai` tidak pernah punya
+*jenis* — hanya nama dan bobot. Jadi setiap kelas kolaboratif di data demo
+dilaporkan sebagai kolaboratif dan tidak akan dihitung.
+
+Sekarang: enum `JenisEvaluasi` (partisipatif, proyek, tugas, kuis, UTS, UAS),
+kolom `komponen_nilai.jenis_evaluasi`, komponen bawaan di `config/academic.php`
+membawa jenisnya, dan validator menghitung ambangnya **sekali per kelas** —
+sebagai peringatan, bukan penolakan: kelas tetap boleh dilaporkan, kampus
+hanya diberi tahu bahwa IKU 7-nya tidak akan diakui. Angka 30 % dan 50 % ada
+di pesannya, dan tesnya memaku angka itu.
+
+Komponen lama di basis data yang sudah berjalan tidak ditebak jenisnya dari
+nama; validator melaporkannya sebagai kosong. Bawaan baru (Tugas/UTS/UAS) tidak
+mencapai ambang — dan itu benar: rencana evaluasi yang isinya tiga ujian memang
+bukan kelas kolaboratif.
+
+### Yang belum ada
+
+Layar untuk mengubah komponen kelas. `simpanKomponen()` sudah menerima
+`jenis`, tetapi tidak ada yang memanggilnya — komponen hanya lahir dari
+konfigurasi bawaan. Dosen yang ingin kelasnya diakui IKU 7 belum punya tempat
+menyusun rencananya. Dicatat di ROADMAP sebagai #20b.
+
+**15 tes baru** (42 asersi); folder Feeder 65 hijau.
+
+---
+
 ## Sesi 31 — 2026-10-22 · Feeder: dosen pengajar kelas dan Lulus/DO — dua entitas yang selalu punya tabel
 
 Pekerjaan #19 dan #21 dari §Peta Jalan Lanjutan. Branch

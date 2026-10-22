@@ -21,6 +21,7 @@ class NilaiKomponen extends Model
     {
         return [
             'nilai' => 'decimal:2',
+            'feeder_synced_at' => 'datetime',
         ];
     }
 

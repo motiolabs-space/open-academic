@@ -155,6 +155,7 @@ class PerkuliahanSeeder extends Seeder
                 'kelas_kuliah_id' => $kelas->id,
                 'nama' => $komponen['name'],
                 'bobot' => $komponen['weight'],
+                'jenis_evaluasi' => $komponen['jenis'] ?? null,
                 'urutan' => $urutan,
             ]);
         }

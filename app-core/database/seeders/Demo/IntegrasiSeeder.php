@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Database\Seeders\Demo;
 
+use App\Enums\JenisEvaluasi;
 use App\Enums\StudentStatus;
 use App\Models\Bridge\BridgeConsumer;
 use App\Models\Feeder\FeederMapping;
@@ -48,6 +49,18 @@ class IntegrasiSeeder extends Seeder
                 'local_value' => $local,
                 'feeder_code' => $feeder,
                 'feeder_label' => StudentStatus::from($local)->label(),
+            ]);
+        }
+
+        // Jenis evaluasi: PDDIKTI's classification of a grade component. The
+        // codes below follow the published reference order; the reference pull
+        // (GetJenisEvaluasi) is authoritative and overwrites them.
+        foreach (JenisEvaluasi::cases() as $jenis) {
+            FeederMapping::create([
+                'group' => 'jenis_evaluasi',
+                'local_value' => $jenis->value,
+                'feeder_code' => (string) (array_search($jenis, JenisEvaluasi::cases(), true) + 1),
+                'feeder_label' => $jenis->label(),
             ]);
         }
 
