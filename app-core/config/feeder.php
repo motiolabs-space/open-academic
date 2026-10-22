@@ -67,6 +67,13 @@ return [
         // local rows can be given their id_dosen (matched on NIDN). Lecturers
         // are registered at PDDIKTI admin, never pushed from here.
         'dosen' => 'GetListDosen',
+
+        // Student activities: the activity kinds (MBKM programmes, final
+        // project, ...) and the supervising / examining categories. Neither
+        // is seeded locally — the campus maps them after this pull, because
+        // the lists change with each MBKM cycle.
+        'jenis_aktivitas' => 'GetJenisAktivitasMahasiswa',
+        'kategori_kegiatan' => 'GetKategoriKegiatan',
     ],
 
     /*
@@ -124,6 +131,41 @@ return [
             'label' => 'Nilai per Komponen Evaluasi',
             'action' => 'UpdateNilaiPerkuliahanKelasKomponenEvaluasi',
             'depends_on' => ['komponen_evaluasi', 'krs'],
+        ],
+        'aktivitas_mbkm' => [
+            'label' => 'Aktivitas MBKM',
+            'action' => 'InsertAktivitasMahasiswa',
+            'depends_on' => ['riwayat_pendidikan'],
+        ],
+        'anggota_mbkm' => [
+            'label' => 'Anggota Aktivitas MBKM',
+            'action' => 'InsertAnggotaAktivitasMahasiswa',
+            'depends_on' => ['aktivitas_mbkm'],
+        ],
+        'bimbing_mbkm' => [
+            'label' => 'Pembimbing Aktivitas MBKM',
+            'action' => 'InsertBimbingMahasiswa',
+            'depends_on' => ['aktivitas_mbkm'],
+        ],
+        'tugas_akhir' => [
+            'label' => 'Tugas Akhir (aktivitas)',
+            'action' => 'InsertAktivitasMahasiswa',
+            'depends_on' => ['riwayat_pendidikan'],
+        ],
+        'anggota_tugas_akhir' => [
+            'label' => 'Anggota Tugas Akhir',
+            'action' => 'InsertAnggotaAktivitasMahasiswa',
+            'depends_on' => ['tugas_akhir'],
+        ],
+        'bimbing_tugas_akhir' => [
+            'label' => 'Pembimbing Tugas Akhir',
+            'action' => 'InsertBimbingMahasiswa',
+            'depends_on' => ['tugas_akhir'],
+        ],
+        'uji_tugas_akhir' => [
+            'label' => 'Penguji Tugas Akhir',
+            'action' => 'InsertUjiMahasiswa',
+            'depends_on' => ['tugas_akhir'],
         ],
         'lulus_do' => [
             'label' => 'Mahasiswa Lulus / DO',

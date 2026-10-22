@@ -7,6 +7,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Kemahasiswaan\Mahasiswa;
 use App\Models\Kemahasiswaan\Yudisium;
+use App\Services\Kemahasiswaan\KesiapanPinService;
 use App\Services\Kemahasiswaan\YudisiumService;
 use App\Support\Portal;
 use Illuminate\Http\RedirectResponse;
@@ -23,7 +24,10 @@ use Illuminate\View\View;
  */
 class YudisiumController extends Controller
 {
-    public function __construct(private readonly YudisiumService $yudisium) {}
+    public function __construct(
+        private readonly YudisiumService $yudisium,
+        private readonly KesiapanPinService $kesiapanPin,
+    ) {}
 
     public function index(): View
     {
@@ -47,11 +51,16 @@ class YudisiumController extends Controller
             'breadcrumb' => ['Dasbor' => route('admin.dashboard'), 'Yudisium & Wisuda'],
             'diajukan' => $diajukan,
             'kandidat' => $this->yudisium->kandidat(),
-            'ditetapkan' => Yudisium::with('mahasiswa.prodi')
+            'ditetapkan' => $ditetapkan = Yudisium::with('mahasiswa.prodi')
                 ->where('status', 'ditetapkan')
                 ->latest('tanggal_lulus')
                 ->limit(15)
                 ->get(),
+
+            // Readiness for the national diploma number, per graduate: the
+            // reservation portal refuses without saying why, and every reason
+            // it has is visible from here first.
+            'kesiapanPin' => $this->kesiapanPin->periksaBanyak($ditetapkan->pluck('mahasiswa')),
         ]);
     }
 

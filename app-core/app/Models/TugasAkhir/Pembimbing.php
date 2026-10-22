@@ -26,6 +26,7 @@ class Pembimbing extends Model
     protected function casts(): array
     {
         return [
+            'feeder_synced_at' => 'datetime',
             'peran' => PeranPembimbing::class,
             'ditetapkan_pada' => 'date',
         ];

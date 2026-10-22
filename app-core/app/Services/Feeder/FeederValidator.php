@@ -14,9 +14,16 @@ use App\Models\Akademik\Nilai;
 use App\Models\Akademik\NilaiKomponen;
 use App\Models\Feeder\FeederMapping;
 use App\Models\Feeder\FeederValidationIssue;
+use App\Models\Kemahasiswaan\AktivitasMahasiswa;
 use App\Models\Kemahasiswaan\Mahasiswa;
 use App\Models\Kemahasiswaan\StatusMahasiswa;
+use App\Models\Sdm\Dosen;
+use App\Models\TugasAkhir\TugasAkhir;
+use App\Services\Feeder\Mappers\BimbingMbkmMapper;
+use App\Services\Feeder\Mappers\BimbingTugasAkhirMapper;
 use App\Services\Feeder\Mappers\FeederMapper;
+use App\Services\Feeder\Mappers\TugasAkhirMapper;
+use App\Services\Feeder\Mappers\UjiTugasAkhirMapper;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
@@ -82,6 +89,13 @@ class FeederValidator
             'krs' => $this->krs($model),
             'nilai' => $this->nilai($model),
             'nilai_komponen' => $this->nilaiKomponen($model),
+            'aktivitas_mbkm' => $this->aktivitasMbkm($model),
+            'anggota_mbkm' => $this->anggota($model->feeder_id, $model->mahasiswa),
+            'bimbing_mbkm' => $this->pembimbing($model->feeder_id, $model->pembimbing, BimbingMbkmMapper::KATEGORI),
+            'tugas_akhir' => $this->tugasAkhir($model),
+            'anggota_tugas_akhir' => $this->anggota($model->feeder_id, $model->mahasiswa),
+            'bimbing_tugas_akhir' => $this->pembimbing($model->tugasAkhir?->feeder_id, $model->dosen, BimbingTugasAkhirMapper::KATEGORI),
+            'uji_tugas_akhir' => $this->pembimbing($model->ujian?->tugasAkhir?->feeder_id, $model->dosen, UjiTugasAkhirMapper::KATEGORI),
             'lulus_do' => $this->lulusDo($model),
             default => collect(),
         };
@@ -383,6 +397,102 @@ class FeederValidator
 
         if ($m->evaluasiStudi->first() === null) {
             $isu->push($this->error('keputusan_tidak_ditemukan', 'Tidak ada keputusan evaluasi studi yang mengakhiri registrasi mahasiswa ini.'));
+        }
+
+        return $isu;
+    }
+
+    /** @param AktivitasMahasiswa $a */
+    private function aktivitasMbkm(Model $a): Collection
+    {
+        $isu = collect();
+
+        if (blank($a->mahasiswa?->feeder_registrasi_id)) {
+            $isu->push($this->error('registrasi_belum_sinkron', 'Riwayat pendidikan mahasiswa belum terkirim ke Feeder.'));
+        }
+
+        if (blank($a->mahasiswa?->prodi?->kode_pddikti)) {
+            $isu->push($this->error('prodi_tanpa_id_sms', 'Program studi belum memiliki kode PDDIKTI (id_sms).'));
+        }
+
+        if (FeederMapping::toFeeder('jenis_aktivitas', $a->jenis->value) === null) {
+            $isu->push($this->error(
+                'jenis_aktivitas_belum_dipetakan',
+                "Jenis aktivitas \"{$a->jenis->label()}\" belum dipetakan ke kode PDDIKTI. Tarik referensi (GetJenisAktivitasMahasiswa) lalu petakan di feeder_mappings, grup jenis_aktivitas.",
+            ));
+        }
+
+        if (blank($a->judul)) {
+            $isu->push($this->error('judul_kosong', 'Judul aktivitas kosong.'));
+        }
+
+        return $isu;
+    }
+
+    /** @param TugasAkhir $t */
+    private function tugasAkhir(Model $t): Collection
+    {
+        $isu = collect();
+
+        if (blank($t->mahasiswa?->feeder_registrasi_id)) {
+            $isu->push($this->error('registrasi_belum_sinkron', 'Riwayat pendidikan mahasiswa belum terkirim ke Feeder.'));
+        }
+
+        if (blank($t->mahasiswa?->prodi?->kode_pddikti)) {
+            $isu->push($this->error('prodi_tanpa_id_sms', 'Program studi belum memiliki kode PDDIKTI (id_sms).'));
+        }
+
+        if (FeederMapping::toFeeder('jenis_aktivitas', TugasAkhirMapper::JENIS) === null) {
+            $isu->push($this->error(
+                'jenis_aktivitas_belum_dipetakan',
+                'Jenis aktivitas "tugas_akhir" belum dipetakan ke kode PDDIKTI (feeder_mappings, grup jenis_aktivitas).',
+            ));
+        }
+
+        if ($t->pembimbing()->count() === 0) {
+            $isu->push($this->peringatan('tanpa_pembimbing', 'Tugas akhir belum memiliki pembimbing; aktivitas terkirim tanpa catatan bimbingan.'));
+        }
+
+        return $isu;
+    }
+
+    /** The student as member of an activity already known to Feeder. */
+    private function anggota(?string $idAktivitas, ?Mahasiswa $m): Collection
+    {
+        $isu = collect();
+
+        if (blank($idAktivitas)) {
+            $isu->push($this->error('aktivitas_belum_sinkron', 'Aktivitas belum terkirim ke Feeder.'));
+        }
+
+        if (blank($m?->feeder_registrasi_id)) {
+            $isu->push($this->error('registrasi_belum_sinkron', 'Riwayat pendidikan mahasiswa belum terkirim ke Feeder.'));
+        }
+
+        return $isu;
+    }
+
+    /** A lecturer supervising or examining an activity already known to Feeder. */
+    private function pembimbing(?string $idAktivitas, ?Dosen $dosen, string $kategori): Collection
+    {
+        $isu = collect();
+
+        if (blank($idAktivitas)) {
+            $isu->push($this->error('aktivitas_belum_sinkron', 'Aktivitas belum terkirim ke Feeder.'));
+        }
+
+        if (blank($dosen?->feeder_id)) {
+            $isu->push($this->error(
+                'dosen_belum_dipetakan',
+                "Dosen {$dosen?->nama} belum dipetakan ke id_dosen PDDIKTI. Tarik referensi (GetListDosen) setelah dosen terdaftar di PDDIKTI admin.",
+            ));
+        }
+
+        if (FeederMapping::toFeeder('kategori_kegiatan', $kategori) === null) {
+            $isu->push($this->error(
+                'kategori_kegiatan_belum_dipetakan',
+                "Kategori kegiatan \"{$kategori}\" belum dipetakan ke kode PDDIKTI. Tarik referensi (GetKategoriKegiatan) lalu petakan di feeder_mappings, grup kategori_kegiatan.",
+            ));
         }
 
         return $isu;

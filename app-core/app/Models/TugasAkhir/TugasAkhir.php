@@ -50,6 +50,7 @@ class TugasAkhir extends Model
     protected function casts(): array
     {
         return [
+            'feeder_synced_at' => 'datetime',
             'status' => TugasAkhirStatus::class,
             'tanggal_pengajuan' => 'date',
             'tanggal_disetujui' => 'date',

@@ -4,6 +4,57 @@
 
 ---
 
+## Sesi 33 — 2026-10-22 · Aktivitas mahasiswa ke Feeder, dan daftar periksa PIN
+
+Pekerjaan #22 dan #28. Branch `feature/feeder-mbkm-pin`, dari `main` sesudah
+PR #1, di-rebase ke `main` sesudah PR #2 (#20) masuk.
+
+### Satu entitas PDDIKTI, tujuh entitas di sini
+
+PDDIKTI memodelkan "Aktivitas Mahasiswa" sebagai satu catatan dengan tiga
+satelit: anggota, pembimbing, penguji. Di sini faktanya hidup di dua tempat —
+`aktivitas_mahasiswa` (MBKM) dan `tugas_akhir` — dan mesin sinkron mengirim satu
+aksi per baris. Maka tujuh mapper kecil: aktivitas MBKM → anggota → pembimbing,
+dan tugas akhir → anggota → pembimbing → penguji. Setiap satelit menyimpan id
+balasan Feeder di kolomnya sendiri (`feeder_anggota_id`, `feeder_bimbing_id`,
+dan `feeder_id` pada baris pembimbing/penguji), karena satu baris lokal kini
+mewakili dua atau tiga catatan PDDIKTI.
+
+Inilah jalur **pembimbingan dan pengujian ke SISTER**: SISTER membacanya dari
+PDDIKTI, dan sampai hari ini tidak ada yang pernah dikirim.
+
+### Yang sengaja tidak di-seed
+
+Kode jenis aktivitas (`GetJenisAktivitasMahasiswa`) dan kategori kegiatan
+(`GetKategoriKegiatan`) **tidak** dipetakan di `IntegrasiSeeder`, berbeda dari
+status mahasiswa dan jenis keluar. Daftarnya berubah tiap siklus MBKM, dan kode
+yang ditebak melaporkan magang seseorang sebagai hal lain. Validator menolak
+dengan pesan yang menyebut referensi mana yang harus ditarik. Konsekuensinya
+jujur: di instalasi demo, ketujuh entitas ini merah sampai operator memetakan
+kodenya — dan itu memang urutan yang benar ("referensi dulu", CLAUDE.md §5).
+
+Hanya penguji **sidang yang sudah terlaksana** yang dikirim; seminar proposal
+dan panel yang baru dijadwalkan bukan ujian di mata PDDIKTI.
+
+### Kesiapan PIN
+
+`KesiapanPinService` menjawab, per lulusan, delapan hal yang membuat reservasi
+nomor ijazah ditolak portal tanpa penjelasan: NIK 16 digit, identitas PDM
+lengkap, registrasi tersinkron, AKM tiap semester tersinkron, seluruh nilai
+final tersinkron, SKS memenuhi, yudisium ditetapkan dengan nomor SK, dan
+status Lulus sudah sampai di PDDIKTI (`feeder_keluar_id` dari #21). Satu kohort
+diperiksa dalam ≤ 6 kueri — tesnya memaku angkanya. Layar Yudisium mendapat
+kolom "Siap PIN"; yang belum siap membuka daftar butirnya, bukan sekadar
+jumlahnya, karena tiap butir diperbaiki di layar Feeder yang berbeda.
+
+Yang belum: **konversi MBKM** (`InsertKonversiKampusMerdeka`) — digeser ke #23,
+karena anggota aktivitasnya kini sudah punya id. Dan SKS diakui mahasiswa
+pindahan sebagai butir PIN menunggu #25/#33.
+
+**18 tes baru** (64 asersi).
+
+---
+
 ## Sesi 32 — 2026-10-22 · Feeder: komponen evaluasi, dan IKU 7 yang akhirnya punya bukti
 
 Pekerjaan #20. Branch `feature/feeder-komponen-evaluasi`, dibuka sesudah PR #1
