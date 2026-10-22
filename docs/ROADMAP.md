@@ -312,7 +312,7 @@ tabel lokal** — ini pekerjaan mapper dan validator, bukan model data baru.
 |---|---|---|
 | ~~19~~ | ~~**Dosen pengajar kelas → Feeder**~~ | ✅ 22 Oktober 2026. `kelas_dosen` ada, mapper tidak. Padahal inilah penghitung rasio dosen:mahasiswa di PDDIKTI, pembagi SKS pada *team teaching*, dan **sumber "pengajaran" di SISTER**. Tanpa ini, BKD unsur pendidikan yang dihitung otomatis di sini tidak pernah sampai ke tempat yang menilainya |
 | ~~20~~ | ~~**Komponen evaluasi kelas & nilai per komponen → Feeder**~~ | ✅ 22 Oktober 2026 — `komponen_nilai` kini punya `jenis_evaluasi`; ambang IKU 7 dihitung validator. Rencana evaluasi wajib dilaporkan sejak 2024 gasal. `komponen_nilai` dan `nilai_komponen` sudah berbobot per kelas — tinggal dipetakan. Satu aturan validator pra-kirim baru: **IKU 7 diakui PDDIKTI hanya bila bobot partisipatif + proyek ≥ 50 %** — kelas ber-flag *case method* yang bobotnya di bawah itu harus ditandai *sebelum* sinkron, bukan ditemukan saat rekonsiliasi IKU |
-| 20b | **Layar rencana evaluasi kelas** | `simpanKomponen()` menerima jenis, tetapi tidak ada layar yang memanggilnya; komponen hanya lahir dari bawaan. Dosen yang ingin kelasnya diakui IKU 7 belum punya tempat menyusun rencananya |
+| ~~20b~~ | ~~**Layar rencana evaluasi kelas**~~ | ✅ 22 Oktober 2026 — panel di layar Input Nilai: nama, bobot, jenis per komponen; total dan ambang IKU 7 dihitung langsung di layar dan diulangi server. Komponen yang berisi nilai dapat diubah, tidak dapat dihapus |
 | ~~21~~ | ~~**Lulus/DO → Feeder**~~ | ✅ 22 Oktober 2026. Yudisium ada; status di PDDIKTI tetap *Aktif*. Itu salah satu dari lima penyebab tersering reservasi nomor ijazah gagal (#28) |
 | ~~22~~ | ~~**Aktivitas MBKM beserta anggota, pembimbing, penguji → Feeder**~~ | ✅ 22 Oktober 2026 — tujuh entitas: aktivitas MBKM, anggota, pembimbing; tugas akhir sebagai aktivitas, anggota, pembimbing, penguji. Kode jenis aktivitas dan kategori kegiatan **tidak di-seed**: kampus memetakannya sesudah tarik referensi. **Konversi MBKM** (`InsertKonversiKampusMerdeka`) dan klaim program flagship belum — digeser ke #23 |
 | 23 | **Prestasi, transfer kredit, dan konversi MBKM → Feeder** | Prestasi dari poin kemahasiswaan; transfer dari `konversi_kredit`; konversi MBKM (`InsertKonversiKampusMerdeka`) dari `krs_detail.aktivitas_mahasiswa_id` — anggota aktivitasnya sudah terkirim sejak #22 |
@@ -364,8 +364,8 @@ Feeder. Kini diisi dari pembacaan `GetListDosen` yang dicocokkan NIDN. **#20 sel
 di hari yang sama; yang tersingkap di sana: komponen nilai tidak pernah punya
 *jenis*, jadi IKU 7 selama ini hanya sebuah flag tanpa bukti. **#22 dan #28
 selesai** menyusul di PR terpisah, lalu **#29**: nomor ijazah kini dicatat dari
-PIN, bukan dibangkitkan — risiko terbuka di MODUL.md tertutup. Berikutnya
-**#20b** (layar rencana evaluasi), lalu **#26**. #32 adalah
+PIN, bukan dibangkitkan — risiko terbuka di MODUL.md tertutup. **#20b selesai**
+(layar rencana evaluasi). Berikutnya **#26**. #32 adalah
 pekerjaan terbesar dan satu-satunya yang membuka portal keempat (calon
 mahasiswa); kerjakan setelah Feeder tuntas, supaya pendaftar yang diterima
 langsung punya riwayat pendidikan yang benar (#25).

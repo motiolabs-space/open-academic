@@ -169,6 +169,7 @@ Route::middleware(['auth:dosen', 'term.active'])->prefix('dosen')->name('dosen.'
     Route::get('/nilai', [Dosen\NilaiController::class, 'index'])->name('nilai');
     Route::get('/nilai/{kelas}', [Dosen\NilaiController::class, 'edit'])->name('nilai.kelas');
     Route::post('/nilai/{kelas}', [Dosen\NilaiController::class, 'simpan'])->name('nilai.simpan');
+    Route::post('/nilai/{kelas}/rencana', [Dosen\NilaiController::class, 'rencana'])->name('nilai.rencana');
     Route::post('/nilai/{kelas}/finalisasi', [Dosen\NilaiController::class, 'finalisasi'])->name('nilai.finalisasi');
 
     Route::get('/presensi', [Dosen\PresensiController::class, 'index'])->name('presensi');

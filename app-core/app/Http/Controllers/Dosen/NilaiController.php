@@ -4,8 +4,11 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Dosen;
 
+use App\Enums\JenisEvaluasi;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Dosen\RencanaEvaluasiRequest;
 use App\Models\Akademik\KelasKuliah;
+use App\Models\Akademik\KomponenNilai;
 use App\Models\Akademik\Nilai;
 use App\Services\Akademik\PenilaianService;
 use App\Support\Portal;
@@ -61,10 +64,57 @@ class NilaiController extends Controller
                 $kelas->mataKuliah->nama,
             ],
             'kelas' => $kelas,
-            'komponen' => $this->penilaian->komponen($kelas),
+            'komponen' => $komponen = $this->penilaian->komponen($kelas),
             'lembar' => $this->penilaian->lembarNilai($kelas),
             'periodeDibuka' => $kelas->tahunAkademik->penilaianDibuka(),
+
+            // The plan as the editor needs it, plus which components already
+            // hold scores: those may be reshaped but not removed.
+            'rencana' => $komponen->map(fn (KomponenNilai $k): array => [
+                'id' => $k->id,
+                'nama' => $k->nama,
+                'bobot' => (int) $k->bobot,
+                'jenis' => $k->jenis_evaluasi?->value,
+                'bernilai' => $k->nilai()->exists(),
+            ])->values(),
+            'jenisEvaluasi' => JenisEvaluasi::options(),
+            'ambangIku7' => JenisEvaluasi::AMBANG_IKU7_PERSEN,
         ]);
+    }
+
+    /**
+     * Saves the class's evaluation plan.
+     *
+     * The reply carries the IKU 7 verdict when the class is flagged as
+     * collaborative: a lecturer who just set the plan is the one person who
+     * can still change it, and the only moment it is cheap to.
+     */
+    public function rencana(RencanaEvaluasiRequest $request, KelasKuliah $kelas): RedirectResponse
+    {
+        $this->authorize('grade', $kelas);
+
+        $komponen = $this->penilaian->simpanKomponen($kelas, $request->rencana());
+
+        $pesan = 'Rencana evaluasi tersimpan: '.$komponen->count().' komponen.';
+
+        if ($kelas->kelasKolaboratif()) {
+            $kolaboratif = (int) $komponen
+                ->filter(fn (KomponenNilai $k): bool => $k->jenis_evaluasi?->menghitungIku7() ?? false)
+                ->sum('bobot');
+
+            if ($kolaboratif < JenisEvaluasi::AMBANG_IKU7_PERSEN) {
+                return back()->with('peringatan', sprintf(
+                    '%s Kelas ini ditandai case method / team-based project, tetapi bobot partisipatif + proyek baru %d%% — PDDIKTI mengakui IKU 7 mulai %d%%.',
+                    $pesan,
+                    $kolaboratif,
+                    JenisEvaluasi::AMBANG_IKU7_PERSEN,
+                ));
+            }
+
+            $pesan .= sprintf(' Bobot partisipatif + proyek %d%% memenuhi syarat IKU 7.', $kolaboratif);
+        }
+
+        return back()->with('sukses', $pesan);
     }
 
     public function simpan(Request $request, KelasKuliah $kelas): RedirectResponse

@@ -51,6 +51,104 @@
         </x-alert>
     @endif
 
+    @php $rencanaTerkunci = $kelas->status_nilai === 'final' || ! $periodeDibuka; @endphp
+
+    {{-- Rencana evaluasi: nama, bobot, dan JENIS tiap komponen. Jenis bukan
+         hiasan — PDDIKTI mewajibkannya, dan jenis inilah yang menentukan apakah
+         kelas case method / team-based project diakui sebagai IKU 7. --}}
+    <x-card class="mb-5" title="Rencana Evaluasi" :meta="$kelas->kelasKolaboratif() ? 'Kelas kolaboratif (IKU 7)' : null">
+        <form
+            method="POST"
+            action="{{ route('dosen.nilai.rencana', $kelas) }}"
+            x-data="{
+                baris: @js($rencana),
+                jenis: @js($jenisEvaluasi),
+                ambang: {{ (int) $ambangIku7 }},
+                kolaboratif: @js($kelas->kelasKolaboratif()),
+                terkunci: @js($rencanaTerkunci),
+                get total() { return this.baris.reduce((t, b) => t + (parseInt(b.bobot) || 0), 0); },
+                get iku7() { return this.baris.filter(b => b.jenis === 'partisipatif' || b.jenis === 'proyek').reduce((t, b) => t + (parseInt(b.bobot) || 0), 0); },
+                tambah() { this.baris.push({ id: null, nama: '', bobot: 0, jenis: '', bernilai: false }); },
+                hapus(i) { if (!this.baris[i].bernilai) this.baris.splice(i, 1); },
+            }"
+        >
+            @csrf
+
+            @error('komponen')
+                <x-alert tone="danger" class="mb-3">{{ $message }}</x-alert>
+            @enderror
+
+            <div class="overflow-x-auto">
+                <table class="w-full min-w-[560px] text-[13px]">
+                    <thead>
+                        <tr class="border-b border-line text-left text-[11px] uppercase tracking-[0.08em] text-ink-muted">
+                            <th class="py-2 pr-3 font-semibold">Komponen</th>
+                            <th class="w-24 py-2 pr-3 text-center font-semibold">Bobot %</th>
+                            <th class="w-56 py-2 pr-3 font-semibold">Jenis evaluasi</th>
+                            <th class="w-16 py-2"></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <template x-for="(b, i) in baris" :key="i">
+                            <tr class="border-b border-line/50 last:border-b-0">
+                                <td class="py-2 pr-3">
+                                    <input type="hidden" :name="`komponen[${i}][id]`" :value="b.id ?? ''">
+                                    <input type="text" :name="`komponen[${i}][nama]`" x-model="b.nama" maxlength="64" required
+                                        :disabled="terkunci"
+                                        class="w-full rounded-control border border-line-input bg-surface px-2.5 py-1.5 outline-none focus:border-navy disabled:bg-line/40 disabled:text-ink-faint">
+                                </td>
+                                <td class="py-2 pr-3">
+                                    <input type="number" :name="`komponen[${i}][bobot]`" x-model="b.bobot" min="0" max="100" step="1" required
+                                        :disabled="terkunci"
+                                        class="tabular w-full rounded-control border border-line-input bg-surface px-2 py-1.5 text-center outline-none focus:border-navy disabled:bg-line/40 disabled:text-ink-faint">
+                                </td>
+                                <td class="py-2 pr-3">
+                                    <select :name="`komponen[${i}][jenis]`" x-model="b.jenis" required :disabled="terkunci"
+                                        class="w-full rounded-control border border-line-input bg-surface px-2 py-1.5 outline-none focus:border-navy disabled:bg-line/40 disabled:text-ink-faint">
+                                        <option value="">— pilih jenis —</option>
+                                        <template x-for="(label, nilai) in jenis" :key="nilai">
+                                            <option :value="nilai" x-text="label" :selected="b.jenis === nilai"></option>
+                                        </template>
+                                    </select>
+                                </td>
+                                <td class="py-2 text-right">
+                                    <template x-if="b.bernilai">
+                                        <span class="text-[11px] text-ink-faint" title="Sudah berisi nilai mahasiswa; dapat diubah, tidak dapat dihapus">berisi nilai</span>
+                                    </template>
+                                    <template x-if="!b.bernilai && !terkunci">
+                                        <button type="button" @click="hapus(i)" class="text-[12px] text-danger hover:underline">Hapus</button>
+                                    </template>
+                                </td>
+                            </tr>
+                        </template>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="mt-3 flex flex-wrap items-center justify-between gap-3 border-t border-line pt-3">
+                <div class="flex flex-wrap items-center gap-4 text-[12px]">
+                    <span class="tabular" :class="total === 100 ? 'text-ink-muted' : 'font-semibold text-danger'">
+                        Total bobot <span x-text="total"></span>%<span x-show="total !== 100"> — harus 100%</span>
+                    </span>
+                    <template x-if="kolaboratif">
+                        <span class="tabular" :class="iku7 >= ambang ? 'text-success' : 'font-semibold text-warning'">
+                            Partisipatif + proyek <span x-text="iku7"></span>%
+                            <span x-show="iku7 < ambang"> — IKU 7 diakui mulai <span x-text="ambang"></span>%</span>
+                            <span x-show="iku7 >= ambang"> — memenuhi IKU 7</span>
+                        </span>
+                    </template>
+                </div>
+
+                @unless ($rencanaTerkunci)
+                    <div class="flex items-center gap-2">
+                        <x-button type="button" variant="outline" @click="tambah()">Tambah komponen</x-button>
+                        <x-button type="submit" x-bind:disabled="total !== 100">Simpan Rencana</x-button>
+                    </div>
+                @endunless
+            </div>
+        </form>
+    </x-card>
+
     <form
         method="POST"
         action="{{ route('dosen.nilai.simpan', $kelas) }}"

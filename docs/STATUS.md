@@ -4,6 +4,40 @@
 
 ---
 
+## Sesi 35 — 2026-10-22 · Layar rencana evaluasi: jenis komponen akhirnya punya tempat diisi
+
+Pekerjaan #20b. Branch `feature/rencana-evaluasi-kelas`, dari `main` sesudah
+PR #3, di-rebase sesudah PR #4.
+
+### Panel di layar Input Nilai
+
+Sejak #20, tiap komponen nilai punya *jenis* (partisipatif, proyek, tugas,
+kuis, UTS, UAS) — dan sejak #20 pula tidak ada satu layar pun tempat dosen
+mengisinya. Kini ada: panel "Rencana Evaluasi" di atas lembar nilai. Nama,
+bobot, jenis per baris; tambah dan hapus baris; total bobot dan bagian
+partisipatif + proyek dihitung di layar saat diketik, dan tombol simpan mati
+sampai totalnya 100. Server mengulangi perhitungannya di `FormRequest` dan di
+service; layar hanya pratinjau. Kelas kolaboratif yang rencananya di bawah 50 %
+mendapat jawaban di detik yang sama ia menyimpan — satu-satunya saat mengubah
+rencana masih murah.
+
+### `simpanKomponen()` berhenti menghapus semuanya
+
+Versi lama menghapus seluruh komponen lalu membuat ulang — dan `nilai_komponen`
+ber-`cascadeOnDelete`, jadi setiap penyimpanan rencana **melenyapkan nilai yang
+sudah diisi**. Tidak pernah terasa karena tidak ada yang memanggilnya. Sekarang:
+baris ber-`id` diubah di tempat, baris tanpa `id` baru, komponen yang tak ada
+di rencana dihapus — **kecuali yang berisi nilai**, yang ditolak dengan menyebut
+namanya. Layar menandai komponen itu "berisi nilai" dan menyembunyikan tombol
+hapusnya; ubah nama, bobot, atau jenisnya tetap boleh.
+
+Rencana terkunci bersama nilai: kelas yang sudah final atau periode penilaian
+yang tertutup menampilkan panelnya hanya-baca.
+
+**13 tes baru** (33 asersi).
+
+---
+
 ## Sesi 34 — 2026-10-22 · Nomor ijazah dicatat dari PIN, bukan dibangkitkan
 
 Pekerjaan #29. Branch `feature/ijazah-nomor-pin`, dari `main` sesudah PR #2, di-rebase sesudah PR #3.

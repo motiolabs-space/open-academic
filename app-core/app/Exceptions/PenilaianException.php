@@ -20,6 +20,14 @@ class PenilaianException extends AturanAkademikException
         return new self("Total bobot komponen penilaian harus 100%, saat ini {$total}%.");
     }
 
+    public static function komponenBernilai(string $nama): self
+    {
+        return new self(
+            "Komponen \"{$nama}\" sudah berisi nilai mahasiswa dan tidak dapat dihapus. "
+                .'Ubah nama, bobot, atau jenisnya; nilai yang tercatat tidak boleh lenyap bersama kolomnya.',
+        );
+    }
+
     public static function komponenKosong(): self
     {
         return new self('Tetapkan minimal satu komponen penilaian sebelum mengisi nilai.');
