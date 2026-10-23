@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Database\Seeders\Demo;
 
+use App\Enums\JenisDaftar;
 use App\Enums\JenisEvaluasi;
 use App\Enums\StudentStatus;
 use App\Models\Bridge\BridgeConsumer;
@@ -111,12 +112,28 @@ class IntegrasiSeeder extends Seeder
                 'feeder_code' => $feeder,
                 'feeder_label' => $local,
             ]);
+        }
 
+        // Jenis pendaftaran: only "peserta didik baru" has a code stable enough
+        // to seed. Transfer, RPL, fast track and non-degree are mapped by the
+        // campus after the GetJenisPendaftaran pull; the validator refuses an
+        // enrolment of those kinds until then, by name.
+        FeederMapping::create([
+            'group' => 'jenis_daftar',
+            'local_value' => JenisDaftar::Baru->value,
+            'feeder_code' => '1',
+            'feeder_label' => JenisDaftar::Baru->label(),
+        ]);
+
+        // Jenis mata kuliah on the course record: A wajib prodi, B pilihan,
+        // U muatan universitas — the published letters; the reference pull is
+        // authoritative here as everywhere.
+        foreach (['wajib' => ['A', 'Wajib program studi'], 'pilihan' => ['B', 'Pilihan'], 'wajib_universitas' => ['U', 'Muatan universitas']] as $local => [$kode, $label]) {
             FeederMapping::create([
-                'group' => 'jenis_daftar',
+                'group' => 'jenis_mata_kuliah',
                 'local_value' => $local,
-                'feeder_code' => '1', // Peserta didik baru
-                'feeder_label' => 'Peserta Didik Baru',
+                'feeder_code' => $kode,
+                'feeder_label' => $label,
             ]);
         }
     }

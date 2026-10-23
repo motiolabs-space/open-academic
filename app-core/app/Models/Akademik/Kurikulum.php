@@ -38,6 +38,7 @@ class Kurikulum extends Model
     protected function casts(): array
     {
         return [
+            'feeder_synced_at' => 'datetime',
             'is_active' => 'boolean',
         ];
     }
