@@ -4,6 +4,60 @@
 
 ---
 
+## Sesi 36 — 2026-10-24 · Denda keterlambatan: akrual harian yang tidak memperketat KRS
+
+Pekerjaan #15. Branch `feature/keuangan-denda`, dari `main` sesudah PR #5.
+Mengikuti keputusan 24 Oktober bahwa payment gateway opsional: denda harus
+bekerja penuh pada pembayaran manual yang dicatat kasir, dan memang begitu.
+
+### Denda adalah baris tagihan
+
+Satu baris `tagihan_item` berjenis `denda` per tagihan, sehingga `total` tetap
+jumlah barisnya dan tak satu pun dari sepuluh pembaca `total` perlu diubah.
+Yang baru di `tagihan`: `denda` (neto yang sedang ada di `total`),
+`denda_dihitung_sampai`, `denda_dibebaskan_at`. Aturannya di
+`config/payment.php` dengan bawaan **nonaktif**: nominal per hari/minggu atau
+persen dari sisa pokok (dibulatkan ke bawah, `intdiv`), tenggang, maksimum.
+
+### Akrual, bukan hitung ulang
+
+Pilihan yang menentukan. Denda yang dihitung ulang dari nol tiap malam menyusut
+sesudah pembayaran sebagian — seolah keterlambatan sebelumnya tidak terjadi —
+dan "idempoten" lalu bergantung pada rumus yang kebetulan setuju dengan dirinya.
+Yang dilakukan: tiap jalan hanya menagih periode yang dimulai sesudah
+`denda_dihitung_sampai`, pada sisa pokok hari itu. Jalan kedua di hari yang
+sama menemukan nol periode baru. Jalan untuk hari yang lebih lampau tidak
+membuka kembali periode yang sudah ditagih. Dispensasi menggeser awal jam
+denda ke akhir dispensasi — bagian keuangan yang berkata "sampai tanggal ini"
+tidak boleh dibantah oleh tagihan mahasiswa sendiri.
+
+### Gerbang KRS mengukur pokok
+
+`memenuhiSyaratKrs()` kini membaca `persenTerbayarPokok()` = terbayar terhadap
+`total − denda`. Mahasiswa yang tepat di ambang 50 % sebelum denda tetap lolos
+sesudahnya; yang memang di bawah ambang tetap terkunci. Dipaku di
+`GerbangPembayaranKrsTest` dan `DendaTest`.
+
+### Pembebasan adalah baris, bukan penghapusan
+
+Staf keuangan membebaskan denda lewat layar Tagihan dengan alasan wajib
+(`BebaskanDendaRequest`, policy `waiveLateFee`). Hasilnya baris potongan
+negatif bernama tetap, menyimpan alasan, staf, dan waktu; bruto–pembebasan–neto
+tetap terbaca di layar mahasiswa, akrual berhenti, mahasiswa diberi tahu.
+`PotonganService::hapus()` menolak menghapus baris ini — kolom di tagihan akan
+menggambarkan pembebasan yang sudah tidak ada.
+
+### Yang sengaja belum
+
+Denda tidak dijurnalkan ke integrasi akuntansi; pendapatan denda butuh kode
+akun yang belum ada di bagan dan keputusan perlakuannya. Dicatat di MODUL.md.
+
+**34 tes baru** (DendaTest 32, GerbangPembayaranKrsTest +2). Seeder demo
+mengenakan denda lewat service pada tagihan yang menunggak dan membebaskan satu
+di antaranya, dengan aturan eksplisit — `.env` kampus tidak disentuh.
+
+---
+
 ## Sesi 35 — 2026-10-22 · Layar rencana evaluasi: jenis komponen akhirnya punya tempat diisi
 
 Pekerjaan #20b. Branch `feature/rencana-evaluasi-kelas`, dari `main` sesudah

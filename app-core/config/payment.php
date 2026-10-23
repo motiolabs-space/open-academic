@@ -42,4 +42,41 @@ return [
         'due_days' => 30,
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Denda keterlambatan
+    |--------------------------------------------------------------------------
+    |
+    | Kebijakan kampus, bukan fakta — maka mati secara bawaan. Kampus yang
+    | menyalakannya memilih bentuknya:
+    |
+    |   bentuk=nominal : `nominal` rupiah per periode keterlambatan;
+    |   bentuk=persen  : `persen` dari sisa tagihan pokok (tanpa denda) per
+    |                    periode, dibulatkan ke bawah ke rupiah penuh.
+    |
+    | `periode` hari atau minggu; minggu yang baru berjalan dihitung penuh.
+    | `maksimum` membatasi denda kumulatif satu tagihan (0 = tanpa batas).
+    | `tenggang_hari` adalah hari sesudah jatuh tempo yang masih bebas denda.
+    |
+    | Denda dihitung oleh `openacademic:hitung-denda` yang terjadwal harian dan
+    | hanya menambah periode yang belum pernah dihitung, jadi menjalankannya
+    | dua kali pada hari yang sama tidak menggandakan apa pun. Jalankan dengan
+    | `--kering` sebelum menyalakannya: tagihan yang sudah lama menunggak akan
+    | dikenai denda sejak jatuh temponya, bukan sejak hari penyalaan.
+    |
+    | Denda TIDAK memperketat gerbang KRS: ambang pembayaran dihitung terhadap
+    | tagihan pokok. Lihat docs/MODUL.md §Keuangan.
+    |
+    */
+
+    'denda' => [
+        'aktif' => (bool) env('PAYMENT_DENDA_AKTIF', false),
+        'bentuk' => env('PAYMENT_DENDA_BENTUK', 'nominal'),
+        'periode' => env('PAYMENT_DENDA_PERIODE', 'hari'),
+        'nominal' => (int) env('PAYMENT_DENDA_NOMINAL', 10_000),
+        'persen' => (int) env('PAYMENT_DENDA_PERSEN', 1),
+        'maksimum' => (int) env('PAYMENT_DENDA_MAKSIMUM', 500_000),
+        'tenggang_hari' => (int) env('PAYMENT_DENDA_TENGGANG_HARI', 0),
+    ],
+
 ];

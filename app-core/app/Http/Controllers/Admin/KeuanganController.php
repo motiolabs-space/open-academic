@@ -4,16 +4,20 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Admin;
 
+use App\DTOs\Keuangan\AturanDenda;
 use App\Enums\InvoiceStatus;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Keuangan\BebaskanDendaRequest;
 use App\Models\Akademik\Prodi;
 use App\Models\Akademik\TahunAkademik;
 use App\Models\Keuangan\Pembayaran;
 use App\Models\Keuangan\Tagihan;
 use App\Models\Keuangan\TagihanItem;
+use App\Services\Keuangan\DendaService;
 use App\Services\Keuangan\PembayaranService;
 use App\Services\Keuangan\PenerbitanTagihanService;
 use App\Services\Keuangan\PotonganService;
+use App\Support\Format;
 use App\Support\Portal;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -33,7 +37,21 @@ class KeuanganController extends Controller
         private readonly PenerbitanTagihanService $penerbitan,
         private readonly PembayaranService $pembayaran,
         private readonly PotonganService $potongan,
+        private readonly DendaService $denda,
     ) {}
+
+    /**
+     * Forgives a late fee. Authorisation and the mandatory reason are the
+     * FormRequest's; the policy is `waiveLateFee` on the invoice.
+     */
+    public function bebaskanDenda(BebaskanDendaRequest $request, Tagihan $tagihan): RedirectResponse
+    {
+        $item = $this->denda->bebaskan($tagihan, Portal::user(), $request->alasan());
+
+        return back()->with('sukses', __('keuangan.denda.berhasil_dibebaskan', [
+            'denda' => Format::rupiah($item->besaran()),
+        ]));
+    }
 
     /**
      * A one-off reduction on one invoice.
@@ -88,7 +106,7 @@ class KeuanganController extends Controller
         $term = Portal::term();
 
         $tagihan = Tagihan::query()
-            ->with(['mahasiswa.prodi', 'tahunAkademik'])
+            ->with(['mahasiswa.prodi', 'tahunAkademik', 'pembebasanDenda.pemutus'])
             ->when($request->filled('term'), fn ($q) => $q->where('tahun_akademik_id', $request->integer('term')))
             ->when($request->filled('status'), fn ($q) => $q->where('status', $request->string('status')))
             ->cari($request->string('cari'), ['nomor', 'mahasiswa.nama', 'mahasiswa.nim'])
@@ -107,6 +125,7 @@ class KeuanganController extends Controller
             'termAktif' => $term,
             'filter' => $request->only(['term', 'status', 'cari']),
             'pratinjau' => session('pratinjau'),
+            'aturanDenda' => AturanDenda::dariConfig(),
 
             // The headline numbers a finance office is actually asked for.
             'ringkas' => $this->ringkas($request->filled('term')

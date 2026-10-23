@@ -56,4 +56,10 @@ class TagihanPolicy
     {
         return $this->stafDenganIzin($actor, 'keuangan.manage');
     }
+
+    /** So is forgiving a late fee — it lowers what a student owes. */
+    public function waiveLateFee(Authenticatable $actor, Tagihan $tagihan): bool
+    {
+        return $this->stafDenganIzin($actor, 'keuangan.manage');
+    }
 }
