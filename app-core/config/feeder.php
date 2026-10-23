@@ -91,6 +91,20 @@ return [
 
     'entities' => [
         // Reference data first: everything below points at these ids.
+        //
+        // The grading scale and the teaching period are per programme at
+        // PDDIKTI. Neither is a transaction: every row is due every run and
+        // the hash check turns the unchanged ones into skips.
+        'skala_nilai_prodi' => [
+            'label' => 'Skala Nilai Prodi',
+            'action' => 'InsertSkalaNilaiProdi',
+            'depends_on' => [],
+        ],
+        'periode_perkuliahan' => [
+            'label' => 'Periode Perkuliahan',
+            'action' => 'InsertPeriodePerkuliahan',
+            'depends_on' => [],
+        ],
         'kurikulum' => [
             'label' => 'Kurikulum',
             'action' => 'InsertKurikulum',
@@ -246,6 +260,18 @@ return [
     */
 
     'reconcile' => [
+
+        'skala_nilai_prodi' => [
+            'get_action' => 'GetListSkalaNilaiProdi',
+            'filter' => [],
+            'key' => ['id_prodi', 'nilai_huruf', 'tanggal_mulai_efektif'],
+        ],
+
+        'periode_perkuliahan' => [
+            'get_action' => 'GetListPeriodePerkuliahan',
+            'filter' => ['id_semester' => ':term'],
+            'key' => ['id_prodi', 'id_semester'],
+        ],
 
         'kelas_kuliah' => [
             'get_action' => 'GetListKelasKuliah',
