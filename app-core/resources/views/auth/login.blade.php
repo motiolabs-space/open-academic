@@ -100,20 +100,21 @@
                 <x-button type="submit" class="mt-1 w-full">Masuk</x-button>
             </form>
 
-            {{-- The "Masuk dengan Akun Kampus (SSO)" button that used to sit here
-                 has been removed rather than wired up, because it described the
-                 wrong direction.
+            {{-- Only when the campus has pointed IDP_* at its own identity
+                 provider. Open Academic is itself the OAuth2 *server* for other
+                 campus applications (docs/SSO.md); this button is the other
+                 direction, and it leads nowhere unless configured. --}}
+            @if (config('idp.enabled'))
+                <div class="my-6 flex items-center gap-3 text-[11px] uppercase tracking-[0.08em] text-ink-muted">
+                    <span class="h-px flex-1 bg-line"></span>
+                    {{ __('auth.idp.atau') }}
+                    <span class="h-px flex-1 bg-line"></span>
+                </div>
 
-                 Open Academic *is* the campus account: it runs the OAuth2 server,
-                 and other applications redirect their users here. There is no
-                 upstream identity provider for this page to delegate to, so the
-                 button could never have done anything.
-
-                 Federating upward to an existing campus IdP (Google Workspace,
-                 Entra ID, Keycloak) is a separate feature. It needs a policy
-                 decision first — an external identity has to be mapped to exactly
-                 one of the three identity tables, and getting that wrong lets a
-                 lecturer into the student portal. See docs/SSO.md. --}}
+                <x-button variant="outline" :href="route('idp.redirect')" class="w-full" rel="nofollow">
+                    {{ __('auth.idp.masuk', ['idp' => config('idp.name')]) }}
+                </x-button>
+            @endif
 
             @if (! app()->environment('production'))
                 <div class="mt-8 rounded-card border border-line bg-surface px-4 py-3 text-[12px] leading-relaxed text-ink-muted">

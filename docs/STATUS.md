@@ -4,6 +4,51 @@
 
 ---
 
+## Sesi 36 — 2026-10-24 · Masuk lewat IdP kampus: Open Academic kini juga konsumen identitas
+
+Pekerjaan P3 #16 bagian yang tersisa. Branch `feature/auth-idp-federasi`, dari
+`main` sesudah PR #5. Berjalan paralel dengan sesi denda (#15), helpdesk (#18),
+dan Feeder (#24b/#27); konflik teks di ROADMAP/STATUS diterima sebagai wajar.
+
+### Keputusan yang dulu menahan fitur ini
+
+`SSO.md` menahan federasi pada satu pertanyaan: identitas dari IdP dipetakan ke
+tabel yang mana. Dijawab sempit (ADR-019): hanya guard di `IDP_GUARDS` — staf
+secara bawaan, dosen bila dipilih, mahasiswa tidak bisa. Surel dipakai sekali
+untuk menautkan, lalu `idp_subject` yang dipegang; cocok di dua tabel ditolak
+sebagai ambigu, bukan diselesaikan lewat urutan; tidak ada provisioning bawaan.
+
+### Klien OIDC ±150 baris, tanpa dependensi baru
+
+`laravel/socialite` tidak ada di `composer.json` dan tidak ditambahkan: dua
+panggilan HTTP (discovery, tukar kode) dan satu validator klaim tidak
+membenarkan katalog penyedia. `ValidatorKlaim` dipakai bersama oleh driver
+`oidc` dan `fake`, jadi tes yang menolak `iss`/`aud`/`nonce` salah menguji
+kode yang sama dengan produksi. Tanda tangan JWS tidak diverifikasi — token
+datang langsung dari token endpoint lewat TLS (OIDC Core §3.1.3.7.6), maka
+issuer non-HTTPS ditolak sebelum jaringan disentuh.
+
+### Titik temu 2FA
+
+Staf ber-TOTP yang kembali dari IdP mendarat di layar tantangan yang sama
+dengan jalur kata sandi, dengan bentuk sesi `dua_faktor` yang sama.
+`IDP_SATISFIES_2FA=true` melewatinya, bawaan `false`.
+
+### Yang baru
+
+`config/idp.php` (`IDP_ENABLED=false` bawaan), `IdentityProviderInterface` +
+`FakeIdentityProvider` + `OidcIdentityProvider`, `PenautanIdpService`,
+`IdpLoginController` (`/masuk/idp`, `/masuk/idp/callback`, terdaftar hanya
+bila aktif), migrasi `idp_subject` pada `staff` dan `dosen`, tombol
+"Masuk dengan <IDP_NAME>" di halaman masuk, string di `lang/id/auth.php`.
+Setiap percobaan ditulis ke Log Aktivitas (`idp_masuk`/`idp_gagal`) tanpa kode
+atau token. `phpunit.xml` memaku `IDP_ENABLED=true` dengan pola `SSO_ENABLED`;
+tes "rute tidak terdaftar" mem-boot proses anak dengan `IDP_ENABLED=false`.
+
+**29 tes baru** (IdpLoginTest 23, OidcIdentityProviderTest 6).
+
+---
+
 ## Sesi 35 — 2026-10-22 · Layar rencana evaluasi: jenis komponen akhirnya punya tempat diisi
 
 Pekerjaan #20b. Branch `feature/rencana-evaluasi-kelas`, dari `main` sesudah
