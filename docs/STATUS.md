@@ -4,6 +4,52 @@
 
 ---
 
+## Sesi 36 — 2026-10-23 · Cek ulang roadmap dan skrip terhadap kode
+
+Bukan fitur. Setiap butir #19–#43 dicocokkan ke kode, setiap perintah
+`openacademic:*` dijalankan di basis data kosong, dan dokumen yang menyebut
+perintah dibandingkan dengan yang ada. Branch `claude/hopeful-elion-ee011b`,
+dari `main` sesudah PR #5; sengaja tidak menyentuh baris #23–#27 dan paragraf
+urutan di ROADMAP, karena PR #6 dan #7 yang masih terbuka menyuntingnya.
+Catatan lengkapnya lokal di `docs/lokal/` (menyebut nama pembanding).
+
+### Tiga butir roadmap yang sebenarnya sudah ada
+
+**#36 pengingat mahasiswa yang belum KRS** sudah ada sejak G2: perintah
+`kirim-pengingat` mengirim H-7, H-3, H-1 hanya kepada mahasiswa aktif tanpa KRS
+diajukan atau disetujui. Dicatat sebagai kesenjangan sehari sebelumnya karena
+daftarnya disusun dari halaman fitur pembanding, bukan dari kode sendiri.
+**2FA staf** ada sejak 22 Agustus tetapi masih ⬜ di dua tempat. **#35** dan
+**#38** separuh ada — tanggal KRS dan nilai sudah menggerbang, seminar proposal
+sudah jenis ujian — dan deskripsinya kini mengatakan yang mana yang kurang.
+
+### Satu yang tercecer dari kajian
+
+**#44 — adopsi mahasiswa yang sudah ada di PDDIKTI.** Mapper biodata hanya
+`Insert`, dan rekonsiliasi tidak membaca daftar mahasiswa kembali. Kampus yang
+pindah dari SIAKAD lain akan mencoba mendaftarkan ulang seluruh mahasiswanya
+pada sinkronisasi pertama. Lebih mendesak dari #32 untuk instalasi sungguhan.
+
+### Dua skrip yang tidak jalan
+
+`openacademic:sso-client --daftar` — dicontohkan di README dan SSO.md — mati
+dengan "missing: nama", karena nama aplikasi argumen wajib dan tidak ada tes
+untuk perintah ini. Kini `nama?` dan tiga tes. Lalu `composer test:par`
+terbunuh **batas waktu 300 detik Composer** di mesin ini: suite paralel 319–670
+detik, dan `disableProcessTimeout` hanya dipasang di `dev`. CI selamat karena
+runner-nya lebih cepat. Dipasang di `test` dan `test:par`.
+
+### Yang tersingkap dan belum diputuskan
+
+Kampus demo **tidak pernah bisa `feeder-sync semua` utuh**: satu mahasiswa
+sengaja dibuat tidak lolos ("Siap PDDIKTI" merah), dan validasi pra-kirim
+membatalkan satu entitas penuh bila ada satu baris yang gagal — jadi entitas
+pertama batal, dan sisanya tidak pernah dicoba. `FEEDER_ENABLED=false` di
+`.env.example` juga tidak disebut README. Dan `docs/openapi/bridge.yaml`
+mendokumentasikan 12 dari 14 endpoint; dicatat di §Utang Teknis.
+
+---
+
 ## Sesi 35 — 2026-10-22 · Layar rencana evaluasi: jenis komponen akhirnya punya tempat diisi
 
 Pekerjaan #20b. Branch `feature/rencana-evaluasi-kelas`, dari `main` sesudah
