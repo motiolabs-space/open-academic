@@ -16,7 +16,7 @@ dan mesin sinkron butuh model Eloquent per baris. Jawabannya bukan mapper atas
 konfigurasi melainkan dua tabel — `skala_nilai_prodi` (per prodi per huruf)
 dan `periode_perkuliahan` (per prodi per semester) — yang **diturunkan** oleh
 `SkalaPeriodeProdiService` dari skala kampus dan kalender semester, hanya untuk
-prodi yang belum punya baris (ADR-014). Batas atas huruf adalah batas bawah
+prodi yang belum punya baris (ADR-016). Batas atas huruf adalah batas bawah
 huruf di atasnya, huruf teratas 100; angka PMB periode dihitung dari pendaftar
 semester itu dan dibiarkan kosong bila tidak ada gelombang — "tidak dihitung",
 bukan nol. Penurunan terjadi saat mapper membaca barisnya dan di
@@ -39,7 +39,7 @@ berubah pada mahasiswa yang sudah ber-`feeder_id` (PDM) atau
 `feeder_keluar_id` (PJK), ia menulis `feeder_change_requests` — satu baris per
 kolom, nilai lama dan baru dalam kosakata PDDIKTI (tanggal `Y-m-d`, periode
 sebagai kode semester). Permintaan terbuka disunting, bukan digandakan; nilai
-yang dikembalikan mencabutnya (ADR-015).
+yang dikembalikan mencabutnya (ADR-017).
 
 Validator pra-kirim menolak biodata (`mahasiswa`) dan catatan Lulus/DO
 (`lulus_do`) dengan aturan `kolom_terkunci_berubah` selama ada permintaan

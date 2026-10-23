@@ -16,7 +16,7 @@ use Illuminate\Support\Facades\Schema;
  * and one calendar (tahun_akademik). The rows here are *derived* from those —
  * one per programme and letter, one per programme and term — so a programme
  * that must differ from the campus default edits its own rows without the
- * code learning about it. See docs/DECISIONS.md, ADR-014.
+ * code learning about it. See docs/DECISIONS.md, ADR-016.
  *
  * `feeder_change_requests` records a change to a column PDDIKTI locks once a
  * student is reported: the six identity columns (PDM, Perubahan Data

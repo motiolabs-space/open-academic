@@ -19,7 +19,7 @@ use Illuminate\Support\Carbon;
  * Both derivations are idempotent and additive: a programme that already has
  * rows is left exactly as it is. That is the whole design — the config and
  * the calendar are the default, the table is the record, and an edit to a
- * programme's rows is never overwritten by the next run. See ADR-014.
+ * programme's rows is never overwritten by the next run. See ADR-016.
  */
 class SkalaPeriodeProdiService
 {

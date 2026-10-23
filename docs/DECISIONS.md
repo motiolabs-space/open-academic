@@ -159,7 +159,7 @@
   yang tidak dapat menghasilkan dokumen tak terverifikasi karena kelalaian.
   Verifikasi publik ijazah adalah SIVIL; QR lokal tetap untuk surat dan SKPI.
 
-## ADR-014 — Skala nilai dan periode perkuliahan per prodi diturunkan ke tabel, tidak dipetakan dari konfigurasi (2026-10-24)
+## ADR-016 — Skala nilai dan periode perkuliahan per prodi diturunkan ke tabel, tidak dipetakan dari konfigurasi (2026-10-24)
 
 - **Konteks.** `InsertSkalaNilaiProdi` dan `InsertPeriodePerkuliahan` adalah
   baris per prodi (dan per huruf / per semester) di PDDIKTI, sedangkan kampus
@@ -182,7 +182,7 @@
   Hitungan "antre" di monitor membaca tabel, jadi nol sampai penurunan pertama;
   seeder demo menutup celah itu untuk instalasi baru.
 
-## ADR-015 — Kolom yang dikunci PDDIKTI dicatat saat berubah, bukan dikunci di layar (2026-10-24)
+## ADR-017 — Kolom yang dikunci PDDIKTI dicatat saat berubah, bukan dikunci di layar (2026-10-24)
 
 - **Konteks.** PDDIKTI membekukan enam kolom identitas setelah biodata
   diterima dan tujuh kolom keluar setelah Lulus/DO diterima. Koreksinya adalah
