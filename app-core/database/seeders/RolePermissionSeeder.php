@@ -42,6 +42,17 @@ class RolePermissionSeeder extends Seeder
             'bridge.view', 'bridge.manage',
             'pengaturan.view', 'pengaturan.manage',
             'log.view',
+
+            /*
+             * Helpdesk, in three widening circles.
+             *
+             * view and tangani are scoped by the policy to the holder's own
+             * unit plus tickets assigned to them by name; manage lifts that
+             * scope to the whole campus and unlocks categories and FAQ. Every
+             * office handles its own queue, so view + tangani go to every
+             * staff role; manage goes to BAAK and the super-admin only.
+             */
+            'helpdesk.view', 'helpdesk.tangani', 'helpdesk.manage',
         ],
         UserRole::Dosen->value => [
             'kelas.view',
@@ -78,6 +89,10 @@ class RolePermissionSeeder extends Seeder
              * tugas_akhir.bimbing.
              */
             'bkd.nilai',
+
+            // Filing a ticket about one's own affairs. Scoped to self by the
+            // policy, like edom.hasil above.
+            'helpdesk.ajukan',
         ],
         UserRole::Mahasiswa->value => [
             'krs.submit',
@@ -88,6 +103,7 @@ class RolePermissionSeeder extends Seeder
             'tugas_akhir.ajukan',
             'surat.ajukan',
             'edom.isi',
+            'helpdesk.ajukan',
         ],
     ];
 
@@ -103,16 +119,23 @@ class RolePermissionSeeder extends Seeder
                 'surat.view', 'surat.manage',
                 'edom.view', 'edom.manage',
                 'wisuda.view', 'wisuda.manage', 'feeder.view', 'feeder.sync',
+                'helpdesk.view', 'helpdesk.tangani', 'helpdesk.manage',
             ],
-            'keuangan' => ['keuangan.view', 'keuangan.manage', 'mahasiswa.view'],
-            'operator-pddikti' => ['feeder.view', 'feeder.sync', 'mahasiswa.view', 'dosen.view', 'kelas.view', 'nilai.view'],
+            'keuangan' => [
+                'keuangan.view', 'keuangan.manage', 'mahasiswa.view',
+                'helpdesk.view', 'helpdesk.tangani',
+            ],
+            'operator-pddikti' => [
+                'feeder.view', 'feeder.sync', 'mahasiswa.view', 'dosen.view', 'kelas.view', 'nilai.view',
+                'helpdesk.view', 'helpdesk.tangani',
+            ],
 
             // Leadership reads results but does not open, close, or reword a
             // period — an instrument whose questions can be edited by the person
             // being judged by them measures nothing.
             'pimpinan' => [
                 'master.view', 'mahasiswa.view', 'dosen.view', 'kelas.view',
-                'keuangan.view', 'feeder.view', 'edom.view',
+                'keuangan.view', 'feeder.view', 'edom.view', 'helpdesk.view',
             ],
         ],
         UserRole::Dosen->value => [
@@ -124,13 +147,13 @@ class RolePermissionSeeder extends Seeder
                 // rows, not by the role — a role-level grant would let any
                 // lecturer sign off any student's consultation log.
                 'tugas_akhir.bimbing', 'tugas_akhir.uji', 'edom.hasil',
-                'bkd.lapor', 'bkd.nilai', 'portofolio.kelola',
+                'bkd.lapor', 'bkd.nilai', 'portofolio.kelola', 'helpdesk.ajukan',
             ],
             'dosen-wali' => [
                 'kelas.view', 'nilai.view', 'nilai.manage', 'presensi.view', 'presensi.manage',
                 'krs.approve', 'bimbingan.view',
                 'tugas_akhir.bimbing', 'tugas_akhir.uji', 'edom.hasil',
-                'bkd.lapor', 'bkd.nilai', 'portofolio.kelola',
+                'bkd.lapor', 'bkd.nilai', 'portofolio.kelola', 'helpdesk.ajukan',
             ],
         ],
         UserRole::Mahasiswa->value => [

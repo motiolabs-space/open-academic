@@ -153,7 +153,7 @@ Apa yang ada hari ini, dikelompokkan menurut siapa yang memakainya.
 | Header keamanan, aksesibilitas | ✅ | [`SECURITY.md`](../SECURITY.md) |
 | **CBT** | 🚫 | Platform ujian — di luar cakupan, lihat §Sengaja Bukan di Sini |
 | **LMS / forum kelas** | 🚫 | Platform belajar — idem |
-| **Helpdesk** | ⬜ | |
+| **Helpdesk** | ✅ | Tiket administratif ke unit kerja, SLA ditandai bukan diputus, FAQ publik — [`HELPDESK.md`](HELPDESK.md). Forum dan chat tetap wilayah Open Campus |
 | Kuesioner umum | ✅ | Dua tabel jawaban; anonimitas jadi properti skema — [`KUESIONER.md`](KUESIONER.md) |
 | **Aplikasi mobile native** | ⬜ | Web responsif saja |
 | **2FA staf** | ⬜ | |
@@ -190,7 +190,6 @@ Bukan kalah. Batas produk.
 | **LMS bawaan** | Platform belajar: materi, tugas, diskusi, progres |
 | Career center, forum & agenda alumni | Milik Open Campus |
 | Modul akreditasi / SPMI / ekspor SAPTO | Produk terpisah di sisi mereka juga; di sini hanya faktanya |
-| Helpdesk | Dapat dibeli terpisah dari mana pun |
 | Backup data | Urusan infrastruktur |
 
 Sikapnya sama untuk keduanya: **kalau kampus butuh CBT atau LMS, sambungkan
@@ -277,7 +276,7 @@ cakupan: **payment gateway**, terhalang kredensial merchant.
 | 15 | Denda keterlambatan |
 | 16 | 2FA staf; federasi IdP eksternal |
 | 17 | Aplikasi mobile native |
-| 18 | Helpdesk |
+| ~~18~~ | ~~Helpdesk~~ ✅ 24 Oktober 2026 — tiket mahasiswa/dosen ke unit kerja; disposisi, catatan internal, SLA per kategori, FAQ publik tanpa login |
 
 ### Bersih-bersih yang sudah tercatat
 

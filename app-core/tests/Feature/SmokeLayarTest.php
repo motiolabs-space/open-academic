@@ -125,6 +125,7 @@ it('membuka layar mahasiswa dalam anggaran kueri', function (string $url, int $a
     ['/notifikasi', 25],
     ['/notifikasi/preferensi', 25],
     ['/mahasiswa/surat', 30],
+    ['/mahasiswa/helpdesk', 20],
     ['/mahasiswa/edom', 15],
     ['/mahasiswa/capaian', 12],
 ]);
@@ -160,6 +161,7 @@ it('membuka layar dosen dalam anggaran kueri', function (string $url, int $angga
     ['/dosen/bkd', 12],
     ['/dosen/bkd/penilaian', 13],
     ['/dosen/portofolio', 13],
+    ['/dosen/helpdesk', 20],
     ['/notifikasi', 25],
 ]);
 
@@ -184,6 +186,8 @@ it('membuka layar admin dalam anggaran kueri', function (string $url, int $angga
     ['/admin/feeder', 30],
     ['/admin/bridge', 25],
     ['/admin/surat', 25],
+    ['/admin/helpdesk', 20],
+    ['/admin/helpdesk/pengaturan', 14],
     ['/admin/konversi', 25],
     ['/admin/beasiswa', 25],
     ['/admin/edom', 24],
@@ -227,6 +231,10 @@ it('membuka halaman publik tanpa menyentuh basis data berlebihan', function (str
 })->with([
     ['/', 5],
     ['/masuk', 5],
+
+    // FAQ publik: daftar terbit + kategorinya. Satu kueri per kelompok adalah
+    // regresi yang paling mungkin di sini.
+    ['/bantuan', 6],
 
     // Halaman publik yang paling mungkin dijangkau bot: satu kueri pun terasa
     // bila seseorang memindai rentang UUID.

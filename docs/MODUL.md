@@ -133,7 +133,7 @@ Akun demo: `admin@demo.test` · kata sandi `password`
 | Monitoring pemakaian ruang | Bentrok jadwal sudah terdeteksi; pemanfaatan ruangnya belum terlihat |
 | Career center | Lowongan, forum & agenda alumni. Tabel `alumni` sudah ada sebagai dasar — tapi instrumennya milik Open Campus |
 | **Enam formulir SISTER** | Penghargaan & sanksi, bahasa, organisasi profesi, keluarga (keempatnya tanpa apa pun), serta pangkat dan mutasi (servisnya ada, pemanggilnya tidak). Tabel dan relasinya ada; layar pengisiannya tidak. Adaptor SISTER yang mulus di atas tabel kosong tetap mengirim kosong |
-| Helpdesk | |
+| ~~Helpdesk~~ | **Selesai 24 Okt 2026** — `/mahasiswa/helpdesk`, `/dosen/helpdesk`, `/admin/helpdesk`, FAQ publik `/bantuan`. Lihat [`HELPDESK.md`](HELPDESK.md) |
 
 Aplikasi mobile native **tidak direncanakan untuk v1** — web-nya responsif, dan
 API-first sudah menyiapkan jalannya.

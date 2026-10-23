@@ -9,6 +9,7 @@ use App\Support\Demo;
 use Database\Seeders\Demo\AkuntansiSeeder;
 use Database\Seeders\Demo\BeasiswaSeeder;
 use Database\Seeders\Demo\EdomSeeder;
+use Database\Seeders\Demo\HelpdeskSeeder;
 use Database\Seeders\Demo\IntegrasiSeeder;
 use Database\Seeders\Demo\KelulusanSeeder;
 use Database\Seeders\Demo\KemahasiswaanSeeder;
@@ -125,6 +126,10 @@ class DemoCampusSeeder extends Seeder
             // Menjalankannya lebih awal menghasilkan rencana yang realisasinya
             // nol — angka yang tidak menggambarkan apa pun.
             MutuSeeder::class,
+
+            // Sesudah MutuSeeder: kategori helpdesk menunjuk unit kerja yang
+            // ditanam di sana, dan tiket contoh didisposisi ke unit itu.
+            HelpdeskSeeder::class,
 
             // Sesudah KeuanganSeeder dan BeasiswaSeeder: outbox akuntansi
             // menyusuri tagihan dan pembayaran yang sudah ada, jadi keduanya
