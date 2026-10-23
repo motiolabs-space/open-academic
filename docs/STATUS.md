@@ -51,6 +51,7 @@ Notifikasi kategori baru `helpdesk`, **dapat dimatikan** — garis NOTIFIKASI.md
 melewatkannya merugikan berupa jawaban yang lambat, bukan satu semester.
 
 **57 tes baru** (service, policy per portal, transisi, SLA, layar, FAQ publik).
+Keputusan: ADR-018.
 
 ---
 

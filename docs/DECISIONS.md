@@ -159,7 +159,7 @@
   yang tidak dapat menghasilkan dokumen tak terverifikasi karena kelalaian.
   Verifikasi publik ijazah adalah SIVIL; QR lokal tetap untuk surat dan SKPI.
 
-## ADR-014 — Helpdesk adalah tiket administratif, status bergerak lewat tabel transisi, SLA hanya menandai (2026-10-24)
+## ADR-018 — Helpdesk adalah tiket administratif, status bergerak lewat tabel transisi, SLA hanya menandai (2026-10-24)
 
 - **Konteks.** Roadmap P3 #18 meminta helpdesk. Dua godaan rancangan: menjadikannya
   utas percakapan umum (yang bergeser ke wilayah Open Campus), dan membiarkan

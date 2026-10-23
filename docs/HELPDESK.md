@@ -20,6 +20,7 @@ satu pemohon, satu unit penanggung jawab pada satu waktu.
 dapat dibaca pemohon lain, tidak ada reaksi, tidak ada utas lepas dari tiket.
 Pengaduan etik dan percakapan antarmahasiswa adalah wilayah Open Campus
 ([`CLAUDE.md`](../CLAUDE.md) §1), dan sengaja tidak punya tempat di sini.
+Keputusan rancangannya tercatat sebagai ADR-018 di [`DECISIONS.md`](DECISIONS.md).
 
 ---
 
