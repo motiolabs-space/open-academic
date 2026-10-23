@@ -4,7 +4,12 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
+use App\Models\Kemahasiswaan\EvaluasiStudi;
+use App\Models\Kemahasiswaan\Mahasiswa;
+use App\Models\Kemahasiswaan\WisudaPeserta;
+use App\Models\Kemahasiswaan\Yudisium;
 use App\Notifications\Channels\DatabaseKategoriChannel;
+use App\Observers\KunciFeederObserver;
 use App\Services\Akuntansi\AkuntansiPalsu;
 use App\Services\Akuntansi\Contracts\AkuntansiClientInterface;
 use App\Services\Akuntansi\EasyAccountingClient;
@@ -100,6 +105,19 @@ class AppServiceProvider extends ServiceProvider
         $this->hardenUrls();
         $this->kanalNotifikasi();
         $this->batasVerifikasi();
+        $this->kunciFeeder();
+    }
+
+    /**
+     * Records a PDM/PJK request whenever a column PDDIKTI locks is changed on
+     * a student who is already reported. One observer, every model that holds
+     * such a column; see KolomTerkunci for the list.
+     */
+    private function kunciFeeder(): void
+    {
+        foreach ([Mahasiswa::class, Yudisium::class, WisudaPeserta::class, EvaluasiStudi::class] as $model) {
+            $model::observe(KunciFeederObserver::class);
+        }
     }
 
     /**

@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Admin;
 
 use App\Enums\FeederSyncStatus;
+use App\Enums\StatusPerubahanFeeder;
 use App\Http\Controllers\Controller;
 use App\Jobs\SyncFeederEntityJob;
+use App\Models\Feeder\FeederChangeRequest;
 use App\Models\Feeder\FeederDiff;
 use App\Models\Feeder\FeederSyncLog;
 use App\Models\Feeder\FeederValidationIssue;
@@ -56,6 +58,16 @@ class FeederController extends Controller
                 ->get(),
             'validasiTerakhir' => $this->validasiTerakhir(),
             'selisih' => $this->selisihTerakhir($term->kode),
+            'perubahan' => FeederChangeRequest::query()
+                ->with('mahasiswa')
+                ->terbuka()
+                ->orderBy('status')
+                ->latest('id')
+                ->limit(60)
+                ->get(),
+            'perubahanSelesai' => FeederChangeRequest::query()
+                ->where('status', StatusPerubahanFeeder::Selesai->value)
+                ->count(),
         ]);
     }
 

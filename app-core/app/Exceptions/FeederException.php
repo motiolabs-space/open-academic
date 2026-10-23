@@ -83,6 +83,22 @@ class FeederException extends RuntimeException
      * "tidak pernah diperiksa" look identical on a screen, and only one of them
      * is a reason to stop worrying.
      */
+    public static function hanyaLewatPddiktiAdmin(string $kolom): self
+    {
+        return new self(
+            "Perubahan {$kolom} tidak diterima web service Feeder; ajukan lewat PDDIKTI admin "
+            .'dengan surat permohonan dan lampirannya.',
+        );
+    }
+
+    public static function registrasiBelumSinkron(string $nim): self
+    {
+        return new self(
+            "Riwayat pendidikan mahasiswa {$nim} belum pernah terkirim ke Feeder, "
+            .'jadi tidak ada id_registrasi_mahasiswa yang dapat diperbarui.',
+        );
+    }
+
     public static function tidakDapatDibandingkan(string $entity): self
     {
         return new self(
