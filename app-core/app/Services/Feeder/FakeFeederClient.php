@@ -103,6 +103,11 @@ class FakeFeederClient implements FeederClientInterface
         return $this->request($act, ['key' => $key, 'record' => $record]);
     }
 
+    public function delete(string $act, array $key): FeederResponse
+    {
+        return $this->request($act, ['key' => $key]);
+    }
+
     /**
      * Reads rows back, honouring limit and offset.
      *

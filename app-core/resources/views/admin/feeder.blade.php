@@ -122,6 +122,16 @@
                         <span class="text-[11px] text-ink-faint">Belum dapat dibandingkan</span>
                     @endif
 
+                    @if ($baris['dapat_dihapus'])
+                        <form method="POST" action="{{ route('admin.feeder.hapus', $baris['entity']) }}"
+                            onsubmit="return confirm('Hapus dari Feeder baris {{ $baris['label'] }} yang sudah tidak ada di sini? Yang masih ada tidak disentuh.');">
+                            @csrf
+                            <x-button variant="outline" type="submit" class="px-4 py-2 text-xs" :disabled="! $aktif">
+                                Hapus yang tiada
+                            </x-button>
+                        </form>
+                    @endif
+
                     @if ($baris['terakhir'])
                         <span class="tabular ml-auto text-[11px] text-ink-faint">
                             {{ Format::tanggal($baris['terakhir']) }}

@@ -32,6 +32,21 @@ abstract class FeederMapper
      */
     abstract protected function query(string $termCode): Builder;
 
+    /**
+     * The Feeder act that removes a row of this entity, or null when Feeder
+     * offers none for it.
+     *
+     * Derived from the insert act by convention (InsertX → DeleteX). An entity
+     * carried by an upserting act has no insert to mirror and is reported as
+     * not removable rather than guessed at.
+     */
+    public function actHapus(): ?string
+    {
+        $act = $this->act();
+
+        return str_starts_with($act, 'Insert') ? 'Delete'.substr($act, 6) : null;
+    }
+
     /** Rows of this entity that belong to the given term. */
     public function rows(string $termCode): Collection
     {

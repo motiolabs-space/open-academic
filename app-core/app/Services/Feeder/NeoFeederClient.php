@@ -65,6 +65,11 @@ class NeoFeederClient implements FeederClientInterface
         return $this->request($act, ['key' => $key, 'record' => $record]);
     }
 
+    public function delete(string $act, array $key): FeederResponse
+    {
+        return $this->request($act, ['key' => $key]);
+    }
+
     public function get(string $act, array $filter = [], int $limit = 0, int $offset = 0): FeederResponse
     {
         $payload = [];
