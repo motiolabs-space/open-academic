@@ -116,7 +116,7 @@ Apa yang ada hari ini, dikelompokkan menurut siapa yang memakainya.
 | Gerbang pembayaran KRS | ✅ | Ambang + dispensasi berbatas waktu |
 | Integrasi akuntansi (Easy Accounting) | ✅ | Opsional; bawaan `nonaktif` |
 | Payment gateway | 🟡 | **Opsional sejak 24 Oktober 2026** (ADR-014). Transfer manual yang dicatat kasir adalah jalur utama; kontrak adaptor ada, implementasinya dibangun hanya bila ada kampus yang membawa kredensial merchant — lihat §Menunggu di Luar Repo |
-| **Denda keterlambatan** | ⬜ | Kecil secara kode, sering diminta |
+| Denda keterlambatan | ✅ | Baris tagihan tersendiri, akrual harian idempoten, pembebasan beralasan; tidak memperketat gerbang KRS. Bawaan nonaktif — [`MODUL.md`](MODUL.md) §Denda keterlambatan |
 
 ### SDM & pelaporan dosen
 
@@ -178,7 +178,7 @@ akademik ada di tabel berikutnya.
 | Modul | Poros | Beratnya |
 |---|---|---|
 | Kanal bayar terintegrasi | Keuangan | **Model berbeda, bukan ketiadaan** — kasir + transfer tercatat adalah jalur utama (ADR-014); adaptor gateway opsional |
-| **Denda keterlambatan** | Keuangan | Kecil–sedang |
+| ~~**Denda keterlambatan**~~ | Keuangan | ~~Kecil–sedang~~ ✅ 24 Oktober 2026 (#15) |
 | **Aplikasi mobile native** | Semua | Sedang — web responsif sudah jalan |
 
 ### Yang mereka punya dan **sengaja tidak kita kejar**
@@ -277,7 +277,7 @@ opsional (ADR-014).
 
 | # | Pekerjaan |
 |---|---|
-| 15 | Denda keterlambatan |
+| ~~15~~ | ~~**Denda keterlambatan**~~ — ✅ 24 Oktober 2026: akrual harian yang idempoten, bekerja penuh pada pembayaran manual; gerbang KRS tetap mengukur tagihan pokok. [`MODUL.md`](MODUL.md) §Denda keterlambatan |
 | 16 | ~~2FA staf~~ ✅ 22 Agustus 2026 (TOTP + kode pemulihan); federasi IdP eksternal masih ⬜ |
 | 17 | Aplikasi mobile native |
 | 18 | Helpdesk |

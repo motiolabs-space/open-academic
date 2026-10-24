@@ -51,7 +51,7 @@ Akun demo: `mahasiswa1@demo.test` · kata sandi `password`
 | Tugas Akhir | `/mahasiswa/tugas-akhir` | Judul, pembimbing, log bimbingan, sidang |
 | Surat & Dokumen | `/mahasiswa/surat` | Ajukan surat, unduh SKPI dwibahasa |
 | Evaluasi Dosen | `/mahasiswa/edom` | Pengisian EDOM (anonim secara skema) |
-| Tagihan & Pembayaran | `/mahasiswa/tagihan` | Tagihan, potongan, riwayat bayar |
+| Tagihan & Pembayaran | `/mahasiswa/tagihan` | Tagihan, potongan, denda keterlambatan beserta penjelasannya, riwayat bayar |
 | Profil Akademik | `/mahasiswa/profil` | Data diri, status, cuti |
 | Aplikasi Terhubung | `/aplikasi-terhubung` | Klien OAuth2 yang diberi izin |
 
@@ -118,6 +118,26 @@ Akun demo: `admin@demo.test` · kata sandi `password`
 | | Pengumuman | `/admin/pengumuman` |
 | | Pengaturan | `/admin/pengaturan` |
 
+## Denda keterlambatan
+
+Bagian dari **Tagihan & Rekonsiliasi** (`/admin/keuangan`), bukan modul
+tersendiri. Bekerja penuh pada pembayaran manual yang dicatat kasir — tidak
+menunggu payment gateway. **Bawaan nonaktif**; aturannya kebijakan kampus di
+`.env` (`PAYMENT_DENDA_*`, lihat `config/payment.php`).
+
+| Hal | Bagaimana |
+|---|---|
+| Bentuk | Nominal tetap per hari/minggu, atau persen dari **sisa tagihan pokok** per periode (bulat ke bawah, tanpa float). Masa tenggang dan batas maksimum per tagihan |
+| Di mana dendanya | Satu baris `tagihan_item` berjenis `denda` per tagihan; `tagihan.total` tetap jumlah barisnya. `tagihan.denda` menyimpan denda neto yang sedang ada di `total` |
+| Siapa yang menghitung | `openacademic:hitung-denda`, terjadwal 01:00 (sebelum pengingat 07:00). `--kering` menunjukkan siapa terkena dan berapa tanpa menulis; `--hari=` untuk menghitung pada tanggal lain |
+| Idempoten | **Akrual, bukan hitung ulang.** Tiap jalan hanya menagih periode yang dimulai sesudah `denda_dihitung_sampai`, pada sisa pokok *hari itu*. Jalan dua kali sehari → nol periode baru → tidak ada perubahan. Pembayaran sebagian tidak menyusutkan denda yang sudah berjalan |
+| Berhenti | Pokok lunas (walau denda belum), dispensasi aktif (jam denda mulai dari akhir dispensasi), mahasiswa tidak aktif, maksimum tercapai, atau sudah dibebaskan |
+| Pembebasan | `DendaService::bebaskan()` — baris potongan negatif bernama "Pembebasan denda keterlambatan" dengan alasan wajib (≥ 5 karakter), nama staf, dan waktu. Denda bruto, pembebasan, dan neto semuanya tetap terlihat; penghitungan berhenti untuk selamanya. Policy `waiveLateFee` (`keuangan.manage`), `BebaskanDendaRequest` |
+| Audit | `late_fee_applied` tiap penambahan, `late_fee_waived` tiap pembebasan — lewat `HasLogAktivitas`. Watermark harian dikecualikan dari log supaya jejaknya tidak tenggelam |
+| Gerbang KRS | **Tidak diperketat.** `memenuhiSyaratKrs()` mengukur ambang terhadap `pokok()` = `total − denda`. Mahasiswa yang lolos 50 % sebelum denda tetap lolos sesudahnya |
+| Yang dilihat mahasiswa | Baris denda berlabel, lencana penjelasan aturan (bila aktif), denda berjalan, atau pembebasan beserta alasannya. Pengingat jatuh tempo menyebut aturan dan denda yang sudah berjalan |
+| Belum | Denda **tidak dijurnalkan** ke integrasi akuntansi — pendapatan denda perlu kode akun yang belum ada di bagan; menyusul bersama keputusan perlakuannya |
+
 ---
 
 # BAGIAN II — BELUM DIBUAT
@@ -129,7 +149,7 @@ Akun demo: `admin@demo.test` · kata sandi `password`
 | ~~**Klien SISTER**~~ | **Dicabut 22 Okt 2026** — SISTER kini terpusat dan menarik pengajaran, pembimbingan, dan pengujian dari PDDIKTI; tidak ada endpoint per kampus. Jalurnya Feeder — [`ROADMAP.md`](ROADMAP.md) §Peta Jalan Lanjutan #19–22 |
 | **Adaptor payment gateway** | **Tertahan di luar repo** — kontraknya sudah ada, yang kurang kredensial merchant + endpoint notifikasi yang terverifikasi tanda tangannya. Tanpa verifikasi, siapa pun yang menjangkau endpoint itu bisa melunasi tagihan mana pun |
 | Federasi ke IdP eksternal | Google / Entra / Keycloak. Open Academic sudah jadi *penerbit* identitas; jadi *konsumen* belum |
-| Denda keterlambatan | Kecil secara kode, sering diminta |
+| ~~Denda keterlambatan~~ | **Selesai 24 Okt 2026** — lihat §Denda keterlambatan di Bagian I |
 | Monitoring pemakaian ruang | Bentrok jadwal sudah terdeteksi; pemanfaatan ruangnya belum terlihat |
 | Career center | Lowongan, forum & agenda alumni. Tabel `alumni` sudah ada sebagai dasar — tapi instrumennya milik Open Campus |
 | **Enam formulir SISTER** | Penghargaan & sanksi, bahasa, organisasi profesi, keluarga (keempatnya tanpa apa pun), serta pangkat dan mutasi (servisnya ada, pemanggilnya tidak). Tabel dan relasinya ada; layar pengisiannya tidak. Adaptor SISTER yang mulus di atas tabel kosong tetap mengirim kosong |

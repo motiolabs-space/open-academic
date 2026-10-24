@@ -70,6 +70,11 @@ class TagihanItem extends Model
         return $query->where('jenis', JenisItemTagihan::Potongan->value);
     }
 
+    public function scopeDenda(Builder $query): Builder
+    {
+        return $query->where('jenis', JenisItemTagihan::Denda->value);
+    }
+
     /** The absolute value, for a screen that already shows the minus sign. */
     public function besaran(): int
     {

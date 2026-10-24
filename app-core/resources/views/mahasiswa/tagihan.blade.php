@@ -21,13 +21,35 @@
         @if (! $aktif->memenuhiSyaratKrs())
             <x-alert tone="warning" class="mb-5">
                 Pengisian KRS terkunci hingga pembayaran mencapai
-                {{ config('academic.krs.min_payment_percent') }}% dari total tagihan.
+                {{ config('academic.krs.min_payment_percent') }}% dari tagihan pokok
+                ({{ Format::rupiah($aktif->pokok()) }}).
                 Hubungi Bagian Keuangan bila memerlukan dispensasi.
             </x-alert>
         @elseif ($aktif->dispensasiAktif())
             <x-alert tone="info" class="mb-5">
                 Dispensasi aktif hingga {{ Format::tanggal($aktif->dispensasi_sampai) }} —
                 pengisian KRS tetap terbuka meski tagihan belum lunas.
+            </x-alert>
+        @endif
+
+        @if ($aktif->dendaDibebaskan())
+            <x-alert tone="success" class="mb-5" data-denda="dibebaskan">
+                {{ __('keuangan.denda.dibebaskan', [
+                    'denda' => Format::rupiah($aktif->pembebasanDenda?->besaran() ?? 0),
+                    'tanggal' => Format::tanggal($aktif->denda_dibebaskan_at),
+                    'alasan' => $aktif->pembebasanDenda?->alasan,
+                ]) }}
+            </x-alert>
+        @elseif ($aktif->denda > 0)
+            <x-alert tone="danger" class="mb-5" data-denda="berjalan">
+                {{ __('keuangan.denda.berjalan', ['denda' => Format::rupiah($aktif->denda)]) }}
+                @if ($aturanDenda->aktif) {{ $aturanDenda->deskripsi() }} @endif
+                {{ __('keuangan.denda.tidak_mengunci_krs') }}
+            </x-alert>
+        @elseif ($aturanDenda->aktif && $aktif->sisa() > 0)
+            <x-alert tone="info" class="mb-5" data-denda="aturan">
+                {{ $aturanDenda->deskripsi() }}
+                {{ __('keuangan.denda.tidak_mengunci_krs') }}
             </x-alert>
         @endif
     @endif
@@ -39,8 +61,17 @@
                     <tbody>
                         @foreach ($aktif->item as $item)
                             <tr class="border-b border-line/50 last:border-b-0">
-                                <td class="px-5 py-3">{{ $item->nama }}</td>
-                                <td class="tabular px-5 py-3 text-right">{{ Format::rupiah($item->nominal) }}</td>
+                                <td class="px-5 py-3">
+                                    {{ $item->nama }}
+                                    @if ($item->jenis === \App\Enums\JenisItemTagihan::Denda)
+                                        <x-chip tone="warning" class="ml-1.5">{{ $item->jenis->label() }}</x-chip>
+                                    @elseif ($item->alasan)
+                                        <div class="text-[11.5px] text-ink-faint">{{ $item->alasan }}</div>
+                                    @endif
+                                </td>
+                                <td class="tabular px-5 py-3 text-right {{ $item->nominal < 0 ? 'text-success' : '' }}">
+                                    {{ $item->nominal < 0 ? '− ' : '' }}{{ Format::rupiah($item->besaran()) }}
+                                </td>
                             </tr>
                         @endforeach
                     </tbody>

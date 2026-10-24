@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Mahasiswa;
 
+use App\DTOs\Keuangan\AturanDenda;
 use App\Http\Controllers\Controller;
 use App\Models\Keuangan\Tagihan;
 use App\Support\Portal;
@@ -18,7 +19,7 @@ class TagihanController extends Controller
         $mahasiswa = Portal::user();
 
         $tagihan = Tagihan::query()
-            ->with(['tahunAkademik', 'item', 'pembayaran'])
+            ->with(['tahunAkademik', 'item', 'pembayaran', 'pembebasanDenda'])
             ->where('mahasiswa_id', $mahasiswa->id)
             ->join('tahun_akademik', 'tahun_akademik.id', '=', 'tagihan.tahun_akademik_id')
             ->orderByDesc('tahun_akademik.kode')
@@ -31,6 +32,7 @@ class TagihanController extends Controller
             'breadcrumb' => ['Portal Mahasiswa' => route('mahasiswa.dashboard'), 'Tagihan & Pembayaran'],
             'tagihan' => $tagihan,
             'aktif' => $tagihan->firstWhere('tahun_akademik_id', Portal::term()?->id),
+            'aturanDenda' => AturanDenda::dariConfig(),
         ]);
     }
 }

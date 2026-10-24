@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Notifications\Pengingat;
 
+use App\DTOs\Keuangan\AturanDenda;
 use App\Enums\KategoriNotifikasi;
 use App\Models\Keuangan\Tagihan;
 use App\Notifications\Notifikasi;
@@ -41,13 +42,41 @@ class TagihanJatuhTempo extends Notifikasi
     {
         $sisa = max(0, (int) $this->tagihan->total - (int) $this->tagihan->terbayar);
 
-        return sprintf(
+        $pesan = sprintf(
             'Tagihan %s (%s) menyisakan %s. Jatuh tempo %s.',
             $this->tagihan->nomor,
             $this->tagihan->keterangan,
             Format::rupiah($sisa),
             $this->tagihan->jatuh_tempo->translatedFormat('j F Y'),
         );
+
+        return trim($pesan.' '.$this->soalDenda());
+    }
+
+    /**
+     * The late-fee clause, when the campus charges one.
+     *
+     * Read at render time, not at construction: the notification is queued, and
+     * the policy in force when the worker runs is the one the student will
+     * actually be charged under. Before the due date it states the rule; after
+     * it, the fee already running, so the figure the student sees here is the
+     * figure on their invoice.
+     */
+    private function soalDenda(): string
+    {
+        $aturan = AturanDenda::dariConfig();
+
+        if (!$aturan->aktif || $this->tagihan->dendaDibebaskan()) {
+            return '';
+        }
+
+        $kalimat = __('keuangan.denda.pengingat', ['aturan' => $aturan->deskripsi()]);
+
+        if ((int) $this->tagihan->denda > 0) {
+            $kalimat .= ' '.__('keuangan.denda.berjalan', ['denda' => Format::rupiah((int) $this->tagihan->denda)]);
+        }
+
+        return $kalimat;
     }
 
     public function tautan(object $penerima): ?string

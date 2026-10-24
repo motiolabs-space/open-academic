@@ -182,6 +182,15 @@ class PotonganService
             throw new AturanAkademikException('Pembatalan potongan wajib disertai alasan.');
         }
 
+        // A late-fee waiver looks like a reduction but is bookkept on the
+        // invoice (`denda`, `denda_dibebaskan_at`); deleting the line here
+        // would leave those columns describing a waiver that no longer exists.
+        if ($item->nama === DendaService::NAMA_PEMBEBASAN) {
+            throw new AturanAkademikException(
+                'Pembebasan denda tidak dapat dibatalkan lewat penghapusan potongan.',
+            );
+        }
+
         $tagihan = $item->tagihan;
 
         DB::transaction(function () use ($item, $tagihan, $staff, $alasan): void {
@@ -223,15 +232,13 @@ class PotonganService
     /**
      * How much of this invoice can still be discounted.
      *
-     * Charges minus reductions already applied. Zero once the bill is fully
-     * covered.
+     * Charges — fee-matrix lines and any late fee — minus reductions already
+     * applied. Zero once the bill is fully covered. Equivalently the signed sum
+     * of every line, which is what keeps `total` from going below zero.
      */
     public function sisaDapatDipotong(Tagihan $tagihan): int
     {
-        $kotor = (int) $tagihan->item()->tagihan()->sum('nominal');
-        $potongan = abs((int) $tagihan->item()->potongan()->sum('nominal'));
-
-        return max(0, $kotor - $potongan);
+        return max(0, (int) $tagihan->item()->sum('nominal'));
     }
 
     /**

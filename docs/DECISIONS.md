@@ -180,6 +180,29 @@
   konfirmasi atau unggah bukti transfer oleh mahasiswa, agar kasir tidak
   mencocokkan mutasi rekening tanpa petunjuk. Belum diputuskan.
 
+## ADR-015 — Denda keterlambatan diakrualkan harian dan tidak memperketat gerbang KRS (2026-10-24)
+
+- **Konteks.** Roadmap #15. Payment gateway diputuskan opsional (24 Okt 2026),
+  jadi denda harus bekerja penuh pada pembayaran manual yang dicatat kasir.
+  Dua jalan yang tampak setara: menghitung ulang denda dari nol tiap malam
+  (rumus murni atas tanggal dan sisa), atau mengakrualkan periode baru di atas
+  yang sudah tercatat. Dan satu pertanyaan yang jawabannya tidak boleh
+  tersirat: apakah denda ikut dihitung pada ambang pembayaran KRS.
+- **Keputusan.** Denda adalah satu baris `tagihan_item` berjenis `denda`,
+  **diakrualkan**: tiap jalan `openacademic:hitung-denda` hanya menagih periode
+  yang dimulai sesudah `tagihan.denda_dihitung_sampai`, pada sisa pokok hari
+  itu, dan watermark hanya bergerak maju. Persen dihitung `intdiv`, tanpa
+  float. `Tagihan::memenuhiSyaratKrs()` mengukur ambang terhadap `pokok()` =
+  `total − denda`. Pembebasan adalah baris potongan negatif beralasan yang
+  menghentikan akrual, bukan penghapusan baris denda. Bawaan **nonaktif**.
+- **Konsekuensi.** Pembayaran sebagian tidak menyusutkan denda yang sudah
+  berjalan; jalan ganda pada hari yang sama tidak menggandakan; jalan susulan
+  sesudah server mati menagih tepat periode yang terlewat. Kampus yang
+  menyalakan kebijakan di tengah semester akan menagih tunggakan lama sejak
+  jatuh temponya — `--kering` ada untuk melihatnya dulu. Denda belum
+  dijurnalkan ke integrasi akuntansi.
+
+
 ## ADR-016 — Skala nilai dan periode perkuliahan per prodi diturunkan ke tabel, tidak dipetakan dari konfigurasi (2026-10-24)
 
 - **Konteks.** `InsertSkalaNilaiProdi` dan `InsertPeriodePerkuliahan` adalah
