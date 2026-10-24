@@ -19,6 +19,7 @@
     </source>
     <php>
         <env name="APP_ENV" value="testing"/>
+        <env name="APP_LOCALE" value="id"/>
 
         <!--
             Tes tidak boleh peduli di mana aplikasinya dipasang.

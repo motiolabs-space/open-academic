@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
+use App\Models\Helpdesk\HelpdeskBalasan;
+use App\Models\Helpdesk\HelpdeskTiket;
 use App\Models\Kemahasiswaan\CutiMahasiswa;
 use App\Models\Kemahasiswaan\Mahasiswa;
 use App\Models\Pmb\PmbBerkas;
@@ -58,6 +60,35 @@ class BerkasController extends Controller
             $cuti->dokumen_path,
             'dokumen-cuti-'.$cuti->tahunAkademik->kode.'.pdf',
         );
+    }
+
+    /**
+     * The attachment on a ticket's opening message.
+     *
+     * Whoever may read the ticket may read its attachment — the policy already
+     * encodes "the applicant, their unit's staff, or campus-wide staff", and
+     * repeating that here would be a second copy to keep in step.
+     */
+    public function helpdeskTiket(HelpdeskTiket $tiket): StreamedResponse
+    {
+        $this->authorize('view', $tiket);
+
+        return $this->alirkan($tiket->lampiran_path, $tiket->lampiran_nama ?? 'lampiran');
+    }
+
+    /**
+     * The attachment on a reply.
+     *
+     * One extra rule beyond the ticket's: an attachment on an internal note is
+     * staff-only, like the note itself.
+     */
+    public function helpdeskBalasan(HelpdeskBalasan $balasan): StreamedResponse
+    {
+        $tiket = $balasan->tiket;
+
+        $this->authorize($balasan->is_internal ? 'handle' : 'view', $tiket);
+
+        return $this->alirkan($balasan->lampiran_path, $balasan->lampiran_nama ?? 'lampiran');
     }
 
     /**

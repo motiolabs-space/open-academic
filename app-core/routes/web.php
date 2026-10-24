@@ -8,6 +8,7 @@ use App\Http\Controllers\Auth\IdpLoginController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\BerkasController;
 use App\Http\Controllers\Dosen;
+use App\Http\Controllers\Helpdesk;
 use App\Http\Controllers\Mahasiswa;
 use App\Http\Controllers\NotifikasiController;
 use App\Http\Controllers\Sso;
@@ -49,6 +50,18 @@ Route::prefix('verifikasi')->name('verifikasi.')->group(function (): void {
         ->middleware('throttle:verifikasi')
         ->name('surat');
 });
+
+/*
+|--------------------------------------------------------------------------
+| Pusat Bantuan — publik
+|--------------------------------------------------------------------------
+|
+| Hanya FAQ yang sudah terbit, tanpa login: orang yang paling perlu membaca
+| "bagaimana mengatur ulang kata sandi" adalah yang sedang tidak bisa masuk.
+| Mengajukan tiket tetap lewat portal masing-masing.
+|
+*/
+Route::get('/bantuan', Helpdesk\FaqPublikController::class)->name('bantuan');
 
 /*
 |--------------------------------------------------------------------------
@@ -161,6 +174,11 @@ Route::middleware(['auth:mahasiswa', 'term.active'])->prefix('mahasiswa')->name(
     Route::post('/surat', [Mahasiswa\SuratController::class, 'ajukan'])->name('surat.ajukan');
     Route::get('/surat/{surat}/unduh', [Mahasiswa\SuratController::class, 'unduh'])->name('surat.unduh');
 
+    Route::get('/helpdesk', [Helpdesk\TiketPemohonController::class, 'index'])->name('helpdesk');
+    Route::post('/helpdesk', [Helpdesk\TiketPemohonController::class, 'store'])->name('helpdesk.store');
+    Route::get('/helpdesk/{tiket}', [Helpdesk\TiketPemohonController::class, 'show'])->name('helpdesk.show');
+    Route::post('/helpdesk/{tiket}/balas', [Helpdesk\TiketPemohonController::class, 'balas'])->name('helpdesk.balas');
+
     Route::get('/profil', [Mahasiswa\ProfilController::class, 'index'])->name('profil');
     Route::put('/profil', [Mahasiswa\ProfilController::class, 'perbarui'])->name('profil.perbarui');
     Route::post('/profil/kata-sandi', [Mahasiswa\ProfilController::class, 'gantiKataSandi'])->name('profil.kata-sandi');
@@ -174,6 +192,13 @@ Route::middleware(['auth:mahasiswa', 'term.active'])->prefix('mahasiswa')->name(
 
 Route::middleware(['auth:dosen', 'term.active'])->prefix('dosen')->name('dosen.')->group(function (): void {
     Route::get('/', Dosen\DashboardController::class)->name('dashboard');
+
+    // Satu controller dengan portal mahasiswa: layarnya sama, hanya guard dan
+    // awalan rutenya yang berbeda.
+    Route::get('/helpdesk', [Helpdesk\TiketPemohonController::class, 'index'])->name('helpdesk');
+    Route::post('/helpdesk', [Helpdesk\TiketPemohonController::class, 'store'])->name('helpdesk.store');
+    Route::get('/helpdesk/{tiket}', [Helpdesk\TiketPemohonController::class, 'show'])->name('helpdesk.show');
+    Route::post('/helpdesk/{tiket}/balas', [Helpdesk\TiketPemohonController::class, 'balas'])->name('helpdesk.balas');
 
     Route::get('/kelas', Dosen\KelasController::class)->name('kelas');
 
@@ -276,6 +301,14 @@ Route::middleware('auth:staff,mahasiswa')->prefix('berkas')->name('berkas.')->gr
     Route::get('/pmb/{berkas}', [BerkasController::class, 'pmb'])->name('pmb');
     Route::get('/cuti/{cuti}', [BerkasController::class, 'cuti'])->name('cuti');
 });
+
+// Lampiran helpdesk dapat diunggah dosen juga, maka ketiga guard. Siapa yang
+// boleh membukanya diputuskan HelpdeskTiketPolicy, bukan oleh guard.
+Route::middleware('auth:staff,dosen,mahasiswa')->prefix('berkas/helpdesk')->name('berkas.helpdesk.')
+    ->group(function (): void {
+        Route::get('/tiket/{tiket}', [BerkasController::class, 'helpdeskTiket'])->name('tiket');
+        Route::get('/balasan/{balasan}', [BerkasController::class, 'helpdeskBalasan'])->name('balasan');
+    });
 
 /*
 |--------------------------------------------------------------------------
@@ -413,6 +446,21 @@ Route::middleware(['auth:staff', 'term.active'])->prefix('admin')->name('admin.'
     Route::post('/konversi/{konversi}/setujui', [Admin\KonversiController::class, 'setujui'])->name('konversi.setujui');
     Route::post('/konversi/{konversi}/tolak', [Admin\KonversiController::class, 'tolak'])->name('konversi.tolak');
     Route::post('/konversi/{konversi}/cabut', [Admin\KonversiController::class, 'cabut'])->name('konversi.cabut');
+
+    // Pengaturan didaftarkan sebelum {tiket} agar "pengaturan" tidak pernah
+    // dibaca sebagai UUID tiket.
+    Route::get('/helpdesk/pengaturan', [Admin\HelpdeskPengaturanController::class, 'index'])->name('helpdesk.pengaturan');
+    Route::post('/helpdesk/pengaturan/kategori', [Admin\HelpdeskPengaturanController::class, 'simpanKategori'])->name('helpdesk.kategori.simpan');
+    Route::put('/helpdesk/pengaturan/kategori/{kategori}', [Admin\HelpdeskPengaturanController::class, 'perbaruiKategori'])->name('helpdesk.kategori.perbarui');
+    Route::post('/helpdesk/pengaturan/faq', [Admin\HelpdeskPengaturanController::class, 'simpanFaq'])->name('helpdesk.faq.simpan');
+    Route::put('/helpdesk/pengaturan/faq/{faq}', [Admin\HelpdeskPengaturanController::class, 'perbaruiFaq'])->name('helpdesk.faq.perbarui');
+    Route::delete('/helpdesk/pengaturan/faq/{faq}', [Admin\HelpdeskPengaturanController::class, 'hapusFaq'])->name('helpdesk.faq.hapus');
+
+    Route::get('/helpdesk', [Admin\HelpdeskController::class, 'index'])->name('helpdesk');
+    Route::get('/helpdesk/{tiket}', [Admin\HelpdeskController::class, 'show'])->name('helpdesk.show');
+    Route::post('/helpdesk/{tiket}/disposisi', [Admin\HelpdeskController::class, 'disposisi'])->name('helpdesk.disposisi');
+    Route::post('/helpdesk/{tiket}/balas', [Admin\HelpdeskController::class, 'balas'])->name('helpdesk.balas');
+    Route::post('/helpdesk/{tiket}/status', [Admin\HelpdeskController::class, 'status'])->name('helpdesk.status');
 
     Route::get('/surat', [Admin\SuratController::class, 'index'])->name('surat');
     Route::post('/surat/skpi', [Admin\SuratController::class, 'terbitkanSkpi'])->name('surat.skpi');

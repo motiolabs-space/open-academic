@@ -38,6 +38,16 @@ enum KategoriNotifikasi: string
     case Kepegawaian = 'kepegawaian';
 
     case Pengingat = 'pengingat';
+
+    /*
+     * Helpdesk tickets: forwarded, answered, resolved.
+     *
+     * Optional, by the rule at the top of this file. Missing a helpdesk reply
+     * costs the person a slower answer, not a semester — the decision they
+     * were asking about still arrives through its own mandatory category.
+     */
+    case Helpdesk = 'helpdesk';
+
     case Sistem = 'sistem';
 
     public function label(): string
@@ -49,6 +59,7 @@ enum KategoriNotifikasi: string
             self::Kemahasiswaan => 'Kemahasiswaan',
             self::Kepegawaian => 'Kepegawaian',
             self::Pengingat => 'Pengingat Tenggat',
+            self::Helpdesk => 'Helpdesk',
             self::Sistem => 'Sistem & Integrasi',
         };
     }
@@ -68,6 +79,7 @@ enum KategoriNotifikasi: string
             self::Kemahasiswaan => 'Keputusan cuti dan penetapan kelulusan.',
             self::Kepegawaian => 'Hasil penilaian beban kerja dosen (BKD) dan laporan yang dikembalikan asesor.',
             self::Pengingat => 'Pengingat sebelum tenggat: batas pengisian KRS, jatuh tempo tagihan, batas revisi.',
+            self::Helpdesk => 'Tiket layanan Anda diteruskan, dibalas petugas, atau dinyatakan selesai.',
             self::Sistem => 'Kegagalan sinkronisasi Neo Feeder dan pengiriman webhook.',
         };
     }
@@ -84,7 +96,7 @@ enum KategoriNotifikasi: string
         return match ($this) {
             self::Keuangan, self::Akademik, self::TugasAkhir,
             self::Kemahasiswaan, self::Kepegawaian => true,
-            self::Pengingat, self::Sistem => false,
+            self::Pengingat, self::Helpdesk, self::Sistem => false,
         };
     }
 
