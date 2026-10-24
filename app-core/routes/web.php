@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Http\Controllers\Admin;
 use App\Http\Controllers\Auth\DuaFaktorController;
+use App\Http\Controllers\Auth\IdpLoginController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\BerkasController;
 use App\Http\Controllers\Dosen;
@@ -99,6 +100,16 @@ Route::middleware('auth:staff')->prefix('admin/dua-langkah')->name('dua-faktor.'
     Route::post('/matikan', [DuaFaktorController::class, 'matikan'])->name('matikan');
 });
 Route::post('/keluar', [LoginController::class, 'destroy'])->name('logout');
+
+/*
+ | Masuk lewat IdP kampus (OIDC). Hanya terdaftar bila IDP_ENABLED=true —
+ | tombolnya di halaman masuk mengikuti syarat yang sama, jadi instalasi tanpa
+ | IdP tidak punya pintu yang mengarah ke mana-mana.
+ */
+if (config('idp.enabled')) {
+    Route::get('/masuk/idp', [IdpLoginController::class, 'redirect'])->name('idp.redirect');
+    Route::get('/masuk/idp/callback', [IdpLoginController::class, 'callback'])->name('idp.callback');
+}
 
 /*
 |--------------------------------------------------------------------------

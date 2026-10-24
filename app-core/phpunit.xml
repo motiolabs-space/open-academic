@@ -50,6 +50,15 @@
             is false (a campus opts in), which is exactly what CI copies.
         -->
         <env name="SSO_ENABLED" value="true"/>
+        <!-- Same reason as SSO_ENABLED: the /masuk/idp routes exist only when
+             idp.enabled is true at boot. The fake driver never reaches the
+             network; issuer and client id only have to be consistent. -->
+        <env name="IDP_ENABLED" value="true"/>
+        <env name="IDP_DRIVER" value="fake"/>
+        <env name="IDP_NAME" value="Akun Kampus Uji"/>
+        <env name="IDP_ISSUER" value="https://idp.uji.test"/>
+        <env name="IDP_CLIENT_ID" value="open-academic-uji"/>
+        <env name="IDP_CLIENT_SECRET" value="bukan-rahasia-sungguhan"/>
         <env name="PULSE_ENABLED" value="false"/>
         <env name="TELESCOPE_ENABLED" value="false"/>
         <env name="NIGHTWATCH_ENABLED" value="false"/>

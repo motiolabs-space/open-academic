@@ -141,7 +141,7 @@ Apa yang ada hari ini, dikelompokkan menurut siapa yang memakainya.
 | Notifikasi (G2) | ✅ | Kategori wajib tidak dapat dimatikan |
 | **Komparasi data SIAKAD ↔ Neo Feeder** | ✅ | FeederRekonsiliasi 21 Agu 2026: membaca Feeder kembali dan melaporkan hanya-lokal / hanya-Feeder / berbeda isinya. Entitas tanpa aksi pembacaan dinyatakan belum dapat dibandingkan, bukan cocok |
 | **Klien SISTER** | 🚫 | Tidak ada lagi web service SISTER per kampus: pengajaran, pembimbingan, dan pengujian turun ke SISTER **dari PDDIKTI**. Jalurnya Feeder — §Peta Jalan Lanjutan #19–22 |
-| **Federasi ke IdP eksternal** | ⬜ | Google/Entra/Keycloak |
+| Federasi ke IdP eksternal | ✅ | 24 Okt 2026 — klien OIDC terhadap Google/Entra/Keycloak; staf (opsional dosen) tertaut lewat surel terverifikasi lalu `idp_subject`; TOTP lokal tetap ditantang — [`SSO.md`](SSO.md) |
 
 ### Platform
 
@@ -277,7 +277,7 @@ opsional (ADR-014).
 | # | Pekerjaan |
 |---|---|
 | ~~15~~ | ~~**Denda keterlambatan**~~ — ✅ 24 Oktober 2026: akrual harian yang idempoten, bekerja penuh pada pembayaran manual; gerbang KRS tetap mengukur tagihan pokok. [`MODUL.md`](MODUL.md) §Denda keterlambatan |
-| 16 | ~~2FA staf~~ ✅ 22 Agustus 2026 (TOTP + kode pemulihan); federasi IdP eksternal masih ⬜ |
+| ~~16~~ | ~~2FA staf; federasi IdP eksternal~~ | ✅ 2FA 22 Agustus 2026; federasi IdP 24 Oktober 2026 — ADR-019 |
 | 17 | Aplikasi mobile native |
 | ~~18~~ | ~~Helpdesk~~ ✅ 24 Oktober 2026 — tiket mahasiswa/dosen ke unit kerja; disposisi, catatan internal, SLA per kategori, FAQ publik tanpa login |
 | 1 | Adaptor payment gateway — **opsional** (ADR-014). Kontrak `PaymentGatewayInterface` sudah ada; dibangun bila ada kampus yang membawa kredensial merchant dan endpoint notifikasi yang terverifikasi tanda tangannya. Transfer manual tetap jalur utama sesudahnya |
@@ -459,7 +459,7 @@ yang tidak ada di sini.
 | Adaptor Midtrans | Kredensial merchant + endpoint notifikasi terverifikasi. **Opsional** sejak 24 Oktober 2026 (ADR-014); bukan syarat v1.0 |
 | ~~Klien SISTER~~ | **Dicabut 22 Oktober 2026.** SISTER kini terpusat dan menarik data pengajaran, pembimbingan, dan pengujian dari PDDIKTI; tidak ada endpoint per kampus untuk dituju. Yang tersisa untuk SISTER adalah ekspor berkas (sudah ada) dan pengiriman entitas yang kurang ke Feeder (#19–22) |
 | Endpoint pembayaran Easy Accounting | Belum ada di API v1 mereka. Bila lahir, yang berubah satu metode di `PenjurnalanService` |
-| Federasi IdP eksternal | Keputusan pemetaan guard |
+| ~~Federasi IdP eksternal~~ | **Selesai 24 Oktober 2026.** Keputusan pemetaannya diambil sempit (ADR-019): staf saja secara bawaan, subject menang atas surel, ambigu ditolak |
 | **Rilis publik v1.0** | Keputusan pemilik repo. Remote sudah ada: repo publik di GitHub sejak 22 Oktober 2026 |
 
 ---

@@ -269,3 +269,37 @@
   Bridge. Tenggat dibekukan saat tiket dibuat, jadi mengubah SLA kategori tidak
   mengubah antrean yang sudah berjalan. Lampiran mengikuti aturan modul berkas
   (disk privat, policy tiket) dan lampiran catatan internal hanya untuk staf.
+
+## ADR-019 — Federasi IdP: klien OIDC minimal, staf saja, TOTP tetap ditantang (2026-10-24)
+
+- **Konteks.** Roadmap #16 menyisakan "federasi IdP eksternal" dan `SSO.md`
+  menahannya pada satu keputusan: identitas dari Google/Entra/Keycloak dipetakan
+  ke tabel yang mana. Tiga tabel identitas (ADR-003) berarti salah petakan bukan
+  salah tampil — dosen bisa mendarat di portal mahasiswa. Di sisi teknis, repo
+  belum punya klien OIDC; pustaka klien yang lazim membawa katalog penyedia,
+  abstraksi sesi, dan pohon dependensi yang tidak ada hubungannya dengan dua
+  panggilan HTTP yang dibutuhkan. 2FA staf (22 Agustus 2026) sudah ada dan harus
+  punya sikap terhadap sesi yang datang dari IdP.
+- **Keputusan.** (1) Klien OIDC ditulis sendiri di `OidcIdentityProvider`:
+  discovery, authorization-code, baca klaim `id_token`; `iss`/`aud`/`azp`/`exp`/
+  `nonce` divalidasi di `ValidatorKlaim` yang **sama** dipakai
+  `FakeIdentityProvider`. Tanda tangan JWS tidak diverifikasi terhadap JWKS —
+  token diterima langsung dari token endpoint lewat TLS dengan client secret
+  (OIDC Core §3.1.3.7.6), maka issuer non-HTTPS ditolak sebelum jaringan
+  disentuh. (2) Pemetaan: hanya guard di `IDP_GUARDS` (bawaan `staff`; `dosen`
+  dapat ditambah; mahasiswa tidak), `idp_subject` yang sudah tertaut menang,
+  surel hanya untuk penautan pertama dan hanya bila `email_verified`, cocok di
+  dua tabel ditolak sebagai ambigu, tidak ada provisioning bawaan
+  (`IDP_PROVISION=true` membuat staf **tanpa peran**). (3) `IDP_SATISFIES_2FA`
+  bawaan `false`: staf ber-TOTP tetap masuk ke layar tantangan yang sama dengan
+  jalur kata sandi, dengan bentuk sesi `dua_faktor` yang sama.
+- **Konsekuensi.** Tidak ada dependensi Composer baru; yang harus diaudit satu
+  kelas ±150 baris. Kampus yang menginginkan verifikasi JWKS mengikat
+  `IdentityProviderInterface`-nya sendiri — titik sambungnya sudah ada. Akun yang
+  surelnya berganti tetap milik orang yang sama karena subject-nya yang dipegang;
+  akun yang alamat bekasnya diberikan ke orang lain ditolak sebagai "tertaut ke
+  identitas lain", bukan diserahkan. Bawaan 2FA memilih gesekan ganda daripada
+  mempercayai kebijakan MFA IdP yang tidak dapat diperiksa dari sini; kampus
+  yang MFA-nya memang dipaksakan di IdP menyalakannya dengan satu variabel.
+  Entra ID memerlukan `IDP_REQUIRE_VERIFIED_EMAIL=false` yang disetel sadar,
+  karena ia tidak mengirim `email_verified` untuk anggota tenant.

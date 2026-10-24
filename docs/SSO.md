@@ -1,8 +1,8 @@
 # SSO — Open Academic sebagai Penyedia Identitas
 
 Open Academic menjalankan server OAuth2 (Laravel Passport). Aplikasi kampus lain
-mengarahkan penggunanya ke sini untuk masuk; Open Academic tidak menyambung ke
-mana pun.
+mengarahkan penggunanya ke sini untuk masuk. Arah sebaliknya — Open Academic
+menerima identitas dari IdP kampus — ada di bagian terakhir dokumen ini.
 
 ```
                     ┌─────────────────┐
@@ -192,17 +192,97 @@ konsumen atas nama orang itu — tidak menunggu tokennya kedaluwarsa.
 
 ---
 
-## Belum Ada: Federasi ke IdP Eksternal
+## Masuk lewat IdP Eksternal
 
-Sebagian kampus sudah punya Google Workspace, Microsoft Entra ID, atau Keycloak.
-Menjadikan Open Academic *client* terhadap IdP tersebut belum diimplementasikan.
+Arah sebaliknya dari seluruh dokumen di atas. Sebagian kampus sudah punya
+Google Workspace, Microsoft Entra ID, atau Keycloak; sejak 24 Oktober 2026
+Open Academic dapat menjadi *relying party* OpenID Connect terhadap salah
+satunya, sehingga staf (dan, bila dipilih, dosen) masuk dengan akun direktori
+kampus. Formulir kata sandi tetap ada: hari IdP-nya padam adalah hari BAAK
+tetap harus bekerja.
 
-Yang menahannya bukan pekerjaan teknisnya, melainkan satu keputusan kebijakan:
-identitas `budi@kampus.ac.id` yang datang dari Google **dipetakan ke tabel yang
-mana?** Ada tiga opsi — pencocokan surel ke ketiga tabel (dan menolak bila
-ambigu), pemisahan lewat domain (`student.kampus.ac.id` vs `kampus.ac.id`), atau
-klaim khusus dari IdP.
+```
+   IdP kampus ──(OIDC authorization-code)──▶ Open Academic ──(OAuth2)──▶ Open Campus, LMS, …
+   Google / Entra / Keycloak                 konsumen di sini,
+                                             penyedia di atas
+```
 
-Salah memilih berarti seorang dosen bisa masuk ke portal mahasiswa. Keputusan
-itu milik kampus, bukan milik kode ini, dan harus diambil sebelum fiturnya
-dibangun.
+### Mengaktifkan
+
+```env
+IDP_ENABLED=true
+IDP_DRIVER=oidc
+IDP_NAME="Akun Google Kampus"
+IDP_ISSUER=https://accounts.google.com
+IDP_CLIENT_ID=…
+IDP_CLIENT_SECRET=…
+```
+
+Daftarkan `https://<APP_URL>/masuk/idp/callback` sebagai redirect URI di IdP.
+`IDP_ISSUER` harus **HTTPS** dan persis sama dengan klaim `iss` pada ID token;
+dokumen discovery dibaca dari `<issuer>/.well-known/openid-configuration`:
+
+| IdP | `IDP_ISSUER` |
+|---|---|
+| Google Workspace | `https://accounts.google.com` |
+| Microsoft Entra ID | `https://login.microsoftonline.com/<tenant-id>/v2.0` |
+| Keycloak | `https://sso.kampus.ac.id/realms/<realm>` |
+
+Driver `fake` tidak pernah menyentuh jaringan dan dipakai suite uji; di
+instalasi sungguhan ia tidak berguna.
+
+### Keputusan pemetaan — yang dulu menahan fitur ini
+
+Pertanyaannya: identitas `budi@kampus.ac.id` yang datang dari IdP **dipetakan
+ke tabel yang mana?** Jawabannya diambil sesempit mungkin (ADR-019):
+
+1. **Hanya guard yang disebut `IDP_GUARDS`** — `staff` secara bawaan,
+   `staff,dosen` bila direktori kampus juga memuat dosen. **Mahasiswa tidak
+   dapat dipilih.** Dosen yang kebetulan juga kuliah di sini tidak boleh satu
+   tabrakan surel jauhnya dari portal mahasiswa.
+2. **Subject menang atas surel.** Surel dipakai sekali untuk menautkan; sesudah
+   itu `idp_subject` pada baris staf/dosen yang menentukan. Kampus mengganti
+   nama kotak surat dan memberikan alamat bekas ke pegawai baru — akun yang
+   terus mengikuti alamat akan mengikutinya ke orang yang salah.
+3. **Surel yang cocok di dua tabel ditolak**, bukan diselesaikan lewat urutan.
+   Kebijakan institusi mengatakan itu mustahil; kode tidak mempertaruhkan
+   satu sesi masuk pada kebijakan.
+4. **Tidak ada provisioning bawaan.** Direktori kampus memuat jauh lebih banyak
+   orang daripada yang boleh membuka BAAK. `IDP_PROVISION=true` membuat akun
+   staf **tanpa peran**; admin tetap harus memberinya peran. Dosen tidak
+   pernah dibuat otomatis — ia butuh NIDN dan prodi.
+5. **Akun nonaktif tetap ditolak**, tertaut atau belum.
+6. Hanya surel yang `email_verified` oleh IdP yang dipakai menautkan. Entra ID
+   tidak mengirim klaim itu untuk anggota tenant; setel
+   `IDP_REQUIRE_VERIFIED_EMAIL=false` di sana **dengan sadar**.
+
+### Titik temu dengan verifikasi dua langkah
+
+Staf yang memasang TOTP **tetap ditantang** sesudah kembali dari IdP. Itu
+bawaannya, dan ia bukan kelalaian: faktor kedua lokal melindungi dari akun
+direktori yang dibajak, dan IdP yang tidak memaksakan MFA untuk semua staf
+tidak mengganti apa pun. `IDP_SATISFIES_2FA=true` melewati tantangan itu —
+setel hanya bila kebijakan akses bersyarat IdP memang mewajibkan faktor kedua
+untuk seluruh akun staf. Keduanya memakai layar tantangan dan bentuk sesi yang
+sama dengan formulir kata sandi, jadi dua jalurnya tidak bisa saling menjauh.
+
+### Yang diperiksa pada callback
+
+`state` dibandingkan dengan yang disimpan di sesi dan dikonsumsi sekali (URL
+callback yang diputar ulang tidak menemukan apa pun). Klaim `iss`, `aud`
+(dan `azp` bila audiensnya lebih dari satu), `exp`, dan `nonce` divalidasi
+sebelum satu pun klaim lain dibaca — oleh kelas yang sama untuk driver `oidc`
+dan `fake`, sehingga penyedia palsu tidak bisa lebih longgar daripada yang
+sungguhan.
+
+Tanda tangan ID token **tidak** diverifikasi terhadap JWKS. Token diterima
+langsung dari token endpoint lewat TLS dengan client secret — kasus yang oleh
+OIDC Core §3.1.3.7.6 diizinkan memakai validasi TLS sebagai gantinya, dan
+alasan mengapa issuer non-HTTPS ditolak sebelum menyentuh jaringan. Kampus yang
+menginginkan verifikasi JWKS di atasnya mengikat implementasi
+`IdentityProviderInterface`-nya sendiri.
+
+Setiap percobaan, berhasil atau gagal, meninggalkan satu baris di **Log
+Aktivitas** (`idp_masuk` / `idp_gagal`) dengan kode alasannya — dan tidak
+pernah kode otorisasi, token, atau `error_description` dari IdP, yang pernah
+terlihat menggemakan parameter permintaan.
