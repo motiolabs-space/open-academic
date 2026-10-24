@@ -13,7 +13,8 @@
 
 **Legenda** — ✅ Selesai · 🟡 Sebagian · ⬜ Belum · 🚫 Sengaja di luar cakupan
 
-Diverifikasi terhadap kode dan basis data pada **16 Agustus 2026**.
+Diverifikasi terhadap kode pada **24 Oktober 2026**; jumlah tabel dan isi basis
+data demo dari pemeriksaan 16 Agustus 2026.
 
 ---
 
@@ -43,15 +44,15 @@ tersendiri dengan siklus hidup, beban, dan model datanya sendiri — lihat
 | | |
 |---|---|
 | Tabel domain | 109 |
-| Migrasi | 48 |
-| Model Eloquent | 94 |
-| Enum | 54 |
-| Service | 85 |
+| Migrasi | 55 |
+| Model Eloquent | 100 |
+| Enum | 60 |
+| Service | 111 (termasuk 25 mapper Feeder) |
 | Policy | 7 |
 | Layar (rute GET berportal) | 94 |
 | Endpoint Campus Bridge | 14 |
-| Perintah artisan | 12 |
-| **Tes Pest** | **1.007 hijau (2.200 asersi)** |
+| Perintah artisan | 13 |
+| **Tes Pest** | **1.136 hijau (2.689 asersi)** — paralel 581 s di mesin pengembang, 24 Okt 2026 |
 
 Seluruh fase (0–5), SSO OAuth2, tujuh kesenjangan SIAKAD (G1–G7), dan integrasi
 akuntansi sudah selesai. `php artisan migrate:fresh --seed` membangun kampus demo
@@ -134,8 +135,8 @@ Apa yang ada hari ini, dikelompokkan menurut siapa yang memakainya.
 
 | Modul | | Catatan |
 |---|---|---|
-| Neo Feeder PDDIKTI | ✅ | Idempoten, ledger, validator pra-kirim. Tujuh belas entitas sejak 22 Okt 2026: + dosen pengajar kelas, + Lulus/DO, + komponen evaluasi, + nilai per komponen, + 7 entitas aktivitas (MBKM dan tugas akhir beserta anggota, pembimbing, penguji) |
-| Campus Bridge | ✅ | 11 endpoint ber-scope, webhook HMAC, spec OpenAPI |
+| Neo Feeder PDDIKTI | ✅ | Idempoten, ledger, validator pra-kirim. Dua puluh lima entitas sejak 24 Okt 2026: + dosen pengajar kelas, + Lulus/DO, + komponen evaluasi, + nilai per komponen, + 7 entitas aktivitas (MBKM dan tugas akhir beserta anggota, pembimbing, penguji), + prestasi, transfer kredit, konversi MBKM, + kurikulum, mata kuliah, matkul kurikulum, + skala nilai prodi, periode perkuliahan; `Delete*` untuk yang sudah tiada di sini |
+| Campus Bridge | ✅ | 14 endpoint ber-scope, webhook HMAC, spec OpenAPI — spec tertinggal dua endpoint, lihat §Utang Teknis |
 | SSO OAuth2 (Passport) | ✅ | Kampus jadi penerbit identitas |
 | Notifikasi (G2) | ✅ | Kategori wajib tidak dapat dimatikan |
 | **Komparasi data SIAKAD ↔ Neo Feeder** | ✅ | FeederRekonsiliasi 21 Agu 2026: membaca Feeder kembali dan melaporkan hanya-lokal / hanya-Feeder / berbeda isinya. Entitas tanpa aksi pembacaan dinyatakan belum dapat dibandingkan, bukan cocok |
@@ -156,7 +157,7 @@ Apa yang ada hari ini, dikelompokkan menurut siapa yang memakainya.
 | **Helpdesk** | ⬜ | |
 | Kuesioner umum | ✅ | Dua tabel jawaban; anonimitas jadi properti skema — [`KUESIONER.md`](KUESIONER.md) |
 | **Aplikasi mobile native** | ⬜ | Web responsif saja |
-| **2FA staf** | ⬜ | |
+| 2FA staf | ✅ | TOTP + kode pemulihan, 22 Agu 2026 — `/admin/dua-langkah`, ditantang di `/masuk/dua-langkah` |
 
 ---
 
@@ -277,7 +278,7 @@ opsional (ADR-014).
 | # | Pekerjaan |
 |---|---|
 | 15 | Denda keterlambatan |
-| 16 | 2FA staf; federasi IdP eksternal |
+| 16 | ~~2FA staf~~ ✅ 22 Agustus 2026 (TOTP + kode pemulihan); federasi IdP eksternal masih ⬜ |
 | 17 | Aplikasi mobile native |
 | 18 | Helpdesk |
 | 1 | Adaptor payment gateway — **opsional** (ADR-014). Kontrak `PaymentGatewayInterface` sudah ada; dibangun bila ada kampus yang membawa kredensial merchant dan endpoint notifikasi yang terverifikasi tanda tangannya. Transfer manual tetap jalur utama sesudahnya |
@@ -307,9 +308,10 @@ belum pernah dikirim.
 
 ### P4 — Pelaporan Feeder yang ternyata belum tertutup
 
-Hari ini enam entitas dikirim: biodata, riwayat pendidikan, aktivitas kuliah,
-KRS, kelas, nilai. Semuanya `Insert`. Yang belum dikirim semuanya **sudah punya
-tabel lokal** — ini pekerjaan mapper dan validator, bukan model data baru.
+Saat daftar ini disusun, enam entitas dikirim: biodata, riwayat pendidikan,
+aktivitas kuliah, KRS, kelas, nilai. Semuanya `Insert`. Sejak 24 Oktober 2026
+jumlahnya dua puluh lima, ditambah `Delete*` (lihat §Integrasi). Yang belum dikirim semuanya **sudah
+punya tabel lokal** — ini pekerjaan mapper dan validator, bukan model data baru.
 
 | # | Pekerjaan | Kenapa, dan apa yang sudah menopangnya |
 |---|---|---|
@@ -349,15 +351,17 @@ sekarang punya rencana.
 | 32 | **Pendaftaran PMB daring oleh calon** | Satu-satunya kesenjangan *besar* yang baru. `pmb_pendaftar` tidak punya akun; rute publik PMB hanya melayani berkas. Perlu: akun pendaftar, periode & syarat, jadwal seleksi, kartu ujian pendaftar, pengumuman lewat surel, penanda calon penerima KIP. Nilai seleksi dari CBT mana pun **diimpor**, bukan diselenggarakan di sini |
 | 33 | **Mahasiswa pindahan** | Intake dengan PT dan prodi asal; SKS diakui lewat `konversi_kredit` yang ada. Pasangan #25 |
 | 34 | **Jadwal ujian (UTS/UAS)** | Entitas sendiri: sesi, ruang, pengawas, bentrok. Kartu ujian sudah dicetak, tetapi dari jadwal kuliah |
-| 35 | **Kalender akademik** | Tanggal kunci per semester sebagai data yang dibaca gerbang KRS, nilai, dan pengingat — bukan sebagai pengumuman |
-| 36 | **Pengingat mahasiswa aktif yang belum KRS** | Notifikasi ada; penerimanya belum. Dipicu menjelang jendela KRS tutup |
+| 35 | **Kalender akademik** 🟡 | Tanggal KRS (`krs_mulai`, `krs_selesai`, `krs_perubahan_selesai`) dan nilai (`nilai_mulai`, `nilai_selesai`) **sudah** ada di `tahun_akademik` dan sudah menggerbang KRS, penilaian, dan pengingat. Yang belum: kalender peristiwa — UTS/UAS, libur, yudisium, wisuda, EDOM — yang dapat dilihat mahasiswa dan dosen, dan yang nantinya dibaca #34 |
+| ~~36~~ | ~~**Pengingat mahasiswa aktif yang belum KRS**~~ | ✅ Sudah ada sejak G2 (9 Agustus 2026); dicatat keliru sebagai kesenjangan pada 22 Oktober 2026. `openacademic:kirim-pengingat` mengirim `BatasKrsMendekat` pada H-7, H-3, H-1 (`config/notifikasi.php`) **hanya** kepada mahasiswa aktif tanpa KRS diajukan/disetujui pada semester aktif — [`NOTIFIKASI.md`](NOTIFIKASI.md) |
 | 37 | **KKN / PKL sebagai kegiatan terkelola** | Kelompok, lokasi, pembimbing lapangan, nilai. Mendarat sebagai `aktivitas_mahasiswa` agar tetap satu jalur ke Feeder (#22), bukan tabel baru |
-| 38 | **Tahap proposal tugas akhir** | Proposal → seminar proposal → bimbingan. TA hari ini mulai dari judul |
+| 38 | **Tahap proposal tugas akhir** 🟡 | Seminar proposal **sudah** ada sebagai jenis ujian (`JenisUjian::Proposal` — dapat tidak lulus dan diulang). Yang belum: dokumen proposal sebagai tahap sebelum judul disetujui; TA hari ini dimulai dari pengajuan judul |
 | 39 | **Riwayat kepegawaian yang tersisa** | Diklat, pengalaman kerja, studi lanjut / tugas belajar, tugas dinas, jabatan struktural, inpassing, pensiun & kontrak — ditambah enam formulir yang sudah tercatat di MODUL.md (penghargaan & sanksi, bahasa, organisasi profesi, keluarga, pangkat, mutasi). Inilah isi "Profil Dosen" di SISTER yang masih diketik ulang dosen di sana |
 | 40 | **Buku besar angka kredit (Kum A–E)** | Dihitung dari BKD dan portofolio (kinerja sebelum 2026 dikonversi dengan faktor 4 dari SKS BKD ke AK), per dosen, per jenjang. Keluarannya: rekap kumulatif, kesiapan usulan kenaikan jabatan, dan **ekspor lembar penyetaraan** (NUPTK, jabatan, TMT, Kum A–E, total DUPAK) dalam format yang diterima SISTER. Buku besar, bukan dasbor — SISTER yang menilai, bukan aplikasi ini |
 | 41 | **Tarif per SKS / per mata kuliah** | Komponen tarif hari ini: UKT, SPP, praktikum, registrasi, wisuda. Kampus yang menagih per SKS tidak terlayani |
 | 42 | Monitoring pemakaian ruang | Sudah tercatat di §Peta Cakupan |
 | 43 | Denda, helpdesk | Sudah tercatat (#15, #18) |
+| 44 | **Adopsi mahasiswa yang sudah ada di PDDIKTI** | Kampus yang pindah dari SIAKAD lain sudah punya seluruh mahasiswanya di PDDIKTI. Mapper biodata hari ini hanya `Insert`, dan rekonsiliasi tidak membaca daftar mahasiswa kembali — sinkronisasi pertama akan mencoba mendaftarkan ulang orang yang sudah terdaftar. Perlu: baca daftar mahasiswa dan riwayat pendidikan dari Feeder, cocokkan NIM/NIK, isi `feeder_id` tanpa mengirim apa pun; ditambah klaim mahasiswa lampau yang disediakan Feeder. Ditemukan dari kajian 22 Oktober 2026, tercecer dari daftar aslinya |
+| 45 | **Klaim program flagship MBKM** | `GetListAktivitasMBKMFlagship` / `InsertAktivitasMBKMFlagship`. #22 menggesernya ke #23, dan #23 selesai tanpanya. Aktivitas MBKM sudah terkirim beserta anggotanya, jadi yang tersisa hanya menandai aktivitas mana yang merupakan program flagship dan mengklaimnya |
 
 ### Urutan yang disarankan
 
@@ -478,6 +482,7 @@ yang tidak ada di sini.
 | **CI merah sejak 22 Agustus 2026** | ✅ | Lunas 22 Okt 2026. Bukan 8 tes: **170**. CI menjalankan Pest *sebelum* `npm run build`, dan sejak tata letak dipisah (`build/` di root, di-ignore) setiap layar membalas 500 "Vite manifest not found". Di mesin pengembang `build/` selalu ada, jadi suite terlihat hijau dua bulan. Ditambah 14 tes SSO yang hanya lolos bila `.env` menyetel `SSO_ENABLED=true` — rute SSO didaftarkan saat boot, jadi `config()` di dalam tes terlambat. Keduanya diperbaiki di suite, bukan di CI: `TestCase::setUp()` memanggil `withoutVite()`, dan `phpunit.xml` menyetel `SSO_ENABLED=true` |
 | 8 tes gagal di `main` sejak Oktober 2026 | ✅ | Lunas 22 Okt 2026. Bukan regresi kode: fixture `KurikulumLanjutanTest` dan `KonversiKreditTest` membuka jendela KRS dengan menggeser `krs_mulai`/`krs_selesai` ke hari ini, tetapi `TahunAkademik::krsDibuka()` menutup jendela pada `krs_perubahan_selesai` — yang tetap 15 Sep 2026 dari factory. Hijau sampai tanggal itu lewat. Kini lewat state factory `krsDibuka()` yang menjangkarkan ketiga tanggal ke hari ini |
 | Font dari Google Fonts | ✅ | Di-host sendiri lewat `@fontsource` 19 Agu 2026; `style-src`/`font-src` pihak ketiga dicabut. Menyingkap bug terpendam: Vite menulis URL aset absolut dari akar domain, jadi setiap pemasangan subfolder kehilangan hurufnya — `base: './'` |
+| **Spec OpenAPI Bridge tertinggal** | ⬜ | `routes/api.php` melayani 14 endpoint; `docs/openapi/bridge.yaml` mendokumentasikan 12. `GET /classes/{uuid}` dan `GET /iku-data` tidak ada di spec — padahal Bridge dinyatakan *spec-first* (CLAUDE.md §7). Ditemukan 23 Okt 2026 |
 
 ---
 
@@ -550,9 +555,14 @@ Rinciannya — termasuk cacat yang ditemukan dan keputusan yang diambil — ada 
 | G1 Tugas Akhir | 8 Agustus 2026 |
 | G2 Notifikasi | 9 Agustus 2026 |
 | G3 Surat & SKPI | 10 Agustus 2026 |
-| G5 Konversi Kredit · Git diinisialisasi | 11 Agustus 2026 |
+| G5 Konversi Kredit · Git diinisialisasi · Rencana kinerja · SPMI/AMI | 11 Agustus 2026 |
 | G4 Keringanan & Beasiswa | 12 Agustus 2026 |
 | G6 EDOM | 13 Agustus 2026 |
 | G7 SISTER & BKD | 14 Agustus 2026 |
 | Integrasi akuntansi Easy Accounting | 15 Agustus 2026 |
 | RPS, jurnal perkuliahan, analitik | 16 Agustus 2026 |
+| P1 perkuliahan (padanan, paket, konsentrasi, cetak, pengaturan dokumen) | 17 Agustus 2026 |
+| P2 (evaluasi studi, poin, unit kerja, kepegawaian, kuesioner) | 18 Agustus 2026 |
+| Uji beban HTTP · verifikasi dua langkah staf | 22 Agustus 2026 |
+| Repo publik · P4 Feeder #19–26, #20b · P5 PIN #28–29 | 22 Oktober 2026 |
+| P4 tuntas: #24b skala & periode per prodi, #27 PDM/PJK | 24 Oktober 2026 |

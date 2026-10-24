@@ -324,8 +324,11 @@ Berdasarkan angka di atas, dengan Nginx + PHP-FPM + OPcache.
 
 ## Cara Mengulang Pengukuran Ini
 
-Belum ada perintah bawaan untuk membangkitkan data skala besar — fixture-nya
-dibuat sekali pakai. Menjadikannya perintah artisan
-(`openacademic:seed-skala --mahasiswa=5000`) layak dikerjakan agar angka di
-halaman ini dapat diverifikasi ulang siapa pun, dan tercatat sebagai utang
-teknis di [`ROADMAP.md`](ROADMAP.md).
+Dua perintah artisan menggantikan fixture sekali pakai yang dipakai pengukuran
+pertama: `openacademic:beban-katalog` menumbuhkan katalog kelas (bawaan 300
+kelas terlihat dari 1.000 se-kampus), dan `openacademic:beban-kuota --siapkan=N`
+menyiapkan satu kelas berkuota N yang lalu diperebutkan oleh proses-proses
+`openacademic:beban-kuota --mahasiswa= --kelas=` yang berjalan serentak.
+Keduanya bekerja di atas kampus demo. Yang masih sekali pakai hanya fixture
+5.000 mahasiswa untuk angka di bagian atas halaman ini; harness HTTP-nya
+`app-core/scripts/beban-http.cjs`.
