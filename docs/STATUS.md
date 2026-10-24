@@ -4,6 +4,17 @@
 
 ---
 
+## Sesi 40 — 2026-10-24 · Payment gateway dinyatakan opsional
+
+Bukan kode. Pemilik repo memutuskan transfer manual yang dicatat kasir adalah
+jalur utama, dan kanal bayar terintegrasi bukan syarat v1.0 — ADR-014. ROADMAP
+mengosongkan P0 dan menurunkan adaptor gateway ke P3 sebagai butir opsional;
+kalimat "satu-satunya kekalahan nyata" di empat tempat ditulis ulang menjadi
+"model berbeda". Pada hari yang sama empat sesi paralel mulai mengerjakan P4
+#24b/#27, P3 #15, #18, dan #16.
+
+---
+
 ## Sesi 39 — 2026-10-24 · Cek ulang roadmap dan skrip terhadap kode
 
 Bukan fitur. Setiap butir #19–#43 dicocokkan ke kode, setiap perintah
