@@ -4,6 +4,24 @@
 
 ---
 
+## Sesi 44 — 2026-10-24 · Delapan PR masuk, dan ROADMAP dibersihkan dari baris basi
+
+Bukan fitur. PR #6–#13 di-merge berurutan (#6, #7, #11, #8, #9, #10, #12, #13);
+setiap PR digabung ulang dengan `main` sebelum gilirannya, dan nomor Sesi serta
+ADR diurutkan mengikuti urutan merge itu. Suite penuh di `main` gabungan: 1.261
+tes hijau (3.179 asersi).
+
+Membaca ulang ROADMAP sesudahnya menemukan enam baris yang tidak lagi benar.
+Dua utang teknis pembayaran — driver `fake` dan direktori kosong `Services/Payment`
+— sudah lunas sejak 20 Agustus tetapi tidak pernah dicoret. #43 masih terbuka
+padahal denda dan helpdesk selesai hari ini. Career center bertanda ⬜ di Peta
+Cakupan sementara tiga bagian lain menyatakannya milik Open Campus; kini 🚫.
+Paragraf urutan masih menyebut #32 berikutnya; kajian Sesi 39 menyimpulkan #44
+harus lebih dulu, dan #33 murah sesudah #25. Baris federasi IdP di §Menunggu di
+Luar Repo sudah dibereskan PR #13 sendiri.
+
+---
+
 ## Sesi 43 — 2026-10-24 · Masuk lewat IdP kampus: Open Academic kini juga konsumen identitas
 
 Pekerjaan P3 #16 bagian yang tersisa. Branch `feature/auth-idp-federasi`, dari

@@ -102,7 +102,7 @@ Apa yang ada hari ini, dikelompokkan menurut siapa yang memakainya.
 | Surat & SKPI (G3) | ✅ | Verifikasi publik ber-QR yang benar-benar memverifikasi |
 | PMB | ✅ | Generator NIM + provisioning akun |
 | Poin kemahasiswaan & pelanggaran | ✅ | Dua buku besar, tidak pernah dijumlahkan — [`POIN-KEMAHASISWAAN.md`](POIN-KEMAHASISWAAN.md) |
-| **Career center** (lowongan, forum & agenda alumni) | ⬜ | Tabel `alumni` ada sebagai dasar |
+| Career center (lowongan, forum & agenda alumni) | 🚫 | Milik Open Campus (lihat §Sengaja Bukan di Sini). Tabel `alumni` di sini hanya sumber data lulusan, disajikan lewat Campus Bridge |
 | **Tracer study** | 🚫→🟡 | Instrumennya milik Open Campus; di sini hanya `alumni.status_pekerjaan` |
 
 ### Keuangan
@@ -286,8 +286,8 @@ opsional (ADR-014).
 
 | Item | Rujukan |
 |---|---|
-| Driver `fake` pembayaran yang dijanjikan `config/payment.php` tetapi tidak pernah ditulis | §Utang Teknis |
-| Direktori kosong `app/Services/Payment/{Contracts,Gateways}` | idem |
+| ~~Driver `fake` pembayaran yang dijanjikan `config/payment.php` tetapi tidak pernah ditulis~~ | ✅ Janjinya dicabut dari config 20 Agustus 2026; dicatat lunas 24 Oktober 2026 — §Utang Teknis |
+| ~~Direktori kosong `app/Services/Payment/{Contracts,Gateways}`~~ | ✅ Tidak ada di repo (Git tidak melacak direktori kosong); dicatat lunas 24 Oktober 2026 |
 
 ---
 
@@ -358,7 +358,7 @@ sekarang punya rencana.
 | 40 | **Buku besar angka kredit (Kum A–E)** | Dihitung dari BKD dan portofolio (kinerja sebelum 2026 dikonversi dengan faktor 4 dari SKS BKD ke AK), per dosen, per jenjang. Keluarannya: rekap kumulatif, kesiapan usulan kenaikan jabatan, dan **ekspor lembar penyetaraan** (NUPTK, jabatan, TMT, Kum A–E, total DUPAK) dalam format yang diterima SISTER. Buku besar, bukan dasbor — SISTER yang menilai, bukan aplikasi ini |
 | 41 | **Tarif per SKS / per mata kuliah** | Komponen tarif hari ini: UKT, SPP, praktikum, registrasi, wisuda. Kampus yang menagih per SKS tidak terlayani |
 | 42 | Monitoring pemakaian ruang | Sudah tercatat di §Peta Cakupan |
-| 43 | Denda, helpdesk | Sudah tercatat (#15, #18) |
+| ~~43~~ | ~~Denda, helpdesk~~ | ✅ 24 Oktober 2026 — #15 dan #18 |
 | 44 | **Adopsi mahasiswa yang sudah ada di PDDIKTI** | Kampus yang pindah dari SIAKAD lain sudah punya seluruh mahasiswanya di PDDIKTI. Mapper biodata hari ini hanya `Insert`, dan rekonsiliasi tidak membaca daftar mahasiswa kembali — sinkronisasi pertama akan mencoba mendaftarkan ulang orang yang sudah terdaftar. Perlu: baca daftar mahasiswa dan riwayat pendidikan dari Feeder, cocokkan NIM/NIK, isi `feeder_id` tanpa mengirim apa pun; ditambah klaim mahasiswa lampau yang disediakan Feeder. Ditemukan dari kajian 22 Oktober 2026, tercecer dari daftar aslinya |
 | 45 | **Klaim program flagship MBKM** | `GetListAktivitasMBKMFlagship` / `InsertAktivitasMBKMFlagship`. #22 menggesernya ke #23, dan #23 selesai tanpanya. Aktivitas MBKM sudah terkirim beserta anggotanya, jadi yang tersisa hanya menandai aktivitas mana yang merupakan program flagship dan mengklaimnya |
 
@@ -376,7 +376,10 @@ PIN, bukan dibangkitkan — risiko terbuka di MODUL.md tertutup. **#20b selesai*
 (layar rencana evaluasi), lalu **#26**: Feeder akhirnya bisa diminta melupakan
 apa yang sudah tidak ada di sini, dan **#23–#25 selesai** di PR terpisah. **#24b
 dan #27 selesai** 24 Oktober 2026: P4 tuntas, menyisakan #27b (surat permohonan).
-Berikutnya **#32**. #32 adalah
+Berikutnya **#44**, lalu **#33**, baru **#32**. #44 didahulukan karena tanpa
+itu kampus yang pindah dari SIAKAD lain tidak dapat memulai sinkronisasi sama
+sekali: sinkronisasi pertama akan mencoba mendaftarkan ulang mahasiswa yang
+sudah ada di PDDIKTI. #33 murah karena datanya sudah ada sejak #25. #32 adalah
 pekerjaan terbesar dan satu-satunya yang membuka portal keempat (calon
 mahasiswa); kerjakan setelah Feeder tuntas, supaya pendaftar yang diterima
 langsung punya riwayat pendidikan yang benar (#25).
@@ -469,8 +472,8 @@ yang tidak ada di sini.
 | Item | | Kenapa penting |
 |---|---|---|
 | Seeder menulis lewat service | 🟡 | Sebagian sudah (konversi, EDOM, BKD, akuntansi); sisanya menulis langsung ke tabel, sehingga aturan akademik tidak ikut ditegakkan pada data demo |
-| Driver `fake` pembayaran | ⬜ | `config/payment.php` menjanjikannya; kelasnya tidak ada dan tidak ada binding. Config yang berbohong |
-| Direktori kosong `app/Services/Payment/*` | ⬜ | Sisa scaffolding Fase 1; kontrak sungguhannya di `Services/Keuangan/Contracts` |
+| ~~Driver `fake` pembayaran~~ | ✅ | Janji `gateway`/`fake` dicabut dari `config/payment.php` 20 Agustus 2026, bukan dibangun; baris ini baru dicatat lunas 24 Oktober 2026. Gateway kini opsional (ADR-014) |
+| ~~Direktori kosong `app/Services/Payment/*`~~ | ✅ | Tidak ada di repo — Git tidak melacak direktori kosong, jadi clone mana pun tidak memilikinya. Kontrak sungguhannya di `Services/Keuangan/Contracts` |
 | FormRequest | 🟡 | Validasi masih banyak di controller |
 | DTO | 🟡 | Menyusul per modul |
 | `lang/id` | 🟡 | auth/validation/pagination sudah; string modul menyusul |
