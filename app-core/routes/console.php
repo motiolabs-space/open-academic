@@ -78,3 +78,16 @@ Schedule::command('openacademic:kirim-akuntansi')
     // Academic. Kampus yang memegang buku besarnya di tempat lain tidak perlu
     // menanggung satu pun proses tiap lima menit untuk modul yang tidak dipakai.
     ->skip(fn (): bool => !Akuntansi::aktif());
+
+/*
+ * Jam SLA helpdesk.
+ *
+ * Tiap jam, karena SLA kategori dinyatakan dalam jam. Perintah ini hanya
+ * MENANDAI tiket yang lewat tenggat — tidak menutup, tidak mengalihkan, tidak
+ * memberi tahu pemohon. Tenggat yang terlewat adalah fakta untuk antrean unit,
+ * bukan keputusan yang boleh diambil penjadwal atas nama unit itu.
+ */
+Schedule::command('openacademic:helpdesk-sla')
+    ->hourly()
+    ->onOneServer()
+    ->withoutOverlapping();

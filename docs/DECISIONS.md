@@ -250,3 +250,22 @@
   sinkron berikutnya mengirim pembaruan yang isinya sama dengan yang sudah
   dipegang PDDIKTI — dicatat, bukan disembunyikan. Surat permohonannya belum
   dicetak dari modul surat (#27b).
+
+## ADR-018 — Helpdesk adalah tiket administratif, status bergerak lewat tabel transisi, SLA hanya menandai (2026-10-24)
+
+- **Konteks.** Roadmap P3 #18 meminta helpdesk. Dua godaan rancangan: menjadikannya
+  utas percakapan umum (yang bergeser ke wilayah Open Campus), dan membiarkan
+  penjadwal menutup atau mengeskalasi tiket yang lewat tenggat (yang mengambil
+  keputusan atas nama unit). Keduanya terasa "lengkap" dan keduanya salah.
+- **Keputusan.** Tiket selalu dari satu pemohon (mahasiswa/dosen, polimorfik) ke
+  satu unit kerja; tidak ada visibilitas antarpemohon dan tidak ada lingkaran
+  "dosen wali" di policy. Status hanya bergerak sepanjang `StatusTiket::tujuanSah()`,
+  dijaga di service, bukan di layar; tiket tertutup tidak menerima apa pun.
+  `openacademic:helpdesk-sla` hanya menstempel `lewat_sla_at` pada tiket yang
+  menunggu kampus — tidak menutup, tidak mengalihkan, tidak memberi tahu pemohon.
+  Notifikasi helpdesk kategori opsional. Seluruh teks UI modul lewat `lang/id/`.
+- **Konsekuensi.** Eskalasi otomatis, pengaduan etik, dan percakapan komunitas
+  tidak akan dibangun di sini; kampus yang memerlukannya menyambungkannya lewat
+  Bridge. Tenggat dibekukan saat tiket dibuat, jadi mengubah SLA kategori tidak
+  mengubah antrean yang sudah berjalan. Lampiran mengikuti aturan modul berkas
+  (disk privat, policy tiket) dan lampiran catatan internal hanya untuk staf.

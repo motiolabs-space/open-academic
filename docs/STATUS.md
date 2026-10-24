@@ -4,6 +4,57 @@
 
 ---
 
+## Sesi 42 — 2026-10-24 · Helpdesk: loket yang bukan loket akhirnya punya nomor antrean
+
+Pekerjaan P3 #18. Branch `feature/helpdesk`, dari `main` sesudah PR #5.
+Dikerjakan paralel dengan sesi denda (#15), federasi IdP (#16), dan Feeder
+#24b/#27 — konflik teks di berkas ini dan `ROADMAP.md` wajar.
+
+### Batas yang ditarik lebih dulu
+
+Helpdesk ini **administratif**: mahasiswa atau dosen → unit kerja. Bukan
+forum, bukan chat. Tidak ada tiket yang terbaca pemohon lain, tidak ada
+lingkaran "dosen wali" di policy — tiket bisa memuat bukti transfer atau surat
+dokter. Pengaduan etik dan percakapan antarmahasiswa tetap wilayah Open Campus.
+
+### Tabel transisi, bukan tombol
+
+`StatusTiket::tujuanSah()` adalah satu-satunya tempat yang menyatakan langkah
+mana yang sah; service menolak sisanya, dari formulir maupun perintah. Beberapa
+langkah adalah **efek samping**: balasan publik staf memindahkan ke "menunggu
+pemohon" dan petugas pertama yang menjawab mengambil tiketnya; balasan pemohon
+pada tiket "selesai" membukanya kembali; balasan pemohon pada tiket baru tidak
+berpura-pura ada yang sedang memproses. Ditutup tidak ke mana-mana — pemohon
+membuka tiket baru, jejak lama utuh.
+
+### SLA menandai, tidak memutuskan
+
+`openacademic:helpdesk-sla` tiap jam hanya menstempel `lewat_sla_at` pada tiket
+yang masih menunggu kampus. Tidak menutup, tidak mengalihkan, tidak memberi tahu
+pemohon. Tiket yang menunggu pemohon tidak terlambat, apa pun kata jam. Tenggat
+dibekukan saat tiket diajukan; kategori yang disunting bulan depan tidak
+memindahkan garis finis antrean yang ada.
+
+### Yang tersingkap
+
+- Komponen `x-field` menaruh atribut tambahan di pembungkus, bukan di input —
+  `x-model` dan `form=` di atasnya diam-diam tidak melakukan apa pun. Dua layar
+  menulis `<select>`-nya sendiri karena itu.
+- Policy ditemukan otomatis lewat penggantian `\Models\` → `\Policies\`
+  milik Laravel; tidak ada registrasi di provider mana pun, dan memang tidak
+  perlu.
+- `phpunit.xml` tidak menyetel `APP_LOCALE`; modul ini modul pertama yang
+  seluruh teks UI-nya lewat `lang/id/`, dan tes layarnya bergantung pada itu.
+  Kini dipaku di sana.
+
+Notifikasi kategori baru `helpdesk`, **dapat dimatikan** — garis NOTIFIKASI.md:
+melewatkannya merugikan berupa jawaban yang lambat, bukan satu semester.
+
+**57 tes baru** (service, policy per portal, transisi, SLA, layar, FAQ publik).
+Keputusan: ADR-018.
+
+---
+
 ## Sesi 41 — 2026-10-24 · Denda keterlambatan: akrual harian yang tidak memperketat KRS
 
 Pekerjaan #15. Branch `feature/keuangan-denda`, dari `main` sesudah PR #5,
@@ -67,7 +118,6 @@ mengosongkan P0 dan menurunkan adaptor gateway ke P3 sebagai butir opsional;
 kalimat "satu-satunya kekalahan nyata" di empat tempat ditulis ulang menjadi
 "model berbeda". Pada hari yang sama empat sesi paralel mulai mengerjakan P4
 #24b/#27, P3 #15, #18, dan #16.
-
 
 ---
 

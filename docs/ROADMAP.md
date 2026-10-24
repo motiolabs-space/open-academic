@@ -154,7 +154,7 @@ Apa yang ada hari ini, dikelompokkan menurut siapa yang memakainya.
 | Header keamanan, aksesibilitas | ✅ | [`SECURITY.md`](../SECURITY.md) |
 | **CBT** | 🚫 | Platform ujian — di luar cakupan, lihat §Sengaja Bukan di Sini |
 | **LMS / forum kelas** | 🚫 | Platform belajar — idem |
-| **Helpdesk** | ⬜ | |
+| **Helpdesk** | ✅ | Tiket administratif ke unit kerja, SLA ditandai bukan diputus, FAQ publik — [`HELPDESK.md`](HELPDESK.md). Forum dan chat tetap wilayah Open Campus |
 | Kuesioner umum | ✅ | Dua tabel jawaban; anonimitas jadi properti skema — [`KUESIONER.md`](KUESIONER.md) |
 | **Aplikasi mobile native** | ⬜ | Web responsif saja |
 | 2FA staf | ✅ | TOTP + kode pemulihan, 22 Agu 2026 — `/admin/dua-langkah`, ditantang di `/masuk/dua-langkah` |
@@ -191,7 +191,6 @@ Bukan kalah. Batas produk.
 | **LMS bawaan** | Platform belajar: materi, tugas, diskusi, progres |
 | Career center, forum & agenda alumni | Milik Open Campus |
 | Modul akreditasi / SPMI / ekspor SAPTO | Produk terpisah di sisi mereka juga; di sini hanya faktanya |
-| Helpdesk | Dapat dibeli terpisah dari mana pun |
 | Backup data | Urusan infrastruktur |
 
 Sikapnya sama untuk keduanya: **kalau kampus butuh CBT atau LMS, sambungkan
@@ -280,7 +279,7 @@ opsional (ADR-014).
 | ~~15~~ | ~~**Denda keterlambatan**~~ — ✅ 24 Oktober 2026: akrual harian yang idempoten, bekerja penuh pada pembayaran manual; gerbang KRS tetap mengukur tagihan pokok. [`MODUL.md`](MODUL.md) §Denda keterlambatan |
 | 16 | ~~2FA staf~~ ✅ 22 Agustus 2026 (TOTP + kode pemulihan); federasi IdP eksternal masih ⬜ |
 | 17 | Aplikasi mobile native |
-| 18 | Helpdesk |
+| ~~18~~ | ~~Helpdesk~~ ✅ 24 Oktober 2026 — tiket mahasiswa/dosen ke unit kerja; disposisi, catatan internal, SLA per kategori, FAQ publik tanpa login |
 | 1 | Adaptor payment gateway — **opsional** (ADR-014). Kontrak `PaymentGatewayInterface` sudah ada; dibangun bila ada kampus yang membawa kredensial merchant dan endpoint notifikasi yang terverifikasi tanda tangannya. Transfer manual tetap jalur utama sesudahnya |
 
 ### Bersih-bersih yang sudah tercatat

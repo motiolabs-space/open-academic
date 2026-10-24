@@ -46,6 +46,7 @@ final class Navigation
                     self::item('Surat & Dokumen', '✉', 'mahasiswa.surat'),
                     self::item('Evaluasi Dosen', '☆', 'mahasiswa.edom'),
                     self::item('Tagihan & Pembayaran', '◈', 'mahasiswa.tagihan'),
+                    self::item('Bantuan & Helpdesk', '?', 'mahasiswa.helpdesk'),
                     self::item('Profil Akademik', '○', 'mahasiswa.profil'),
                     self::item('Aplikasi Terhubung', '⌘', 'sso.aplikasi'),
                 ],
@@ -84,6 +85,14 @@ final class Navigation
                     self::item('Beban Kerja (BKD)', '⊞', 'dosen.bkd'),
                     self::item('Penilaian BKD', '✓', 'dosen.bkd.penilaian'),
                     self::item('Portofolio', '◈', 'dosen.portofolio'),
+                ],
+            ],
+            [
+                // Layanan kampus untuk dosen sendiri — bukan tentang mahasiswa
+                // yang dibimbingnya, bukan tentang kepegawaiannya.
+                'title' => 'LAYANAN',
+                'items' => [
+                    self::item('Bantuan & Helpdesk', '?', 'dosen.helpdesk'),
                 ],
             ],
         ];
@@ -217,6 +226,12 @@ final class Navigation
                     self::item('Rencana Kinerja', '◎', 'admin.kinerja'),
                     self::item('SPMI & Audit Mutu', '⚖', 'admin.spmi'),
 
+                    /*
+                     * Helpdesk di SISTEM, bukan di MAHASISWA: tiketnya datang
+                     * dari dosen juga, dan antreannya milik tiap unit kerja —
+                     * keuangan, TIK, BAAK — bukan satu bagian saja.
+                     */
+                    self::item('Helpdesk', '?', 'admin.helpdesk'),
                     self::item('Pengumuman', '✉', 'admin.pengumuman'),
                     self::item('Verifikasi Dua Langkah', '⚿', 'dua-faktor.kelola'),
                     self::item('Pengaturan', '⚙', 'admin.pengaturan'),
