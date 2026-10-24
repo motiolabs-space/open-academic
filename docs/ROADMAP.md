@@ -13,7 +13,7 @@
 
 **Legenda** — ✅ Selesai · 🟡 Sebagian · ⬜ Belum · 🚫 Sengaja di luar cakupan
 
-Diverifikasi terhadap kode pada **23 Oktober 2026**; jumlah tabel dan isi basis
+Diverifikasi terhadap kode pada **24 Oktober 2026**; jumlah tabel dan isi basis
 data demo dari pemeriksaan 16 Agustus 2026.
 
 ---
@@ -44,15 +44,15 @@ tersendiri dengan siklus hidup, beban, dan model datanya sendiri — lihat
 | | |
 |---|---|
 | Tabel domain | 109 |
-| Migrasi | 53 |
-| Model Eloquent | 96 |
-| Enum | 56 |
-| Service | 100 (termasuk 18 mapper Feeder) |
-| Policy | 6 |
+| Migrasi | 55 |
+| Model Eloquent | 100 |
+| Enum | 60 |
+| Service | 111 (termasuk 25 mapper Feeder) |
+| Policy | 7 |
 | Layar (rute GET berportal) | 94 |
 | Endpoint Campus Bridge | 14 |
-| Perintah artisan | 12 |
-| **Tes Pest** | **1.083 hijau (2.438 asersi)** — paralel 636 s di mesin pengembang, 23 Okt 2026 |
+| Perintah artisan | 13 |
+| **Tes Pest** | **1.136 hijau (2.689 asersi)** — paralel 581 s di mesin pengembang, 24 Okt 2026 |
 
 Seluruh fase (0–5), SSO OAuth2, tujuh kesenjangan SIAKAD (G1–G7), dan integrasi
 akuntansi sudah selesai. `php artisan migrate:fresh --seed` membangun kampus demo
@@ -135,7 +135,7 @@ Apa yang ada hari ini, dikelompokkan menurut siapa yang memakainya.
 
 | Modul | | Catatan |
 |---|---|---|
-| Neo Feeder PDDIKTI | ✅ | Idempoten, ledger, validator pra-kirim. Tujuh belas entitas sejak 22 Okt 2026: + dosen pengajar kelas, + Lulus/DO, + komponen evaluasi, + nilai per komponen, + 7 entitas aktivitas (MBKM dan tugas akhir beserta anggota, pembimbing, penguji) |
+| Neo Feeder PDDIKTI | ✅ | Idempoten, ledger, validator pra-kirim. Dua puluh lima entitas sejak 24 Okt 2026: + dosen pengajar kelas, + Lulus/DO, + komponen evaluasi, + nilai per komponen, + 7 entitas aktivitas (MBKM dan tugas akhir beserta anggota, pembimbing, penguji), + prestasi, transfer kredit, konversi MBKM, + kurikulum, mata kuliah, matkul kurikulum, + skala nilai prodi, periode perkuliahan; `Delete*` untuk yang sudah tiada di sini |
 | Campus Bridge | ✅ | 14 endpoint ber-scope, webhook HMAC, spec OpenAPI — spec tertinggal dua endpoint, lihat §Utang Teknis |
 | SSO OAuth2 (Passport) | ✅ | Kampus jadi penerbit identitas |
 | Notifikasi (G2) | ✅ | Kategori wajib tidak dapat dimatikan |
@@ -306,8 +306,8 @@ belum pernah dikirim.
 ### P4 — Pelaporan Feeder yang ternyata belum tertutup
 
 Saat daftar ini disusun, enam entitas dikirim: biodata, riwayat pendidikan,
-aktivitas kuliah, KRS, kelas, nilai. Semuanya `Insert`. Sejak 22 Oktober 2026
-jumlahnya tujuh belas (lihat §Integrasi). Yang belum dikirim semuanya **sudah
+aktivitas kuliah, KRS, kelas, nilai. Semuanya `Insert`. Sejak 24 Oktober 2026
+jumlahnya dua puluh lima, ditambah `Delete*` (lihat §Integrasi). Yang belum dikirim semuanya **sudah
 punya tabel lokal** — ini pekerjaan mapper dan validator, bukan model data baru.
 
 | # | Pekerjaan | Kenapa, dan apa yang sudah menopangnya |
@@ -358,6 +358,7 @@ sekarang punya rencana.
 | 42 | Monitoring pemakaian ruang | Sudah tercatat di §Peta Cakupan |
 | 43 | Denda, helpdesk | Sudah tercatat (#15, #18) |
 | 44 | **Adopsi mahasiswa yang sudah ada di PDDIKTI** | Kampus yang pindah dari SIAKAD lain sudah punya seluruh mahasiswanya di PDDIKTI. Mapper biodata hari ini hanya `Insert`, dan rekonsiliasi tidak membaca daftar mahasiswa kembali — sinkronisasi pertama akan mencoba mendaftarkan ulang orang yang sudah terdaftar. Perlu: baca daftar mahasiswa dan riwayat pendidikan dari Feeder, cocokkan NIM/NIK, isi `feeder_id` tanpa mengirim apa pun; ditambah klaim mahasiswa lampau yang disediakan Feeder. Ditemukan dari kajian 22 Oktober 2026, tercecer dari daftar aslinya |
+| 45 | **Klaim program flagship MBKM** | `GetListAktivitasMBKMFlagship` / `InsertAktivitasMBKMFlagship`. #22 menggesernya ke #23, dan #23 selesai tanpanya. Aktivitas MBKM sudah terkirim beserta anggotanya, jadi yang tersisa hanya menandai aktivitas mana yang merupakan program flagship dan mengklaimnya |
 
 ### Urutan yang disarankan
 
@@ -560,4 +561,5 @@ Rinciannya — termasuk cacat yang ditemukan dan keputusan yang diambil — ada 
 | P1 perkuliahan (padanan, paket, konsentrasi, cetak, pengaturan dokumen) | 17 Agustus 2026 |
 | P2 (evaluasi studi, poin, unit kerja, kepegawaian, kuesioner) | 18 Agustus 2026 |
 | Uji beban HTTP · verifikasi dua langkah staf | 22 Agustus 2026 |
-| Repo publik · P4 Feeder #19–22, #20b · P5 PIN #28–29 | 22 Oktober 2026 |
+| Repo publik · P4 Feeder #19–26, #20b · P5 PIN #28–29 | 22 Oktober 2026 |
+| P4 tuntas: #24b skala & periode per prodi, #27 PDM/PJK | 24 Oktober 2026 |
