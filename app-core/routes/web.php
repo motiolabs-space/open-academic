@@ -558,6 +558,10 @@ Route::middleware(['auth:staff', 'term.active'])->prefix('admin')->name('admin.'
     Route::post('/feeder/{entity}/jalankan', [Admin\FeederController::class, 'jalankan'])->name('feeder.jalankan');
     Route::post('/feeder/{entity}/ulangi', [Admin\FeederController::class, 'ulangi'])->name('feeder.ulangi');
     Route::post('/feeder/{entity}/bandingkan', [Admin\FeederController::class, 'bandingkan'])->name('feeder.bandingkan');
+    Route::post('/feeder/{entity}/hapus', [Admin\FeederController::class, 'hapus'])->name('feeder.hapus');
+    Route::post('/feeder/perubahan/{perubahan}/ajukan', [Admin\FeederPerubahanController::class, 'ajukan'])->name('feeder.perubahan.ajukan');
+    Route::post('/feeder/perubahan/{perubahan}/kirim', [Admin\FeederPerubahanController::class, 'kirim'])->name('feeder.perubahan.kirim');
+    Route::post('/feeder/perubahan/{perubahan}/selesai', [Admin\FeederPerubahanController::class, 'selesai'])->name('feeder.perubahan.selesai');
 
     Route::get('/yudisium', [Admin\YudisiumController::class, 'index'])->name('yudisium');
     Route::post('/yudisium/ajukan', [Admin\YudisiumController::class, 'ajukan'])->name('yudisium.ajukan');

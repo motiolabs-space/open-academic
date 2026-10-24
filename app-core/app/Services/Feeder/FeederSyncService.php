@@ -21,15 +21,24 @@ use App\Services\Feeder\Mappers\DosenPengajarMapper;
 use App\Services\Feeder\Mappers\FeederMapper;
 use App\Services\Feeder\Mappers\KelasKuliahMapper;
 use App\Services\Feeder\Mappers\KomponenEvaluasiMapper;
+use App\Services\Feeder\Mappers\KonversiMbkmMapper;
 use App\Services\Feeder\Mappers\KrsMapper;
+use App\Services\Feeder\Mappers\KurikulumMapper;
 use App\Services\Feeder\Mappers\LulusDoMapper;
 use App\Services\Feeder\Mappers\MahasiswaMapper;
+use App\Services\Feeder\Mappers\MataKuliahMapper;
+use App\Services\Feeder\Mappers\MatkulKurikulumMapper;
 use App\Services\Feeder\Mappers\NilaiKomponenMapper;
 use App\Services\Feeder\Mappers\NilaiMapper;
+use App\Services\Feeder\Mappers\PeriodePerkuliahanMapper;
+use App\Services\Feeder\Mappers\PrestasiMapper;
 use App\Services\Feeder\Mappers\RiwayatPendidikanMapper;
+use App\Services\Feeder\Mappers\SkalaNilaiProdiMapper;
+use App\Services\Feeder\Mappers\TransferKreditMapper;
 use App\Services\Feeder\Mappers\TugasAkhirMapper;
 use App\Services\Feeder\Mappers\UjiTugasAkhirMapper;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -59,6 +68,11 @@ class FeederSyncService
 
     /** @return array<string, class-string<FeederMapper>> */
     public const MAPPERS = [
+        'skala_nilai_prodi' => SkalaNilaiProdiMapper::class,
+        'periode_perkuliahan' => PeriodePerkuliahanMapper::class,
+        'kurikulum' => KurikulumMapper::class,
+        'mata_kuliah' => MataKuliahMapper::class,
+        'matkul_kurikulum' => MatkulKurikulumMapper::class,
         'mahasiswa' => MahasiswaMapper::class,
         'riwayat_pendidikan' => RiwayatPendidikanMapper::class,
         'aktivitas_kuliah' => AktivitasKuliahMapper::class,
@@ -75,6 +89,9 @@ class FeederSyncService
         'anggota_tugas_akhir' => AnggotaTugasAkhirMapper::class,
         'bimbing_tugas_akhir' => BimbingTugasAkhirMapper::class,
         'uji_tugas_akhir' => UjiTugasAkhirMapper::class,
+        'prestasi' => PrestasiMapper::class,
+        'transfer_kredit' => TransferKreditMapper::class,
+        'konversi_mbkm' => KonversiMbkmMapper::class,
         'lulus_do' => LulusDoMapper::class,
     ];
 
@@ -148,6 +165,108 @@ class FeederSyncService
         }
 
         return ['diulang' => $gagal->count(), 'berhasil' => $berhasil, 'gagal' => $masihGagal];
+    }
+
+    /**
+     * Removes from Feeder the rows of an entity that no longer exist here.
+     *
+     * A push-only sync has a blind spot: a class cancelled after it was
+     * reported, a KRS line dropped during revision, a student record merged
+     * away — each stays at PDDIKTI exactly as it was sent, and the ratio or
+     * the credit total it feeds is wrong from then on. The ledger knows what
+     * left the building; this reads it back against what is still here, and
+     * sends a delete for the difference.
+     *
+     * Soft-deleted rows count as gone: a trashed class is not one the campus
+     * runs. Each delete writes its own ledger row, so a re-run finds the
+     * last successful action was the delete and skips it — the same
+     * idempotency as a push.
+     *
+     * @return array{entity: string, term: string, diperiksa: int, dihapus: int, dilewati: int, gagal: int, didukung: bool}
+     */
+    public function hapusYangTerhapus(string $entity, TahunAkademik $term): array
+    {
+        $this->pastikanAktif();
+
+        $mapper = $this->mapper($entity);
+        $actHapus = $mapper->actHapus();
+
+        $hasil = ['entity' => $entity, 'term' => $term->kode, 'diperiksa' => 0, 'dihapus' => 0, 'dilewati' => 0, 'gagal' => 0, 'didukung' => $actHapus !== null];
+
+        if ($actHapus === null) {
+            return $hasil;
+        }
+
+        // The latest successful action per local row. Newest first, so the
+        // first row seen for a (type, id) pair is the one that counts.
+        $terakhir = FeederSyncLog::query()
+            ->entity($entity)
+            ->where('tahun_akademik_id', $term->id)
+            ->where('status', FeederSyncStatus::Success->value)
+            ->whereNotNull('local_type')
+            ->whereNotNull('local_id')
+            ->orderByDesc('id')
+            ->get(['id', 'action', 'local_type', 'local_id', 'feeder_id'])
+            ->unique(fn (FeederSyncLog $log): string => $log->local_type.'#'.$log->local_id)
+            ->reject(fn (FeederSyncLog $log): bool => $log->action === $actHapus || blank($log->feeder_id));
+
+        $hasil['diperiksa'] = $terakhir->count();
+
+        foreach ($terakhir->groupBy('local_type') as $kelas => $logs) {
+            if (!class_exists($kelas)) {
+                continue;
+            }
+
+            /** @var Model $contoh */
+            $contoh = new $kelas;
+            $masihAda = $kelas::query()
+                ->whereIn($contoh->getKeyName(), $logs->pluck('local_id'))
+                ->pluck($contoh->getKeyName())
+                ->map(fn ($id): string => (string) $id)
+                ->all();
+
+            foreach ($logs as $log) {
+                if (in_array((string) $log->local_id, $masihAda, true)) {
+                    $hasil['dilewati']++;
+
+                    continue;
+                }
+
+                $kunci = $this->kunciUpdate($mapper, (string) $log->feeder_id);
+
+                try {
+                    $response = $this->client->delete($actHapus, $kunci);
+                    $gagal = $response->gagal();
+                    $kode = (string) $response->errorCode;
+                    $pesan = $response->errorDesc;
+                } catch (FeederException $e) {
+                    $gagal = true;
+                    $kode = (string) ($e->feederErrorCode ?? 'transport');
+                    $pesan = $e->getMessage();
+                }
+
+                FeederSyncLog::create([
+                    'entity' => $entity,
+                    'action' => $actHapus,
+                    'direction' => 'push',
+                    'local_type' => $log->local_type,
+                    'local_id' => $log->local_id,
+                    'feeder_id' => $log->feeder_id,
+                    'tahun_akademik_id' => $term->id,
+                    'payload_hash' => FeederSyncLog::hashPayload($kunci),
+                    'payload' => ['key' => $kunci],
+                    'status' => $gagal ? FeederSyncStatus::Failed : FeederSyncStatus::Success,
+                    'error_code' => $gagal ? $kode : null,
+                    'error_message' => $gagal ? $pesan : null,
+                    'attempts' => 1,
+                    'synced_at' => $gagal ? null : now(),
+                ]);
+
+                $gagal ? $hasil['gagal']++ : $hasil['dihapus']++;
+            }
+        }
+
+        return $hasil;
     }
 
     /**
@@ -238,6 +357,27 @@ class FeederSyncService
             });
 
         return $dipetakan;
+    }
+
+    /**
+     * How many rows each entity has due for a term, in one query.
+     *
+     * The monitor shows this number for every entity on every visit. One
+     * count per entity was fine at six entities and blew the screen's query
+     * budget at twenty-three; a single SELECT of scalar sub-selects costs the
+     * same whatever the number.
+     *
+     * @return array<string, int> entity => rows due
+     */
+    public function jumlahAntre(string $termCode): array
+    {
+        $kueri = DB::query();
+
+        foreach (self::MAPPERS as $entity => $kelas) {
+            $kueri->selectSub(app($kelas)->kueriJumlah($termCode), $entity);
+        }
+
+        return array_map('intval', (array) $kueri->first());
     }
 
     /** Whether the Feeder service answers right now. */
@@ -368,7 +508,21 @@ class FeederSyncService
             AnggotaMbkmMapper::class, AnggotaTugasAkhirMapper::class => ['id_anggota' => $feederId],
             BimbingMbkmMapper::class, BimbingTugasAkhirMapper::class => ['id_bimbing_mahasiswa' => $feederId],
             UjiTugasAkhirMapper::class => ['id_uji' => $feederId],
+            PrestasiMapper::class => ['id_prestasi' => $feederId],
+            TransferKreditMapper::class => ['id_transfer' => $feederId],
+            KonversiMbkmMapper::class => ['id_konversi_aktivitas' => $feederId],
+            KurikulumMapper::class => ['id_kurikulum' => $feederId],
+            MataKuliahMapper::class => ['id_matkul' => $feederId],
+            MatkulKurikulumMapper::class => array_combine(
+                ['id_kurikulum', 'id_matkul'],
+                array_pad(explode(MatkulKurikulumMapper::PEMISAH, $feederId, 2), 2, null),
+            ),
             LulusDoMapper::class => ['id_registrasi_mahasiswa' => $feederId],
+            SkalaNilaiProdiMapper::class => ['id_bobot_nilai' => $feederId],
+            PeriodePerkuliahanMapper::class => array_combine(
+                ['id_prodi', 'id_semester'],
+                array_pad(explode(PeriodePerkuliahanMapper::PEMISAH, $feederId, 2), 2, null),
+            ),
             default => ['id' => $feederId],
         };
     }

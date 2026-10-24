@@ -58,6 +58,7 @@ class LulusDoMapper extends FeederMapper
 
         return Mahasiswa::query()
             ->with([
+                'perubahanFeeder' => fn ($q) => $q->terbuka(),
                 'yudisium.tahunAkademik',
                 'evaluasiStudi' => fn ($q) => $q->whereIn('keputusan', $keputusan)->latest('diputuskan_at'),
             ])

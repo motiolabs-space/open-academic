@@ -64,7 +64,8 @@ final readonly class FeederResponse
         foreach ([
             'id_registrasi_mahasiswa', 'id_mahasiswa', 'id_aktivitas_kuliah',
             'id_kelas_kuliah', 'id_aktivitas_mengajar', 'id_komponen_evaluasi', 'id_aktivitas',
-            'id_anggota', 'id_bimbing_mahasiswa', 'id_uji', 'id_dosen', 'id',
+            'id_anggota', 'id_bimbing_mahasiswa', 'id_uji', 'id_prestasi', 'id_transfer',
+            'id_konversi_aktivitas', 'id_kurikulum', 'id_matkul', 'id_bobot_nilai', 'id_dosen', 'id',
         ] as $kunci) {
             if (isset($baris[$kunci]) && $baris[$kunci] !== '') {
                 return (string) $baris[$kunci];

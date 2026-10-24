@@ -42,6 +42,7 @@ class PoinMahasiswa extends Model
     protected function casts(): array
     {
         return [
+            'feeder_synced_at' => 'datetime',
             'jenis' => JenisPoin::class,
             'tanggal' => 'date',
             'is_verified' => 'boolean',

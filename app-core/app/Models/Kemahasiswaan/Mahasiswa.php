@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models\Kemahasiswaan;
 
 use App\Enums\Gender;
+use App\Enums\JenisDaftar;
 use App\Enums\StudentStatus;
 use App\Models\Akademik\Konsentrasi;
 use App\Models\Akademik\Krs;
@@ -12,6 +13,7 @@ use App\Models\Akademik\Kurikulum;
 use App\Models\Akademik\Nilai;
 use App\Models\Akademik\Prodi;
 use App\Models\Akademik\TahunAkademik;
+use App\Models\Feeder\FeederChangeRequest;
 use App\Models\Keuangan\Tagihan;
 use App\Models\Sdm\Dosen;
 use App\Models\Surat\Surat;
@@ -73,6 +75,7 @@ class Mahasiswa extends Authenticatable implements OAuthenticatable
             'tanggal_lahir' => 'date',
             'jenis_kelamin' => Gender::class,
             'status' => StudentStatus::class,
+            'jenis_daftar' => JenisDaftar::class,
 
             // YEAR columns come back as strings from the driver.
             'angkatan' => 'integer',
@@ -156,6 +159,17 @@ class Mahasiswa extends Authenticatable implements OAuthenticatable
     public function evaluasiStudi(): HasMany
     {
         return $this->hasMany(EvaluasiStudi::class)->orderByDesc('id');
+    }
+
+    /**
+     * Changes to columns PDDIKTI locked once this student was reported.
+     *
+     * While one is open the biodata is not pushed again; see
+     * FeederPerubahanService for why that is the honest default.
+     */
+    public function perubahanFeeder(): HasMany
+    {
+        return $this->hasMany(FeederChangeRequest::class)->orderByDesc('id');
     }
 
     /** Official letters requested by or issued to this student. */

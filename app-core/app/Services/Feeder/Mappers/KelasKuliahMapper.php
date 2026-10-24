@@ -40,7 +40,7 @@ class KelasKuliahMapper extends FeederMapper
         return array_filter([
             'id_semester' => $model->tahunAkademik->kode,
             'id_prodi' => $model->prodi->kode_pddikti,
-            'id_matkul' => $model->mataKuliah->kode,
+            'id_matkul' => $model->mataKuliah->feeder_id ?? $model->mataKuliah->kode,
             'nama_kelas_kuliah' => $model->kode,
             'sks' => $model->sks,
             'jumlah_mahasiswa' => $model->terisi,

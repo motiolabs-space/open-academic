@@ -87,10 +87,26 @@ class FakeFeederClient implements FeederClientInterface
             return new FeederResponse(0, '', $this->fixture($act));
         }
 
-        // Insert/Update: mirror Feeder by handing back a generated identifier.
+        // Insert/Update: mirror Feeder by handing back a generated identifier,
+        // under the name the real service uses for that entity.
         return new FeederResponse(0, '', [
-            ['id_registrasi_mahasiswa' => (string) Str::uuid()],
+            [$this->namaId($act) => (string) Str::uuid()],
         ]);
+    }
+
+    /**
+     * The identifier field Feeder answers an insert of this act with.
+     *
+     * Only the entities whose reply is read back under a *different* name
+     * than the default need listing: a mapper that stores `id_bobot_nilai`
+     * would otherwise be handed `id_registrasi_mahasiswa` and store that.
+     */
+    private function namaId(string $act): string
+    {
+        return match ($act) {
+            'InsertSkalaNilaiProdi' => 'id_bobot_nilai',
+            default => 'id_registrasi_mahasiswa',
+        };
     }
 
     public function insert(string $act, array $record): FeederResponse
@@ -101,6 +117,11 @@ class FakeFeederClient implements FeederClientInterface
     public function update(string $act, array $key, array $record): FeederResponse
     {
         return $this->request($act, ['key' => $key, 'record' => $record]);
+    }
+
+    public function delete(string $act, array $key): FeederResponse
+    {
+        return $this->request($act, ['key' => $key]);
     }
 
     /**
