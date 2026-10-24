@@ -52,6 +52,9 @@ melewatkannya merugikan berupa jawaban yang lambat, bukan satu semester.
 
 **57 tes baru** (service, policy per portal, transisi, SLA, layar, FAQ publik).
 Keputusan: ADR-018.
+
+---
+
 ## Sesi 36 — 2026-10-22 · Feeder: menghapus yang sudah tidak ada di sini
 
 Pekerjaan #26. Branch `feature/feeder-hapus-koreksi`, dari `main` sesudah PR #4, di-rebase sesudah PR #5.
