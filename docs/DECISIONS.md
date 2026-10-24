@@ -180,3 +180,51 @@
   menyalakan kebijakan di tengah semester akan menagih tunggakan lama sejak
   jatuh temponya — `--kering` ada untuk melihatnya dulu. Denda belum
   dijurnalkan ke integrasi akuntansi.
+
+## ADR-016 — Skala nilai dan periode perkuliahan per prodi diturunkan ke tabel, tidak dipetakan dari konfigurasi (2026-10-24)
+
+- **Konteks.** `InsertSkalaNilaiProdi` dan `InsertPeriodePerkuliahan` adalah
+  baris per prodi (dan per huruf / per semester) di PDDIKTI, sedangkan kampus
+  menyimpan satu skala di `config/academic.php` dan satu kalender di
+  `tahun_akademik`. Mesin sinkron bekerja per baris model Eloquent: buku besar
+  menyimpan `local_type`/`local_id`, ulang-yang-gagal memuatnya kembali, dan
+  hapus-yang-tiada mencocokkannya — tidak ada tempat untuk "baris" yang hanya
+  ada di konfigurasi.
+- **Keputusan.** Dua tabel, `skala_nilai_prodi` dan `periode_perkuliahan`,
+  **diturunkan** oleh `SkalaPeriodeProdiService` untuk prodi yang belum punya
+  baris: dari skala kampus (batas atas huruf = batas bawah huruf di atasnya;
+  berlaku sejak semester pertama kampus) dan dari kalender semester plus angka
+  PMB semester itu. Penurunan berjalan saat mapper membaca barisnya (validasi
+  atau sinkron) dan di `IntegrasiSeeder`; ia **aditif dan idempoten** — baris
+  yang ada tidak pernah disentuh.
+- **Konsekuensi.** Skala kampus tetap satu-satunya tempat kebijakan ditulis,
+  tetapi prodi yang harus berbeda (mis. skala kesehatan) menyunting barisnya
+  sendiri, dan perubahan konfigurasi sesudah penurunan **tidak** merambat —
+  itu disengaja, karena skala yang sudah dilaporkan punya tanggal berlaku.
+  Hitungan "antre" di monitor membaca tabel, jadi nol sampai penurunan pertama;
+  seeder demo menutup celah itu untuk instalasi baru.
+
+## ADR-017 — Kolom yang dikunci PDDIKTI dicatat saat berubah, bukan dikunci di layar (2026-10-24)
+
+- **Konteks.** PDDIKTI membekukan enam kolom identitas setelah biodata
+  diterima dan tujuh kolom keluar setelah Lulus/DO diterima. Koreksinya adalah
+  PDM/PJK: sebagian lewat web service, sisanya lewat PDDIKTI admin dengan surat.
+  Mengunci kolomnya di layar hanya menghentikan satu jalur perubahan — impor,
+  perintah artisan, dan service lain tetap bisa mengubahnya — dan sinkron
+  berikutnya akan mengirim ulang biodata yang pasti ditolak, atau lebih buruk,
+  diterima build Feeder lama dan diam-diam berbeda dari keputusan PDDIKTI admin.
+- **Keputusan.** `KunciFeederObserver` pada setiap model pemegang kolom itu
+  mencatat `feeder_change_requests` (satu per kolom; permintaan terbuka
+  disunting, bukan digandakan; nilai yang dikembalikan mencabutnya). Katalog
+  kolom dan jalurnya di `KolomTerkunci`. Validator pra-kirim **menolak**
+  biodata dan Lulus/DO selama ada permintaan jalur PDDIKTI admin yang terbuka.
+  Hanya kolom riwayat pendidikan (NIM, periode masuk) dikirim lewat
+  `UpdateRiwayatPendidikanMahasiswa`; penolakannya disimpan pada permintaan.
+  "Selesai" adalah pernyataan operator sesudah memeriksa PDDIKTI admin —
+  web service tidak menyediakan cara membacanya.
+- **Konsekuensi.** Perubahan kolom terkunci tidak pernah diam-diam: ia tampak
+  di konsol dengan jalur dan statusnya, dan biodata tidak dikirim ulang sampai
+  operator menyatakan PDDIKTI sudah memegang nilai barunya. Sesudah itu
+  sinkron berikutnya mengirim pembaruan yang isinya sama dengan yang sudah
+  dipegang PDDIKTI — dicatat, bukan disembunyikan. Surat permohonannya belum
+  dicetak dari modul surat (#27b).

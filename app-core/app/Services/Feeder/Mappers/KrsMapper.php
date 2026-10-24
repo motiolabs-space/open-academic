@@ -39,7 +39,7 @@ class KrsMapper extends FeederMapper
         return array_filter([
             'id_registrasi_mahasiswa' => $model->krs->mahasiswa->feeder_registrasi_id,
             'id_kelas_kuliah' => $model->kelasKuliah->feeder_id,
-            'id_matkul' => $model->kelasKuliah->mataKuliah->kode,
+            'id_matkul' => $model->kelasKuliah->mataKuliah->feeder_id ?? $model->kelasKuliah->mataKuliah->kode,
             'id_semester' => $model->krs->tahunAkademik->kode,
             'sks_mata_kuliah' => $model->sks,
         ], fn (mixed $nilai): bool => $nilai !== null && $nilai !== '');

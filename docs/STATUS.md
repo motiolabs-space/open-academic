@@ -4,10 +4,10 @@
 
 ---
 
-## Sesi 37 — 2026-10-24 · Denda keterlambatan: akrual harian yang tidak memperketat KRS
+## Sesi 39 — 2026-10-24 · Denda keterlambatan: akrual harian yang tidak memperketat KRS
 
 Pekerjaan #15. Branch `feature/keuangan-denda`, dari `main` sesudah PR #5,
-di-merge dengan `main` sesudah PR #6.
+di-merge dengan `main` sesudah PR #6, #7, dan #11.
 Mengikuti keputusan 24 Oktober bahwa payment gateway opsional: denda harus
 bekerja penuh pada pembayaran manual yang dicatat kasir, dan memang begitu.
 
@@ -56,6 +56,123 @@ akun yang belum ada di bagan dan keputusan perlakuannya. Dicatat di MODUL.md.
 **34 tes baru** (DendaTest 32, GerbangPembayaranKrsTest +2). Seeder demo
 mengenakan denda lewat service pada tagihan yang menunggak dan membebaskan satu
 di antaranya, dengan aturan eksplisit — `.env` kampus tidak disentuh.
+
+---
+
+## Sesi 38 — 2026-10-24 · Feeder: skala & periode per prodi, dan koreksi yang tidak diam-diam (PDM/PJK)
+
+Pekerjaan #24b dan #27. Branch `feature/feeder-skala-periode-pdm`, ditumpuk di
+atas PR #6 (#26) dan PR #7 (#23–#25) yang belum merge. P4 tuntas; sisa #27b.
+
+### Keputusan pemodelan #24b: tabel per prodi yang diturunkan
+
+`InsertSkalaNilaiProdi` dan `InsertPeriodePerkuliahan` butuh baris per prodi,
+dan mesin sinkron butuh model Eloquent per baris. Jawabannya bukan mapper atas
+konfigurasi melainkan dua tabel — `skala_nilai_prodi` (per prodi per huruf)
+dan `periode_perkuliahan` (per prodi per semester) — yang **diturunkan** oleh
+`SkalaPeriodeProdiService` dari skala kampus dan kalender semester, hanya untuk
+prodi yang belum punya baris (ADR-016). Batas atas huruf adalah batas bawah
+huruf di atasnya, huruf teratas 100; angka PMB periode dihitung dari pendaftar
+semester itu dan dibiarkan kosong bila tidak ada gelombang — "tidak dihitung",
+bukan nol. Penurunan terjadi saat mapper membaca barisnya dan di
+`IntegrasiSeeder`, jadi kampus demo langsung mengantre 14 skala dan 2 periode.
+Pembaruan berkunci `id_bobot_nilai` dan (`id_prodi`, `id_semester`) — yang
+terakhir disimpan gabungan di `feeder_id`, pola yang sama dengan matkul
+kurikulum. Keduanya ditaruh paling awal di `config/feeder.php`, dan dapat
+dibandingkan lewat `GetListSkalaNilaiProdi` / `GetListPeriodePerkuliahan`.
+
+`FakeFeederClient` kini membalas insert dengan nama id yang benar per aksi
+(`id_bobot_nilai` untuk skala) — sebelumnya semua balasan memakai
+`id_registrasi_mahasiswa`, dan mapper skala akan menyimpan nama yang salah.
+
+### #27: mencatat saat berubah, bukan mengunci di layar
+
+Enam kolom identitas dan tujuh kolom keluar dikunci PDDIKTI setelah tersinkron.
+`KunciFeederObserver` dipasang pada `mahasiswa`, `yudisium`, `wisuda_peserta`,
+dan `evaluasi_studi`; begitu salah satu kolom di katalog `KolomTerkunci`
+berubah pada mahasiswa yang sudah ber-`feeder_id` (PDM) atau
+`feeder_keluar_id` (PJK), ia menulis `feeder_change_requests` — satu baris per
+kolom, nilai lama dan baru dalam kosakata PDDIKTI (tanggal `Y-m-d`, periode
+sebagai kode semester). Permintaan terbuka disunting, bukan digandakan; nilai
+yang dikembalikan mencabutnya (ADR-017).
+
+Validator pra-kirim menolak biodata (`mahasiswa`) dan catatan Lulus/DO
+(`lulus_do`) dengan aturan `kolom_terkunci_berubah` selama ada permintaan
+jalur PDDIKTI admin yang terbuka, menyebut kolomnya. Yang web service terima —
+NIM dan periode masuk — dikirim lewat `UpdateRiwayatPendidikanMahasiswa`
+berkunci `id_registrasi_mahasiswa`, dicatat di buku besar; penolakan Feeder
+disimpan pada permintaan dan membiarkannya terbuka untuk diajukan lewat admin.
+Panel baru di `/admin/feeder`: jenis, kolom, lama → baru, jalur ("harus
+diajukan lewat PDDIKTI admin" / "dapat dikirim lewat web service"), status
+belum diajukan → diajukan (nomor surat) → selesai, tiga aksi di
+`FeederPerubahanController` dengan `FeederChangeRequestPolicy` (`feeder.sync`).
+String UI-nya di `lang/id/feeder.php`.
+
+Yang tersingkap: mapper biodata hanya membaca mahasiswa semester berjalan
+(atau yang belum pernah terkirim), jadi perubahan identitas mahasiswa angkatan
+lama memang tidak pernah dikirim ulang oleh sinkron — permintaannya tetap
+tercatat dan tampak di konsol.
+
+**27 tes baru** (133 asersi) di `FeederSkalaPeriodeTest` dan
+`FeederPerubahanMahasiswaTest`, termasuk kampus demo yang mengirim kedua
+entitas lewat driver palsu tanpa satu pun gagal. Belum: surat permohonan
+PDM/PJK dari modul surat (#27b).
+
+---
+
+## Sesi 37 — 2026-10-22 · Feeder: referensi dulu, baru kredit dari luar, dan cara mahasiswa masuk
+
+Pekerjaan #23, #24, #25. Branch `feature/feeder-prestasi-kurikulum`, dari `main`
+sesudah PR #5. Enam entitas baru, dua puluh empat seluruhnya.
+
+### "Referensi dulu" ternyata belum berlaku untuk referensi kita sendiri
+
+CLAUDE.md §5 mewajibkan menarik referensi Feeder sebelum mengirim apa pun. Yang
+terlewat: kurikulum dan mata kuliah adalah referensi *kita* yang harus sampai di
+Feeder lebih dulu, dan tidak pernah dikirim. Payload kelas dan KRS sejak Agustus
+mengirim `id_matkul` berisi **kode lokal** — yang Feeder tidak kenal. Instalasi
+demo tidak pernah menemukannya karena *fake client* menerima apa saja.
+
+Kini tiga entitas referensi berjalan paling awal: kurikulum, mata kuliah, dan
+penempatan mata kuliah dalam kurikulum. Payload kelas dan KRS memakai id Feeder
+begitu ada, dan validator memperingatkan kelas yang mata kuliahnya belum
+terkirim. Penempatan dikunci pada *pasangan* (kurikulum, mata kuliah) karena
+PDDIKTI tidak memberi id untuknya; pasangan itu disimpan bergabung dan dipecah
+lagi saat update — dan *fake client* yang mengembalikan UUID untuk segala hal
+sempat menggantikannya, sampai mapper memaksa pasangannya.
+
+### Tiga catatan kredit dari luar
+
+Prestasi (hanya yang terverifikasi staf), transfer kredit (hanya yang disetujui;
+asal dikirim sebagai teks karena PDDIKTI tak punya id untuk mata kuliah kampus
+lain), dan konversi MBKM — dikunci pada *anggota* aktivitas dari #22, bukan
+aktivitasnya, karena PDDIKTI mengonversi kredit untuk peserta. Baris KRS yang
+mewakilinya kini membawa dua id Feeder: milik KRS dan milik konversi.
+
+### Cara mahasiswa masuk
+
+`JenisDaftar` enam nilai dan empat kolom di `mahasiswa`. Pindahan dan RPL wajib
+membawa SKS diakui dan asal — Feeder menolaknya tanpa itu, dan portal PIN
+menolaknya lagi bila SKS-nya kurang; validator menangkap keduanya di sini.
+Hanya "peserta didik baru" yang kodenya di-seed; selebihnya dipetakan kampus
+sesudah `GetJenisPendaftaran`. Belum ada layar untuk mengisinya — itu #33.
+
+### Yang sengaja tidak ikut
+
+Skala nilai prodi dan periode perkuliahan (#24b). Keduanya baris *per prodi* di
+PDDIKTI, sedangkan di sini skala nilai satu untuk seluruh kampus dan periode
+tidak berdimensi prodi. Itu keputusan pemodelan, bukan mapper, dan ditulis
+sebagai butir sendiri alih-alih dipaksakan.
+
+### Anggaran kueri monitor, untuk kedua kalinya
+
+Pada enam entitas, satu kueri hitung per entitas tidak terasa. Pada dua puluh
+tiga, layar monitor melewati anggaran 30 kueri — dan suite penuh yang
+menangkapnya. Kini seluruh hitungan antrean dijadikan **satu** SELECT berisi
+sub-select skalar per entitas (`FeederSyncService::jumlahAntre()`), jadi
+jumlah entitas boleh terus bertambah tanpa anggaran ikut naik.
+
+**16 tes baru** (70 asersi); folder Feeder hijau seluruhnya.
 
 ---
 
