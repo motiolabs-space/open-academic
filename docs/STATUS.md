@@ -4,9 +4,10 @@
 
 ---
 
-## Sesi 36 — 2026-10-24 · Denda keterlambatan: akrual harian yang tidak memperketat KRS
+## Sesi 37 — 2026-10-24 · Denda keterlambatan: akrual harian yang tidak memperketat KRS
 
-Pekerjaan #15. Branch `feature/keuangan-denda`, dari `main` sesudah PR #5.
+Pekerjaan #15. Branch `feature/keuangan-denda`, dari `main` sesudah PR #5,
+di-merge dengan `main` sesudah PR #6.
 Mengikuti keputusan 24 Oktober bahwa payment gateway opsional: denda harus
 bekerja penuh pada pembayaran manual yang dicatat kasir, dan memang begitu.
 
@@ -55,6 +56,48 @@ akun yang belum ada di bagan dan keputusan perlakuannya. Dicatat di MODUL.md.
 **34 tes baru** (DendaTest 32, GerbangPembayaranKrsTest +2). Seeder demo
 mengenakan denda lewat service pada tagihan yang menunggak dan membebaskan satu
 di antaranya, dengan aturan eksplisit — `.env` kampus tidak disentuh.
+
+---
+
+## Sesi 36 — 2026-10-22 · Feeder: menghapus yang sudah tidak ada di sini
+
+Pekerjaan #26. Branch `feature/feeder-hapus-koreksi`, dari `main` sesudah PR #4, di-rebase sesudah PR #5.
+
+### Separuh koreksi yang hilang
+
+`Update*` sudah berjalan sejak Agustus: ledger menyimpan hash muatan, dan baris
+yang berubah dikirim ulang dengan kunci balasan Feeder. Yang tidak pernah ada
+adalah kebalikannya. Kelas yang dibatalkan sesudah dilaporkan, baris KRS yang
+dicabut saat revisi, mahasiswa yang dihapus — semuanya tetap di PDDIKTI persis
+seperti saat dikirim, dan rasio atau total SKS yang dihitung darinya salah
+sejak itu.
+
+`FeederSyncService::hapusYangTerhapus()` membaca ledger: aksi sukses terakhir
+per baris lokal, lalu dicocokkan dengan tabelnya. Yang tidak ditemukan — terhapus
+lunak dihitung tiada, karena kelas di keranjang sampah bukan kelas yang
+diselenggarakan — dikirim `Delete*` dengan kunci yang sama seperti `Update*`.
+Setiap penghapusan menulis baris ledger sendiri, jadi putaran berikutnya melihat
+aksi sukses terakhirnya adalah hapus dan melewatinya: idempoten dengan cara yang
+sama seperti dorongan.
+
+### Tiga hal yang sengaja
+
+1. **Nama aksi diturunkan, bukan ditulis per entitas.** `InsertX` → `DeleteX`.
+   Entitas yang dibawa aksi *upsert* (nilai per komponen) tidak punya *Insert*
+   untuk dicerminkan dan dinyatakan "tanpa aksi hapus" — di layar, di perintah,
+   dan di hasil — alih-alih ditebak.
+2. **Penghapusan yang ditolak Feeder dicoba lagi.** Baris ledger gagal bukan
+   aksi *sukses* terakhir, jadi putaran berikutnya mencobanya kembali.
+3. **Berjalan di dalam permintaan, bukan antrean**, seperti pembanding:
+   penghapusan sedikit, dan operator yang menekan tombolnya ingin angkanya
+   sekarang.
+
+Yang **bukan** penghapusan dan tidak disentuh: mahasiswa yang yudisiumnya
+dibatalkan masih ada — statusnya berubah, barisnya tidak; itu urusan `Update`
+entitas Lulus/DO, bukan `Delete`.
+
+Kontrak `FeederClientInterface` bertambah satu metode, `delete()`, di client
+sungguhan maupun palsu. **10 tes baru**; folder Feeder 87 hijau.
 
 ---
 
