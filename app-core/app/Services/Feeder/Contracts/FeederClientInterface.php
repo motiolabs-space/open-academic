@@ -30,6 +30,13 @@ interface FeederClientInterface
      */
     public function update(string $act, array $key, array $record): FeederResponse;
 
+    /**
+     * Removes one row Feeder holds, identified by its key.
+     *
+     * @param array<string, mixed> $key
+     */
+    public function delete(string $act, array $key): FeederResponse;
+
     /** @param array<string, mixed> $filter */
     public function get(string $act, array $filter = [], int $limit = 0, int $offset = 0): FeederResponse;
 

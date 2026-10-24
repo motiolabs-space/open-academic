@@ -129,6 +129,36 @@ class FeederController extends Controller
         return back()->with('sukses', "Sinkronisasi {$entity} dijadwalkan. Pantau perkembangannya pada buku besar di bawah.");
     }
 
+    /**
+     * Removes from Feeder what no longer exists here.
+     *
+     * Inline, like the comparison: deletions are few, and the operator who
+     * clicked wants the number now.
+     */
+    public function hapus(string $entity): RedirectResponse
+    {
+        $this->authorizeFeeder('feeder.sync');
+
+        if (!isset(FeederSyncService::MAPPERS[$entity])) {
+            abort(404);
+        }
+
+        $hasil = $this->sync->hapusYangTerhapus($entity, Portal::term());
+
+        if (!$hasil['didukung']) {
+            return back()->with('peringatan', "Feeder tidak menyediakan aksi hapus untuk {$entity}; baris yang sudah terkirim hanya dapat dikoreksi lewat PDDIKTI admin.");
+        }
+
+        return back()->with($hasil['gagal'] > 0 ? 'peringatan' : 'sukses', sprintf(
+            '%s: %d baris terkirim diperiksa, %d sudah tidak ada di sini dan dihapus dari Feeder, %d gagal dihapus, %d masih ada.',
+            $entity,
+            $hasil['diperiksa'],
+            $hasil['dihapus'],
+            $hasil['gagal'],
+            $hasil['dilewati'],
+        ));
+    }
+
     public function ulangi(string $entity): RedirectResponse
     {
         $this->authorizeFeeder('feeder.sync');
@@ -199,6 +229,7 @@ class FeederController extends Controller
                 // reads as "belum dapat dibandingkan" rather than as one that
                 // was checked and found clean.
                 'dapat_dibandingkan' => $this->rekonsiliasi->dapatDibandingkan($entity),
+                'dapat_dihapus' => app(FeederSyncService::MAPPERS[$entity])->actHapus() !== null,
             ];
         })->values();
     }

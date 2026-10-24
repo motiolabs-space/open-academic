@@ -164,6 +164,108 @@ class FeederSyncService
     }
 
     /**
+     * Removes from Feeder the rows of an entity that no longer exist here.
+     *
+     * A push-only sync has a blind spot: a class cancelled after it was
+     * reported, a KRS line dropped during revision, a student record merged
+     * away — each stays at PDDIKTI exactly as it was sent, and the ratio or
+     * the credit total it feeds is wrong from then on. The ledger knows what
+     * left the building; this reads it back against what is still here, and
+     * sends a delete for the difference.
+     *
+     * Soft-deleted rows count as gone: a trashed class is not one the campus
+     * runs. Each delete writes its own ledger row, so a re-run finds the
+     * last successful action was the delete and skips it — the same
+     * idempotency as a push.
+     *
+     * @return array{entity: string, term: string, diperiksa: int, dihapus: int, dilewati: int, gagal: int, didukung: bool}
+     */
+    public function hapusYangTerhapus(string $entity, TahunAkademik $term): array
+    {
+        $this->pastikanAktif();
+
+        $mapper = $this->mapper($entity);
+        $actHapus = $mapper->actHapus();
+
+        $hasil = ['entity' => $entity, 'term' => $term->kode, 'diperiksa' => 0, 'dihapus' => 0, 'dilewati' => 0, 'gagal' => 0, 'didukung' => $actHapus !== null];
+
+        if ($actHapus === null) {
+            return $hasil;
+        }
+
+        // The latest successful action per local row. Newest first, so the
+        // first row seen for a (type, id) pair is the one that counts.
+        $terakhir = FeederSyncLog::query()
+            ->entity($entity)
+            ->where('tahun_akademik_id', $term->id)
+            ->where('status', FeederSyncStatus::Success->value)
+            ->whereNotNull('local_type')
+            ->whereNotNull('local_id')
+            ->orderByDesc('id')
+            ->get(['id', 'action', 'local_type', 'local_id', 'feeder_id'])
+            ->unique(fn (FeederSyncLog $log): string => $log->local_type.'#'.$log->local_id)
+            ->reject(fn (FeederSyncLog $log): bool => $log->action === $actHapus || blank($log->feeder_id));
+
+        $hasil['diperiksa'] = $terakhir->count();
+
+        foreach ($terakhir->groupBy('local_type') as $kelas => $logs) {
+            if (!class_exists($kelas)) {
+                continue;
+            }
+
+            /** @var Model $contoh */
+            $contoh = new $kelas;
+            $masihAda = $kelas::query()
+                ->whereIn($contoh->getKeyName(), $logs->pluck('local_id'))
+                ->pluck($contoh->getKeyName())
+                ->map(fn ($id): string => (string) $id)
+                ->all();
+
+            foreach ($logs as $log) {
+                if (in_array((string) $log->local_id, $masihAda, true)) {
+                    $hasil['dilewati']++;
+
+                    continue;
+                }
+
+                $kunci = $this->kunciUpdate($mapper, (string) $log->feeder_id);
+
+                try {
+                    $response = $this->client->delete($actHapus, $kunci);
+                    $gagal = $response->gagal();
+                    $kode = (string) $response->errorCode;
+                    $pesan = $response->errorDesc;
+                } catch (FeederException $e) {
+                    $gagal = true;
+                    $kode = (string) ($e->feederErrorCode ?? 'transport');
+                    $pesan = $e->getMessage();
+                }
+
+                FeederSyncLog::create([
+                    'entity' => $entity,
+                    'action' => $actHapus,
+                    'direction' => 'push',
+                    'local_type' => $log->local_type,
+                    'local_id' => $log->local_id,
+                    'feeder_id' => $log->feeder_id,
+                    'tahun_akademik_id' => $term->id,
+                    'payload_hash' => FeederSyncLog::hashPayload($kunci),
+                    'payload' => ['key' => $kunci],
+                    'status' => $gagal ? FeederSyncStatus::Failed : FeederSyncStatus::Success,
+                    'error_code' => $gagal ? $kode : null,
+                    'error_message' => $gagal ? $pesan : null,
+                    'attempts' => 1,
+                    'synced_at' => $gagal ? null : now(),
+                ]);
+
+                $gagal ? $hasil['gagal']++ : $hasil['dihapus']++;
+            }
+        }
+
+        return $hasil;
+    }
+
+    /**
      * Pulls Feeder's reference tables.
      *
      * Always run before pushing anything: the codes a campus maps its enums to

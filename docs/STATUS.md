@@ -4,7 +4,7 @@
 
 ---
 
-## Sesi 36 — 2026-10-22 · Feeder: referensi dulu, baru kredit dari luar, dan cara mahasiswa masuk
+## Sesi 37 — 2026-10-22 · Feeder: referensi dulu, baru kredit dari luar, dan cara mahasiswa masuk
 
 Pekerjaan #23, #24, #25. Branch `feature/feeder-prestasi-kurikulum`, dari `main`
 sesudah PR #5. Enam entitas baru, dua puluh empat seluruhnya.
@@ -57,6 +57,48 @@ sub-select skalar per entitas (`FeederSyncService::jumlahAntre()`), jadi
 jumlah entitas boleh terus bertambah tanpa anggaran ikut naik.
 
 **16 tes baru** (70 asersi); folder Feeder hijau seluruhnya.
+
+---
+
+## Sesi 36 — 2026-10-22 · Feeder: menghapus yang sudah tidak ada di sini
+
+Pekerjaan #26. Branch `feature/feeder-hapus-koreksi`, dari `main` sesudah PR #4, di-rebase sesudah PR #5.
+
+### Separuh koreksi yang hilang
+
+`Update*` sudah berjalan sejak Agustus: ledger menyimpan hash muatan, dan baris
+yang berubah dikirim ulang dengan kunci balasan Feeder. Yang tidak pernah ada
+adalah kebalikannya. Kelas yang dibatalkan sesudah dilaporkan, baris KRS yang
+dicabut saat revisi, mahasiswa yang dihapus — semuanya tetap di PDDIKTI persis
+seperti saat dikirim, dan rasio atau total SKS yang dihitung darinya salah
+sejak itu.
+
+`FeederSyncService::hapusYangTerhapus()` membaca ledger: aksi sukses terakhir
+per baris lokal, lalu dicocokkan dengan tabelnya. Yang tidak ditemukan — terhapus
+lunak dihitung tiada, karena kelas di keranjang sampah bukan kelas yang
+diselenggarakan — dikirim `Delete*` dengan kunci yang sama seperti `Update*`.
+Setiap penghapusan menulis baris ledger sendiri, jadi putaran berikutnya melihat
+aksi sukses terakhirnya adalah hapus dan melewatinya: idempoten dengan cara yang
+sama seperti dorongan.
+
+### Tiga hal yang sengaja
+
+1. **Nama aksi diturunkan, bukan ditulis per entitas.** `InsertX` → `DeleteX`.
+   Entitas yang dibawa aksi *upsert* (nilai per komponen) tidak punya *Insert*
+   untuk dicerminkan dan dinyatakan "tanpa aksi hapus" — di layar, di perintah,
+   dan di hasil — alih-alih ditebak.
+2. **Penghapusan yang ditolak Feeder dicoba lagi.** Baris ledger gagal bukan
+   aksi *sukses* terakhir, jadi putaran berikutnya mencobanya kembali.
+3. **Berjalan di dalam permintaan, bukan antrean**, seperti pembanding:
+   penghapusan sedikit, dan operator yang menekan tombolnya ingin angkanya
+   sekarang.
+
+Yang **bukan** penghapusan dan tidak disentuh: mahasiswa yang yudisiumnya
+dibatalkan masih ada — statusnya berubah, barisnya tidak; itu urusan `Update`
+entitas Lulus/DO, bukan `Delete`.
+
+Kontrak `FeederClientInterface` bertambah satu metode, `delete()`, di client
+sungguhan maupun palsu. **10 tes baru**; folder Feeder 87 hijau.
 
 ---
 
