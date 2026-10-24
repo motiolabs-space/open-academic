@@ -4,7 +4,7 @@
 
 ---
 
-## Sesi 39 — 2026-10-24 · Denda keterlambatan: akrual harian yang tidak memperketat KRS
+## Sesi 41 — 2026-10-24 · Denda keterlambatan: akrual harian yang tidak memperketat KRS
 
 Pekerjaan #15. Branch `feature/keuangan-denda`, dari `main` sesudah PR #5,
 di-merge dengan `main` sesudah PR #6, #7, dan #11.
