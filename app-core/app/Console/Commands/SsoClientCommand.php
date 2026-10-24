@@ -20,7 +20,7 @@ use Laravel\Passport\Passport;
 class SsoClientCommand extends Command
 {
     protected $signature = 'openacademic:sso-client
-        {nama : Nama aplikasi yang akan dibaca mahasiswa pada layar persetujuan}
+        {nama? : Nama aplikasi yang akan dibaca mahasiswa pada layar persetujuan; tidak dipakai bersama --daftar atau --cabut}
         {--redirect=* : URI callback (boleh diulang)}
         {--daftar : Tampilkan daftar aplikasi terdaftar}
         {--cabut= : Cabut seluruh token milik satu client (isi dengan client id)}';
@@ -48,6 +48,14 @@ class SsoClientCommand extends Command
 
     private function buat(ClientRepository $clients): int
     {
+        $nama = (string) $this->argument('nama');
+
+        if ($nama === '') {
+            $this->components->error('Nama aplikasi wajib diisi untuk mendaftarkan klien baru.');
+
+            return self::FAILURE;
+        }
+
         $redirects = (array) $this->option('redirect');
 
         if ($redirects === []) {
@@ -63,7 +71,7 @@ class SsoClientCommand extends Command
         }
 
         $client = $clients->createAuthorizationCodeGrantClient(
-            name: $this->argument('nama'),
+            name: $nama,
             redirectUris: $redirects,
             confidential: true,
         );
