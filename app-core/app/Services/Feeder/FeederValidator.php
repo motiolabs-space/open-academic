@@ -4,18 +4,24 @@ declare(strict_types=1);
 
 namespace App\Services\Feeder;
 
+use App\Enums\JenisDaftar;
 use App\Enums\JenisEvaluasi;
 use App\Enums\StudentStatus;
 use App\Models\Akademik\KelasDosen;
 use App\Models\Akademik\KelasKuliah;
 use App\Models\Akademik\KomponenNilai;
+use App\Models\Akademik\KonversiKredit;
 use App\Models\Akademik\KrsDetail;
+use App\Models\Akademik\Kurikulum;
+use App\Models\Akademik\KurikulumMataKuliah;
+use App\Models\Akademik\MataKuliah;
 use App\Models\Akademik\Nilai;
 use App\Models\Akademik\NilaiKomponen;
 use App\Models\Feeder\FeederMapping;
 use App\Models\Feeder\FeederValidationIssue;
 use App\Models\Kemahasiswaan\AktivitasMahasiswa;
 use App\Models\Kemahasiswaan\Mahasiswa;
+use App\Models\Kemahasiswaan\PoinMahasiswa;
 use App\Models\Kemahasiswaan\StatusMahasiswa;
 use App\Models\Sdm\Dosen;
 use App\Models\TugasAkhir\TugasAkhir;
@@ -80,6 +86,9 @@ class FeederValidator
     private function periksaBaris(string $entity, Model $model, FeederMapper $mapper): Collection
     {
         return match ($entity) {
+            'kurikulum' => $this->kurikulum($model),
+            'mata_kuliah' => $this->mataKuliah($model),
+            'matkul_kurikulum' => $this->matkulKurikulum($model),
             'mahasiswa' => $this->mahasiswa($model),
             'riwayat_pendidikan' => $this->riwayatPendidikan($model),
             'aktivitas_kuliah' => $this->aktivitasKuliah($model),
@@ -96,6 +105,9 @@ class FeederValidator
             'anggota_tugas_akhir' => $this->anggota($model->feeder_id, $model->mahasiswa),
             'bimbing_tugas_akhir' => $this->pembimbing($model->tugasAkhir?->feeder_id, $model->dosen, BimbingTugasAkhirMapper::KATEGORI),
             'uji_tugas_akhir' => $this->pembimbing($model->ujian?->tugasAkhir?->feeder_id, $model->dosen, UjiTugasAkhirMapper::KATEGORI),
+            'prestasi' => $this->prestasi($model),
+            'transfer_kredit' => $this->transferKredit($model),
+            'konversi_mbkm' => $this->konversiMbkm($model),
             'lulus_do' => $this->lulusDo($model),
             default => collect(),
         };
@@ -150,6 +162,28 @@ class FeederValidator
             $isu->push($this->error('periode_masuk_kosong', 'Periode masuk (term) belum ditetapkan.'));
         }
 
+        $jenis = $m->jenis_daftar ?? JenisDaftar::Baru;
+
+        if (FeederMapping::toFeeder('jenis_daftar', $jenis->value) === null) {
+            $isu->push($this->error(
+                'jenis_daftar_belum_dipetakan',
+                "Jenis pendaftaran \"{$jenis->label()}\" belum dipetakan ke kode PDDIKTI. Tarik referensi (GetJenisPendaftaran) lalu petakan di feeder_mappings, grup jenis_daftar.",
+            ));
+        }
+
+        // A transfer without its origin is refused by Feeder, and a transfer
+        // whose recognised credits are short is refused again at the
+        // diploma-number portal. Both are visible here first.
+        if ($jenis->butuhAsal()) {
+            if (blank($m->sks_diakui)) {
+                $isu->push($this->error('sks_diakui_kosong', "Mahasiswa {$jenis->label()} wajib membawa jumlah SKS yang diakui."));
+            }
+
+            if (blank($m->pt_asal) || blank($m->prodi_asal)) {
+                $isu->push($this->error('asal_kosong', "Mahasiswa {$jenis->label()} wajib membawa perguruan tinggi dan program studi asal."));
+            }
+        }
+
         return $isu;
     }
 
@@ -197,6 +231,10 @@ class FeederValidator
 
         if ((int) $k->sks <= 0) {
             $isu->push($this->error('sks_nol', 'Jumlah SKS kelas belum ditetapkan.'));
+        }
+
+        if (blank($k->mataKuliah?->feeder_id)) {
+            $isu->push($this->peringatan('matkul_belum_sinkron', 'Mata kuliah belum terkirim ke Feeder; kode lokal dikirim sebagai id_matkul dan akan ditolak bila Feeder tidak mengenalnya.'));
         }
 
         return $isu;
@@ -493,6 +531,120 @@ class FeederValidator
                 'kategori_kegiatan_belum_dipetakan',
                 "Kategori kegiatan \"{$kategori}\" belum dipetakan ke kode PDDIKTI. Tarik referensi (GetKategoriKegiatan) lalu petakan di feeder_mappings, grup kategori_kegiatan.",
             ));
+        }
+
+        return $isu;
+    }
+
+    /** @param Kurikulum $k */
+    private function kurikulum(Model $k): Collection
+    {
+        $isu = collect();
+
+        if (blank($k->prodi?->kode_pddikti)) {
+            $isu->push($this->error('prodi_tanpa_id_sms', 'Program studi belum memiliki kode PDDIKTI (id_sms).'));
+        }
+
+        if ((int) $k->sks_lulus <= 0) {
+            $isu->push($this->error('sks_lulus_nol', 'Jumlah SKS lulus kurikulum belum ditetapkan.'));
+        }
+
+        return $isu;
+    }
+
+    /** @param MataKuliah $mk */
+    private function mataKuliah(Model $mk): Collection
+    {
+        $isu = collect();
+
+        if (blank($mk->prodi?->kode_pddikti)) {
+            $isu->push($this->error('prodi_tanpa_id_sms', 'Program studi belum memiliki kode PDDIKTI (id_sms).'));
+        }
+
+        if ((int) $mk->sks <= 0) {
+            $isu->push($this->error('sks_nol', 'SKS mata kuliah belum ditetapkan.'));
+        }
+
+        $jenis = $mk->kurikulum->first()?->pivot?->jenis ?? 'wajib';
+
+        if (FeederMapping::toFeeder('jenis_mata_kuliah', $jenis) === null) {
+            $isu->push($this->error('jenis_matkul_belum_dipetakan', "Jenis mata kuliah \"{$jenis}\" belum dipetakan ke kode PDDIKTI (feeder_mappings, grup jenis_mata_kuliah)."));
+        }
+
+        return $isu;
+    }
+
+    /** @param KurikulumMataKuliah $km */
+    private function matkulKurikulum(Model $km): Collection
+    {
+        $isu = collect();
+
+        if (blank($km->kurikulum?->feeder_id)) {
+            $isu->push($this->error('kurikulum_belum_sinkron', 'Kurikulum belum terkirim ke Feeder.'));
+        }
+
+        if (blank($km->mataKuliah?->feeder_id)) {
+            $isu->push($this->error('matkul_belum_sinkron', 'Mata kuliah belum terkirim ke Feeder.'));
+        }
+
+        return $isu;
+    }
+
+    /** @param PoinMahasiswa $p */
+    private function prestasi(Model $p): Collection
+    {
+        $isu = collect();
+
+        if (blank($p->mahasiswa?->feeder_id)) {
+            $isu->push($this->error('biodata_belum_sinkron', 'Biodata mahasiswa belum terkirim ke Feeder.'));
+        }
+
+        if (FeederMapping::toFeeder('jenis_prestasi', (string) $p->kategori?->kode) === null) {
+            $isu->push($this->error('jenis_prestasi_belum_dipetakan', "Kategori prestasi \"{$p->kategori?->nama}\" belum dipetakan ke jenis prestasi PDDIKTI (feeder_mappings, grup jenis_prestasi; referensi GetJenisPrestasi)."));
+        }
+
+        if (FeederMapping::toFeeder('tingkat_prestasi', (string) $p->kategori?->tingkat) === null) {
+            $isu->push($this->error('tingkat_prestasi_belum_dipetakan', "Tingkat \"{$p->kategori?->tingkat}\" belum dipetakan ke tingkat prestasi PDDIKTI (grup tingkat_prestasi; referensi GetTingkatPrestasi)."));
+        }
+
+        return $isu;
+    }
+
+    /** @param KonversiKredit $k */
+    private function transferKredit(Model $k): Collection
+    {
+        $isu = collect();
+
+        if (blank($k->mahasiswa?->feeder_registrasi_id)) {
+            $isu->push($this->error('registrasi_belum_sinkron', 'Riwayat pendidikan mahasiswa belum terkirim ke Feeder.'));
+        }
+
+        if (blank($k->mataKuliah?->feeder_id)) {
+            $isu->push($this->error('matkul_belum_sinkron', 'Mata kuliah tujuan belum terkirim ke Feeder.'));
+        }
+
+        if (blank($k->nilai_huruf)) {
+            $isu->push($this->error('huruf_kosong', 'Nilai huruf yang diakui belum ditetapkan.'));
+        }
+
+        return $isu;
+    }
+
+    /** @param KrsDetail $d */
+    private function konversiMbkm(Model $d): Collection
+    {
+        $isu = collect();
+
+        if (blank($d->aktivitas?->feeder_anggota_id)) {
+            $isu->push($this->error('anggota_belum_sinkron', 'Keanggotaan aktivitas MBKM belum terkirim ke Feeder (entitas anggota_mbkm).'));
+        }
+
+        if (blank($d->kelasKuliah?->mataKuliah?->feeder_id)) {
+            $isu->push($this->error('matkul_belum_sinkron', 'Mata kuliah belum terkirim ke Feeder.'));
+        }
+
+        if ($d->nilai?->nilai_huruf === null) {
+            $isu->push($this->error('huruf_kosong', 'Nilai huruf belum ditetapkan.'));
         }
 
         return $isu;

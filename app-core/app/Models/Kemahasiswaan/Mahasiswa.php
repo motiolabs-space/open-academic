@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models\Kemahasiswaan;
 
 use App\Enums\Gender;
+use App\Enums\JenisDaftar;
 use App\Enums\StudentStatus;
 use App\Models\Akademik\Konsentrasi;
 use App\Models\Akademik\Krs;
@@ -73,6 +74,7 @@ class Mahasiswa extends Authenticatable implements OAuthenticatable
             'tanggal_lahir' => 'date',
             'jenis_kelamin' => Gender::class,
             'status' => StudentStatus::class,
+            'jenis_daftar' => JenisDaftar::class,
 
             // YEAR columns come back as strings from the driver.
             'angkatan' => 'integer',

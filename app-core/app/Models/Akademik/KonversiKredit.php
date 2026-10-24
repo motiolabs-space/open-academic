@@ -36,6 +36,7 @@ class KonversiKredit extends Model
     protected function casts(): array
     {
         return [
+            'feeder_synced_at' => 'datetime',
             'jenis' => JenisKonversi::class,
             'status' => StatusKonversi::class,
             'bobot' => 'decimal:2',

@@ -74,6 +74,9 @@ return [
         // the lists change with each MBKM cycle.
         'jenis_aktivitas' => 'GetJenisAktivitasMahasiswa',
         'kategori_kegiatan' => 'GetKategoriKegiatan',
+        'jenis_prestasi' => 'GetJenisPrestasi',
+        'tingkat_prestasi' => 'GetTingkatPrestasi',
+        'jenis_pendaftaran' => 'GetJenisPendaftaran',
     ],
 
     /*
@@ -87,6 +90,22 @@ return [
     */
 
     'entities' => [
+        // Reference data first: everything below points at these ids.
+        'kurikulum' => [
+            'label' => 'Kurikulum',
+            'action' => 'InsertKurikulum',
+            'depends_on' => [],
+        ],
+        'mata_kuliah' => [
+            'label' => 'Mata Kuliah',
+            'action' => 'InsertMataKuliah',
+            'depends_on' => [],
+        ],
+        'matkul_kurikulum' => [
+            'label' => 'Mata Kuliah dalam Kurikulum',
+            'action' => 'InsertMatkulKurikulum',
+            'depends_on' => ['kurikulum', 'mata_kuliah'],
+        ],
         'mahasiswa' => [
             'label' => 'Biodata Mahasiswa',
             'action' => 'InsertBiodataMahasiswa',
@@ -166,6 +185,21 @@ return [
             'label' => 'Penguji Tugas Akhir',
             'action' => 'InsertUjiMahasiswa',
             'depends_on' => ['tugas_akhir'],
+        ],
+        'prestasi' => [
+            'label' => 'Prestasi Mahasiswa',
+            'action' => 'InsertPrestasiMahasiswa',
+            'depends_on' => ['mahasiswa'],
+        ],
+        'transfer_kredit' => [
+            'label' => 'Transfer Kredit',
+            'action' => 'InsertTransferKreditMahasiswa',
+            'depends_on' => ['riwayat_pendidikan', 'mata_kuliah'],
+        ],
+        'konversi_mbkm' => [
+            'label' => 'Konversi Kredit MBKM',
+            'action' => 'InsertKonversiKampusMerdeka',
+            'depends_on' => ['anggota_mbkm', 'nilai'],
         ],
         'lulus_do' => [
             'label' => 'Mahasiswa Lulus / DO',
