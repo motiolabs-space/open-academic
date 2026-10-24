@@ -321,7 +321,7 @@ tabel lokal** — ini pekerjaan mapper dan validator, bukan model data baru.
 | 23 | **Prestasi, transfer kredit, dan konversi MBKM → Feeder** | Prestasi dari poin kemahasiswaan; transfer dari `konversi_kredit`; konversi MBKM (`InsertKonversiKampusMerdeka`) dari `krs_detail.aktivitas_mahasiswa_id` — anggota aktivitasnya sudah terkirim sejak #22 |
 | 24 | **Kurikulum, mata kuliah, RPS & rencana evaluasi MK, skala nilai prodi, periode perkuliahan → Feeder** | Saat ini referensi ini diasumsikan sudah ada di Feeder. Kampus baru tidak punya asumsi itu |
 | 25 | **Jenis daftar riwayat pendidikan yang lengkap** | Peserta didik baru · pindahan (internal / antar PT) · RPL transfer SKS · RPL perolehan · *fast track* · non-gelar. Pindahan dan RPL wajib membawa SKS diakui, PT asal, dan prodi asal. `mahasiswa` hanya punya `jalur_masuk`. Sisi akademiknya #33 |
-| 26 | **`Update*` / `Delete*` untuk koreksi** | Data yang sudah tersinkron tidak dapat diubah dari UI Feeder; koreksi hanya lewat web service atau PDDIKTI admin. Ledger `payload_hash` sudah membedakan "sama" dari "berubah" — yang kurang aksi untuk "berubah" |
+| ~~26~~ | ~~**`Update*` / `Delete*` untuk koreksi**~~ | ✅ 22 Oktober 2026 — `Update*` sudah berjalan lewat hash sejak Agustus; yang baru `Delete*`: `hapusYangTerhapus()` membaca ledger, mencocokkan dengan baris yang masih ada (terhapus lunak = tiada), dan mengirim hapus untuk selisihnya. Tombol "Hapus yang tiada" per entitas dan `openacademic:feeder-hapus`. Entitas tanpa aksi hapus dinyatakan, bukan ditebak |
 | 27 | **Perubahan Data Mahasiswa & Perubahan Jenis Keluar** | Enam kolom identitas (NIM, nama, nama ibu, tempat & tanggal lahir, periode masuk) dan tujuh kolom keluar dikunci PDDIKTI setelah sinkron; mengubahnya berarti ajuan di PDDIKTI admin dengan surat permohonan dan lampiran. Aplikasi harus **menandai kolom itu terkunci** setelah sinkron pertama, dan modul surat dapat mencetak surat permohonannya |
 
 Juga dicatat, bukan pekerjaan: sinkronisasi dari UI Feeder memerlukan OTP
@@ -368,7 +368,8 @@ di hari yang sama; yang tersingkap di sana: komponen nilai tidak pernah punya
 *jenis*, jadi IKU 7 selama ini hanya sebuah flag tanpa bukti. **#22 dan #28
 selesai** menyusul di PR terpisah, lalu **#29**: nomor ijazah kini dicatat dari
 PIN, bukan dibangkitkan — risiko terbuka di MODUL.md tertutup. **#20b selesai**
-(layar rencana evaluasi). Berikutnya **#26**. #32 adalah
+(layar rencana evaluasi), lalu **#26**: Feeder akhirnya bisa diminta melupakan
+apa yang sudah tidak ada di sini. Berikutnya **#23–#25**. #32 adalah
 pekerjaan terbesar dan satu-satunya yang membuka portal keempat (calon
 mahasiswa); kerjakan setelah Feeder tuntas, supaya pendaftar yang diterima
 langsung punya riwayat pendidikan yang benar (#25).
