@@ -159,6 +159,27 @@
   yang tidak dapat menghasilkan dokumen tak terverifikasi karena kelalaian.
   Verifikasi publik ijazah adalah SIVIL; QR lokal tetap untuk surat dan SKPI.
 
+## ADR-014 — Payment gateway opsional; transfer manual adalah jalur utama (2026-10-24)
+
+- **Konteks.** Sejak perbandingan dengan pembanding komersial (16 Agustus 2026)
+  ROADMAP menempatkan adaptor payment gateway sebagai P0, "satu-satunya
+  kekalahan nyata", dan mengulanginya di empat tempat. Adaptornya tertahan dua
+  bulan pada kredensial merchant. Sementara itu jalur yang ada — tagihan
+  diterbitkan, mahasiswa transfer, kasir mencatat (termasuk cicilan), gerbang
+  KRS membaca status tagihan — sudah lengkap dan teruji, dan itulah cara kerja
+  sebagian besar kampus sasaran.
+- **Keputusan.** Pemilik repo menyatakan payment gateway **opsional**.
+  Pencatatan manual oleh kasir adalah jalur utama dan cukup untuk rilis v1.0.
+  Kontrak `PaymentGatewayInterface` tetap; adaptornya dibangun hanya bila ada
+  kampus yang membawa kredensial merchant dan endpoint notifikasi yang dapat
+  diverifikasi tanda tangannya. P0 dikosongkan; butirnya turun ke P3 dengan
+  tanda opsional.
+- **Konsekuensi.** `config/payment.php` tetap tidak menjanjikan gateway sampai
+  kodenya ada. Tabel perbandingan menyebutnya "model berbeda", bukan
+  "kekalahan". Yang mungkin layak dikerjakan sebagai gantinya, dan lebih murah:
+  konfirmasi atau unggah bukti transfer oleh mahasiswa, agar kasir tidak
+  mencocokkan mutasi rekening tanpa petunjuk. Belum diputuskan.
+
 ## ADR-016 — Skala nilai dan periode perkuliahan per prodi diturunkan ke tabel, tidak dipetakan dari konfigurasi (2026-10-24)
 
 - **Konteks.** `InsertSkalaNilaiProdi` dan `InsertPeriodePerkuliahan` adalah

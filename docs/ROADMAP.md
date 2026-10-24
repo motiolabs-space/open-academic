@@ -115,7 +115,7 @@ Apa yang ada hari ini, dikelompokkan menurut siapa yang memakainya.
 | Beasiswa, keringanan, potongan (G4) | ✅ | Tak pernah negatif, tak pernah menelan pembayaran |
 | Gerbang pembayaran KRS | ✅ | Ambang + dispensasi berbatas waktu |
 | Integrasi akuntansi (Easy Accounting) | ✅ | Opsional; bawaan `nonaktif` |
-| **Payment gateway aktif** | 🟡 | Kontrak ada, adaptor tidak — lihat §Menunggu di Luar Repo |
+| Payment gateway | 🟡 | **Opsional sejak 24 Oktober 2026** (ADR-014). Transfer manual yang dicatat kasir adalah jalur utama; kontrak adaptor ada, implementasinya dibangun hanya bila ada kampus yang membawa kredensial merchant — lihat §Menunggu di Luar Repo |
 | **Denda keterlambatan** | ⬜ | Kecil secara kode, sering diminta |
 
 ### SDM & pelaporan dosen
@@ -177,7 +177,7 @@ akademik ada di tabel berikutnya.
 
 | Modul | Poros | Beratnya |
 |---|---|---|
-| **Payment gateway aktif** | Keuangan | **Besar** — kita hanya punya pencatatan manual |
+| Kanal bayar terintegrasi | Keuangan | **Model berbeda, bukan ketiadaan** — kasir + transfer tercatat adalah jalur utama (ADR-014); adaptor gateway opsional |
 | **Denda keterlambatan** | Keuangan | Kecil–sedang |
 | **Aplikasi mobile native** | Semua | Sedang — web responsif sudah jalan |
 
@@ -213,10 +213,12 @@ sesi ujiannya tidak perlu.
 
 ### Penilaian
 
-**Di dalam poros akademik, hanya satu yang benar-benar kalah: payment gateway
-yang jalan.** Sisanya adalah kedalaman, bukan ketiadaan — kita punya
-perkuliahan, kita belum punya RPS-nya; kita punya kurikulum, kita belum punya
-padanannya.
+**Di dalam poros akademik tidak ada yang benar-benar kalah.** Payment gateway
+sempat dicatat sebagai satu-satunya kekalahan; sejak 24 Oktober 2026 ia
+dinyatakan opsional (ADR-014) — transfer manual yang dicatat kasir adalah jalur
+utama, dan adaptornya tinggal menunggu kampus yang membawa kredensial. Sisanya
+adalah kedalaman, bukan ketiadaan — kita punya perkuliahan, kita belum punya
+RPS-nya; kita punya kurikulum, kita belum punya padanannya.
 
 Kalau kampus membandingkan berdampingan, mereka akan menang di **CBT dan LMS**.
 Itu diterima: dua produk yang dibundel, bukan satu produk yang lebih dalam. Yang
@@ -233,11 +235,11 @@ KTM/kartu ujian, padanan MK, dan poin kemahasiswaan.**
 Disusun menurut poros, bukan menurut daftar pesaing. Yang memperdalam
 perkuliahan didahulukan atas yang melebarkan cakupan.
 
-### P0 — satu-satunya kekalahan nyata
+### P0 — dikosongkan 24 Oktober 2026
 
 | # | Pekerjaan | Alasan |
 |---|---|---|
-| 1 | **Adaptor payment gateway** | Kontraknya sudah ada; yang kurang kredensial merchant + endpoint notifikasi **terverifikasi tanda tangannya**. Menerima notifikasi tanpa verifikasi berarti siapa pun yang menjangkau endpoint itu dapat melunasi tagihan mana pun di kampus. Tertahan di luar repo — lihat §Menunggu di Luar Repo |
+| ~~1~~ | ~~**Adaptor payment gateway**~~ | **Diturunkan ke P3 sebagai butir opsional** (ADR-014). Sampai 24 Oktober 2026 baris ini disebut "satu-satunya kekalahan nyata"; pemilik repo memutuskan transfer manual yang dicatat kasir adalah jalur utama, dan kanal bayar terintegrasi bukan syarat v1.0 |
 
 ### P1 — memperdalam perkuliahan
 
@@ -255,8 +257,8 @@ Inti produk. Semuanya menempel pada kelas dan kurikulum yang sudah ada.
 | ~~9~~ | ~~**Pengaturan dokumen**~~ | ✅ 17 Agustus 2026 — kop, penandatangan, catatan kaki per jenis. Templat Blade yang dapat disunting pengguna ditolak sebagai rancangan: itu berarti mengeksekusi kode yang tersimpan di basis data |
 
 **P1 perkuliahan tuntas.** Yang berikutnya P2 — memperdalam data mahasiswa dan
-dosen, dan satu-satunya kekalahan kompetitif yang tersisa di dalam cakupan kita
-tetap **payment gateway**, yang terhalang kredensial merchant.
+dosen. Payment gateway, yang saat itu disebut satu-satunya kekalahan kompetitif,
+kini opsional (ADR-014).
 
 ### P2 — memperdalam data mahasiswa & dosen
 
@@ -268,8 +270,8 @@ tetap **payment gateway**, yang terhalang kredensial merchant.
 | ~~11~~ | ~~**Kepegawaian mendalam**~~ | ✅ 18 Agustus 2026 — enam riwayat; hanya pangkat & mutasi yang punya aturan. [`KEPEGAWAIAN.md`](KEPEGAWAIAN.md) |
 | ~~13~~ | ~~**Kuesioner umum**~~ | ✅ 18 Agustus 2026 — dua tabel jawaban, karena anonimitas harus properti skema. [`KUESIONER.md`](KUESIONER.md) |
 
-**P2 tuntas.** Yang tersisa P3 dan satu-satunya kekalahan kompetitif di dalam
-cakupan: **payment gateway**, terhalang kredensial merchant.
+**P2 tuntas.** Yang tersisa P3; payment gateway ikut di sana sebagai butir
+opsional (ADR-014).
 
 ### P3 — pelaporan & platform
 
@@ -279,6 +281,7 @@ cakupan: **payment gateway**, terhalang kredensial merchant.
 | ~~16~~ | ~~2FA staf; federasi IdP eksternal~~ | ✅ 2FA 22 Agustus 2026; federasi IdP 24 Oktober 2026 — ADR-019 |
 | 17 | Aplikasi mobile native |
 | 18 | Helpdesk |
+| 1 | Adaptor payment gateway — **opsional** (ADR-014). Kontrak `PaymentGatewayInterface` sudah ada; dibangun bila ada kampus yang membawa kredensial merchant dan endpoint notifikasi yang terverifikasi tanda tangannya. Transfer manual tetap jalur utama sesudahnya |
 
 ### Bersih-bersih yang sudah tercatat
 
@@ -454,7 +457,7 @@ yang tidak ada di sini.
 
 | Item | Tertahan pada |
 |---|---|
-| Adaptor Midtrans | Kredensial merchant + endpoint notifikasi terverifikasi |
+| Adaptor Midtrans | Kredensial merchant + endpoint notifikasi terverifikasi. **Opsional** sejak 24 Oktober 2026 (ADR-014); bukan syarat v1.0 |
 | ~~Klien SISTER~~ | **Dicabut 22 Oktober 2026.** SISTER kini terpusat dan menarik data pengajaran, pembimbingan, dan pengujian dari PDDIKTI; tidak ada endpoint per kampus untuk dituju. Yang tersisa untuk SISTER adalah ekspor berkas (sudah ada) dan pengiriman entitas yang kurang ke Feeder (#19–22) |
 | Endpoint pembayaran Easy Accounting | Belum ada di API v1 mereka. Bila lahir, yang berubah satu metode di `PenjurnalanService` |
 | ~~Federasi IdP eksternal~~ | **Selesai 24 Oktober 2026.** Keputusan pemetaannya diambil sempit (ADR-019): staf saja secara bawaan, subject menang atas surel, ambigu ditolak |
