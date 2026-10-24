@@ -4,7 +4,7 @@
 
 ---
 
-## Sesi 37 — 2026-10-24 · Helpdesk: loket yang bukan loket akhirnya punya nomor antrean
+## Sesi 42 — 2026-10-24 · Helpdesk: loket yang bukan loket akhirnya punya nomor antrean
 
 Pekerjaan P3 #18. Branch `feature/helpdesk`, dari `main` sesudah PR #5.
 Dikerjakan paralel dengan sesi denda (#15), federasi IdP (#16), dan Feeder
