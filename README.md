@@ -229,6 +229,8 @@ di tengah selalu aman diulang.
 
 Setel `FEEDER_DRIVER=fake` untuk menjalankan seluruh modul — validator, ledger,
 penanganan galat — tanpa instalasi Neo Feeder. Ini yang dipakai kampus demo.
+Sinkronisasi sendiri baru berjalan setelah `FEEDER_ENABLED=true`; bawaannya
+`false`, dan `feeder-sync` berhenti dengan pesan itu, bukan diam.
 
 **Pembanding** dijalankan dari konsolnya di `/admin/feeder`, per entitas. Ia
 membaca kembali isi Feeder dan melaporkan empat keadaan: hanya di SIAKAD, hanya
