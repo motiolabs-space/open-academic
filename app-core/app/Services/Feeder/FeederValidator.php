@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace App\Services\Feeder;
 
+use App\Enums\JalurPerubahanFeeder;
 use App\Enums\JenisDaftar;
 use App\Enums\JenisEvaluasi;
+use App\Enums\JenisPerubahanFeeder;
 use App\Enums\StudentStatus;
 use App\Models\Akademik\KelasDosen;
 use App\Models\Akademik\KelasKuliah;
@@ -17,6 +19,9 @@ use App\Models\Akademik\KurikulumMataKuliah;
 use App\Models\Akademik\MataKuliah;
 use App\Models\Akademik\Nilai;
 use App\Models\Akademik\NilaiKomponen;
+use App\Models\Akademik\PeriodePerkuliahan;
+use App\Models\Akademik\SkalaNilaiProdi;
+use App\Models\Feeder\FeederChangeRequest;
 use App\Models\Feeder\FeederMapping;
 use App\Models\Feeder\FeederValidationIssue;
 use App\Models\Kemahasiswaan\AktivitasMahasiswa;
@@ -86,6 +91,8 @@ class FeederValidator
     private function periksaBaris(string $entity, Model $model, FeederMapper $mapper): Collection
     {
         return match ($entity) {
+            'skala_nilai_prodi' => $this->skalaNilaiProdi($model),
+            'periode_perkuliahan' => $this->periodePerkuliahan($model),
             'kurikulum' => $this->kurikulum($model),
             'mata_kuliah' => $this->mataKuliah($model),
             'matkul_kurikulum' => $this->matkulKurikulum($model),
@@ -140,6 +147,95 @@ class FeederValidator
 
         if (blank($m->agama_kode)) {
             $isu->push($this->peringatan('agama_kosong', 'Agama belum diisi; akan dikirim tanpa id_agama.'));
+        }
+
+        // Identity columns PDDIKTI froze when this biodata was first accepted
+        // have changed here. Re-sending the biodata would be refused, or —
+        // worse — accepted on an older Feeder build and silently diverge from
+        // what PDDIKTI admin later decides. The request is on the console.
+        $terkunci = $this->kolomTerkunciBerubah($m, JenisPerubahanFeeder::Pdm);
+
+        if ($terkunci !== []) {
+            $isu->push($this->error(
+                'kolom_terkunci_berubah',
+                'Kolom identitas yang dikunci PDDIKTI berubah sejak tersinkron: '.implode(', ', $terkunci)
+                .'. Biodata tidak dikirim ulang; ajukan PDM lewat PDDIKTI admin dan tandai selesai pada panel Perubahan Data.',
+            ));
+        }
+
+        return $isu;
+    }
+
+    /**
+     * Labels of the locked columns with an open PDM/PJK request, for the
+     * columns that must go through PDDIKTI admin. A request the web service
+     * can carry is not a reason to block: sending it is the correction.
+     *
+     * @return array<int, string>
+     */
+    private function kolomTerkunciBerubah(Mahasiswa $m, JenisPerubahanFeeder $jenis): array
+    {
+        if (blank($jenis === JenisPerubahanFeeder::Pdm ? $m->feeder_id : $m->feeder_keluar_id)) {
+            return [];
+        }
+
+        $terbuka = $m->relationLoaded('perubahanFeeder')
+            ? $m->perubahanFeeder->filter(fn (FeederChangeRequest $p): bool => $p->status->terbuka())
+            : $m->perubahanFeeder()->terbuka()->get();
+
+        return $terbuka
+            ->filter(fn (FeederChangeRequest $p): bool => $p->jenis === $jenis && $p->jalur === JalurPerubahanFeeder::PddiktiAdmin)
+            ->map(fn (FeederChangeRequest $p): string => $p->labelKolom())
+            ->unique()
+            ->values()
+            ->all();
+    }
+
+    /** @param SkalaNilaiProdi $s */
+    private function skalaNilaiProdi(Model $s): Collection
+    {
+        $isu = collect();
+
+        if (blank($s->prodi?->kode_pddikti)) {
+            $isu->push($this->error('prodi_tanpa_id_sms', 'Program studi belum memiliki kode PDDIKTI (id_sms).'));
+        }
+
+        if ((float) $s->bobot_minimum > (float) $s->bobot_maksimum) {
+            $isu->push($this->error('rentang_terbalik', "Batas bawah huruf {$s->nilai_huruf} ({$s->bobot_minimum}) melebihi batas atasnya ({$s->bobot_maksimum})."));
+        }
+
+        if ((float) $s->nilai_indeks > 4.0) {
+            $isu->push($this->error('indeks_di_luar_rentang', "Nilai indeks huruf {$s->nilai_huruf} melebihi 4,00."));
+        }
+
+        if ($s->berlaku_sampai !== null && $s->berlaku_mulai !== null && $s->berlaku_sampai->lt($s->berlaku_mulai)) {
+            $isu->push($this->error('masa_berlaku_terbalik', "Skala huruf {$s->nilai_huruf} berakhir sebelum mulai berlaku."));
+        }
+
+        return $isu;
+    }
+
+    /** @param PeriodePerkuliahan $p */
+    private function periodePerkuliahan(Model $p): Collection
+    {
+        $isu = collect();
+
+        if (blank($p->prodi?->kode_pddikti)) {
+            $isu->push($this->error('prodi_tanpa_id_sms', 'Program studi belum memiliki kode PDDIKTI (id_sms).'));
+        }
+
+        if ($p->tanggal_awal === null || $p->tanggal_akhir === null) {
+            $isu->push($this->error('tanggal_periode_kosong', 'Tanggal awal dan akhir perkuliahan wajib diisi.'));
+        } elseif ($p->tanggal_akhir->lt($p->tanggal_awal)) {
+            $isu->push($this->error('tanggal_periode_terbalik', 'Perkuliahan berakhir sebelum dimulai.'));
+        }
+
+        if ((int) $p->jumlah_minggu_pertemuan <= 0) {
+            $isu->push($this->error('minggu_pertemuan_nol', 'Jumlah minggu pertemuan belum ditetapkan.'));
+        }
+
+        if (!$p->metode_tatap_muka && !$p->metode_daring && !$p->metode_campuran) {
+            $isu->push($this->peringatan('metode_kosong', 'Tidak satu pun metode kuliah ditandai; PDDIKTI menerimanya, tetapi laporan prodi membacanya sebagai tidak ada perkuliahan.'));
         }
 
         return $isu;
@@ -406,6 +502,16 @@ class FeederValidator
             $isu->push($this->error(
                 'jenis_keluar_belum_dipetakan',
                 "Status \"{$m->status->label()}\" belum dipetakan ke kode jenis keluar PDDIKTI (feeder_mappings, grup jenis_keluar).",
+            ));
+        }
+
+        $terkunci = $this->kolomTerkunciBerubah($m, JenisPerubahanFeeder::Pjk);
+
+        if ($terkunci !== []) {
+            $isu->push($this->error(
+                'kolom_terkunci_berubah',
+                'Kolom keluar yang dikunci PDDIKTI berubah sejak tersinkron: '.implode(', ', $terkunci)
+                .'. Catatan Lulus/DO tidak dikirim ulang; ajukan PJK lewat PDDIKTI admin dan tandai selesai pada panel Perubahan Data.',
             ));
         }
 

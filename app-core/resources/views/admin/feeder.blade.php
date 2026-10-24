@@ -164,6 +164,76 @@
         @endforelse
     </x-card>
 
+    {{-- ============ PERUBAHAN DATA MAHASISWA / JENIS KELUAR ============ --}}
+    <x-card
+        class="mb-5"
+        :title="__('feeder.perubahan.judul')"
+        :meta="__('feeder.perubahan.meta', ['terbuka' => $perubahan->count(), 'selesai' => $perubahanSelesai])"
+        flush
+    >
+        <p class="border-b border-line px-5 py-3 text-[12.5px] text-ink-muted">{{ __('feeder.perubahan.penjelasan') }}</p>
+
+        @forelse ($perubahan as $p)
+            <div class="flex flex-wrap items-start gap-3 border-b border-line/50 px-5 py-2.5 last:border-b-0">
+                <x-chip :tone="$p->status->tone()">{{ $p->status->label() }}</x-chip>
+
+                <div class="w-36 flex-none">
+                    <div class="tabular truncate text-[12.5px] font-medium">{{ $p->mahasiswa->nim }}</div>
+                    <div class="truncate text-[11px] text-ink-faint">{{ $p->mahasiswa->nama }}</div>
+                </div>
+
+                <div class="min-w-0 flex-1 text-[12.5px]">
+                    <div>
+                        <span class="font-semibold">{{ $p->jenis->singkatan() }}</span>
+                        · {{ $p->labelKolom() }}:
+                        <span class="tabular text-ink-muted">{{ $p->nilai_lama ?? __('feeder.perubahan.kosong_nilai') }}</span>
+                        <span class="text-ink-faint" aria-hidden="true">→</span>
+                        <span class="tabular font-medium">{{ $p->nilai_baru ?? __('feeder.perubahan.kosong_nilai') }}</span>
+                    </div>
+                    <div class="mt-0.5 text-[11px] text-ink-faint">
+                        {{ __('feeder.perubahan.jalur.'.$p->jalur->value) }}
+                        @if ($p->nomor_surat)
+                            · {{ __('feeder.perubahan.surat', ['nomor' => $p->nomor_surat]) }}
+                        @endif
+                        @if ($p->error_message)
+                            · <span class="text-danger">{{ __('feeder.perubahan.gagal', ['sebab' => $p->error_message]) }}</span>
+                        @endif
+                    </div>
+                </div>
+
+                <div class="flex flex-wrap items-center gap-2">
+                    @if ($p->jalur === \App\Enums\JalurPerubahanFeeder::WebService)
+                        <form method="POST" action="{{ route('admin.feeder.perubahan.kirim', $p) }}">
+                            @csrf
+                            <x-button type="submit" class="px-3 py-1.5 text-xs" :disabled="! $aktif">{{ __('feeder.perubahan.tombol.kirim') }}</x-button>
+                        </form>
+                    @endif
+
+                    @if ($p->status === \App\Enums\StatusPerubahanFeeder::Menunggu)
+                        <form method="POST" action="{{ route('admin.feeder.perubahan.ajukan', $p) }}" class="flex items-center gap-2">
+                            @csrf
+                            <input type="text" name="nomor_surat" placeholder="{{ __('feeder.perubahan.nomor_surat') }}"
+                                class="w-44 rounded-control border border-line-input bg-surface px-2 py-1.5 text-[12px]" />
+                            <x-button variant="outline" type="submit" class="px-3 py-1.5 text-xs">{{ __('feeder.perubahan.tombol.ajukan') }}</x-button>
+                        </form>
+                    @endif
+
+                    <form method="POST" action="{{ route('admin.feeder.perubahan.selesai', $p) }}">
+                        @csrf
+                        <x-button variant="outline" type="submit" class="px-3 py-1.5 text-xs">{{ __('feeder.perubahan.tombol.selesai') }}</x-button>
+                    </form>
+                </div>
+            </div>
+        @empty
+            <div class="px-5 py-10">
+                <x-empty-state
+                    :title="__('feeder.perubahan.kosong.judul')"
+                    :description="__('feeder.perubahan.kosong.deskripsi')"
+                />
+            </div>
+        @endforelse
+    </x-card>
+
     {{-- ============ SELISIH TERHADAP FEEDER ============ --}}
     <x-card
         class="mb-5"

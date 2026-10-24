@@ -30,8 +30,10 @@ use App\Services\Feeder\Mappers\MataKuliahMapper;
 use App\Services\Feeder\Mappers\MatkulKurikulumMapper;
 use App\Services\Feeder\Mappers\NilaiKomponenMapper;
 use App\Services\Feeder\Mappers\NilaiMapper;
+use App\Services\Feeder\Mappers\PeriodePerkuliahanMapper;
 use App\Services\Feeder\Mappers\PrestasiMapper;
 use App\Services\Feeder\Mappers\RiwayatPendidikanMapper;
+use App\Services\Feeder\Mappers\SkalaNilaiProdiMapper;
 use App\Services\Feeder\Mappers\TransferKreditMapper;
 use App\Services\Feeder\Mappers\TugasAkhirMapper;
 use App\Services\Feeder\Mappers\UjiTugasAkhirMapper;
@@ -66,6 +68,8 @@ class FeederSyncService
 
     /** @return array<string, class-string<FeederMapper>> */
     public const MAPPERS = [
+        'skala_nilai_prodi' => SkalaNilaiProdiMapper::class,
+        'periode_perkuliahan' => PeriodePerkuliahanMapper::class,
         'kurikulum' => KurikulumMapper::class,
         'mata_kuliah' => MataKuliahMapper::class,
         'matkul_kurikulum' => MatkulKurikulumMapper::class,
@@ -514,6 +518,11 @@ class FeederSyncService
                 array_pad(explode(MatkulKurikulumMapper::PEMISAH, $feederId, 2), 2, null),
             ),
             LulusDoMapper::class => ['id_registrasi_mahasiswa' => $feederId],
+            SkalaNilaiProdiMapper::class => ['id_bobot_nilai' => $feederId],
+            PeriodePerkuliahanMapper::class => array_combine(
+                ['id_prodi', 'id_semester'],
+                array_pad(explode(PeriodePerkuliahanMapper::PEMISAH, $feederId, 2), 2, null),
+            ),
             default => ['id' => $feederId],
         };
     }
