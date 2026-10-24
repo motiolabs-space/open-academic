@@ -71,6 +71,18 @@ class Prodi extends Model
         return $this->hasMany(MataKuliah::class);
     }
 
+    /** The grading scale PDDIKTI holds for this programme, one row per letter. */
+    public function skalaNilai(): HasMany
+    {
+        return $this->hasMany(SkalaNilaiProdi::class)->orderByDesc('bobot_minimum');
+    }
+
+    /** This programme's teaching period per term, as reported to PDDIKTI. */
+    public function periodePerkuliahan(): HasMany
+    {
+        return $this->hasMany(PeriodePerkuliahan::class);
+    }
+
     /**
      * Programme learning outcomes, stated on every diploma supplement.
      *

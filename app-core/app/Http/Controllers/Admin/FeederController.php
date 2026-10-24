@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Admin;
 
 use App\Enums\FeederSyncStatus;
+use App\Enums\StatusPerubahanFeeder;
 use App\Http\Controllers\Controller;
 use App\Jobs\SyncFeederEntityJob;
+use App\Models\Feeder\FeederChangeRequest;
 use App\Models\Feeder\FeederDiff;
 use App\Models\Feeder\FeederSyncLog;
 use App\Models\Feeder\FeederValidationIssue;
@@ -56,6 +58,16 @@ class FeederController extends Controller
                 ->get(),
             'validasiTerakhir' => $this->validasiTerakhir(),
             'selisih' => $this->selisihTerakhir($term->kode),
+            'perubahan' => FeederChangeRequest::query()
+                ->with('mahasiswa')
+                ->terbuka()
+                ->orderBy('status')
+                ->latest('id')
+                ->limit(60)
+                ->get(),
+            'perubahanSelesai' => FeederChangeRequest::query()
+                ->where('status', StatusPerubahanFeeder::Selesai->value)
+                ->count(),
         ]);
     }
 
@@ -203,7 +215,11 @@ class FeederController extends Controller
             ->get()
             ->groupBy('entity');
 
-        return collect(config('feeder.entities'))->map(function (array $meta, string $entity) use ($term, $rekap): array {
+        // Every entity's queue in one query, for the same reason as the
+        // ledger aggregate above: this list grows, the budget does not.
+        $antre = $this->sync->jumlahAntre($term->kode);
+
+        return collect(config('feeder.entities'))->map(function (array $meta, string $entity) use ($rekap, $antre): array {
             $baris = $rekap->get($entity) ?? collect();
             $jumlah = fn (FeederSyncStatus $status): int => (int) ($baris
                 ->firstWhere('status', $status->value)?->jumlah ?? 0);
@@ -214,11 +230,7 @@ class FeederController extends Controller
                 'action' => $meta['action'],
                 'depends_on' => $meta['depends_on'],
 
-                // Stays per entity: each mapper reads a different table, so
-                // this is eight distinct questions, not the same one repeated.
-                // A count, not the rows: loading them to count them put the
-                // screen over its query budget the moment two entities joined.
-                'antre' => app(FeederSyncService::MAPPERS[$entity])->jumlah($term->kode),
+                'antre' => $antre[$entity] ?? 0,
 
                 'berhasil' => $jumlah(FeederSyncStatus::Success),
                 'dilewati' => $jumlah(FeederSyncStatus::Skipped),
