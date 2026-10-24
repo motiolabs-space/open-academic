@@ -538,6 +538,7 @@ Route::middleware(['auth:staff', 'term.active'])->prefix('admin')->name('admin.'
     Route::post('/keuangan/pembayaran/{pembayaran}/batal', [Admin\KeuanganController::class, 'batalkanPembayaran'])->name('keuangan.pembayaran.batal');
     Route::post('/keuangan/tagihan/{tagihan}/keringanan', [Admin\KeuanganController::class, 'keringanan'])->name('keuangan.keringanan');
     Route::post('/keuangan/potongan/{item}/hapus', [Admin\KeuanganController::class, 'hapusPotongan'])->name('keuangan.potongan.hapus');
+    Route::post('/keuangan/tagihan/{tagihan}/bebaskan-denda', [Admin\KeuanganController::class, 'bebaskanDenda'])->name('keuangan.denda.bebaskan');
 
     Route::get('/beasiswa', [Admin\BeasiswaController::class, 'index'])->name('beasiswa');
     Route::post('/beasiswa', [Admin\BeasiswaController::class, 'simpanSkema'])->name('beasiswa.skema');
