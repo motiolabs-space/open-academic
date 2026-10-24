@@ -7,6 +7,7 @@ namespace App\Services\Feeder\Mappers;
 use App\Models\Feeder\FeederMapping;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Query\Builder as QueryBuilder;
 use Illuminate\Support\Collection;
 
 /**
@@ -32,6 +33,21 @@ abstract class FeederMapper
      */
     abstract protected function query(string $termCode): Builder;
 
+    /**
+     * The Feeder act that removes a row of this entity, or null when Feeder
+     * offers none for it.
+     *
+     * Derived from the insert act by convention (InsertX → DeleteX). An entity
+     * carried by an upserting act has no insert to mirror and is reported as
+     * not removable rather than guessed at.
+     */
+    public function actHapus(): ?string
+    {
+        $act = $this->act();
+
+        return str_starts_with($act, 'Insert') ? 'Delete'.substr($act, 6) : null;
+    }
+
     /** Rows of this entity that belong to the given term. */
     public function rows(string $termCode): Collection
     {
@@ -48,6 +64,17 @@ abstract class FeederMapper
     public function jumlah(string $termCode): int
     {
         return $this->query($termCode)->count();
+    }
+
+    /**
+     * The same count as a bare sub-select, so the monitor can ask for every
+     * entity's queue in one round trip instead of one per entity. Eager loads
+     * and ordering are dropped: neither changes a count, and an ORDER BY
+     * inside a scalar sub-select is noise some engines refuse.
+     */
+    public function kueriJumlah(string $termCode): QueryBuilder
+    {
+        return $this->query($termCode)->toBase()->reorder()->selectRaw('count(*)');
     }
 
     /** @return array<string, mixed> the record Feeder receives */

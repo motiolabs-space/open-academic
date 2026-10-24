@@ -74,6 +74,9 @@ return [
         // the lists change with each MBKM cycle.
         'jenis_aktivitas' => 'GetJenisAktivitasMahasiswa',
         'kategori_kegiatan' => 'GetKategoriKegiatan',
+        'jenis_prestasi' => 'GetJenisPrestasi',
+        'tingkat_prestasi' => 'GetTingkatPrestasi',
+        'jenis_pendaftaran' => 'GetJenisPendaftaran',
     ],
 
     /*
@@ -87,6 +90,36 @@ return [
     */
 
     'entities' => [
+        // Reference data first: everything below points at these ids.
+        //
+        // The grading scale and the teaching period are per programme at
+        // PDDIKTI. Neither is a transaction: every row is due every run and
+        // the hash check turns the unchanged ones into skips.
+        'skala_nilai_prodi' => [
+            'label' => 'Skala Nilai Prodi',
+            'action' => 'InsertSkalaNilaiProdi',
+            'depends_on' => [],
+        ],
+        'periode_perkuliahan' => [
+            'label' => 'Periode Perkuliahan',
+            'action' => 'InsertPeriodePerkuliahan',
+            'depends_on' => [],
+        ],
+        'kurikulum' => [
+            'label' => 'Kurikulum',
+            'action' => 'InsertKurikulum',
+            'depends_on' => [],
+        ],
+        'mata_kuliah' => [
+            'label' => 'Mata Kuliah',
+            'action' => 'InsertMataKuliah',
+            'depends_on' => [],
+        ],
+        'matkul_kurikulum' => [
+            'label' => 'Mata Kuliah dalam Kurikulum',
+            'action' => 'InsertMatkulKurikulum',
+            'depends_on' => ['kurikulum', 'mata_kuliah'],
+        ],
         'mahasiswa' => [
             'label' => 'Biodata Mahasiswa',
             'action' => 'InsertBiodataMahasiswa',
@@ -167,6 +200,21 @@ return [
             'action' => 'InsertUjiMahasiswa',
             'depends_on' => ['tugas_akhir'],
         ],
+        'prestasi' => [
+            'label' => 'Prestasi Mahasiswa',
+            'action' => 'InsertPrestasiMahasiswa',
+            'depends_on' => ['mahasiswa'],
+        ],
+        'transfer_kredit' => [
+            'label' => 'Transfer Kredit',
+            'action' => 'InsertTransferKreditMahasiswa',
+            'depends_on' => ['riwayat_pendidikan', 'mata_kuliah'],
+        ],
+        'konversi_mbkm' => [
+            'label' => 'Konversi Kredit MBKM',
+            'action' => 'InsertKonversiKampusMerdeka',
+            'depends_on' => ['anggota_mbkm', 'nilai'],
+        ],
         'lulus_do' => [
             'label' => 'Mahasiswa Lulus / DO',
             'action' => 'InsertMahasiswaLulusDO',
@@ -212,6 +260,18 @@ return [
     */
 
     'reconcile' => [
+
+        'skala_nilai_prodi' => [
+            'get_action' => 'GetListSkalaNilaiProdi',
+            'filter' => [],
+            'key' => ['id_prodi', 'nilai_huruf', 'tanggal_mulai_efektif'],
+        ],
+
+        'periode_perkuliahan' => [
+            'get_action' => 'GetListPeriodePerkuliahan',
+            'filter' => ['id_semester' => ':term'],
+            'key' => ['id_prodi', 'id_semester'],
+        ],
 
         'kelas_kuliah' => [
             'get_action' => 'GetListKelasKuliah',

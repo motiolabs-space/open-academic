@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Admin;
 
 use App\Enums\FeederSyncStatus;
+use App\Enums\StatusPerubahanFeeder;
 use App\Http\Controllers\Controller;
 use App\Jobs\SyncFeederEntityJob;
+use App\Models\Feeder\FeederChangeRequest;
 use App\Models\Feeder\FeederDiff;
 use App\Models\Feeder\FeederSyncLog;
 use App\Models\Feeder\FeederValidationIssue;
@@ -56,6 +58,16 @@ class FeederController extends Controller
                 ->get(),
             'validasiTerakhir' => $this->validasiTerakhir(),
             'selisih' => $this->selisihTerakhir($term->kode),
+            'perubahan' => FeederChangeRequest::query()
+                ->with('mahasiswa')
+                ->terbuka()
+                ->orderBy('status')
+                ->latest('id')
+                ->limit(60)
+                ->get(),
+            'perubahanSelesai' => FeederChangeRequest::query()
+                ->where('status', StatusPerubahanFeeder::Selesai->value)
+                ->count(),
         ]);
     }
 
@@ -129,6 +141,36 @@ class FeederController extends Controller
         return back()->with('sukses', "Sinkronisasi {$entity} dijadwalkan. Pantau perkembangannya pada buku besar di bawah.");
     }
 
+    /**
+     * Removes from Feeder what no longer exists here.
+     *
+     * Inline, like the comparison: deletions are few, and the operator who
+     * clicked wants the number now.
+     */
+    public function hapus(string $entity): RedirectResponse
+    {
+        $this->authorizeFeeder('feeder.sync');
+
+        if (!isset(FeederSyncService::MAPPERS[$entity])) {
+            abort(404);
+        }
+
+        $hasil = $this->sync->hapusYangTerhapus($entity, Portal::term());
+
+        if (!$hasil['didukung']) {
+            return back()->with('peringatan', "Feeder tidak menyediakan aksi hapus untuk {$entity}; baris yang sudah terkirim hanya dapat dikoreksi lewat PDDIKTI admin.");
+        }
+
+        return back()->with($hasil['gagal'] > 0 ? 'peringatan' : 'sukses', sprintf(
+            '%s: %d baris terkirim diperiksa, %d sudah tidak ada di sini dan dihapus dari Feeder, %d gagal dihapus, %d masih ada.',
+            $entity,
+            $hasil['diperiksa'],
+            $hasil['dihapus'],
+            $hasil['gagal'],
+            $hasil['dilewati'],
+        ));
+    }
+
     public function ulangi(string $entity): RedirectResponse
     {
         $this->authorizeFeeder('feeder.sync');
@@ -173,7 +215,11 @@ class FeederController extends Controller
             ->get()
             ->groupBy('entity');
 
-        return collect(config('feeder.entities'))->map(function (array $meta, string $entity) use ($term, $rekap): array {
+        // Every entity's queue in one query, for the same reason as the
+        // ledger aggregate above: this list grows, the budget does not.
+        $antre = $this->sync->jumlahAntre($term->kode);
+
+        return collect(config('feeder.entities'))->map(function (array $meta, string $entity) use ($rekap, $antre): array {
             $baris = $rekap->get($entity) ?? collect();
             $jumlah = fn (FeederSyncStatus $status): int => (int) ($baris
                 ->firstWhere('status', $status->value)?->jumlah ?? 0);
@@ -184,11 +230,7 @@ class FeederController extends Controller
                 'action' => $meta['action'],
                 'depends_on' => $meta['depends_on'],
 
-                // Stays per entity: each mapper reads a different table, so
-                // this is eight distinct questions, not the same one repeated.
-                // A count, not the rows: loading them to count them put the
-                // screen over its query budget the moment two entities joined.
-                'antre' => app(FeederSyncService::MAPPERS[$entity])->jumlah($term->kode),
+                'antre' => $antre[$entity] ?? 0,
 
                 'berhasil' => $jumlah(FeederSyncStatus::Success),
                 'dilewati' => $jumlah(FeederSyncStatus::Skipped),
@@ -199,6 +241,7 @@ class FeederController extends Controller
                 // reads as "belum dapat dibandingkan" rather than as one that
                 // was checked and found clean.
                 'dapat_dibandingkan' => $this->rekonsiliasi->dapatDibandingkan($entity),
+                'dapat_dihapus' => app(FeederSyncService::MAPPERS[$entity])->actHapus() !== null,
             ];
         })->values();
     }

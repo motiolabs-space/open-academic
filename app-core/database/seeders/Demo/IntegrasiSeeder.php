@@ -4,11 +4,14 @@ declare(strict_types=1);
 
 namespace Database\Seeders\Demo;
 
+use App\Enums\JenisDaftar;
 use App\Enums\JenisEvaluasi;
 use App\Enums\StudentStatus;
+use App\Models\Akademik\TahunAkademik;
 use App\Models\Bridge\BridgeConsumer;
 use App\Models\Feeder\FeederMapping;
 use App\Models\System\Pengumuman;
+use App\Services\Feeder\SkalaPeriodeProdiService;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Str;
 
@@ -21,8 +24,27 @@ class IntegrasiSeeder extends Seeder
     public function run(): void
     {
         $this->seedFeederMappings();
+        $this->seedSkalaDanPeriode();
         $this->seedBridgeConsumer();
         $this->seedPengumuman();
+    }
+
+    /**
+     * The per-programme rows PDDIKTI wants for the grading scale and the
+     * teaching period, derived from the campus scale and the active term.
+     * The mappers derive them lazily anyway; seeding them here is so the
+     * monitor shows the queue on first visit instead of after the first run.
+     */
+    private function seedSkalaDanPeriode(): void
+    {
+        $turunan = app(SkalaPeriodeProdiService::class);
+        $turunan->turunkanSkala();
+
+        $term = TahunAkademik::aktif();
+
+        if ($term !== null) {
+            $turunan->turunkanPeriode($term);
+        }
     }
 
     /**
@@ -111,12 +133,28 @@ class IntegrasiSeeder extends Seeder
                 'feeder_code' => $feeder,
                 'feeder_label' => $local,
             ]);
+        }
 
+        // Jenis pendaftaran: only "peserta didik baru" has a code stable enough
+        // to seed. Transfer, RPL, fast track and non-degree are mapped by the
+        // campus after the GetJenisPendaftaran pull; the validator refuses an
+        // enrolment of those kinds until then, by name.
+        FeederMapping::create([
+            'group' => 'jenis_daftar',
+            'local_value' => JenisDaftar::Baru->value,
+            'feeder_code' => '1',
+            'feeder_label' => JenisDaftar::Baru->label(),
+        ]);
+
+        // Jenis mata kuliah on the course record: A wajib prodi, B pilihan,
+        // U muatan universitas — the published letters; the reference pull is
+        // authoritative here as everywhere.
+        foreach (['wajib' => ['A', 'Wajib program studi'], 'pilihan' => ['B', 'Pilihan'], 'wajib_universitas' => ['U', 'Muatan universitas']] as $local => [$kode, $label]) {
             FeederMapping::create([
-                'group' => 'jenis_daftar',
+                'group' => 'jenis_mata_kuliah',
                 'local_value' => $local,
-                'feeder_code' => '1', // Peserta didik baru
-                'feeder_label' => 'Peserta Didik Baru',
+                'feeder_code' => $kode,
+                'feeder_label' => $label,
             ]);
         }
     }
