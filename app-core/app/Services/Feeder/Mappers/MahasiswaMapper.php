@@ -30,7 +30,7 @@ class MahasiswaMapper extends FeederMapper
     protected function query(string $termCode): Builder
     {
         return Mahasiswa::query()
-            ->with('prodi')
+            ->with(['prodi', 'perubahanFeeder' => fn ($q) => $q->terbuka()])
             ->where(fn ($query) => $query->where('term_masuk', $termCode)->orWhereNull('feeder_id'))
             ->orderBy('nim');
     }
