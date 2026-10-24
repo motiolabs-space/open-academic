@@ -73,7 +73,14 @@
                                             {{ $t->mahasiswa->nim }} · {{ $t->mahasiswa->prodi->nama }}
                                         </div>
                                     </td>
-                                    <td class="tabular px-5 py-3 text-right">{{ $rp($t->total) }}</td>
+                                    <td class="tabular px-5 py-3 text-right">
+                                        {{ $rp($t->total) }}
+                                        @if ($t->denda > 0)
+                                            <div class="text-[11px] text-warning">
+                                                {{ __('keuangan.denda.termasuk', ['denda' => $rp($t->denda)]) }}
+                                            </div>
+                                        @endif
+                                    </td>
                                     <td class="tabular px-5 py-3 text-right">
                                         {{ $rp($t->terbayar) }}
                                         @if ($sisa > 0)
@@ -82,8 +89,27 @@
                                     </td>
                                     <td class="px-5 py-3 text-center">
                                         <x-chip :tone="$t->status->tone()">{{ $t->status->label() }}</x-chip>
+                                        @if ($t->dendaDibebaskan())
+                                            <div class="mt-1.5"
+                                                title="{{ $t->pembebasanDenda?->alasan }} — {{ $t->pembebasanDenda?->pemutus?->nama }}">
+                                                <x-chip tone="neutral">{{ __('keuangan.denda.chip_dibebaskan') }}</x-chip>
+                                            </div>
+                                        @endif
                                     </td>
                                     <td class="px-5 py-3">
+                                        @if ($t->denda > 0)
+                                            <form method="POST" action="{{ route('admin.keuangan.denda.bebaskan', $t) }}"
+                                                class="mb-1.5 flex flex-wrap items-center justify-end gap-1.5"
+                                                onsubmit="return confirm('Bebaskan denda {{ $rp($t->denda) }}? Denda pada tagihan ini tidak akan dihitung lagi.');">
+                                                @csrf
+                                                <input type="text" name="alasan" required minlength="5" maxlength="500"
+                                                    placeholder="Alasan pembebasan"
+                                                    class="w-40 rounded-control border border-line-input bg-surface px-2 py-1.5 text-[12px]">
+                                                <x-button type="submit" variant="outline" size="sm">
+                                                    {{ __('keuangan.denda.tombol_bebaskan') }}
+                                                </x-button>
+                                            </form>
+                                        @endif
                                         @if ($sisa > 0)
                                             <form method="POST" action="{{ route('admin.keuangan.pembayaran', $t) }}"
                                                 class="flex flex-wrap items-center justify-end gap-1.5">
@@ -217,6 +243,22 @@
 
                 <x-button type="submit" variant="outline" class="w-full">Lihat Pratinjau</x-button>
             </form>
+
+            <div class="mt-5 border-t border-line pt-4">
+                <div class="mb-1.5 text-[11px] font-bold uppercase tracking-[0.08em] text-ink-muted">Denda Keterlambatan</div>
+                @if ($aturanDenda->aktif)
+                    <p class="text-[12px] leading-relaxed text-ink-muted">
+                        {{ $aturanDenda->deskripsi() }}
+                        Dihitung tiap dini hari oleh penjadwal; pembebasan dicatat per tagihan
+                        dengan alasan dan nama staf.
+                    </p>
+                @else
+                    <p class="text-[12px] leading-relaxed text-ink-muted">
+                        Nonaktif. Nyalakan lewat <code class="tabular">PAYMENT_DENDA_AKTIF=true</code>
+                        dan aturannya di <code>.env</code>; denda yang sudah tercatat tetap tampil.
+                    </p>
+                @endif
+            </div>
         </x-card>
     </div>
 @endsection

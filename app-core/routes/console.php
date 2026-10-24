@@ -26,6 +26,24 @@ Artisan::command('inspire', function () {
 |
 */
 
+/*
+ * Denda keterlambatan.
+ *
+ * Dini hari, sebelum pengingat pukul 07:00, supaya pengingat mengutip denda
+ * hari ini dan bukan kemarin. Idempoten per hari: yang dikenai hanya periode
+ * yang belum pernah dihitung, jadi jalan ganda atau jalan susulan sesudah
+ * server mati tidak menggandakan apa pun — lihat DendaService.
+ *
+ * Tidak dijalankan sama sekali selagi kebijakan nonaktif, yang merupakan
+ * bawaan Open Academic.
+ */
+Schedule::command('openacademic:hitung-denda')
+    ->dailyAt('01:00')
+    ->timezone(config('app.timezone'))
+    ->onOneServer()
+    ->withoutOverlapping()
+    ->skip(fn (): bool => !(bool) config('payment.denda.aktif'));
+
 // Pagi hari waktu kampus. Pengingat yang tiba tengah malam terbaca esok pagi
 // bersama semalam penuh pesan lain, dan kehilangan urgensinya di tengahnya.
 Schedule::command('openacademic:kirim-pengingat')

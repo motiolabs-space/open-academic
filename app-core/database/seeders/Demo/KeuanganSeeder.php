@@ -4,8 +4,11 @@ declare(strict_types=1);
 
 namespace Database\Seeders\Demo;
 
+use App\DTOs\Keuangan\AturanDenda;
+use App\Enums\BentukDenda;
 use App\Enums\InvoiceStatus;
 use App\Enums\PaymentStatus;
+use App\Enums\PeriodeDenda;
 use App\Enums\StudentStatus;
 use App\Models\Akademik\Prodi;
 use App\Models\Akademik\TahunAkademik;
@@ -14,6 +17,8 @@ use App\Models\Keuangan\Pembayaran;
 use App\Models\Keuangan\Tagihan;
 use App\Models\Keuangan\TagihanItem;
 use App\Models\Keuangan\Tarif;
+use App\Models\Sdm\Staff;
+use App\Services\Keuangan\DendaService;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Collection;
 
@@ -38,6 +43,45 @@ class KeuanganSeeder extends Seeder
             $tagihan = $this->buatTagihan($student, $term, $tarif, $index);
 
             $this->buatPembayaran($tagihan, $index);
+        }
+
+        $this->seedDenda();
+    }
+
+    /**
+     * Late fees on the invoices nobody paid, and one of them forgiven.
+     *
+     * The demo invoices fell due at the start of term — weeks ago, by the
+     * calendar the demo anchors to — so the fee has something to accrue on.
+     * Charged through the service with an explicit rule, not written to the
+     * table, so the seed exercises the same path the nightly job takes; the
+     * campus's own `.env` policy is left untouched.
+     */
+    private function seedDenda(): void
+    {
+        $aturan = new AturanDenda(
+            aktif: true,
+            bentuk: BentukDenda::Nominal,
+            periode: PeriodeDenda::Hari,
+            nominal: 10_000,
+            persen: 0,
+            maksimum: 500_000,
+            tenggangHari: 7,
+        );
+
+        /** @var DendaService $denda */
+        $denda = app(DendaService::class);
+        $denda->jalankan($aturan);
+
+        $staf = Staff::where('email', 'keuangan@demo.test')->first();
+        $contoh = Tagihan::query()->where('denda', '>', 0)->orderBy('id')->first();
+
+        if ($staf !== null && $contoh !== null) {
+            $denda->bebaskan(
+                $contoh,
+                $staf,
+                'Mahasiswa menunjukkan bukti transfer yang tertahan di bank sejak sebelum jatuh tempo.',
+            );
         }
     }
 
