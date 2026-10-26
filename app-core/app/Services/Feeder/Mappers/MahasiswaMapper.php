@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\Feeder\Mappers;
 
+use App\Enums\StatusAdopsiFeeder;
 use App\Models\Kemahasiswaan\Mahasiswa;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
@@ -30,7 +31,11 @@ class MahasiswaMapper extends FeederMapper
     protected function query(string $termCode): Builder
     {
         return Mahasiswa::query()
-            ->with(['prodi', 'perubahanFeeder' => fn ($q) => $q->terbuka()])
+            ->with([
+                'prodi',
+                'perubahanFeeder' => fn ($q) => $q->terbuka(),
+                'adopsiFeeder' => fn ($q) => $q->status(StatusAdopsiFeeder::Ambigu),
+            ])
             ->where(fn ($query) => $query->where('term_masuk', $termCode)->orWhereNull('feeder_id'))
             ->orderBy('nim');
     }

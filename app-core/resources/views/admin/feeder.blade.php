@@ -15,6 +15,8 @@
             @csrf
             <x-button variant="outline" type="submit">Tarik Referensi</x-button>
         </form>
+
+        <x-button variant="outline" href="{{ route('admin.feeder.adopsi') }}">{{ __('feeder.adopsi.tautan_konsol') }}</x-button>
     </div>
 @endsection
 

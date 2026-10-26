@@ -1,0 +1,59 @@
+{
+    "_keterangan": "Mahasiswa yang sudah ada di PDDIKTI sebelum kampus memakai Open Academic. Prodi uji 'prodi-ti-0001', periode masuk 20241. Setiap baris satu kasus pencocokan; FeederAdopsiTest membuat mahasiswa lokal yang sepadan.",
+    "orang": [
+        {
+            "_kasus": "cocok: NIM dan NIK sama",
+            "id_mahasiswa": "mhs-ayu", "id_registrasi_mahasiswa": "reg-ayu",
+            "nim": "2024001", "nik": "3201010101010001", "nama_mahasiswa": "Ayu Lestari",
+            "tanggal_lahir": "2006-01-15", "id_prodi": "prodi-ti-0001", "id_periode_masuk": "20241"
+        },
+        {
+            "_kasus": "cocok: NIK mengalahkan nama yang salah ketik",
+            "id_mahasiswa": "mhs-bagus", "id_registrasi_mahasiswa": "reg-bagus",
+            "nim": "2024002", "nik": "3201010101010002", "nama_mahasiswa": "Bagus Pratomo",
+            "tanggal_lahir": "2006-02-20", "id_prodi": "prodi-ti-0001", "id_periode_masuk": "20241"
+        },
+        {
+            "_kasus": "ambigu: NIM sama, NIK berbeda",
+            "id_mahasiswa": "mhs-citra", "id_registrasi_mahasiswa": "reg-citra",
+            "nim": "2024003", "nik": "3201010101010003", "nama_mahasiswa": "Citra Dewi",
+            "tanggal_lahir": "2006-03-03", "id_prodi": "prodi-ti-0001", "id_periode_masuk": "20241"
+        },
+        {
+            "_kasus": "ambigu: dua registrasi dengan NIM yang sama (1/2)",
+            "id_mahasiswa": "mhs-dimas-a", "id_registrasi_mahasiswa": "reg-dimas-a",
+            "nim": "2024004", "nik": "3201010101010004", "nama_mahasiswa": "Dimas Saputra",
+            "tanggal_lahir": "2006-04-04", "id_prodi": "prodi-ti-0001", "id_periode_masuk": "20241"
+        },
+        {
+            "_kasus": "ambigu: dua registrasi dengan NIM yang sama (2/2)",
+            "id_mahasiswa": "mhs-dimas-b", "id_registrasi_mahasiswa": "reg-dimas-b",
+            "nim": "2024004", "nik": "3201010101010044", "nama_mahasiswa": "Dimas Saputra",
+            "tanggal_lahir": "2006-04-04", "id_prodi": "prodi-ti-0001", "id_periode_masuk": "20241"
+        },
+        {
+            "_kasus": "ambigu: NIK sama, terdaftar dengan NIM lama",
+            "id_mahasiswa": "mhs-eka", "id_registrasi_mahasiswa": "reg-eka",
+            "nim": "TI-24-005", "nik": "3201010101010005", "nama_mahasiswa": "Eka Putri",
+            "tanggal_lahir": "2006-05-05", "id_prodi": "prodi-ti-0001", "id_periode_masuk": "20241"
+        },
+        {
+            "_kasus": "hanya di Feeder",
+            "id_mahasiswa": "mhs-fajar", "id_registrasi_mahasiswa": "reg-fajar",
+            "nim": "2024006", "nik": "3201010101010006", "nama_mahasiswa": "Fajar Nugroho",
+            "tanggal_lahir": "2006-06-06", "id_prodi": "prodi-ti-0001", "id_periode_masuk": "20241"
+        },
+        {
+            "_kasus": "prodi lain: tidak boleh terbaca",
+            "id_mahasiswa": "mhs-lain-prodi", "id_registrasi_mahasiswa": "reg-lain-prodi",
+            "nim": "2024007", "nik": "3201010101010007", "nama_mahasiswa": "Gilang Ramadhan",
+            "tanggal_lahir": "2006-07-07", "id_prodi": "prodi-si-0002", "id_periode_masuk": "20241"
+        },
+        {
+            "_kasus": "periode lain: tidak boleh terbaca",
+            "id_mahasiswa": "mhs-lain-periode", "id_registrasi_mahasiswa": "reg-lain-periode",
+            "nim": "2023008", "nik": "3201010101010008", "nama_mahasiswa": "Hana Safitri",
+            "tanggal_lahir": "2005-08-08", "id_prodi": "prodi-ti-0001", "id_periode_masuk": "20231"
+        }
+    ]
+}

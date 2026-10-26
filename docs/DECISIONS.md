@@ -304,6 +304,95 @@
   Entra ID memerlukan `IDP_REQUIRE_VERIFIED_EMAIL=false` yang disetel sadar,
   karena ia tidak mengirim `email_verified` untuk anggota tenant.
 
+## ADR-020 — Adopsi mahasiswa PDDIKTI: NIM menemukan, NIK menegaskan, keraguan diputuskan orang (2026-10-26)
+
+- **Konteks.** Roadmap #44. Kampus yang pindah dari SIAKAD lain sudah punya
+  seluruh mahasiswanya di PDDIKTI, sedangkan mapper biodata hanya mengenal
+  `InsertBiodataMahasiswa` dan rekonsiliasi sengaja tidak membaca biodata
+  (satu-satunya kunci uniknya NIK, yang tidak boleh tersalin ke tabel selisih).
+  Sinkronisasi pertama akan mendaftarkan ulang semua orang itu: ditolak karena
+  NIK, atau lebih buruk, menjadi orang kedua di PDDIKTI. Penautan yang salah
+  sama berbahayanya — nilai, SKS, dan kelak nomor ijazah seorang mahasiswa
+  terlapor atas nama orang lain, dan tidak ada yang di hilir yang akan
+  menyadarinya.
+- **Keputusan.** `FeederAdopsi` membaca `GetListRiwayatPendidikanMahasiswa`
+  (NIM, `id_registrasi_mahasiswa`) dan `GetListMahasiswa` (NIK) per prodi +
+  periode masuk, digabung pada `id_mahasiswa`; nama aksi dan filternya di
+  `config/feeder.php` → `adopt`, dan penolakan Feeder menghentikan proses
+  seperti pada rekonsiliasi. Pencocokan: (1) kandidat = baris yang NIM-nya
+  sama ∪ baris yang NIK-nya sama; (2) satu kandidat, NIM dan NIK sama →
+  **diadopsi**, apa pun namanya (NIK mengalahkan nama); (3) NIK kosong di salah
+  satu sisi → nama yang dinormalkan menggantikannya dan harus sama; (4) dua
+  kandidat, NIM sama tetapi NIK beda, NIK sama tetapi NIM beda, atau mahasiswa
+  yang sudah memegang id Feeder lain → **ambigu**, tidak pernah diadopsi
+  otomatis. NIK-sama-NIM-beda sengaja ambigu meski orangnya hampir pasti sama:
+  mengadopsinya akan meninggalkan NIM lama di PDDIKTI di balik buku besar yang
+  menyatakan tidak ada yang perlu dikirim. Yang diadopsi mendapat `feeder_id`
+  dan `feeder_registrasi_id` serta satu baris `feeder_sync_logs` per entitas
+  (`direction = adopt`, status `success`, hash muatan lokal saat ini), **hanya
+  bila** buku besar belum pernah mencatat sukses untuknya — hash lama dari
+  dorongan sungguhan tidak ditimpa. Laporan di `feeder_adoptions` (empat
+  keadaan otomatis, diganti setiap kali dijalankan) tanpa NIK, hanya
+  `nik_cocok`. Yang ambigu diputuskan orang di `/admin/feeder/adopsi`:
+  *tautkan* ke salah satu kandidat atau *pisahkan* ("bukan orang yang sama"),
+  keduanya wajib alasan, tercatat di Log Aktivitas, dan bertahan saat adopsi
+  diulang. Validator pra-kirim menolak biodata mahasiswa yang masih ambigu
+  (`kandidat_feeder_belum_diadopsi`). Klaim mahasiswa lampau
+  (`GetListDaftarLampau` / `KlaimMahasiswaLampau`) dipisah ke #44b.
+- **Konsekuensi.** Tidak ada satu pun `Insert`/`Update` yang terkirim saat
+  adopsi; dorongan berikutnya mencatat `Skipped` bagi yang teradopsi. Harganya
+  di buku besar: selisih isi biodata antara laporan SIAKAD lama
+  dan data lokal hari ini (alamat, telepon) tidak terkirim sampai data lokalnya
+  berubah, karena hash yang dicatat adalah hash muatan lokal — nama yang
+  berbeda ditampilkan di layar adopsi, kolom lain tidak dibandingkan. Baris
+  adopsi dihitung sebagai "Terkirim" di kartu entitas dan ikut dipertimbangkan
+  "Hapus yang tiada": catatan PDDIKTI milik kampus, bukan milik aplikasi yang
+  dulu mengirimnya. Validator hanya tahu kandidat yang sudah pernah dibaca;
+  kampus yang lupa menjalankan adopsi tidak diperingatkan. Nama aksi dan field
+  Feeder mengikuti pemakaian komunitas dan perlu diverifikasi terhadap
+  dokumentasi build Feeder kampus.
+
+## ADR-021 — SKS diakui pindahan diturunkan dari konversi; semester masuk dan batas KRS pertama membacanya (2026-10-26)
+
+- **Konteks.** Sejak #25 `mahasiswa` punya `jenis_daftar`, `pt_asal`,
+  `prodi_asal`, dan `sks_diakui`, dan Feeder menolak riwayat pendidikan pindahan
+  tanpa keduanya. Kolom itu hanya terisi lewat seeder. Pengakuan kredit sendiri
+  sudah ada di `konversi_kredit` (G5) dengan batas persentase. Bila `sks_diakui`
+  diketik di layar intake, dua angka yang harus sama — total di riwayat
+  pendidikan dan jumlah baris transfer kredit yang dikirim di sampingnya —
+  dipelihara oleh dua orang di dua layar. Mahasiswa pindahan juga masuk dengan
+  semester tempuh 1 dan batas SKS bawaan, seolah tidak membawa apa pun, dan
+  sebagian kampus menghitung masa studi sejak masuk di PT asal.
+- **Keputusan.** (1) `sks_diakui` **bukan input**: `KonversiService` menulisnya
+  sebagai jumlah konversi yang disetujui pada setiap persetujuan dan pencabutan,
+  hanya untuk jenis daftar yang `butuhAsal()`, dan `null` selama jumlahnya nol —
+  supaya validator tetap berkata "belum ada SKS diakui", bukan meloloskan
+  pindahan nol SKS. (2) Semester masuk = 1 + floor(`sks_diakui` /
+  `academic.pindahan.sks_per_semester`, bawaan 20), dihitung saat dibaca di
+  `BatasSksCalculator::semesterKe()` hanya bila belum ada baris status sama
+  sekali; tidak disimpan. (3) Batas SKS KRS selama belum ada semester final di
+  sini diambil dari rata-rata berbobot nilai konversi yang disetujui dan bernilai,
+  lewat matriks IPS yang sama, **terlepas dari** `konversi.hitung_ipk` — setelan
+  itu tentang apa yang diukur ijazah, bukan beban semester pertama. Konversi tanpa
+  nilai (RPL) tidak berkata apa pun, jadi bawaan tetap berlaku. Angkanya tercatat
+  sebagai `ips_acuan` KRS seperti acuan lainnya. (4) Kolom baru
+  `term_masuk_asal`; masa studi menghitung semester di asal hanya bila
+  `academic.pindahan.masa_studi_dari_asal` dinyalakan (bawaan mati), dan hanya
+  untuk batas masa studi — titik evaluasi bertingkat tetap pada studi di sini.
+  (5) Koreksi asal ditolak setelah `feeder_registrasi_id` terisi; perubahan sejak
+  itu adalah pembaruan riwayat di Feeder. (6) Saran nama PT dari referensi
+  `GetAllPT` (tipe `perguruan_tinggi` di `feeder_refs`) ditambah nama yang sudah
+  pernah dimasukkan; prodi asal hanya dari intake sebelumnya, karena PDDIKTI
+  tidak punya pengenal prodi PT lain dan payload membawanya sebagai teks.
+- **Konsekuensi.** Satu sumber angka untuk layar, KRS, semester tempuh, dan
+  payload Feeder. Riwayat yang sudah terkirim lalu konversinya berubah akan
+  berbeda dari PDDIKTI sampai diperbarui — hal yang sama berlaku untuk setiap
+  baris transfer kredit, dan layar menampilkan isu validator yang sama dengan
+  sinkronisasi. Pendaftar dari gelombang transfer/RPL diarahkan ke intake, bukan
+  daftar ulang biasa; `PmbService::daftarUlang()` kini juga mengisi `term_masuk`,
+  yang selama ini kosong sehingga setiap mahasiswa hasil PMB gagal pemeriksaan
+  periode masuk.
+
 ## ADR-022 — Syarat wisuda satu sumber; "Menunggu Uji Kompetensi" berkode lokal dan meluluskan pada tanggal ujian (2026-10-26)
 
 - **Konteks.** Roadmap #30 meminta mahasiswa mendaftar wisuda sendiri. Satu-satunya
@@ -351,3 +440,20 @@
   tempat itu. Mahasiswa yang menunggu tidak pernah memicu peringatan masa studi;
   batas waktu ulang ujian, bila kampus punya, belum dimodelkan. Layar Yudisium
   dan Wisuda menampilkan tanggal lulus mereka "—" sampai hasil yang lulus dicatat.
+
+## ADR-023 — CI menguji PHP 8.2, 8.4, dan 8.5; produksi berjalan di 8.4/8.5 (2026-10-26)
+
+- **Konteks.** `composer.json` mengizinkan `^8.2` dan CI hanya menguji 8.2,
+  padahal instalasi produksi berjalan di PHP 8.4 atau 8.5. Tes yang hijau di
+  CI tidak membuktikan apa pun tentang versi tempat kode benar-benar dijalankan;
+  perilaku yang berubah atau usang di 8.4/8.5 baru akan tampak di server. Celah
+  inti PHP 21 Oktober 2026 sekaligus memaksa XAMPP pengembang naik dari 8.2.12.
+- **Keputusan.** Job CI menjadi matriks `['8.2', '8.4', '8.5']` dengan
+  `fail-fast: false`. Pest berjalan di ketiganya; Pint dan `npm run build` tidak
+  bergantung pada versi PHP dan hanya berjalan di 8.4. Batas bawah `^8.2` tetap,
+  supaya kampus di shared hosting yang masih di 8.2 tidak terkunci keluar.
+  Lingkungan pengembang disarankan mengikuti produksi (8.4).
+- **Konsekuensi.** Waktu CI kira-kira tiga kali lipat untuk langkah tes, berjalan
+  paralel. Begitu dukungan keamanan PHP 8.2 berakhir (31 Desember 2026), batas
+  bawah layak dinaikkan ke `^8.4` dan 8.2 dikeluarkan dari matriks — keputusan
+  terpisah, karena memutus instalasi yang masih di 8.2.

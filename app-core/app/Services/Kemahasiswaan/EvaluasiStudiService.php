@@ -118,7 +118,13 @@ class EvaluasiStudiService
 
         $maksimum = (int) config('academic.evaluasi.masa_studi_maksimum', 14);
 
-        if ($maksimum > 0 && $tempuh >= $maksimum) {
+        // A transfer's semesters elsewhere count against the limit only where
+        // the campus has chosen so; the milestones above stay on study here.
+        $masaStudi = $tempuh + (config('academic.pindahan.masa_studi_dari_asal')
+            ? (int) $baris->mahasiswa?->semesterDiAsal()
+            : 0);
+
+        if ($maksimum > 0 && $masaStudi >= $maksimum) {
             $temuan[] = [
                 'tahap' => 'Batas Masa Studi',
                 'syarat_sks' => null,
@@ -126,7 +132,7 @@ class EvaluasiStudiService
 
                 // At the limit is a warning; past it is a failure. The student
                 // in their final permitted term still has that term to finish.
-                'temuan' => $tempuh > $maksimum
+                'temuan' => $masaStudi > $maksimum
                     ? HasilEvaluasi::TidakMemenuhi
                     : HasilEvaluasi::Peringatan,
             ];

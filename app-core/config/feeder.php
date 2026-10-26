@@ -77,6 +77,12 @@ return [
         'jenis_prestasi' => 'GetJenisPrestasi',
         'tingkat_prestasi' => 'GetTingkatPrestasi',
         'jenis_pendaftaran' => 'GetJenisPendaftaran',
+
+        // Not a code table either: every institution PDDIKTI knows, read back
+        // so the transfer intake can suggest the origin's name as PDDIKTI
+        // spells it. The enrolment payload still carries the name as text —
+        // there is no identifier for another campus's programme.
+        'perguruan_tinggi' => 'GetAllPT',
     ],
 
     /*
@@ -297,6 +303,36 @@ return [
             'key' => ['id_registrasi_mahasiswa', 'id_kelas_kuliah'],
         ],
 
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Adoption
+    |--------------------------------------------------------------------------
+    |
+    | A campus moving here from another SIAKAD already has its students at
+    | PDDIKTI. Adoption reads them back per programme and intake term and
+    | gives matching local students their Feeder identifiers, so the first
+    | sync updates or skips them instead of registering them again.
+    |
+    | Two lists, joined on id_mahasiswa: the enrolment list carries the NIM
+    | and id_registrasi_mahasiswa, the person list the NIK. ":prodi" becomes
+    | the programme's id_sms (prodi.kode_pddikti), ":periode" the intake term
+    | code. Act and field names follow the community's usage and should be
+    | checked against the Feeder build's own documentation; a wrong act name
+    | surfaces as a Feeder error rather than as "no students found".
+    |
+    */
+
+    'adopt' => [
+        'riwayat' => [
+            'get_action' => 'GetListRiwayatPendidikanMahasiswa',
+            'filter' => ['id_prodi' => ':prodi', 'id_periode_masuk' => ':periode'],
+        ],
+        'biodata' => [
+            'get_action' => 'GetListMahasiswa',
+            'filter' => ['id_prodi' => ':prodi', 'id_periode' => ':periode'],
+        ],
     ],
 
     // Rows pulled per page when reading Feeder back. Higher is fewer requests

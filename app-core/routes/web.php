@@ -447,6 +447,16 @@ Route::middleware(['auth:staff', 'term.active'])->prefix('admin')->name('admin.'
     Route::post('/tugas-akhir/{tugasAkhir}/selesai', [Admin\TugasAkhirController::class, 'selesaikan'])->name('tugas-akhir.selesai');
     Route::post('/tugas-akhir/{tugasAkhir}/batal', [Admin\TugasAkhirController::class, 'batalkan'])->name('tugas-akhir.batal');
 
+    // Intake pindahan/RPL (#33). `referensi` dan `baru` didaftarkan sebelum
+    // `{mahasiswa}` agar tidak ditangkap sebagai UUID.
+    Route::get('/pindahan', [Admin\PindahanController::class, 'index'])->name('pindahan');
+    Route::get('/pindahan/referensi', [Admin\PindahanController::class, 'referensi'])->name('pindahan.referensi');
+    Route::get('/pindahan/baru', [Admin\PindahanController::class, 'create'])->name('pindahan.create');
+    Route::post('/pindahan', [Admin\PindahanController::class, 'store'])->name('pindahan.store');
+    Route::get('/pindahan/{mahasiswa}', [Admin\PindahanController::class, 'show'])->name('pindahan.show');
+    Route::put('/pindahan/{mahasiswa}', [Admin\PindahanController::class, 'update'])->name('pindahan.update');
+    Route::post('/pindahan/{mahasiswa}/transkrip', [Admin\PindahanController::class, 'transkrip'])->name('pindahan.transkrip');
+
     Route::get('/konversi', [Admin\KonversiController::class, 'index'])->name('konversi');
     Route::post('/konversi/{mahasiswa}', [Admin\KonversiController::class, 'ajukan'])->name('konversi.ajukan');
     Route::post('/konversi/{konversi}/setujui', [Admin\KonversiController::class, 'setujui'])->name('konversi.setujui');
@@ -621,6 +631,10 @@ Route::middleware(['auth:staff', 'term.active'])->prefix('admin')->name('admin.'
     Route::get('/feeder', [Admin\FeederController::class, 'index'])->name('feeder');
     Route::post('/feeder/validasi', [Admin\FeederController::class, 'validasi'])->name('feeder.validasi');
     Route::post('/feeder/referensi', [Admin\FeederController::class, 'tarikReferensi'])->name('feeder.referensi');
+    Route::get('/feeder/adopsi', [Admin\FeederAdopsiController::class, 'index'])->name('feeder.adopsi');
+    Route::post('/feeder/adopsi', [Admin\FeederAdopsiController::class, 'jalankan'])->name('feeder.adopsi.jalankan');
+    Route::post('/feeder/adopsi/{adopsi}/tautkan', [Admin\FeederAdopsiController::class, 'tautkan'])->name('feeder.adopsi.tautkan');
+    Route::post('/feeder/adopsi/{adopsi}/pisahkan', [Admin\FeederAdopsiController::class, 'pisahkan'])->name('feeder.adopsi.pisahkan');
     Route::post('/feeder/{entity}/jalankan', [Admin\FeederController::class, 'jalankan'])->name('feeder.jalankan');
     Route::post('/feeder/{entity}/ulangi', [Admin\FeederController::class, 'ulangi'])->name('feeder.ulangi');
     Route::post('/feeder/{entity}/bandingkan', [Admin\FeederController::class, 'bandingkan'])->name('feeder.bandingkan');
