@@ -71,6 +71,19 @@ describe('generator NIM', function () {
         expect($nim)->toBe('26552010001');
     });
 
+    it('memakai kode lokal bila kode_pddikti berisi id_prodi Feeder, bukan kode nasional', function () {
+        config(['academic.nim.pattern' => '{yy}{prodi}{seq}', 'academic.nim.sequence_length' => 4]);
+
+        // Sesudah tarik referensi Feeder kolom ini berisi UUID. NIM darinya
+        // 46 karakter — kolom `nim` 32, dan MySQL menolaknya.
+        $this->prodi->update(['kode_pddikti' => 'f127ba98-41bc-3d06-9935-a0fcf911fd19']);
+
+        $nim = app(NimGenerator::class)->untuk($this->prodi, 2026);
+
+        expect($nim)->toBe('26IF0001')
+            ->and(strlen($nim))->toBeLessThanOrEqual(32);
+    });
+
     it('melanjutkan urutan, tidak mengulang dari satu', function () {
         Mahasiswa::factory()->create(['nim' => '26552010007', 'prodi_id' => $this->prodi->id]);
 
