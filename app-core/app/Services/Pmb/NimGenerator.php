@@ -31,10 +31,27 @@ class NimGenerator
      */
     private const PERCOBAAN = 25;
 
+    /**
+     * Width of `mahasiswa.nim`.
+     *
+     * Checked here because SQLite does not enforce it: a pattern that
+     * overflows passes the whole suite and then fails on MySQL with "data too
+     * long" in the middle of an intake, after the applicant was accepted.
+     */
+    private const PANJANG_MAKSIMUM = 32;
+
     public function untuk(Prodi $prodi, int $angkatan): string
     {
         $awalan = $this->awalan($prodi, $angkatan);
         $panjang = (int) config('academic.nim.sequence_length', 4);
+
+        if (strlen($awalan) + $panjang > self::PANJANG_MAKSIMUM) {
+            throw new AturanAkademikException(
+                "Pola NIM untuk {$prodi->nama} menghasilkan nomor lebih dari "
+                    .self::PANJANG_MAKSIMUM.' karakter. Periksa pola pada config/academic.php '
+                    .'dan kode prodi.',
+            );
+        }
 
         $urut = $this->urutBerikutnya($awalan, $panjang);
 
@@ -77,13 +94,14 @@ class NimGenerator
     /**
      * The programme's slot in the number.
      *
-     * Prefers the PDDIKTI code when present: it is the one identifier that is
-     * stable nationally, so a NIM built on it stays meaningful if the campus
-     * renames its internal codes.
+     * Always `kode`, never `kode_pddikti`. The latter is PDDIKTI's id_sms — a
+     * UUID, not the five-digit programme code — so a NIM built on it is 42
+     * characters of hex that overflows the column and means nothing on a
+     * student card.
      */
     private function kodeProdi(Prodi $prodi): string
     {
-        return $prodi->kode_pddikti ?: $prodi->kode;
+        return $prodi->kode;
     }
 
     private function urutBerikutnya(string $awalan, int $panjang): int

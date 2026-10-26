@@ -26,7 +26,7 @@ beforeEach(function () {
         'tahun_mulai' => 2026,
     ]);
 
-    $this->prodi = Prodi::factory()->create(['kode' => 'IF', 'kode_pddikti' => '55201']);
+    $this->prodi = Prodi::factory()->create(['kode' => '55201', 'kode_pddikti' => fake()->uuid()]);
 
     $this->gelombang = PmbGelombang::create([
         'tahun_akademik_id' => $this->term->id,
@@ -67,7 +67,7 @@ describe('generator NIM', function () {
 
         $nim = app(NimGenerator::class)->untuk($this->prodi, 2026);
 
-        // 26 (dua digit tahun) + 55201 (kode PDDIKTI) + 0001
+        // 26 (dua digit tahun) + 55201 (kode prodi) + 0001
         expect($nim)->toBe('26552010001');
     });
 
@@ -87,10 +87,27 @@ describe('generator NIM', function () {
         expect(app(NimGenerator::class)->untuk($this->prodi, 2026))->not->toBe('26552010001');
     });
 
-    it('memakai kode PDDIKTI bila ada, bukan kode internal', function () {
-        $tanpaPddikti = Prodi::factory()->create(['kode' => 'SI', 'kode_pddikti' => null]);
+    it('memakai kode prodi, bukan id_sms PDDIKTI yang berupa UUID', function () {
+        // kode_pddikti adalah id_sms: UUID 36 karakter. NIM yang dirakit
+        // darinya 42 karakter dan ditolak kolom `nim` di MySQL, sementara
+        // SQLite menerimanya tanpa keluhan.
+        $nim = app(NimGenerator::class)->untuk($this->prodi, 2026);
 
-        expect(app(NimGenerator::class)->untuk($tanpaPddikti, 2026))->toStartWith('26SI');
+        expect($this->prodi->kode_pddikti)->toMatch('/^[0-9a-f-]{36}$/')
+            ->and($nim)->toMatch('/^2655201\d{4}$/')
+            ->and($nim)->not->toContain('-')
+            ->and(strlen($nim))->toBe(11);
+
+        $tanpaPddikti = Prodi::factory()->create(['kode' => '57201', 'kode_pddikti' => null]);
+
+        expect(app(NimGenerator::class)->untuk($tanpaPddikti, 2026))->toBe('26572010001');
+    });
+
+    it('menolak pola yang menghasilkan NIM melebihi lebar kolom', function () {
+        config(['academic.nim.pattern' => '{year}{prodi}{prodi}{prodi}{prodi}{prodi}{seq}']);
+
+        expect(fn () => app(NimGenerator::class)->untuk($this->prodi, 2026))
+            ->toThrow(AturanAkademikException::class, 'lebih dari 32 karakter');
     });
 });
 
