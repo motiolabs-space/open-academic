@@ -452,6 +452,10 @@ describe('diterima menjadi mahasiswa', function () {
         $hasil = $this->pmb->daftarUlang($p->fresh(), $this->term);
         $m = $hasil['mahasiswa']->fresh();
 
+        // From the short `kode`, not the id_sms UUID in kode_pddikti (#23).
+        expect($m->nim)->toStartWith('26IF')
+            ->and(strlen($m->nim))->toBeLessThanOrEqual(32);
+
         expect($m->nik)->toBe('3273015408080002')
             ->and($m->agama_kode)->toBe('1')
             ->and($m->nama_ibu)->toBe('Siti Aminah')
