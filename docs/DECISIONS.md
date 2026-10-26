@@ -304,7 +304,7 @@
   Entra ID memerlukan `IDP_REQUIRE_VERIFIED_EMAIL=false` yang disetel sadar,
   karena ia tidak mengirim `email_verified` untuk anggota tenant.
 
-## ADR-020 — SKS diakui pindahan diturunkan dari konversi; semester masuk dan batas KRS pertama membacanya (2026-10-26)
+## ADR-021 — SKS diakui pindahan diturunkan dari konversi; semester masuk dan batas KRS pertama membacanya (2026-10-26)
 
 - **Konteks.** Sejak #25 `mahasiswa` punya `jenis_daftar`, `pt_asal`,
   `prodi_asal`, dan `sks_diakui`, dan Feeder menolak riwayat pendidikan pindahan

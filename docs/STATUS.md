@@ -4,7 +4,7 @@
 
 ---
 
-## Sesi 45 — 2026-10-26 · Mahasiswa pindahan: kolom #25 akhirnya punya layar
+## Sesi 47 — 2026-10-26 · Mahasiswa pindahan: kolom #25 akhirnya punya layar
 
 Pekerjaan P6 #33. Branch `feature/mahasiswa-pindahan`, dari `main` sesudah PR
 #14. Berjalan paralel dengan sesi #44 dan #30/#31; konflik teks di berkas ini
@@ -17,7 +17,7 @@ setiap persetujuan dan pencabutan sebagai jumlah konversi yang disetujui —
 hanya untuk jenis daftar yang `butuhAsal()`, dan `null` selama jumlahnya nol,
 supaya validator Feeder tetap berkata "belum ada SKS diakui". Semester masuk
 (1 + SKS diakui ÷ 20) dan batas SKS KRS pertama (rata-rata nilai konversi
-bernilai lewat matriks IPS yang sama) membaca angka yang sama. ADR-020.
+bernilai lewat matriks IPS yang sama) membaca angka yang sama. ADR-021.
 
 ### Dua pintu, satu layar transkrip
 
