@@ -99,6 +99,37 @@ class FeederException extends RuntimeException
         );
     }
 
+    public static function prodiTanpaKodePddikti(string $prodi): self
+    {
+        return new self(
+            "Program studi {$prodi} belum memiliki kode PDDIKTI (id_sms), jadi daftar mahasiswanya "
+            .'tidak dapat dibaca dari Feeder.',
+        );
+    }
+
+    public static function adopsiBukanAmbigu(): self
+    {
+        return new self('Hanya temuan adopsi yang ambigu yang dapat ditautkan atau dipisahkan secara manual.');
+    }
+
+    public static function kandidatTidakDikenal(string $idRegistrasi): self
+    {
+        return new self("Registrasi {$idRegistrasi} bukan salah satu kandidat temuan ini. Jalankan adopsi ulang bila daftar Feeder berubah.");
+    }
+
+    public static function registrasiSudahDipakai(string $nim): self
+    {
+        return new self("Registrasi Feeder itu sudah tertaut ke mahasiswa {$nim}. Satu registrasi PDDIKTI hanya untuk satu mahasiswa.");
+    }
+
+    public static function tertautLain(string $nim): self
+    {
+        return new self(
+            "Mahasiswa {$nim} sudah tertaut ke data Feeder lain. Periksa riwayat sinkronisasinya sebelum "
+            .'menautkan ulang; menimpa id Feeder diam-diam akan memutus nilai dan KRS yang sudah terkirim.',
+        );
+    }
+
     public static function tidakDapatDibandingkan(string $entity): self
     {
         return new self(

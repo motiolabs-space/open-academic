@@ -4,6 +4,63 @@
 
 ---
 
+## Sesi 45 — 2026-10-26 · Adopsi mahasiswa PDDIKTI: kampus yang pindah tidak lagi mendaftarkan ulang angkatannya
+
+Roadmap #44, branch `feature/feeder-adopsi-mahasiswa`. Berjalan paralel dengan
+sesi #33 dan #30/#31; konflik teks di ROADMAP/STATUS diterima sebagai wajar.
+
+### Masalahnya
+
+Kampus yang datang dari SIAKAD lain sudah punya seluruh mahasiswanya di PDDIKTI.
+`MahasiswaMapper` hanya `InsertBiodataMahasiswa`, dan rekonsiliasi sengaja tidak
+membaca biodata — jadi sinkronisasi pertama mendaftarkan ulang semua orang itu.
+
+### Rancangan (ADR-020)
+
+`FeederAdopsi` membaca `GetListRiwayatPendidikanMahasiswa` (NIM, registrasi) dan
+`GetListMahasiswa` (NIK) per prodi + periode masuk, digabung pada `id_mahasiswa`.
+NIM menemukan, NIK menegaskan, nama hanya pengganti NIK yang kosong. Yang jelas
+diadopsi: `feeder_id`/`feeder_registrasi_id` diisi dan buku besar mendapat satu
+baris per entitas (`direction = adopt`, hash muatan lokal) — hanya bila belum
+pernah ada sukses, supaya hash dorongan sungguhan tidak tertimpa. Dorongan
+berikutnya mencatat *Skipped*; tidak ada `Insert`/`Update` yang terkirim.
+Yang ragu (dua kandidat, NIM sama NIK beda, NIK sama NIM beda, sudah tertaut ke
+data lain) tidak pernah diadopsi otomatis: ditautkan atau dipisahkan di
+`/admin/feeder/adopsi` dengan alasan wajib, ter-audit, dan bertahan saat adopsi
+diulang. Validator menolak biodatanya (`kandidat_feeder_belum_diadopsi`) sampai
+diputuskan. NIK tidak disimpan di laporan — hanya `nik_cocok`.
+
+### Yang ditemukan saat menulis tes
+
+Sesudah satu dari dua registrasi kembar ditautkan manual, kembarannya muncul
+sebagai "hanya di Feeder". Tes awalnya mengharapkan sebaliknya; kodenya yang
+benar — itu registrasi ganda di PDDIKTI yang memang perlu dilihat operator.
+Cabang "satu baris Feeder diperebutkan dua mahasiswa lokal" dibuang: NIM unik,
+jadi dua adopsi atas satu baris tidak mungkin terjadi.
+
+### Yang baru
+
+Migrasi `feeder_adoptions`, enum `StatusAdopsiFeeder` dan `AlasanAmbiguAdopsi`,
+model `FeederAdoption` (`HasLogAktivitas`), `FeederAdopsi`,
+`FeederAdopsiController` + policy + dua FormRequest, layar `feeder-adopsi`
+(tautan dari konsol Feeder), `openacademic:feeder-adopsi {prodi|semua}
+[--periode=]`, `config/feeder.php` → `adopt`, string di `lang/id/feeder.php`.
+`FakeFeederClient::isi()` menghormati filter (prodi/periode) dan
+`mahasiswaTerdaftar()` memisah fixture ke dua daftar seperti layanan aslinya;
+fixture kasus di `tests/Fixtures/feeder/mahasiswa-terdaftar.json`.
+
+**33 tes baru** (FeederAdopsiTest). Suite penuh paralel: 1.294 tes hijau (3.292 asersi).
+
+### Tersisa
+
+- #44b: klaim mahasiswa lampau (`GetListDaftarLampau`/`KlaimMahasiswaLampau`).
+- Nama aksi dan field Feeder untuk kedua daftar perlu diverifikasi terhadap
+  dokumentasi build Feeder kampus; keduanya dapat diganti di konfigurasi.
+- Validator hanya tahu kandidat yang sudah pernah dibaca: kampus yang lupa
+  menjalankan adopsi belum diperingatkan.
+
+---
+
 ## Sesi 44 — 2026-10-24 · Delapan PR masuk, dan ROADMAP dibersihkan dari baris basi
 
 Bukan fitur. PR #6–#13 di-merge berurutan (#6, #7, #11, #8, #9, #10, #12, #13);

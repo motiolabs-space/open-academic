@@ -8,6 +8,7 @@ use App\Enums\JalurPerubahanFeeder;
 use App\Enums\JenisDaftar;
 use App\Enums\JenisEvaluasi;
 use App\Enums\JenisPerubahanFeeder;
+use App\Enums\StatusAdopsiFeeder;
 use App\Enums\StudentStatus;
 use App\Models\Akademik\KelasDosen;
 use App\Models\Akademik\KelasKuliah;
@@ -149,6 +150,13 @@ class FeederValidator
             $isu->push($this->peringatan('agama_kosong', 'Agama belum diisi; akan dikirim tanpa id_agama.'));
         }
 
+        // PDDIKTI may already hold this student. Inserting the biodata now
+        // would register them a second time — or be refused for the NIK —
+        // and either way the decision belongs to a person, not to a sync.
+        if (blank($m->feeder_id) && $this->kandidatBelumDiputuskan($m)) {
+            $isu->push($this->error('kandidat_feeder_belum_diadopsi', __('feeder.adopsi.validasi.belum_diputuskan')));
+        }
+
         // Identity columns PDDIKTI froze when this biodata was first accepted
         // have changed here. Re-sending the biodata would be refused, or —
         // worse — accepted on an older Feeder build and silently diverge from
@@ -164,6 +172,14 @@ class FeederValidator
         }
 
         return $isu;
+    }
+
+    /** Whether an adoption run left this student ambiguous, and nobody has decided since. */
+    private function kandidatBelumDiputuskan(Mahasiswa $m): bool
+    {
+        return $m->relationLoaded('adopsiFeeder')
+            ? $m->adopsiFeeder->contains(fn ($a): bool => $a->status === StatusAdopsiFeeder::Ambigu)
+            : $m->adopsiFeeder()->status(StatusAdopsiFeeder::Ambigu)->exists();
     }
 
     /**
