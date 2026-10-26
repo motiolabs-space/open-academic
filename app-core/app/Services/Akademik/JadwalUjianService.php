@@ -17,6 +17,7 @@ use App\Exceptions\AturanAkademikException;
 use App\Models\Akademik\JadwalUjian;
 use App\Models\Akademik\JadwalUjianPengawas;
 use App\Models\Akademik\JadwalUjianRuang;
+use App\Models\Akademik\KalenderPeristiwa;
 use App\Models\Akademik\KelasKuliah;
 use App\Models\Akademik\Ruang;
 use App\Models\Akademik\TahunAkademik;
@@ -83,7 +84,9 @@ class JadwalUjianService
 
         $peserta = $this->pesertaPerKelas([$kelas->id, ...$lain->pluck('kelas_id')->all()]);
 
-        return $this->bentrokSesi($usulan, $lain, $peserta);
+        $bentrok = $this->bentrokSesi($usulan, $lain, $peserta);
+
+        return $this->tambahLibur($bentrok, $usulan, KalenderPeristiwa::tanggalLibur($data->tanggal, $data->tanggal));
     }
 
     /**
@@ -215,6 +218,10 @@ class JadwalUjianService
         $semua = $this->muatSesi(JadwalUjian::query()->term($term->id));
         $peserta = $this->pesertaPerKelas($semua->pluck('kelas_id')->unique()->all());
 
+        $libur = $semua->isEmpty()
+            ? []
+            : KalenderPeristiwa::tanggalLibur($semua->min('tanggal'), $semua->max('tanggal'));
+
         $laporan = [];
 
         foreach ($semua as $sesi) {
@@ -222,7 +229,7 @@ class JadwalUjianService
                 continue;
             }
 
-            $bentrok = $this->bentrokSesi($sesi, $semua, $peserta);
+            $bentrok = $this->tambahLibur($this->bentrokSesi($sesi, $semua, $peserta), $sesi, $libur);
 
             if ($bentrok->isNotEmpty()) {
                 $laporan[$sesi['id']] = $bentrok;
@@ -358,6 +365,7 @@ class JadwalUjianService
             ->get();
 
         $slot = $data->slot();
+        $libur = KalenderPeristiwa::tanggalLibur($data->tanggalMulai, $data->tanggalSelesai);
         $usulan = collect();
         $tidakTerjadwal = collect();
 
@@ -375,10 +383,17 @@ class JadwalUjianService
                 continue;
             }
 
-            $tempat = $this->cariSlot($k, $mahasiswa, $slot, $ruang, $terpakai, $peserta, $data);
+            // A published holiday is not offered as a sitting — for every class
+            // when it is campus-wide, for the programme's own when it is not.
+            $slotKelas = array_values(array_filter(
+                $slot,
+                fn (array $s): bool => KalenderPeristiwa::liburUntuk($libur, $s['tanggal'], $k->prodi_id) === null,
+            ));
+
+            $tempat = $this->cariSlot($k, $mahasiswa, $slotKelas, $ruang, $terpakai, $peserta, $data);
 
             if ($tempat === null) {
-                $tidakTerjadwal->push(['kelas' => $k, 'alasan' => $slot === []
+                $tidakTerjadwal->push(['kelas' => $k, 'alasan' => $slotKelas === []
                     ? __('jadwal_ujian.susun.tanpa_slot')
                     : __('jadwal_ujian.susun.tidak_muat', ['jumlah' => count($mahasiswa)])]);
 
@@ -889,6 +904,25 @@ class JadwalUjianService
                     'kapasitas' => $r['kapasitas'],
                 ])));
             }
+        }
+
+        return $bentrok;
+    }
+
+    /**
+     * Adds the holiday warning to a session's clashes, if its day is one.
+     *
+     * @param Collection<int, BentrokJadwal> $bentrok
+     * @param array<string, mixed> $sesi
+     * @param array<string, list<array{judul: string, prodi_id: ?int}>> $libur from KalenderPeristiwa::tanggalLibur()
+     * @return Collection<int, BentrokJadwal>
+     */
+    private function tambahLibur(Collection $bentrok, array $sesi, array $libur): Collection
+    {
+        $judul = KalenderPeristiwa::liburUntuk($libur, $sesi['tanggal'], $sesi['prodi_id']);
+
+        if ($judul !== null) {
+            $bentrok->push(BentrokJadwal::libur(__('jadwal_ujian.bentrok.libur', ['judul' => $judul])));
         }
 
         return $bentrok;

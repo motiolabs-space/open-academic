@@ -4,6 +4,84 @@
 
 ---
 
+## Sesi 57 — 2026-10-27 · Kalender akademik: satu lapisan baca, libur yang tidak punya pemilik, feed iCalendar
+
+Roadmap #35, branch `feature/kalender-peristiwa`, dari `main` sesudah #32/#34.
+Berjalan paralel dengan sesi SDM #39/#40 dan KKN/PKL #37 + proposal TA #38;
+konflik teks di berkas ini, `ROADMAP.md`, dan `DECISIONS.md` wajar. Keputusan:
+ADR-027.
+
+### Lapisan baca, bukan salinan
+
+`KalenderService` menyatukan tanggal dari pemiliknya pada saat dibaca:
+perkuliahan, KRS, perubahan KRS, dan nilai dari `tahun_akademik` (kolom yang
+sama dengan `krsDibuka()`/`penilaianDibuka()`), masa UTS/UAS per prodi dari sesi
+**terbit** #34 (satu kueri ber-`GROUP BY`, rentang utuh walau melewati batas
+bulan), EDOM yang aktif, yudisium sebagai jumlah lulusan per hari per prodi
+(tanpa nama), wisuda, dan gelombang PMB (staf saja). Mengubah tanggal di layar
+sumber langsung terlihat; tabel kalender tidak pernah menyimpan tanggal turunan.
+
+### Peristiwa yang tidak punya pemilik
+
+Tabel `kalender_peristiwa` hanya untuk libur akademik, kegiatan kampus, dan
+batas administrasi: judul, rentang, sasaran (semua/mahasiswa/dosen/staf), prodi
+opsional, draf → terbit, `HasLogAktivitas`, hapus lunak. Layar BAAK
+`/admin/kalender/peristiwa` di bawah izin baru `kalender.manage` (peran `baak`;
+instalasi berjalan perlu `db:seed --class=RolePermissionSeeder` seperti
+biasa). Jenis turunan ditolak di FormRequest dan service.
+
+### Tiga portal, satu aturan pembaca
+
+`/admin/kalender`, `/dosen/kalender`, `/mahasiswa/kalender`: tampilan bulan
+(Senin–Minggu, hari libur ditandai) dan daftar, filter jenis, sasaran, dan prodi.
+Dosen melihat yang untuk dosen, mahasiswa, dan semua; mahasiswa yang untuk
+mahasiswa dan semua, **dipaku** ke prodinya apa pun isi URL-nya, plus sesi ujiannya
+sendiri (berjam, berruang duduk); dosen sesi yang diampu atau diawasi. Draf hanya
+untuk staf ber-`kalender.manage`. Peristiwa manual dapat langsung diubah dari
+daftar; turunan menyebut layar sumbernya.
+
+### Langganan iCalendar
+
+Tautan per orang `/kalender/{token}.ics` untuk Google/Outlook: token 48 karakter,
+hanya SHA-256-nya di `calendar_feed_tokens`, URL tampil sekali; buat ulang
+mencabut yang lama, cabut tanpa mengganti tersedia, feed berhenti bila akun
+dinonaktifkan. Isinya tanpa nama, NIM, atau surel, tanpa draf; 3 bulan ke
+belakang sampai 12 bulan ke depan, seharian sebagai `VALUE=DATE`, sesi berjam
+dalam UTC, baris dilipat per 75 oktet tanpa memotong UTF-8.
+
+### Libur di jadwal ujian
+
+Sesi pada libur terbit (semua prodi atau prodi kelasnya; libur khusus staf tidak
+dihitung) mendapat `BentrokJadwal::libur()` — peringatan, **bukan** penghalang —
+di formulir, laporan bentrok, dan detail; penyusun massal melewati hari libur.
+Gerbang KRS, nilai, pertemuan, dan pengingat sengaja tidak disentuh (ADR-027).
+
+### Demo
+
+`KalenderSeeder` (sesudah `JadwalUjianSeeder`) menanam delapan peristiwa terbit
+dan satu draf di semester aktif: libur nasional, cuti bersama, dies natalis,
+orientasi prodi Informatika (mahasiswa), sosialisasi MBKM yang mengapit hari ini
+(mahasiswa), rapat kerja (staf), batas cuti akademik (mahasiswa), batas unggah
+RPS (dosen), dan libur akhir tahun berstatus draf. Liburnya di luar pekan UTS,
+jadi UTS demo tetap terbit tanpa peringatan — SmokeLayarTest memakunya. Dicoba
+pada basis data demo utuh lewat `artisan serve`: ketiga portal 200 di kedua
+tampilan, feed mahasiswa demo 20 acara tanpa NIM, nama, atau surel.
+
+**Tes baru:** KalenderTest 21 (agregasi tiap sumber termasuk tanggal dan jumlah
+yang dibaca balik, peristiwa manual + audit, filter per portal, policy, ICS dan
+pencabutannya, pelipatan baris, peringatan libur dan penyusun massal),
+SmokeLayarTest 6 (anggaran kueri layar kalender ketiga portal dan layar kelola —
+mahasiswa 25, dosen 26, staf 18 — plus isi kalender demo). Peringatan libur
+menambah satu kueri pada `/admin/jadwal-ujian`; anggarannya tidak berubah.
+
+### Belum
+
+Tidak ada pengingat/notifikasi untuk peristiwa manual; libur nasional dan cuti
+bersama masih diketik tangan per tahun, belum diimpor; `MODUL.md` belum memuat
+layar kalender (sama seperti jadwal ujian #34).
+
+---
+
 ## Sesi 56 — 2026-10-26 · PMB daring: calon mendaftar sendiri, portal keempat
 
 Roadmap #32, branch `feature/pmb-daring`. Berjalan paralel dengan sesi #34

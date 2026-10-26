@@ -12,6 +12,7 @@ use Database\Seeders\Demo\EdomSeeder;
 use Database\Seeders\Demo\HelpdeskSeeder;
 use Database\Seeders\Demo\IntegrasiSeeder;
 use Database\Seeders\Demo\JadwalUjianSeeder;
+use Database\Seeders\Demo\KalenderSeeder;
 use Database\Seeders\Demo\KelulusanSeeder;
 use Database\Seeders\Demo\KemahasiswaanSeeder;
 use Database\Seeders\Demo\KepegawaianSeeder;
@@ -88,6 +89,12 @@ class DemoCampusSeeder extends Seeder
             // ujian dihitung dari KRS yang sudah disetujui, jadi peserta harus
             // sudah final sebelum jadwal UTS disusun dan diterbitkan.
             JadwalUjianSeeder::class,
+
+            // Sesudah JadwalUjianSeeder: penyusun jadwal ujian massal melewati
+            // hari libur yang sudah terbit. Liburnya sengaja di luar pekan UTS,
+            // jadi urutan ini hanya menjaga agar UTS demo tetap disusun dari
+            // kampus tanpa libur — bukan dari kalender yang ditata mengikutinya.
+            KalenderSeeder::class,
 
             // Sesudah KeuanganSeeder: beasiswa mendarat pada tagihan yang sudah
             // terbit, dan itu justru alur yang paling sering terjadi — seleksi
