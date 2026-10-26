@@ -8,6 +8,7 @@ use App\Models\Akademik\JadwalUjian;
 use App\Models\Akademik\KelasKuliah;
 use App\Models\Akademik\TahunAkademik;
 use App\Models\Bridge\BridgeConsumer;
+use App\Models\Kemahasiswaan\KegiatanLapangan;
 use App\Models\Kemahasiswaan\Mahasiswa;
 use App\Models\Pmb\PmbAkun;
 use App\Models\Pmb\PmbGelombang;
@@ -403,4 +404,28 @@ it('membuka detail jadwal ujian dan mencetak kartu dari jadwal ujian dalam angga
         fn () => $this->actingAs($mahasiswa, 'mahasiswa')->get('/mahasiswa/kartu-ujian')->assertOk(),
         30,
     );
+});
+
+/*
+ * KKN/PKL (#37): daftar dan rincian di tiga portal. Rincian merender seluruh
+ * anggota dengan prodi, nilai, dan logbooknya — tempat paling wajar bagi
+ * kueri per anggota untuk menyelinap masuk.
+ */
+it('membuka layar KKN/PKL di tiga portal dalam anggaran kueri', function () {
+    $staff = Staff::where('email', 'admin@demo.test')->firstOrFail();
+    $kegiatan = KegiatanLapangan::query()->firstOrFail();
+    $kelompok = $kegiatan->kelompok()->whereNotNull('dosen_pembimbing_id')->orderBy('nomor')->firstOrFail();
+    $mahasiswa = $kelompok->anggota()->firstOrFail()->mahasiswa;
+
+    foreach ([
+        [$staff, 'staff', '/admin/kegiatan-lapangan', 12],
+        [$staff, 'staff', '/admin/kegiatan-lapangan/'.$kegiatan->uuid, 16],
+        [$kelompok->pembimbing, 'dosen', '/dosen/kegiatan-lapangan', 7],
+        [$kelompok->pembimbing, 'dosen', '/dosen/kegiatan-lapangan/'.$kelompok->uuid, 10],
+        [$mahasiswa, 'mahasiswa', '/mahasiswa/kegiatan-lapangan', 15],
+    ] as [$aktor, $guard, $url, $anggaran]) {
+        auth()->forgetGuards();
+
+        dalamAnggaranKueri(fn () => $this->actingAs($aktor, $guard)->get($url)->assertOk(), $anggaran);
+    }
 });

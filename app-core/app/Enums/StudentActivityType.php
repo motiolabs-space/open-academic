@@ -24,6 +24,15 @@ enum StudentActivityType: string
     case MembangunDesa = 'membangun_desa';
     case BelaNegara = 'bela_negara';
 
+    /*
+     * The two field programmes that predate MBKM and run outside it: the
+     * regular community-service term and the practical-work placement. They
+     * are managed programmes here (#37) and reach PDDIKTI as activities like
+     * the nine above, but never flagged as Kampus Merdeka.
+     */
+    case Kkn = 'kkn';
+    case Pkl = 'pkl';
+
     public function label(): string
     {
         return match ($this) {
@@ -36,6 +45,8 @@ enum StudentActivityType: string
             self::ProyekKemanusiaan => 'Proyek Kemanusiaan',
             self::MembangunDesa => 'Membangun Desa / KKN Tematik',
             self::BelaNegara => 'Bela Negara',
+            self::Kkn => 'Kuliah Kerja Nyata (KKN)',
+            self::Pkl => 'Praktik Kerja Lapangan (PKL)',
         };
     }
 
@@ -47,6 +58,38 @@ enum StudentActivityType: string
     public function qualifiesForIku2(): bool
     {
         return true;
+    }
+
+    /**
+     * Whether PDDIKTI should record the activity as Kampus Merdeka.
+     *
+     * Sent as `untuk_kampus_merdeka`. A regular KKN reported as MBKM would be
+     * counted in the ministry's MBKM figures for a programme that never was.
+     */
+    public function kampusMerdeka(): bool
+    {
+        return !in_array($this, [self::Kkn, self::Pkl], true);
+    }
+
+    /**
+     * The kinds a managed field programme can be run as: the regular KKN and
+     * PKL, and their MBKM counterparts when the campus runs them as such.
+     *
+     * @return array<int, self>
+     */
+    public static function kegiatanLapangan(): array
+    {
+        return [self::Kkn, self::MembangunDesa, self::Pkl, self::Magang];
+    }
+
+    /** @return array<string, string> */
+    public static function opsiKegiatanLapangan(): array
+    {
+        return array_reduce(
+            self::kegiatanLapangan(),
+            fn (array $carry, self $case): array => $carry + [$case->value => $case->label()],
+            [],
+        );
     }
 
     /** @return array<string, string> */

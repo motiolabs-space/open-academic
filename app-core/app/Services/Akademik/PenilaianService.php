@@ -18,6 +18,7 @@ use App\Models\Sdm\Staff;
 use App\Notifications\Akademik\NilaiTerbit;
 use App\Services\Bridge\BridgeEventPublisher;
 use App\Services\Notifikasi\Notifier;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
@@ -144,7 +145,7 @@ class PenilaianService
             throw PenilaianException::komponenKosong();
         }
 
-        $detailSah = $kelas->krsDetail()->pluck('id')->all();
+        $detailSah = $this->dinilaiDosen($kelas)->pluck('id')->all();
 
         return DB::transaction(function () use ($kelas, $isian, $komponen, $detailSah): int {
             $tersimpan = 0;
@@ -195,7 +196,7 @@ class PenilaianService
 
         $komponen = $this->komponen($kelas);
 
-        if ($kelas->krsDetail()->count() === 0) {
+        if ($this->dinilaiDosen($kelas)->count() === 0) {
             throw PenilaianException::tanpaPeserta();
         }
 
@@ -204,7 +205,7 @@ class PenilaianService
         }
 
         DB::transaction(function () use ($kelas, $dosen, $komponen): void {
-            foreach ($kelas->krsDetail()->with('krs')->get() as $detail) {
+            foreach ($this->dinilaiDosen($kelas)->with('krs')->get() as $detail) {
                 $this->segarkanNilaiAkhir($detail->id, $kelas, $komponen);
 
                 Nilai::where('krs_detail_id', $detail->id)->update([
@@ -229,7 +230,7 @@ class PenilaianService
             'kelas_uuid' => $kelas->uuid,
             'semester' => $kelas->tahunAkademik->kode,
             'mata_kuliah' => $kelas->mataKuliah->kode,
-            'jumlah_mahasiswa' => $kelas->krsDetail()->count(),
+            'jumlah_mahasiswa' => $this->dinilaiDosen($kelas)->count(),
             'difinalisasi_oleh' => $dosen->uuid,
             'difinalisasi_pada' => now()->toIso8601String(),
         ]);
@@ -243,7 +244,7 @@ class PenilaianService
          */
         $this->notifier->kirimBanyak(
             Mahasiswa::query()
-                ->whereIn('id', $kelas->krsDetail()->join(
+                ->whereIn('id', $this->dinilaiDosen($kelas)->join(
                     'krs',
                     'krs.id',
                     '=',
@@ -307,7 +308,7 @@ class PenilaianService
         $rekapHadir = $this->presensi->rekapKelas($kelas);
         $minimum = (float) config('academic.attendance.min_percent_for_final_exam');
 
-        return $kelas->krsDetail()
+        return $this->dinilaiDosen($kelas)
             ->with(['krs.mahasiswa', 'nilai', 'nilaiKomponen'])
             ->get()
             ->sortBy(fn (KrsDetail $detail): string => $detail->krs->mahasiswa->nim)
@@ -375,14 +376,14 @@ class PenilaianService
     /** How many component cells are still empty across the class. */
     private function adaNilaiKosong(KelasKuliah $kelas, Collection $komponen): int
     {
-        $harusnya = $kelas->krsDetail()->count() * $komponen->count();
+        $harusnya = $this->dinilaiDosen($kelas)->count() * $komponen->count();
 
         return max(0, $harusnya - $this->jumlahTerisi($kelas, $komponen));
     }
 
     private function jumlahTerisi(KelasKuliah $kelas, Collection $komponen): int
     {
-        return NilaiKomponen::whereIn('krs_detail_id', $kelas->krsDetail()->pluck('id'))
+        return NilaiKomponen::whereIn('krs_detail_id', $this->dinilaiDosen($kelas)->pluck('id'))
             ->whereIn('komponen_nilai_id', $komponen->pluck('id'))
             ->whereNotNull('nilai')
             ->count();
@@ -401,6 +402,20 @@ class PenilaianService
         }
 
         return round($angka, 2);
+    }
+
+    /**
+     * The lines the lecturer grades: every line of the class except those
+     * whose credits were recognised from a student activity.
+     *
+     * A converted line (KKN, PKL, MBKM — #23, #37) arrives with a final grade
+     * from the activity's own marks. Left on the sheet, it would block
+     * finalisation as an empty row, and finalising would recompute it from
+     * components nobody entered.
+     */
+    private function dinilaiDosen(KelasKuliah $kelas): HasMany
+    {
+        return $kelas->krsDetail()->whereNull('krs_detail.aktivitas_mahasiswa_id');
     }
 
     private function pastikanBelumFinal(KelasKuliah $kelas): void

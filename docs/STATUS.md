@@ -4,6 +4,62 @@
 
 ---
 
+## Sesi 59 — 2026-10-27 · KKN/PKL terkelola dan tahap proposal tugas akhir
+
+Roadmap #37 dan #38, branch `feature/kkn-proposal-ta`, satu PR dengan satu
+commit per butir. Berjalan paralel dengan kalender peristiwa #35 dan SDM
+#39/#40; konflik teks di berkas ini, `ROADMAP.md`, dan `DECISIONS.md` wajar.
+Keputusan: ADR-029.
+
+### #37 — KKN / PKL sebagai kegiatan terkelola
+
+Peserta KKN/PKL adalah baris `aktivitas_mahasiswa` biasa — jenis baru `kkn`
+dan `pkl`, atau `membangun_desa`/`magang` bila kampus menjalankannya sebagai
+MBKM — sehingga mapper aktivitas, anggota, bimbing, dan konversi #22/#23
+mengirimnya tanpa entitas Feeder baru. Empat tabel baru hanya untuk yang tak
+punya tempat di baris aktivitas: periode (`kegiatan_lapangan`, aturan kelompok
+dan bobot nilai disalin dari `config/kegiatan_lapangan.php`), lokasi desa/
+instansi dengan kuota kelompok, kelompok dengan DPL dan pembimbing mitra, dan
+logbook (FK ke aktivitas). `KegiatanLapanganService` menulis ulang judul,
+mitra, wilayah, tanggal, dan DPL ke setiap baris aktivitas tiap kali periode,
+lokasi, atau kelompok berubah.
+
+- **Kelompok**: manual, atau otomatis lewat `PembentukKelompok` — urut prodi →
+  jenis kelamin → NIM lalu dibagikan bergiliran, ukuran diratakan; aturan
+  campur yang dimatikan memartisi lebih dulu. Lokasi diisi sesuai kuota, sisa
+  kelompok tanpa lokasi.
+- **Nilai**: DPL dan mitra (mitra bukan akun; nilainya diisi DPL atau staf),
+  akhir hanya bila semua nilai berbobot ada.
+- **Konversi per kelas**: kelas mata kuliah KKN/PKL memilih peserta prodinya,
+  menulis atau menempelkan baris KRS bertanda aktivitas dengan nilai final,
+  memverifikasi aktivitas, mengisi `sks_konversi`, menghitung ulang IPS/IPK.
+  Sesudahnya nilai kegiatan terkunci.
+- **Yang tersingkap**: belum ada satu pun kode yang menulis baris KRS
+  bertanda aktivitas sejak #23 — konversi MBKM hanya bisa dikirim, tidak bisa
+  dibuat. Dan baris seperti itu, bila ada di kelas yang juga dinilai dosen,
+  akan menghalangi finalisasi sebagai baris kosong lalu ditimpa dari komponen
+  nol. `PenilaianService` kini mengeluarkannya dari lembar nilai.
+- **Layar**: KEMAHASISWAAN → KKN / PKL (staf, `mahasiswa.view`/`.manage`),
+  Bimbingan KKN / PKL (dosen, per kelompok yang dibimbing), KKN / PKL
+  (mahasiswa: daftar mandiri bila dibuka, kelompok, logbook). Lampiran logbook
+  di `/berkas/kegiatan-lapangan/{logbook}` di balik policy.
+- **Demo**: `KegiatanLapanganSeeder` — satu periode KKN di semester aktif,
+  tiga desa, 18 peserta dalam tiga kelompok campuran, dosen1 membimbing
+  Kelompok 01 (dengan tiga logbook), mahasiswa1 ikut. Belum dinilai: mengisi
+  nilai dan mengonversinya adalah demonya.
+
+**Tes baru:** KegiatanLapanganTest 37, SmokeLayarTest 1 (anggaran kueri lima
+layar KKN/PKL di tiga portal).
+
+### Belum
+
+Lokasi belum dapat disunting dari layar (service-nya sudah); peserta belum
+dapat membatalkan pendaftaran mandirinya sendiri; ketua kelompok belum dikirim
+sebagai peran *ketua* ke PDDIKTI karena setiap peserta adalah aktivitas
+tersendiri.
+
+---
+
 ## Sesi 56 — 2026-10-26 · PMB daring: calon mendaftar sendiri, portal keempat
 
 Roadmap #32, branch `feature/pmb-daring`. Berjalan paralel dengan sesi #34

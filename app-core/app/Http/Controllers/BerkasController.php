@@ -7,6 +7,7 @@ namespace App\Http\Controllers;
 use App\Models\Helpdesk\HelpdeskBalasan;
 use App\Models\Helpdesk\HelpdeskTiket;
 use App\Models\Kemahasiswaan\CutiMahasiswa;
+use App\Models\Kemahasiswaan\KegiatanLapanganLogbook;
 use App\Models\Kemahasiswaan\Mahasiswa;
 use App\Models\Pmb\PmbBerkas;
 use App\Services\Berkas\BerkasService;
@@ -96,6 +97,17 @@ class BerkasController extends Controller
         $this->authorize($balasan->is_internal ? 'handle' : 'view', $tiket);
 
         return $this->alirkan($balasan->lampiran_path, $balasan->lampiran_nama ?? 'lampiran');
+    }
+
+    /**
+     * The attachment on a KKN/PKL log entry: its author, the group's field
+     * supervisor, and staff — KegiatanLapanganLogbookPolicy.
+     */
+    public function logbookKegiatan(KegiatanLapanganLogbook $logbook): StreamedResponse
+    {
+        $this->authorize('view', $logbook);
+
+        return $this->alirkan($logbook->berkas_path, $logbook->berkas_nama ?? 'lampiran');
     }
 
     /**

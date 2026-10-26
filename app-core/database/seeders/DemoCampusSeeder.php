@@ -12,6 +12,7 @@ use Database\Seeders\Demo\EdomSeeder;
 use Database\Seeders\Demo\HelpdeskSeeder;
 use Database\Seeders\Demo\IntegrasiSeeder;
 use Database\Seeders\Demo\JadwalUjianSeeder;
+use Database\Seeders\Demo\KegiatanLapanganSeeder;
 use Database\Seeders\Demo\KelulusanSeeder;
 use Database\Seeders\Demo\KemahasiswaanSeeder;
 use Database\Seeders\Demo\KepegawaianSeeder;
@@ -105,6 +106,10 @@ class DemoCampusSeeder extends Seeder
             TugasAkhirSeeder::class,
 
             KelulusanSeeder::class,
+
+            // Sesudah KelulusanSeeder: peserta KKN dipilih dari mahasiswa yang
+            // masih aktif, bukan yang baru saja diluluskan.
+            KegiatanLapanganSeeder::class,
 
             // Sesudah KelulusanSeeder, sebelum IntegrasiSeeder: satu prodi
             // kesehatan dengan lulusan yang menunggu uji kompetensi. Prodinya
