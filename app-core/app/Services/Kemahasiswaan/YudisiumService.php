@@ -22,11 +22,13 @@ use App\Models\Keuangan\Tagihan;
 use App\Models\Sdm\Staff;
 use App\Models\TugasAkhir\TugasAkhir;
 use App\Notifications\Kemahasiswaan\KelulusanDitetapkan;
+use App\Notifications\Kemahasiswaan\YudisiumMenungguUjiKompetensi;
 use App\Services\Akademik\PerolehanAkademik;
 use App\Services\Bridge\BridgeEventPublisher;
 use App\Services\Notifikasi\Notifier;
 use App\Services\Surat\SuratService;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
@@ -93,11 +95,7 @@ class YudisiumService
         // third copy of the same best-attempt-per-course logic.
         $perolehan = $this->perolehan->untukBanyak($mahasiswa);
 
-        $tunggakanPerMahasiswa = Tagihan::query()
-            ->whereIn('mahasiswa_id', $ids)
-            ->belumLunas()
-            ->groupBy('mahasiswa_id')
-            ->pluck(DB::raw('SUM(total - terbayar)'), 'mahasiswa_id');
+        $tunggakanPerMahasiswa = Tagihan::tunggakanPerMahasiswa($ids);
 
         // A grade still being entered can move the IPK after graduation is
         // confirmed, which would leave the diploma disagreeing with the record.
@@ -315,12 +313,23 @@ class YudisiumService
             ));
         }
 
-        DB::transaction(function () use ($yudisium, $mahasiswa, $staff, $nomorSk, $syarat): void {
+        /*
+         * A programme that requires the competency examination does not
+         * graduate anyone here. The academic decision is still recorded — SK,
+         * IPK and predicate are final — but the student moves to
+         * MenungguUkom, not Lulus, and has no graduation date yet. PDDIKTI is
+         * told "menunggu uji kompetensi" each term until the result is
+         * recorded (UjiKompetensiService), and only then does everything below
+         * the branch happen.
+         */
+        $wajibUkom = (bool) $mahasiswa->prodi->wajib_ukom;
+
+        DB::transaction(function () use ($yudisium, $mahasiswa, $staff, $nomorSk, $syarat, $wajibUkom): void {
             $yudisium->update([
                 'status' => 'ditetapkan',
                 'nomor_sk' => $nomorSk ?? $yudisium->nomor_sk,
                 'tanggal_yudisium' => now(),
-                'tanggal_lulus' => now(),
+                'tanggal_lulus' => $wajibUkom ? null : now(),
                 'total_sks' => $syarat->sksLulus,
                 'ipk' => $syarat->ipk,
                 'predikat' => Yudisium::predikatUntuk($syarat->ipk),
@@ -330,35 +339,102 @@ class YudisiumService
 
             // The status change is what PDDIKTI eventually reports, so it is
             // part of the same transaction as the decision itself.
-            $mahasiswa->update(['status' => StudentStatus::Lulus]);
-
-            Alumni::updateOrCreate(
-                ['mahasiswa_id' => $mahasiswa->id],
-                [
-                    'tahun_lulus' => now()->year,
-                    'email_pribadi' => $mahasiswa->email,
-                    'telepon' => $mahasiswa->telepon,
-                    'status_pekerjaan' => 'belum',
-                ],
-            );
+            if ($wajibUkom) {
+                $mahasiswa->update(['status' => StudentStatus::MenungguUkom]);
+            } else {
+                $this->tutupRegistrasi($yudisium, $mahasiswa, now());
+            }
         });
 
+        if ($wajibUkom) {
+            $this->bridge->publish('student.status_changed', [
+                'mahasiswa_uuid' => $mahasiswa->uuid,
+                'nim' => $mahasiswa->nim,
+                'status_lama' => StudentStatus::Aktif->value,
+                'status_baru' => StudentStatus::MenungguUkom->value,
+            ]);
+
+            $this->notifier->kirim($mahasiswa, new YudisiumMenungguUjiKompetensi($yudisium->refresh()));
+
+            return $yudisium->refresh();
+        }
+
+        $this->umumkanKelulusan($yudisium->refresh(), $mahasiswa, $staff, StudentStatus::Aktif);
+
+        return $yudisium->refresh();
+    }
+
+    /**
+     * Graduates a student who was waiting on the competency examination.
+     *
+     * Called by UjiKompetensiService once a passing result is recorded, inside
+     * its transaction. The graduation date is the examination date, not the
+     * yudisium date: that is the day the degree was complete, and it is what
+     * PDDIKTI records as the exit date.
+     */
+    public function lulusSetelahUjiKompetensi(Yudisium $yudisium, Staff $staff, Carbon $tanggalLulus): Yudisium
+    {
+        $mahasiswa = $yudisium->mahasiswa;
+
+        if ($mahasiswa->status !== StudentStatus::MenungguUkom || $yudisium->status !== 'ditetapkan') {
+            throw new AturanAkademikException(sprintf(
+                '%s tidak sedang menunggu uji kompetensi.',
+                $mahasiswa->nama,
+            ));
+        }
+
+        DB::transaction(function () use ($yudisium, $mahasiswa, $tanggalLulus): void {
+            $yudisium->update(['tanggal_lulus' => $tanggalLulus]);
+            $this->tutupRegistrasi($yudisium, $mahasiswa, $tanggalLulus);
+        });
+
+        // After the outermost commit: webhook consumers and the student must
+        // never hear about a graduation the caller's transaction then undoes.
+        DB::afterCommit(fn () => $this->umumkanKelulusan(
+            $yudisium->refresh(),
+            $mahasiswa,
+            $staff,
+            StudentStatus::MenungguUkom,
+        ));
+
+        return $yudisium;
+    }
+
+    /** The writes that make a student a graduate. Runs inside the caller's transaction. */
+    private function tutupRegistrasi(Yudisium $yudisium, Mahasiswa $mahasiswa, Carbon $tanggalLulus): void
+    {
+        $mahasiswa->update(['status' => StudentStatus::Lulus]);
+
+        Alumni::updateOrCreate(
+            ['mahasiswa_id' => $mahasiswa->id],
+            [
+                'tahun_lulus' => $tanggalLulus->year,
+                'email_pribadi' => $mahasiswa->email,
+                'telepon' => $mahasiswa->telepon,
+                'status_pekerjaan' => 'belum',
+            ],
+        );
+    }
+
+    /** Everything the outside world is told once somebody has graduated. */
+    private function umumkanKelulusan(Yudisium $yudisium, Mahasiswa $mahasiswa, Staff $staff, StudentStatus $statusLama): void
+    {
         // Open Campus's tracer study (IKU 1) starts from this event.
         $this->bridge->publish('student.graduated', [
             'mahasiswa_uuid' => $mahasiswa->uuid,
             'nim' => $mahasiswa->nim,
             'nama' => $mahasiswa->nama,
             'prodi' => $mahasiswa->prodi->kode,
-            'tanggal_lulus' => now()->toDateString(),
-            'total_sks' => $syarat->sksLulus,
-            'ipk' => $syarat->ipk,
-            'predikat' => Yudisium::predikatUntuk($syarat->ipk),
+            'tanggal_lulus' => $yudisium->tanggal_lulus?->toDateString(),
+            'total_sks' => (int) $yudisium->total_sks,
+            'ipk' => (float) $yudisium->ipk,
+            'predikat' => $yudisium->predikat,
         ]);
 
         $this->bridge->publish('student.status_changed', [
             'mahasiswa_uuid' => $mahasiswa->uuid,
             'nim' => $mahasiswa->nim,
-            'status_lama' => StudentStatus::Aktif->value,
+            'status_lama' => $statusLama->value,
             'status_baru' => StudentStatus::Lulus->value,
         ]);
 
@@ -377,8 +453,6 @@ class YudisiumService
         $this->surat->terbitkanSkpi($mahasiswa->refresh(), $staff);
 
         $this->notifier->kirim($mahasiswa, new KelulusanDitetapkan($yudisium->refresh()));
-
-        return $yudisium->refresh();
     }
 
     /** Cancels a confirmed graduation — an exceptional, audited correction. */

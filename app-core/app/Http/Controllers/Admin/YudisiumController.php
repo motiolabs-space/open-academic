@@ -4,10 +4,14 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Admin;
 
+use App\DTOs\Kemahasiswaan\HasilUjiKompetensiData;
+use App\Enums\HasilUjiKompetensi;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\CatatUjiKompetensiRequest;
 use App\Models\Kemahasiswaan\Mahasiswa;
 use App\Models\Kemahasiswaan\Yudisium;
 use App\Services\Kemahasiswaan\KesiapanPinService;
+use App\Services\Kemahasiswaan\UjiKompetensiService;
 use App\Services\Kemahasiswaan\YudisiumService;
 use App\Support\Portal;
 use Illuminate\Http\RedirectResponse;
@@ -27,6 +31,7 @@ class YudisiumController extends Controller
     public function __construct(
         private readonly YudisiumService $yudisium,
         private readonly KesiapanPinService $kesiapanPin,
+        private readonly UjiKompetensiService $ukom,
     ) {}
 
     public function index(): View
@@ -61,7 +66,24 @@ class YudisiumController extends Controller
             // reservation portal refuses without saying why, and every reason
             // it has is visible from here first.
             'kesiapanPin' => $this->kesiapanPin->periksaBanyak($ditetapkan->pluck('mahasiswa')),
+
+            // Health programmes: academically done, waiting on the national
+            // competency examination. Empty on campuses without one.
+            'menungguUkom' => $this->ukom->menunggu(),
         ]);
+    }
+
+    /** Records one competency-examination sitting; a pass graduates the student. */
+    public function catatUkom(CatatUjiKompetensiRequest $request, Mahasiswa $mahasiswa): RedirectResponse
+    {
+        $data = HasilUjiKompetensiData::fromRequest($request);
+
+        $this->ukom->catatHasil($mahasiswa, $data, Portal::user());
+
+        return back()->with('sukses', __(
+            $data->hasil === HasilUjiKompetensi::Lulus ? 'ukom.sukses.lulus' : 'ukom.sukses.belum',
+            ['nama' => $mahasiswa->nama],
+        ));
     }
 
     public function ajukan(Request $request): RedirectResponse

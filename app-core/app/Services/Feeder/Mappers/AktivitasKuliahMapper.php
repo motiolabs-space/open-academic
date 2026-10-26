@@ -37,7 +37,15 @@ class AktivitasKuliahMapper extends FeederMapper
         return array_filter([
             'id_registrasi_mahasiswa' => $model->mahasiswa->feeder_registrasi_id,
             'id_semester' => $model->tahunAkademik->kode,
-            'id_status_mahasiswa' => $this->kode('status_mahasiswa', $model->status->value, $model->status->value),
+            // The PDDIKTI-shaped codes fall back to themselves; a local code
+            // (MenungguUkom) does not, and is left out so the validator's
+            // "belum dipetakan" error is what the operator sees, not a
+            // rejection from Feeder over a code it never issued.
+            'id_status_mahasiswa' => $this->kode(
+                'status_mahasiswa',
+                $model->status->value,
+                $model->status->kodeLokal() ? null : $model->status->value,
+            ),
             'ips' => number_format((float) $model->ips, 2, '.', ''),
             'ipk' => number_format((float) $model->ipk, 2, '.', ''),
             'sks_semester' => $model->sks_semester,

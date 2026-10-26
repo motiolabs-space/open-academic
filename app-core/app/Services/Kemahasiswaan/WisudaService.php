@@ -4,11 +4,17 @@ declare(strict_types=1);
 
 namespace App\Services\Kemahasiswaan;
 
+use App\DTOs\Kemahasiswaan\SyaratWisuda;
 use App\Exceptions\AturanAkademikException;
+use App\Models\Kemahasiswaan\Mahasiswa;
 use App\Models\Kemahasiswaan\WisudaPeriode;
 use App\Models\Kemahasiswaan\WisudaPeserta;
 use App\Models\Kemahasiswaan\Yudisium;
 use App\Models\Sdm\Staff;
+use App\Notifications\Kemahasiswaan\PendaftaranWisudaDibatalkan;
+use App\Notifications\Kemahasiswaan\PendaftaranWisudaDiterima;
+use App\Services\Notifikasi\Notifier;
+use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
@@ -27,58 +33,24 @@ use Illuminate\Support\Facades\DB;
  */
 class WisudaService
 {
+    public function __construct(
+        private readonly SyaratWisudaService $syarat,
+        private readonly Notifier $notifier,
+    ) {}
+
     /**
      * Registers a confirmed graduate for a ceremony.
      *
      * Only confirmed graduations are eligible: registering somebody whose
      * yudisium is still a proposal would put a name on the programme for a
-     * degree that has not been awarded.
+     * degree that has not been awarded. Beyond that the whole ceremony
+     * checklist applies — the same one the student's own screen shows, so the
+     * office cannot register somebody the student would have been refused, nor
+     * the other way round.
      */
     public function daftarkan(WisudaPeriode $periode, Yudisium $yudisium): WisudaPeserta
     {
-        if (!$periode->is_pendaftaran_dibuka) {
-            throw new AturanAkademikException("Pendaftaran {$periode->nama} sudah ditutup.");
-        }
-
-        if ($yudisium->status !== 'ditetapkan') {
-            throw new AturanAkademikException(
-                "Kelulusan {$yudisium->mahasiswa->nama} belum ditetapkan, sehingga belum dapat "
-                    .'didaftarkan sebagai peserta wisuda.',
-            );
-        }
-
-        $sudah = WisudaPeserta::where('yudisium_id', $yudisium->id)->first();
-
-        if ($sudah !== null) {
-            throw new AturanAkademikException(sprintf(
-                '%s sudah terdaftar pada %s.',
-                $yudisium->mahasiswa->nama,
-                $sudah->periode->nama,
-            ));
-        }
-
-        return DB::transaction(function () use ($periode, $yudisium): WisudaPeserta {
-            // Locked before counting: two registrations arriving together would
-            // otherwise both read the same count and both be admitted past a
-            // full ceremony, or take the same queue number.
-            $terkunci = WisudaPeriode::whereKey($periode->id)->lockForUpdate()->firstOrFail();
-
-            $terdaftar = WisudaPeserta::where('wisuda_periode_id', $terkunci->id)->count();
-
-            if ($terkunci->kuota !== null && $terdaftar >= (int) $terkunci->kuota) {
-                throw new AturanAkademikException(sprintf(
-                    'Kuota %s sudah penuh (%d peserta).',
-                    $terkunci->nama,
-                    $terkunci->kuota,
-                ));
-            }
-
-            return WisudaPeserta::create([
-                'wisuda_periode_id' => $terkunci->id,
-                'yudisium_id' => $yudisium->id,
-                'nomor_urut' => $terdaftar + 1,
-            ]);
-        });
+        return $this->daftarkanTerperiksa($periode, $yudisium, $this->syarat->periksa($yudisium->mahasiswa));
     }
 
     /**
@@ -95,12 +67,15 @@ class WisudaService
             ->orderBy('tanggal_lulus')
             ->get();
 
+        // One batch check for the whole queue rather than one per graduate.
+        $syarat = $this->syarat->periksaBanyak($kandidat->pluck('mahasiswa'));
+
         $didaftarkan = 0;
         $gagal = collect();
 
         foreach ($kandidat as $yudisium) {
             try {
-                $this->daftarkan($periode, $yudisium);
+                $this->daftarkanTerperiksa($periode, $yudisium, $syarat[$yudisium->mahasiswa_id]);
                 $didaftarkan++;
             } catch (AturanAkademikException $e) {
                 // A full quota stops the run; anything else is about this one
@@ -120,6 +95,72 @@ class WisudaService
         ];
     }
 
+    /**
+     * A graduate registering themself.
+     *
+     * The same path as staff registration from the first check onwards. The
+     * only difference is that the graduation record is found from the person
+     * signed in rather than from a form field naming it, so there is nothing
+     * to forge.
+     */
+    public function daftarSendiri(WisudaPeriode $periode, Mahasiswa $mahasiswa): WisudaPeserta
+    {
+        $yudisium = $mahasiswa->yudisium;
+
+        if ($yudisium === null) {
+            throw new AturanAkademikException(__('wisuda.galat.tanpa_yudisium'));
+        }
+
+        return $this->daftarkan($periode, $yudisium);
+    }
+
+    /**
+     * A graduate withdrawing their own registration.
+     *
+     * Only while the period is still open: once it closes, the seating plan and
+     * the printed programme are built from the list, and a silent withdrawal
+     * leaves an empty chair with a name on it. After that the graduate asks
+     * the office, which can still remove them.
+     */
+    public function batalkanSendiri(WisudaPeriode $periode, Mahasiswa $mahasiswa): void
+    {
+        $peserta = $this->pesertaDari($periode, $mahasiswa);
+
+        if ($peserta === null) {
+            throw new AturanAkademikException(__('wisuda.galat.tidak_terdaftar', ['periode' => $periode->nama]));
+        }
+
+        if (!$periode->is_pendaftaran_dibuka) {
+            throw new AturanAkademikException(__('wisuda.galat.batal_ditutup', ['periode' => $periode->nama]));
+        }
+
+        $this->batalkan($peserta);
+    }
+
+    /** The graduate's registration in this period, if any. */
+    public function pesertaDari(WisudaPeriode $periode, Mahasiswa $mahasiswa): ?WisudaPeserta
+    {
+        return WisudaPeserta::query()
+            ->where('wisuda_periode_id', $periode->id)
+            ->whereHas('yudisium', fn ($q) => $q->where('mahasiswa_id', $mahasiswa->id))
+            ->first();
+    }
+
+    /**
+     * Ceremonies a graduate can still sign up for: open, and not yet held.
+     *
+     * @return EloquentCollection<int, WisudaPeriode>
+     */
+    public function periodeTerbuka(): EloquentCollection
+    {
+        return WisudaPeriode::query()
+            ->withCount('peserta')
+            ->where('is_pendaftaran_dibuka', true)
+            ->whereDate('tanggal', '>=', today())
+            ->orderBy('tanggal')
+            ->get();
+    }
+
     public function batalkan(WisudaPeserta $peserta): void
     {
         if (filled($peserta->nomor_ijazah)) {
@@ -129,7 +170,85 @@ class WisudaService
             );
         }
 
+        $periode = $peserta->periode;
+        $mahasiswa = $peserta->yudisium->mahasiswa;
+
         $peserta->delete();
+
+        $periode->recordActivity('participant_removed', sprintf(
+            '%s (%s) keluar dari daftar peserta %s.',
+            $mahasiswa->nama,
+            $mahasiswa->nim,
+            $periode->nama,
+        ));
+
+        // Told whichever side removed them: a graduate dropped by the office
+        // must not find out at the door.
+        $this->notifier->kirim($mahasiswa, new PendaftaranWisudaDibatalkan($periode));
+    }
+
+    /** The registration itself, against a checklist the caller already ran. */
+    private function daftarkanTerperiksa(WisudaPeriode $periode, Yudisium $yudisium, SyaratWisuda $syarat): WisudaPeserta
+    {
+        if (!$periode->is_pendaftaran_dibuka) {
+            throw new AturanAkademikException("Pendaftaran {$periode->nama} sudah ditutup.");
+        }
+
+        if ($yudisium->status !== 'ditetapkan') {
+            throw new AturanAkademikException(
+                "Kelulusan {$yudisium->mahasiswa->nama} belum ditetapkan, sehingga belum dapat "
+                    .'didaftarkan sebagai peserta wisuda.',
+            );
+        }
+
+        if (!$syarat->memenuhi()) {
+            throw new AturanAkademikException(__('wisuda.galat.syarat', [
+                'nama' => $yudisium->mahasiswa->nama,
+                'syarat' => implode(', ', $syarat->belumTerpenuhi()),
+            ]));
+        }
+
+        $sudah = WisudaPeserta::where('yudisium_id', $yudisium->id)->first();
+
+        if ($sudah !== null) {
+            throw new AturanAkademikException(sprintf(
+                '%s sudah terdaftar pada %s.',
+                $yudisium->mahasiswa->nama,
+                $sudah->periode->nama,
+            ));
+        }
+
+        $peserta = DB::transaction(function () use ($periode, $yudisium): WisudaPeserta {
+            // Locked before counting: two registrations arriving together would
+            // otherwise both read the same count and both be admitted past a
+            // full ceremony, or take the same queue number.
+            $terkunci = WisudaPeriode::whereKey($periode->id)->lockForUpdate()->firstOrFail();
+
+            $terdaftar = WisudaPeserta::where('wisuda_periode_id', $terkunci->id)->count();
+
+            if ($terkunci->kuota !== null && $terdaftar >= (int) $terkunci->kuota) {
+                throw new AturanAkademikException(sprintf(
+                    'Kuota %s sudah penuh (%d peserta).',
+                    $terkunci->nama,
+                    $terkunci->kuota,
+                ));
+            }
+
+            // After the highest number, not after the head count: once anyone
+            // withdraws, the count falls behind the numbers already handed out
+            // and the next graduate would be given one that is taken.
+            $urut = (int) WisudaPeserta::where('wisuda_periode_id', $terkunci->id)->max('nomor_urut');
+
+            return WisudaPeserta::create([
+                'wisuda_periode_id' => $terkunci->id,
+                'yudisium_id' => $yudisium->id,
+                'nomor_urut' => $urut + 1,
+            ]);
+        });
+
+        $this->notifier->kirim($yudisium->mahasiswa, new PendaftaranWisudaDiterima($peserta));
+
+        return $peserta;
     }
 
     /**

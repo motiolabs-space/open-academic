@@ -207,11 +207,15 @@ class KonversiService
             throw new AturanAkademikException('Pencabutan konversi wajib disertai alasan.');
         }
 
-        if ($konversi->mahasiswa->status === StudentStatus::Lulus) {
+        // A student waiting on the competency examination is held to the same
+        // rule: the yudisium that fixed their credit total is already
+        // confirmed, and only the examination stands between it and the
+        // diploma that quotes it.
+        if (in_array($konversi->mahasiswa->status, [StudentStatus::Lulus, StudentStatus::MenungguUkom], true)) {
             throw new AturanAkademikException(
-                'Mahasiswa ini sudah lulus. Kredit yang diakui sudah masuk ke total yang tercetak '
-                    .'pada transkrip dan dikutip pada ijazah — pencabutannya harus melewati '
-                    .'pembatalan yudisium lebih dulu.',
+                'Kelulusan mahasiswa ini sudah ditetapkan (status '.$konversi->mahasiswa->status->label().'). '
+                    .'Kredit yang diakui sudah masuk ke total yang tercetak pada transkrip dan dikutip '
+                    .'pada ijazah — pencabutannya harus melewati pembatalan yudisium lebih dulu.',
             );
         }
 

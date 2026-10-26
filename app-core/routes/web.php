@@ -167,6 +167,12 @@ Route::middleware(['auth:mahasiswa', 'term.active'])->prefix('mahasiswa')->name(
 
     Route::get('/capaian', Mahasiswa\PenguasaanController::class)->name('capaian');
 
+    // Berparameter periode, bukan orang: pemilik pendaftarannya selalu yang
+    // sedang masuk.
+    Route::get('/wisuda', [Mahasiswa\WisudaController::class, 'index'])->name('wisuda');
+    Route::post('/wisuda/{periode}', [Mahasiswa\WisudaController::class, 'daftar'])->name('wisuda.daftar');
+    Route::delete('/wisuda/{periode}', [Mahasiswa\WisudaController::class, 'batal'])->name('wisuda.batal');
+
     Route::get('/edom', [Mahasiswa\EdomController::class, 'index'])->name('edom');
     Route::post('/edom', [Mahasiswa\EdomController::class, 'kirim'])->name('edom.kirim');
 
@@ -641,6 +647,7 @@ Route::middleware(['auth:staff', 'term.active'])->prefix('admin')->name('admin.'
     Route::post('/yudisium/ajukan', [Admin\YudisiumController::class, 'ajukan'])->name('yudisium.ajukan');
     Route::post('/yudisium/{yudisium}/tetapkan', [Admin\YudisiumController::class, 'tetapkan'])->name('yudisium.tetapkan');
     Route::post('/yudisium/{yudisium}/batalkan', [Admin\YudisiumController::class, 'batalkan'])->name('yudisium.batalkan');
+    Route::post('/yudisium/ukom/{mahasiswa}', [Admin\YudisiumController::class, 'catatUkom'])->name('yudisium.ukom');
 
     Route::get('/wisuda', [Admin\WisudaController::class, 'index'])->name('wisuda');
     Route::post('/wisuda/periode', [Admin\WisudaController::class, 'storePeriode'])->name('wisuda.periode.store');

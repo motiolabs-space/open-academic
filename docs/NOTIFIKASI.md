@@ -57,7 +57,7 @@ dalam hal yang kelak ditagihkan kepadanya.
 | Keuangan | ✅ | Tagihan terbit, pembayaran diterima |
 | Akademik | ✅ | Keputusan KRS, nilai final |
 | Tugas Akhir | ✅ | Keputusan judul, pembimbing, jadwal ujian |
-| Kemahasiswaan | ✅ | Keputusan cuti, penetapan kelulusan |
+| Kemahasiswaan | ✅ | Keputusan cuti, penetapan kelulusan, uji kompetensi, pendaftaran wisuda |
 | Pengingat | ⬜ | Tenggat yang mendekat |
 | Sistem | ⬜ | Kegagalan Feeder dan webhook (staf) |
 
@@ -83,6 +83,9 @@ tetap sampai lewat kategori wajib.
 | Pembayaran dicatat | Mahasiswa |
 | Cuti diputus | Mahasiswa |
 | Kelulusan ditetapkan | Mahasiswa |
+| Yudisium ditetapkan, menunggu uji kompetensi (prodi wajib ukom) | Mahasiswa |
+| Hasil uji kompetensi dicatat belum lulus | Mahasiswa |
+| Terdaftar / dikeluarkan dari daftar peserta wisuda — oleh dirinya atau oleh staf | Mahasiswa |
 | Judul tugas akhir diputus | Mahasiswa |
 | Pembimbing ditetapkan | Mahasiswa **dan** dosen |
 | Ujian dijadwalkan | Mahasiswa **dan** seluruh penguji |

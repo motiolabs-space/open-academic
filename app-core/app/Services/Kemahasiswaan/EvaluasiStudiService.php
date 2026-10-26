@@ -63,8 +63,17 @@ class EvaluasiStudiService
              * finding about somebody who has already left, and an operator
              * cannot act on it — the queue fills with noise and the real cases
              * stop being visible.
+             *
+             * The same holds for a student waiting on the competency
+             * examination: every course is passed and the yudisium confirmed.
+             * The only thing between them and the degree is a national
+             * sitting the campus does not schedule.
              */
-            if ($mahasiswa === null || $mahasiswa->status->isTerminal()) {
+            if (
+                $mahasiswa === null
+                || $mahasiswa->status->isTerminal()
+                || $mahasiswa->status === StudentStatus::MenungguUkom
+            ) {
                 $hasil['dilewati']++;
 
                 continue;
@@ -223,7 +232,10 @@ class EvaluasiStudiService
             ->join('tahun_akademik', 'tahun_akademik.id', '=', 'status_mahasiswa.tahun_akademik_id')
             ->whereIn('status_mahasiswa.mahasiswa_id', $mahasiswaIds->unique()->all())
             ->where('tahun_akademik.kode', '<=', $term->kode)
-            ->where('status_mahasiswa.status', '!=', StudentStatus::Cuti->value)
+            ->whereNotIn('status_mahasiswa.status', array_map(
+                fn (StudentStatus $s): string => $s->value,
+                StudentStatus::tidakDihitungMasaStudi(),
+            ))
             ->groupBy('status_mahasiswa.mahasiswa_id')
             ->pluck(DB::raw('count(*)'), 'status_mahasiswa.mahasiswa_id')
             ->map(fn ($n): int => (int) $n)

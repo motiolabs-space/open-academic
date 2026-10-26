@@ -59,6 +59,8 @@ class LulusDoMapper extends FeederMapper
         return Mahasiswa::query()
             ->with([
                 'perubahanFeeder' => fn ($q) => $q->terbuka(),
+                'prodi',
+                'ujiKompetensiLulus.tahunAkademik',
                 'yudisium.tahunAkademik',
                 'evaluasiStudi' => fn ($q) => $q->whereIn('keputusan', $keputusan)->latest('diputuskan_at'),
             ])
@@ -69,6 +71,12 @@ class LulusDoMapper extends FeederMapper
             ])
             ->where(fn (Builder $q) => $q
                 ->whereHas('yudisium', fn (Builder $y) => $y
+                    ->whereHas('tahunAkademik', fn (Builder $t) => $t->where('kode', $termCode)))
+                // A programme with a competency examination graduates its
+                // students in the term they pass it, often terms after the
+                // yudisium. Without this clause they would only ever be due
+                // in a term the operator has long since stopped syncing.
+                ->orWhereHas('ujiKompetensiLulus', fn (Builder $u) => $u
                     ->whereHas('tahunAkademik', fn (Builder $t) => $t->where('kode', $termCode)))
                 ->orWhereIn('id', EvaluasiStudi::query()
                     ->select('mahasiswa_id')
@@ -83,11 +91,18 @@ class LulusDoMapper extends FeederMapper
         $yudisium = $model->status === StudentStatus::Lulus ? $model->yudisium : null;
         $evaluasi = $yudisium === null ? $model->evaluasiStudi->first() : null;
 
+        // For a programme with a competency examination the exit term is the
+        // term of the passing sitting; yudisium.tanggal_lulus already holds
+        // its date (UjiKompetensiService).
+        $periodeUkom = $yudisium !== null && $model->prodi?->wajib_ukom
+            ? $model->ujiKompetensiLulus?->tahunAkademik?->kode
+            : null;
+
         return array_filter([
             'id_registrasi_mahasiswa' => $model->feeder_registrasi_id,
             'id_jenis_keluar' => $this->kode('jenis_keluar', $model->status->value),
             'tanggal_keluar' => $this->tanggal($yudisium?->tanggal_lulus ?? $evaluasi?->diputuskan_at),
-            'id_periode_keluar' => $yudisium?->tahunAkademik->kode ?? $evaluasi?->tahunAkademik->kode,
+            'id_periode_keluar' => $periodeUkom ?? $yudisium?->tahunAkademik->kode ?? $evaluasi?->tahunAkademik->kode,
             'nomor_sk_yudisium' => $yudisium?->nomor_sk,
             'tanggal_sk_yudisium' => $this->tanggal($yudisium?->tanggal_yudisium),
             'ipk' => $yudisium !== null ? number_format((float) $yudisium->ipk, 2, '.', '') : null,

@@ -27,6 +27,7 @@ use Database\Seeders\Demo\RpsSeeder;
 use Database\Seeders\Demo\SdmSeeder;
 use Database\Seeders\Demo\SuratSeeder;
 use Database\Seeders\Demo\TugasAkhirSeeder;
+use Database\Seeders\Demo\UjiKompetensiSeeder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Seeder;
 use RuntimeException;
@@ -98,6 +99,13 @@ class DemoCampusSeeder extends Seeder
             TugasAkhirSeeder::class,
 
             KelulusanSeeder::class,
+
+            // Sesudah KelulusanSeeder, sebelum IntegrasiSeeder: satu prodi
+            // kesehatan dengan lulusan yang menunggu uji kompetensi. Prodinya
+            // sengaja ditanam sesudah seluruh riwayat perkuliahan, supaya
+            // seeder lain yang menyusuri Prodi::all() tidak mencarikan
+            // kurikulum untuknya.
+            UjiKompetensiSeeder::class,
 
             // Sesudah KelulusanSeeder: SKPI hanya dapat diterbitkan untuk
             // kelulusan yang sudah ditetapkan.

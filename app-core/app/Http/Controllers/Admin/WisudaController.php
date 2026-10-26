@@ -8,6 +8,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Kemahasiswaan\WisudaPeriode;
 use App\Models\Kemahasiswaan\WisudaPeserta;
 use App\Models\Kemahasiswaan\Yudisium;
+use App\Services\Kemahasiswaan\SyaratWisudaService;
 use App\Services\Kemahasiswaan\WisudaService;
 use App\Support\Portal;
 use Illuminate\Http\RedirectResponse;
@@ -22,7 +23,10 @@ use Illuminate\View\View;
  */
 class WisudaController extends Controller
 {
-    public function __construct(private readonly WisudaService $wisuda) {}
+    public function __construct(
+        private readonly WisudaService $wisuda,
+        private readonly SyaratWisudaService $syarat,
+    ) {}
 
     public function index(Request $request): View
     {
@@ -48,12 +52,16 @@ class WisudaController extends Controller
 
             // Confirmed graduates not yet placed in any ceremony — the queue
             // this screen exists to clear.
-            'menunggu' => Yudisium::query()
+            'menunggu' => $menunggu = Yudisium::query()
                 ->with('mahasiswa.prodi')
                 ->where('status', 'ditetapkan')
                 ->whereDoesntHave('pesertaWisuda')
                 ->orderBy('tanggal_lulus')
                 ->get(),
+
+            // The same checklist the graduate sees on their own screen, so the
+            // office and the student never disagree about who may register.
+            'syaratMenunggu' => $this->syarat->periksaBanyak($menunggu->pluck('mahasiswa')),
 
             'polaIjazah' => (string) config('academic.ijazah.pattern', '{tahun}/{prodi}/{urut}'),
             'penomoranLokal' => $this->wisuda->penomoranLokal(),

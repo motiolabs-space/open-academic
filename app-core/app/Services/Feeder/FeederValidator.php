@@ -322,6 +322,13 @@ class FeederValidator
             $isu->push($this->error('registrasi_belum_sinkron', 'Riwayat pendidikan mahasiswa belum terkirim ke Feeder.'));
         }
 
+        if ($s->status->kodeLokal() && FeederMapping::toFeeder('status_mahasiswa', $s->status->value) === null) {
+            $isu->push($this->error(
+                'status_belum_dipetakan',
+                __('ukom.feeder.status_belum_dipetakan', ['status' => $s->status->label()]),
+            ));
+        }
+
         if ((float) $s->ipk > 4.0 || (float) $s->ips > 4.0) {
             $isu->push($this->error('indeks_di_luar_rentang', 'IPS/IPK melebihi 4,00.'));
         }
@@ -564,6 +571,14 @@ class FeederValidator
 
             if (blank($y->nomor_sk)) {
                 $isu->push($this->peringatan('nomor_sk_kosong', 'Nomor SK yudisium kosong; PDDIKTI menerimanya, tetapi reservasi nomor ijazah menanyakannya.'));
+            }
+
+            // A health programme's graduate is not Lulus until the competency
+            // examination is passed. A Lulus status without that result was set
+            // by hand, or the programme was flagged after the fact; either
+            // way PDDIKTI must not be told the degree is complete.
+            if ($m->prodi?->wajib_ukom && $m->ujiKompetensiLulus === null) {
+                $isu->push($this->error('ukom_belum_lulus', __('ukom.feeder.lulus_tanpa_ukom')));
             }
 
             return $isu;

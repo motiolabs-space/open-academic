@@ -79,6 +79,10 @@ class PenutupanSemesterController extends Controller
             $pesan .= sprintf(' %d sudah beku sebelumnya dan dilewati.', $hasil['dilewati']);
         }
 
+        if ($hasil['menunggu_ukom'] > 0) {
+            $pesan .= sprintf(' %d catatan "Menunggu Uji Kompetensi" ditulis untuk semester ini.', $hasil['menunggu_ukom']);
+        }
+
         if ($hasil['terhalang'] > 0) {
             return back()->with('peringatan', $pesan.sprintf(
                 ' %d mahasiswa BELUM dibekukan karena masih ada kelasnya yang nilainya belum '

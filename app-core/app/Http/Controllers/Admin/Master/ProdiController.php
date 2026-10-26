@@ -93,6 +93,10 @@ class ProdiController extends MasterController
             'gelar_panjang' => ['nullable', 'string', 'max:128'],
             'akreditasi' => ['nullable', 'string', 'max:16'],
             'sks_lulus' => ['required', 'integer', 'min:36', 'max:300'],
+
+            // Health programmes: graduates wait at "Menunggu Uji Kompetensi"
+            // after yudisium until a passing result is recorded.
+            'wajib_ukom' => ['sometimes', 'boolean'],
             'kaprodi_dosen_id' => ['nullable', 'integer', Rule::exists('dosen', 'id')],
             'is_active' => ['sometimes', 'boolean'],
         ]);

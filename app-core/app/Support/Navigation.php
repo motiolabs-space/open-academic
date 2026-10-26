@@ -43,6 +43,7 @@ final class Navigation
                     self::item('KHS & Transkrip', '≡', 'mahasiswa.khs'),
                     self::item('Capaian Pembelajaran', '◔', 'mahasiswa.capaian'),
                     self::item('Tugas Akhir', '✍', 'mahasiswa.tugas-akhir'),
+                    self::item('Wisuda', '◎', 'mahasiswa.wisuda'),
                     self::item('Surat & Dokumen', '✉', 'mahasiswa.surat'),
                     self::item('Evaluasi Dosen', '☆', 'mahasiswa.edom'),
                     self::item('Tagihan & Pembayaran', '◈', 'mahasiswa.tagihan'),

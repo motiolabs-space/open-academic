@@ -4,6 +4,83 @@
 
 ---
 
+## Sesi 52 — 2026-10-26 · P5 tuntas: wisuda didaftar sendiri, dan lulusan kesehatan menunggu ukom dengan nama
+
+Pekerjaan P5 #30 dan #31. Branch `feature/wisuda-mandiri-ukom`, dari `main`
+sesudah PR #14; dua commit, satu per butir. Berjalan paralel dengan sesi #44 dan
+#33 — konflik teks di berkas ini dan `ROADMAP.md` wajar.
+
+### #30 — satu daftar periksa, tiga pembaca
+
+Sebelum ini satu-satunya syarat wisuda adalah satu `if` di
+`WisudaService::daftarkan()`. Layar mahasiswa yang menyalakan tombol "Daftar"
+akan butuh salinannya, dan salinan itu akan menyimpang begitu syarat bertambah.
+`SyaratWisudaService` kini dibaca layar `/mahasiswa/wisuda`, antrean "Menunggu
+Periode Wisuda" di layar staf, dan `WisudaService` sendiri sebelum menulis.
+Akibatnya staf juga tidak lagi dapat mendaftarkan lulusan yang menunggak —
+pendaftaran massal melewatinya dan menyebut namanya.
+
+Tunggakan dibaca dari `Tagihan::tunggakanPerMahasiswa()`, definisi yang kini
+juga dipakai daftar periksa yudisium. **Denda yang belum dibebaskan dihitung
+tunggakan**; yang sudah dibebaskan tidak, karena baris pembebasannya sudah
+mengurangi `total`. Kesiapan PIN tampil sebagai baris informasi yang tidak
+menghalangi. Tidak ada baris bebas pinjaman: modul perpustakaan tidak ada.
+
+Mahasiswa mendaftar dan membatalkan sendiri hanya selama periode dibuka; rute
+berparameter periode, bukan orang. Notifikasi dikirim pada kedua arah, dari
+jalur mana pun — lulusan yang dikeluarkan staf juga diberi tahu.
+
+### Yang tersingkap di #30
+
+Nomor urut peserta dihitung `count() + 1`. Begitu satu orang mundur, peserta
+berikutnya menerima nomor yang sudah dipegang orang lain. Selama hanya staf yang
+bisa mengeluarkan peserta, ini jarang; dengan pembatalan mandiri, ini pasti.
+Kini `max(nomor_urut) + 1`.
+
+### #31 — kode lokal, bukan tebakan
+
+`StudentStatus::MenungguUkom = 'U'` adalah kode lokal pertama di enum yang
+selama ini meniru kode PDDIKTI. `AktivitasKuliahMapper` menjatuhkan setiap
+status balik ke kode lokalnya bila pemetaan kosong; untuk status ini tidak —
+barisnya dikirim tanpa `id_status_mahasiswa` dan validator menolaknya sebagai
+"belum dipetakan" sebelum Feeder sempat menolak kode yang tidak pernah ia
+terbitkan.
+
+Alurnya: prodi ber-`wajib_ukom` → `tetapkan()` mencatat SK, IPK, predikat, lalu
+berhenti di MenungguUkom tanpa tanggal lulus, alumni, webhook lulus, atau SKPI →
+staf mencatat hasil per sitting di layar Yudisium (tabel `uji_kompetensi`; yang
+gagal ikut tercatat) → hasil lulus meluluskan pada tanggal ujian, atau tanggal
+yudisium bila ujian lebih dulu. Semester hasil itu menjadi periode keluar
+Lulus/DO, sehingga lulusan tidak terutang di semester yudisium yang sudah lama
+tidak disinkron.
+
+Mahasiswa yang menunggu tidak mengisi KRS, jadi tidak ada yang membuat catatan
+semesternya. Penutupan semester kini menulisnya: beku, status `U`, SKS dan IPS
+nol, IPK dibawa dari semester terakhir — itu yang dikirim sebagai AKM. Evaluasi
+studi melewati mereka dan tidak menghitung semester `U` sebagai semester tempuh.
+Validator Lulus/DO menolak Lulus pada prodi wajib ukom tanpa hasil yang lulus;
+DO tidak disyaratkan ukom. Keputusan: ADR-022.
+
+### Demo
+
+Seeder baru `UjiKompetensiSeeder`: Fakultas Ilmu Kesehatan, D3 Keperawatan
+(wajib ukom, tanpa kurikulum sendiri), satu mahasiswa menunggu ukom
+(`mahasiswa.ukom@demo.test`) dengan catatan AKM `U` semester aktif dan satu
+sitting yang belum lulus. Pemetaan demo `U → U` di `IntegrasiSeeder`.
+
+### Sesudah #44 dan #33 masuk
+
+Digabung dengan `main` sesudah PR #15 dan #16. Satu interaksi: `KonversiService::cabut()`
+menolak mencabut kredit diakui milik mahasiswa Lulus, tetapi tidak milik mahasiswa
+yang menunggu ukom — padahal total SKS-nya sudah ditetapkan yudisium. Kini keduanya
+ditolak. Pindahan yang menunggu tidak dievaluasi meski `masa_studi_dari_asal` aktif,
+dan mahasiswa adopsi mengirim AKM `U` dengan id registrasi dari PDDIKTI; keduanya
+dipaku tes. Migrasi ukom dipindah ke `120000`/`120001`, sesudah migrasi #33.
+
+**52 tes baru** (WisudaMandiriTest 27, UjiKompetensiTest 24, KonversiKreditTest 1).
+
+---
+
 ## Sesi 51 — 2026-10-26 · Mahasiswa pindahan: kolom #25 akhirnya punya layar
 
 Pekerjaan P6 #33. Branch `feature/mahasiswa-pindahan`, dari `main` sesudah PR

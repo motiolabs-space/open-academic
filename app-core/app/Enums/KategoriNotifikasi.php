@@ -76,7 +76,7 @@ enum KategoriNotifikasi: string
             self::Keuangan => 'Tagihan terbit, pembayaran diterima, dan jatuh tempo.',
             self::Akademik => 'Keputusan rencana studi dan nilai yang sudah final.',
             self::TugasAkhir => 'Keputusan judul, penetapan pembimbing, dan jadwal ujian.',
-            self::Kemahasiswaan => 'Keputusan cuti dan penetapan kelulusan.',
+            self::Kemahasiswaan => 'Keputusan cuti, penetapan kelulusan, uji kompetensi, dan pendaftaran wisuda.',
             self::Kepegawaian => 'Hasil penilaian beban kerja dosen (BKD) dan laporan yang dikembalikan asesor.',
             self::Pengingat => 'Pengingat sebelum tenggat: batas pengisian KRS, jatuh tempo tagihan, batas revisi.',
             self::Helpdesk => 'Tiket layanan Anda diteruskan, dibalas petugas, atau dinyatakan selesai.',
