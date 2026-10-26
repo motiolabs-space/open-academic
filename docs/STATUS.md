@@ -4,6 +4,41 @@
 
 ---
 
+## Sesi 55 — 2026-10-26 · Tiga sisa kecil: klaim flagship MBKM, surat PDM/PJK, spec Bridge yang dipaku tes
+
+Branch `feature/paket-kecil-flagship-surat-spec`, dari `main` sesudah PR #17;
+satu commit per butir. Berjalan paralel dengan #32 (PMB daring) dan #34
+(jadwal ujian) — konflik teks di berkas ini dan `ROADMAP.md` wajar.
+
+### #45 — klaim program flagship MBKM
+
+Daftar program flagship ditarik sebagai referensi (`GetListAktivitasMBKMFlagship`,
+tipe `program_flagship`), tidak di-seed. Penandanya `aktivitas_mahasiswa.flagship_kode`,
+dipilih per aktivitas di kolom baru layar Verifikasi Data IKU; pilihan hanya
+dari referensi, dan `FlagshipMbkmService` menolak kode yang tidak ada di sana.
+
+Entitas ke-26, `flagship_mbkm` (`InsertAktivitasMBKMFlagship`), bergantung pada
+`anggota_mbkm`: program mengakui peserta, bukan judul. Validator melaporkan
+aktivitas atau anggota yang belum terkirim, dan program yang hilang dari tarikan
+referensi terakhir (program yang dipensiunkan atau dinomori ulang kementerian).
+
+Klaimnya **dialamatkan pada `id_aktivitas`**, bukan pada id apa pun yang
+dibalas Feeder: PDDIKTI memegang paling banyak satu klaim per aktivitas.
+`feeder_flagship_id` menyimpan id aktivitas tempat klaim diterima; ulangan
+dilewati lewat hash, perpindahan program dikirim sebagai
+`UpdateAktivitasMBKMFlagship` berkunci aktivitas yang sama. Penanda yang
+klaimnya sudah diterima **tidak dapat dicabut dari sini** — web service tidak
+punya penarikan yang dapat diandalkan sinkron, dan mengosongkan kolom diam-diam
+akan meninggalkan klaim di PDDIKTI yang tidak diingat siapa pun di sini.
+
+Nama aksi dan medan payload (`id_aktivitas`, `id_flagship`) mengikuti pemakaian
+komunitas dan belum diverifikasi terhadap dokumentasi build Feeder; aksi yang
+salah muncul sebagai galat Feeder di ledger, bukan sebagai "tidak ada program".
+`FakeFeederClient` membalas insert-nya dengan `id_aktivitas` dan menyajikan
+fixture lima program untuk kampus demo.
+
+**8 tes** (`FeederFlagshipTest`).
+
 ## Sesi 52 — 2026-10-26 · P5 tuntas: wisuda didaftar sendiri, dan lulusan kesehatan menunggu ukom dengan nama
 
 Pekerjaan P5 #30 dan #31. Branch `feature/wisuda-mandiri-ukom`, dari `main`

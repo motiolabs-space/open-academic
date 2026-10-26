@@ -664,6 +664,8 @@ Route::middleware(['auth:staff', 'term.active'])->prefix('admin')->name('admin.'
         ->name('iku-records.aktivitas.verifikasi');
     Route::post('/data-iku/aktivitas/{aktivitas}/batal', [Admin\IkuRecordController::class, 'batalkanAktivitas'])
         ->name('iku-records.aktivitas.batal');
+    Route::post('/data-iku/aktivitas/{aktivitas}/flagship', [Admin\IkuRecordController::class, 'tandaiFlagship'])
+        ->name('iku-records.aktivitas.flagship');
     Route::post('/data-iku/penugasan/{penugasan}/verifikasi', [Admin\IkuRecordController::class, 'verifikasiPenugasan'])
         ->name('iku-records.penugasan.verifikasi');
     Route::post('/data-iku/penugasan/{penugasan}/batal', [Admin\IkuRecordController::class, 'batalkanPenugasan'])

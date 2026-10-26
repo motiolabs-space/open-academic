@@ -161,6 +161,7 @@ class FakeFeederClient implements FeederClientInterface
     {
         return match ($act) {
             'InsertSkalaNilaiProdi' => 'id_bobot_nilai',
+            'InsertAktivitasMBKMFlagship' => 'id_aktivitas',
             default => 'id_registrasi_mahasiswa',
         };
     }
