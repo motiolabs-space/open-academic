@@ -83,6 +83,12 @@ class KelasKuliah extends Model
         return $this->hasMany(JadwalKuliah::class);
     }
 
+    /** Mid-term and final sessions, drafts included. */
+    public function jadwalUjian(): HasMany
+    {
+        return $this->hasMany(JadwalUjian::class);
+    }
+
     public function pertemuan(): HasMany
     {
         return $this->hasMany(PertemuanKelas::class)->orderBy('pertemuan_ke');

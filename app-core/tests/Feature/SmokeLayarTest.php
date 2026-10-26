@@ -3,12 +3,16 @@
 declare(strict_types=1);
 
 use App\Enums\JenisDaftar;
+use App\Enums\JenisUjianKelas;
+use App\Models\Akademik\JadwalUjian;
 use App\Models\Akademik\KelasKuliah;
+use App\Models\Akademik\TahunAkademik;
 use App\Models\Bridge\BridgeConsumer;
 use App\Models\Kemahasiswaan\Mahasiswa;
 use App\Models\Sdm\Dosen;
 use App\Models\Sdm\Staff;
 use App\Models\TugasAkhir\TugasAkhir;
+use App\Services\Akademik\JadwalUjianService;
 use App\Support\Portal;
 use Database\Seeders\DemoCampusSeeder;
 use Database\Seeders\RolePermissionSeeder;
@@ -120,6 +124,9 @@ it('membuka layar mahasiswa dalam anggaran kueri', function (string $url, int $a
     // pada 1.000 kelas layarnya dulu 1,92 detik dan 2,2 MB HTML.
     ['/mahasiswa/krs', 37],
     ['/mahasiswa/jadwal', 20],
+    // Ruang duduk seluruh sesi dihitung dari satu kueri peserta, bukan dua per
+    // sesi — tanpa itu layar ini tumbuh bersama jumlah mata kuliah.
+    ['/mahasiswa/jadwal-ujian', 18],
     ['/mahasiswa/khs', 25],
     ['/mahasiswa/tagihan', 20],
     ['/mahasiswa/tugas-akhir', 25],
@@ -141,6 +148,7 @@ it('membuka layar dosen dalam anggaran kueri', function (string $url, int $angga
 })->with([
     ['/dosen', 25],
     ['/dosen/kelas', 25],
+    ['/dosen/jadwal-ujian', 16],
     ['/dosen/nilai', 25],
     ['/dosen/presensi', 25],
     ['/dosen/persetujuan-krs', 25],
@@ -176,6 +184,10 @@ it('membuka layar admin dalam anggaran kueri', function (string $url, int $angga
 })->with([
     ['/admin', 30],
     ['/admin/mahasiswa', 25],
+    // Laporan bentrok membaca seluruh sesi semester dan peserta seluruh kelasnya
+    // dalam dua kueri, apa pun jumlah sesinya.
+    ['/admin/jadwal-ujian', 28],
+    ['/admin/jadwal-ujian/susun', 12],
 
     // Ditambahkan 18 Agu 2026 sesudah layar ini ditemukan 500 di MySQL: view-nya
     // merender `prodiPilihan2` yang tidak ikut di-eager-load, dan penjaga N+1
@@ -334,5 +346,38 @@ it('menyusun transkrip PDF dalam anggaran kueri', function () {
     dalamAnggaranKueri(
         fn () => $this->actingAs($mahasiswa, 'mahasiswa')->get('/mahasiswa/khs/transkrip')->assertOk(),
         25,
+    );
+});
+
+it('menerbitkan UTS semester aktif yang bebas bentrok di kampus demo', function () {
+    /*
+     * Seeder menyusun dan menerbitkan lewat gerbang bentrok yang sama dengan
+     * layar BAAK, jadi "terbit" di sini berarti "tidak ada mahasiswa dengan
+     * dua ujian bersamaan" — bukan sekadar baris yang ditandai terbit.
+     */
+    $term = TahunAkademik::aktif();
+    $layanan = app(JadwalUjianService::class);
+
+    expect(JadwalUjian::term($term->id)->terbit()->count())->toBeGreaterThan(0)
+        ->and($layanan->jenisTerbit($term))->toBe(JenisUjianKelas::Uts)
+        ->and(collect($layanan->laporanBentrok($term))->flatten()->where('menghalangi', true))->toBeEmpty();
+});
+
+it('membuka detail jadwal ujian dan mencetak kartu dari jadwal ujian dalam anggaran kueri', function () {
+    $staff = Staff::where('email', 'admin@demo.test')->firstOrFail();
+    $jadwal = JadwalUjian::query()->orderBy('id')->firstOrFail();
+
+    dalamAnggaranKueri(
+        // Laporan bentrok semester, peserta, rekap kehadiran, dan tunggakan —
+        // masing-masing satu kueri untuk seluruh peserta, bukan per baris.
+        fn () => $this->actingAs($staff, 'staff')->get('/admin/jadwal-ujian/'.$jadwal->uuid)->assertOk(),
+        32,
+    );
+
+    $mahasiswa = Mahasiswa::query()->whereHas('krs')->orderBy('id')->firstOrFail();
+
+    dalamAnggaranKueri(
+        fn () => $this->actingAs($mahasiswa, 'mahasiswa')->get('/mahasiswa/kartu-ujian')->assertOk(),
+        30,
     );
 });

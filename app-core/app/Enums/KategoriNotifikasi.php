@@ -74,7 +74,7 @@ enum KategoriNotifikasi: string
     {
         return match ($this) {
             self::Keuangan => 'Tagihan terbit, pembayaran diterima, dan jatuh tempo.',
-            self::Akademik => 'Keputusan rencana studi dan nilai yang sudah final.',
+            self::Akademik => 'Keputusan rencana studi, jadwal UTS/UAS yang terbit atau berubah, dan nilai yang sudah final.',
             self::TugasAkhir => 'Keputusan judul, penetapan pembimbing, dan jadwal ujian.',
             self::Kemahasiswaan => 'Keputusan cuti, penetapan kelulusan, uji kompetensi, dan pendaftaran wisuda.',
             self::Kepegawaian => 'Hasil penilaian beban kerja dosen (BKD) dan laporan yang dikembalikan asesor.',

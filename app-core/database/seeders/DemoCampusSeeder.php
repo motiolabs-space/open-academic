@@ -11,6 +11,7 @@ use Database\Seeders\Demo\BeasiswaSeeder;
 use Database\Seeders\Demo\EdomSeeder;
 use Database\Seeders\Demo\HelpdeskSeeder;
 use Database\Seeders\Demo\IntegrasiSeeder;
+use Database\Seeders\Demo\JadwalUjianSeeder;
 use Database\Seeders\Demo\KelulusanSeeder;
 use Database\Seeders\Demo\KemahasiswaanSeeder;
 use Database\Seeders\Demo\KepegawaianSeeder;
@@ -82,6 +83,11 @@ class DemoCampusSeeder extends Seeder
             KurikulumLanjutanSeeder::class,
 
             KeuanganSeeder::class,
+
+            // Sesudah RiwayatAkademikSeeder dan KurikulumLanjutanSeeder: bentrok
+            // ujian dihitung dari KRS yang sudah disetujui, jadi peserta harus
+            // sudah final sebelum jadwal UTS disusun dan diterbitkan.
+            JadwalUjianSeeder::class,
 
             // Sesudah KeuanganSeeder: beasiswa mendarat pada tagihan yang sudah
             // terbit, dan itu justru alur yang paling sering terjadi — seleksi

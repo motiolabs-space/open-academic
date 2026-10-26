@@ -153,6 +153,7 @@ Route::middleware(['auth:mahasiswa', 'term.active'])->prefix('mahasiswa')->name(
     Route::post('/krs/ajukan', [Mahasiswa\KrsController::class, 'ajukan'])->name('krs.ajukan');
 
     Route::get('/jadwal', Mahasiswa\JadwalController::class)->name('jadwal');
+    Route::get('/jadwal-ujian', Mahasiswa\JadwalUjianController::class)->name('jadwal-ujian');
     Route::get('/khs', Mahasiswa\KhsController::class)->name('khs');
     Route::get('/khs/transkrip', Mahasiswa\TranskripController::class)->name('transkrip');
     Route::get('/tagihan', Mahasiswa\TagihanController::class)->name('tagihan');
@@ -207,6 +208,7 @@ Route::middleware(['auth:dosen', 'term.active'])->prefix('dosen')->name('dosen.'
     Route::post('/helpdesk/{tiket}/balas', [Helpdesk\TiketPemohonController::class, 'balas'])->name('helpdesk.balas');
 
     Route::get('/kelas', Dosen\KelasController::class)->name('kelas');
+    Route::get('/jadwal-ujian', Dosen\JadwalUjianController::class)->name('jadwal-ujian');
 
     Route::get('/nilai', [Dosen\NilaiController::class, 'index'])->name('nilai');
     Route::get('/nilai/{kelas}', [Dosen\NilaiController::class, 'edit'])->name('nilai.kelas');
@@ -398,6 +400,20 @@ Route::middleware(['auth:staff', 'term.active'])->prefix('admin')->name('admin.'
     Route::delete('/kelas/{kelas}/dosen/{dosen}', [Admin\KelasController::class, 'lepasDosen'])->name('kelas.dosen.lepas');
     Route::post('/kelas/{kelas}/jadwal', [Admin\KelasController::class, 'jadwalkan'])->name('kelas.jadwal');
     Route::delete('/kelas/{kelas}/jadwal/{jadwal}', [Admin\KelasController::class, 'hapusJadwal'])->name('kelas.jadwal.hapus');
+
+    // UTS/UAS. Susun dan pratinjau sebelum {jadwal}, agar tidak tertangkap
+    // sebagai UUID.
+    Route::get('/jadwal-ujian', [Admin\JadwalUjianController::class, 'index'])->name('jadwal-ujian.index');
+    Route::get('/jadwal-ujian/baru', [Admin\JadwalUjianController::class, 'create'])->name('jadwal-ujian.create');
+    Route::post('/jadwal-ujian', [Admin\JadwalUjianController::class, 'store'])->name('jadwal-ujian.store');
+    Route::get('/jadwal-ujian/susun', [Admin\JadwalUjianController::class, 'susun'])->name('jadwal-ujian.susun');
+    Route::get('/jadwal-ujian/susun/pratinjau', [Admin\JadwalUjianController::class, 'pratinjau'])->name('jadwal-ujian.pratinjau');
+    Route::post('/jadwal-ujian/susun', [Admin\JadwalUjianController::class, 'simpanSusun'])->name('jadwal-ujian.susun.simpan');
+    Route::post('/jadwal-ujian/terbitkan', [Admin\JadwalUjianController::class, 'terbitkan'])->name('jadwal-ujian.terbitkan');
+    Route::get('/jadwal-ujian/{jadwal}', [Admin\JadwalUjianController::class, 'show'])->name('jadwal-ujian.show');
+    Route::get('/jadwal-ujian/{jadwal}/ubah', [Admin\JadwalUjianController::class, 'edit'])->name('jadwal-ujian.edit');
+    Route::put('/jadwal-ujian/{jadwal}', [Admin\JadwalUjianController::class, 'update'])->name('jadwal-ujian.update');
+    Route::delete('/jadwal-ujian/{jadwal}', [Admin\JadwalUjianController::class, 'destroy'])->name('jadwal-ujian.destroy');
 
     Route::get('/dosen', [Admin\DosenController::class, 'index'])->name('dosen');
     Route::post('/dosen', [Admin\DosenController::class, 'store'])->name('dosen.store');

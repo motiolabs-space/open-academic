@@ -50,6 +50,28 @@ final readonly class BentrokJadwal
         return new self('mahasiswa', $pesan, true);
     }
 
+    /**
+     * An invigilator booked into two exam sessions at once.
+     *
+     * Blocking for the same reason a lecturer is: one person, one room.
+     */
+    public static function pengawas(string $pesan): self
+    {
+        return new self('pengawas', $pesan, true);
+    }
+
+    /**
+     * Fewer exam seats than students sitting.
+     *
+     * Blocking, unlike kapasitas below: a room slightly over capacity is a
+     * registrar's call about extra chairs, but a student with no seat at all
+     * has no room to print on their card.
+     */
+    public static function kursi(string $pesan): self
+    {
+        return new self('kursi', $pesan, true);
+    }
+
     public static function kapasitas(string $pesan): self
     {
         return new self('kapasitas', $pesan, false);
