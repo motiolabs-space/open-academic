@@ -48,7 +48,7 @@ beforeEach(function () {
     $this->seed(RolePermissionSeeder::class);
 
     $this->term = TahunAkademik::factory()->term(2026, SemesterType::Ganjil)->aktif()->krsDibuka()->create();
-    $this->prodi = Prodi::factory()->create(['kode' => 'IF', 'kode_pddikti' => '55201', 'sks_lulus' => 144]);
+    $this->prodi = Prodi::factory()->create(['kode' => '55201', 'kode_pddikti' => fake()->uuid(), 'sks_lulus' => 144]);
 
     $this->staf = Staff::factory()->create();
     $this->staf->assignRole('baak');
@@ -169,7 +169,9 @@ describe('pintu pendaftaran langsung', function () {
             ->and($m->term_masuk_asal)->toBe('20241')
             ->and($m->term_masuk)->toBe($this->term->kode)
             ->and($m->angkatan)->toBe(2026)
-            ->and($m->nim)->toStartWith('2655201')
+            // Kode prodi, bukan id_sms (UUID): NIM harus muat di kolom 32
+            // karakter MySQL, yang tidak ditegakkan SQLite.
+            ->and($m->nim)->toMatch('/^2655201\d{4}$/')
             ->and($m->status)->toBe(StudentStatus::Aktif)
             ->and($m->hasRole('mahasiswa'))->toBeTrue()
             ->and($hasil['kata_sandi'])->not->toBeEmpty();
