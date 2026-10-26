@@ -4,6 +4,36 @@
 
 ---
 
+## Sesi 49 — 2026-10-26 · CI ikut versi produksi: PHP 8.2, 8.4, 8.5
+
+Bukan fitur. Produksi berjalan di PHP 8.4 atau 8.5, sementara CI dan laptop
+pengembang menguji di 8.2 — tes hijau tidak membuktikan apa pun tentang versi
+tempat kode benar-benar dijalankan. CI kini matriks 8.2/8.4/8.5 (ADR-023); Pint
+dan build aset sekali saja, di 8.4. Batas bawah `^8.2` tidak diubah.
+
+Sebelum matriks dibuka, suite penuh dijalankan di PHP 8.4.27: 1.261 tes hijau
+(3.179 asersi), **nol** peringatan deprecation.
+
+Di laptop pengembang, XAMPP dinaikkan dari 8.2.12 (terdampak celah inti PHP
+21 Oktober) ke 8.4.27. Dua hal yang tersingkap dan layak diingat siapa pun yang
+mengulanginya di XAMPP:
+
+1. **Apache memuat DLL pendukung PHP dari `apache\bin`, bukan dari `php\`.**
+   XAMPP menyalin `icu71`, `libssh2`, `nghttp2`, dan lainnya ke sana untuk 8.2.
+   Tanpa salinan versi 8.4 (`icu77`, `brotlidec`, `libsodium`, `libssh2`
+   1.11.1, `nghttp2` 1.70), `curl` dan `intl` lolos di CLI tetapi gagal dimuat di
+   Apache. OpenSSL milik Apache (3.1.3) lebih baru daripada milik PHP (3.0.22)
+   dan dibiarkan. `sodium` ternyata **selalu** gagal dimuat di Apache sejak
+   sebelum upgrade — 96 baris di log — dan kini termuat.
+2. **`imap` keluar dari inti PHP di 8.4.** `php.ini` mengaktifkannya; barisnya
+   dinonaktifkan. Tidak ada proyek di `htdocs` yang benar-benar butuh: klien
+   IMAP yang ada memakai socket sendiri.
+
+Folder lama disimpan di `C:\xampp\php-8.2.12-backup`, DLL Apache yang ditimpa
+di `C:\xampp\apache\bin-backup-2026-10-26`.
+
+---
+
 ## Sesi 45 — 2026-10-26 · Pembaruan keamanan Oktober: Laravel 12.70.1 dan lima paket lain
 
 Bukan fitur. `laravel/framework` di `main` masih 12.65.0, di bawah perbaikan tiga
