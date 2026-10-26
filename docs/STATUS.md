@@ -61,6 +61,36 @@ fixture kasus di `tests/Fixtures/feeder/mahasiswa-terdaftar.json`.
 
 ---
 
+## Sesi 45 — 2026-10-26 · Pembaruan keamanan Oktober: Laravel 12.70.1 dan lima paket lain
+
+Bukan fitur. `laravel/framework` di `main` masih 12.65.0, di bawah perbaikan tiga
+advisori yang terbit 19 Oktober dan sesudahnya. Yang kritis — CVE-2026-114509,
+bypass TokenGuard lewat token non-string di MySQL/MariaDB — ternyata **tidak
+terjangkau** di sini: tak satu pun guard memakai driver `token`; portal memakai
+session, SSO memakai Passport (13.7.5, sudah di atas perbaikan CVE-2026-39976),
+dan Bridge memakai Sanctum. Inklusi relasi JSON:API (CVE-2026-114508) juga tidak:
+resource Bridge adalah `JsonResource` biasa dan tidak membaca `include`. XSS
+halaman debug (CVE-2026-102279) terjangkau bila `APP_DEBUG=true` di produksi —
+dan `.env.example` menyetelnya `true`.
+
+Yang benar-benar terjangkau tanpa login justru dari Symfony: ReDoS di
+`HeaderUtils::split()` lewat header `Cache-Control` (CVE-2026-108082). Ikut
+ditutup: enam advisori `league/commonmark`, `phpseclib` 3.0.57, `flysystem`
+3.36.0, `symfony/yaml`. Semua dalam Laravel 12 / Symfony 7.4, hanya
+`composer.lock` yang berubah. `npm audit fix` membereskan tujuh temuan rantai dev
+(vite, concurrently, axios) tanpa perubahan `package.json`.
+
+Satu yang tidak bisa diperbaiki dari repo: celah inti PHP 21 Oktober
+(CVE-2026-109618/109619, "PHP2Shell"). XAMPP pengembang di 8.2.12 terdampak;
+setiap server harus memperbarui interpreternya sendiri. Dicatat di ROADMAP
+§Menunggu di Luar Repo.
+
+Catatan alat: `composer audit` sempat tertinggal — basis data advisori Packagist
+belum memuat CVE-2026-114509 beberapa hari setelah terbit — jadi audit yang
+bersih pada pekan itu bukan bukti aman.
+
+---
+
 ## Sesi 44 — 2026-10-24 · Delapan PR masuk, dan ROADMAP dibersihkan dari baris basi
 
 Bukan fitur. PR #6–#13 di-merge berurutan (#6, #7, #11, #8, #9, #10, #12, #13);
