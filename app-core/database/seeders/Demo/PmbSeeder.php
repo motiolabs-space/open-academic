@@ -95,5 +95,42 @@ class PmbSeeder extends Seeder
                 }
             }
         }
+
+        $this->gelombangPindahan($term, $prodi->first(), $nomor);
+    }
+
+    /**
+     * A transfer wave with one accepted applicant left unregistered, so the
+     * first door of the transfer intake has someone waiting at it.
+     */
+    private function gelombangPindahan(TahunAkademik $term, Prodi $prodi, int $nomor): void
+    {
+        $gelombang = PmbGelombang::create([
+            'tahun_akademik_id' => $term->id,
+            'kode' => 'PMB-'.$term->kode.'-TR',
+            'nama' => 'Gelombang Pindahan',
+            'jalur' => 'transfer',
+            'tanggal_mulai' => $term->tanggal_mulai->copy()->subMonths(3),
+            'tanggal_selesai' => $term->tanggal_mulai->copy()->subMonth(),
+            'biaya_pendaftaran' => 300_000,
+            'kuota' => 20,
+            'is_active' => true,
+        ]);
+
+        PmbPendaftar::create([
+            'pmb_gelombang_id' => $gelombang->id,
+            'nomor_pendaftaran' => sprintf('%s-%04d', $gelombang->kode, $nomor),
+            'nama' => 'Bagas Wicaksono',
+            'email' => 'bagas.pindahan@demo.test',
+            'nik' => '3374021203030004',
+            'tempat_lahir' => 'Semarang',
+            'tanggal_lahir' => '2003-03-12',
+            'jenis_kelamin' => Gender::LakiLaki,
+            'alamat' => 'Jl. Pemuda No. 18, Semarang',
+            'prodi_pilihan_1_id' => $prodi->id,
+            'prodi_diterima_id' => $prodi->id,
+            'status' => ApplicantStatus::Lulus,
+            'nilai_seleksi' => 81.5,
+        ]);
     }
 }

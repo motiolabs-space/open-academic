@@ -148,6 +148,7 @@ final class Navigation
                 'items' => [
                     self::item('Data Mahasiswa', '○', 'admin.mahasiswa'),
                     self::item('PMB', '◇', 'admin.pmb'),
+                    self::item('Pindahan & RPL', '↪', 'admin.pindahan'),
                     self::item('Cuti Mahasiswa', '◐', 'admin.cuti'),
                     self::item('Konversi Kredit', '⇄', 'admin.konversi'),
                     self::item('Evaluasi Studi', '⚖', 'admin.evaluasi-studi'),

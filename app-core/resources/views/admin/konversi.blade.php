@@ -53,6 +53,17 @@
                         Batas {{ config('academic.konversi.maks_persen') }}% dari syarat kelulusan
                         program studi. Tanpa batas, seseorang dapat diakui masuk ke dalam gelar.
                     </p>
+
+                    @if ($mahasiswa->jenis_daftar?->butuhAsal())
+                        <div class="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-line pt-3 text-[12.5px]">
+                            <span class="text-ink-muted">
+                                {{ __('pindahan.kartu.asal_singkat', ['jenis' => $mahasiswa->jenis_daftar->label(), 'pt' => $mahasiswa->pt_asal ?? '—']) }}
+                            </span>
+                            <x-button href="{{ route('admin.pindahan.show', $mahasiswa) }}" variant="outline" size="sm">
+                                {{ __('pindahan.aksi.profil_pindahan') }}
+                            </x-button>
+                        </div>
+                    @endif
                 </x-card>
 
                 <x-card flush title="Riwayat Konversi">
@@ -156,7 +167,7 @@
                         <x-field label="Nama asal" name="asal_nama" required
                             hint="Nama mata kuliah asal, atau uraian pengalaman untuk RPL." />
 
-                        <x-field label="Perguruan tinggi asal" name="asal_institusi"
+                        <x-field label="Perguruan tinggi asal" name="asal_institusi" :value="$mahasiswa->pt_asal"
                             hint="Wajib untuk transfer. Kosongkan untuk RPL dari pengalaman kerja." />
 
                         <div class="grid gap-3 sm:grid-cols-2">

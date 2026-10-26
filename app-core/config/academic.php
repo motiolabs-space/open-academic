@@ -192,6 +192,40 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Mahasiswa Pindahan & RPL
+    |--------------------------------------------------------------------------
+    |
+    | How a transfer student's recognised credits place them in the degree.
+    | The credits themselves are never typed in: they are the sum of the
+    | approved rows in konversi_kredit, bounded by `konversi.maks_persen`.
+    |
+    */
+
+    'pindahan' => [
+        /*
+         * Credits that count as one semester already studied.
+         *
+         * The entering semester is 1 + floor(recognised credits / this). With
+         * the defaults, 40 recognised credits place a student in semester 3 —
+         * which decides the curriculum package they are offered and where the
+         * study-evaluation milestones fall.
+         */
+        'sks_per_semester' => (int) env('ACADEMIC_PINDAHAN_SKS_PER_SEMESTER', 20),
+
+        /*
+         * Whether the maximum study period counts semesters spent at the
+         * origin institution, from the term recorded as `term_masuk_asal`.
+         *
+         * Off by default: the limit is this campus's rule about study done
+         * here, and counting somebody else's semesters against it would end a
+         * degree early for time this campus never supervised. Some statutes
+         * read it the other way, so it can be turned on.
+         */
+        'masa_studi_dari_asal' => (bool) env('ACADEMIC_PINDAHAN_MASA_STUDI_DARI_ASAL', false),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Graduation
     |--------------------------------------------------------------------------
     */

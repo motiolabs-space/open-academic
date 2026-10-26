@@ -441,6 +441,16 @@ Route::middleware(['auth:staff', 'term.active'])->prefix('admin')->name('admin.'
     Route::post('/tugas-akhir/{tugasAkhir}/selesai', [Admin\TugasAkhirController::class, 'selesaikan'])->name('tugas-akhir.selesai');
     Route::post('/tugas-akhir/{tugasAkhir}/batal', [Admin\TugasAkhirController::class, 'batalkan'])->name('tugas-akhir.batal');
 
+    // Intake pindahan/RPL (#33). `referensi` dan `baru` didaftarkan sebelum
+    // `{mahasiswa}` agar tidak ditangkap sebagai UUID.
+    Route::get('/pindahan', [Admin\PindahanController::class, 'index'])->name('pindahan');
+    Route::get('/pindahan/referensi', [Admin\PindahanController::class, 'referensi'])->name('pindahan.referensi');
+    Route::get('/pindahan/baru', [Admin\PindahanController::class, 'create'])->name('pindahan.create');
+    Route::post('/pindahan', [Admin\PindahanController::class, 'store'])->name('pindahan.store');
+    Route::get('/pindahan/{mahasiswa}', [Admin\PindahanController::class, 'show'])->name('pindahan.show');
+    Route::put('/pindahan/{mahasiswa}', [Admin\PindahanController::class, 'update'])->name('pindahan.update');
+    Route::post('/pindahan/{mahasiswa}/transkrip', [Admin\PindahanController::class, 'transkrip'])->name('pindahan.transkrip');
+
     Route::get('/konversi', [Admin\KonversiController::class, 'index'])->name('konversi');
     Route::post('/konversi/{mahasiswa}', [Admin\KonversiController::class, 'ajukan'])->name('konversi.ajukan');
     Route::post('/konversi/{konversi}/setujui', [Admin\KonversiController::class, 'setujui'])->name('konversi.setujui');

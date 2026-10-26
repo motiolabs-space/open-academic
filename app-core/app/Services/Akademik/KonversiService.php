@@ -155,6 +155,8 @@ class KonversiService
                     $konversi->asal_institusi ?? $konversi->jenis->label(),
                     $staff->nama,
                 ));
+
+                $this->segarkanSksDiakui($konversi->mahasiswa);
             });
         } catch (UniqueConstraintViolationException) {
             throw new AturanAkademikException(
@@ -223,6 +225,8 @@ class KonversiService
             ]);
 
             $konversi->recordActivity('revoked', 'Konversi dicabut. Alasan: '.$alasan);
+
+            $this->segarkanSksDiakui($konversi->mahasiswa);
         });
 
         return $konversi->refresh();
@@ -245,6 +249,30 @@ class KonversiService
         $persen = (int) config('academic.konversi.maks_persen');
 
         return (int) floor($syarat * $persen / 100);
+    }
+
+    /**
+     * Writes the recognised total onto the enrolment record.
+     *
+     * `mahasiswa.sks_diakui` is what PDDIKTI receives with a transfer's
+     * enrolment, and it must equal the transfer-credit rows sent beside it.
+     * It is therefore only ever this sum — set on every grant and every
+     * withdrawal, never typed. Null while nothing is granted, so the Feeder
+     * validator keeps saying "no recognised credits yet" instead of reporting
+     * a transfer of zero credits as complete.
+     *
+     * Only for the kinds PDDIKTI asks it of; a new entrant with an odd
+     * conversion keeps a null column, as the enrolment payload expects.
+     */
+    public function segarkanSksDiakui(Mahasiswa $mahasiswa): void
+    {
+        if (!($mahasiswa->jenis_daftar?->butuhAsal() ?? false)) {
+            return;
+        }
+
+        $total = $this->sudahDiakui($mahasiswa);
+
+        $mahasiswa->update(['sks_diakui' => $total > 0 ? $total : null]);
     }
 
     public function sudahDiakui(Mahasiswa $mahasiswa): int

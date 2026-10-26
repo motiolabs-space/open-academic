@@ -77,6 +77,12 @@ return [
         'jenis_prestasi' => 'GetJenisPrestasi',
         'tingkat_prestasi' => 'GetTingkatPrestasi',
         'jenis_pendaftaran' => 'GetJenisPendaftaran',
+
+        // Not a code table either: every institution PDDIKTI knows, read back
+        // so the transfer intake can suggest the origin's name as PDDIKTI
+        // spells it. The enrolment payload still carries the name as text —
+        // there is no identifier for another campus's programme.
+        'perguruan_tinggi' => 'GetAllPT',
     ],
 
     /*

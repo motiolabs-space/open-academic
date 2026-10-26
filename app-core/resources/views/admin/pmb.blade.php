@@ -206,6 +206,12 @@
                                 <div class="flex flex-col items-end gap-1.5">
                                     @if ($p->status->value === 'mahasiswa')
                                         <span class="text-[11.5px] text-ink-faint">sudah terdaftar</span>
+                                    @elseif (in_array($p->status->value, ['lulus', 'daftar_ulang'], true) && $p->gelombang->jalurPindahan())
+                                        {{-- Daftar ulang biasa akan mencatatnya sebagai peserta
+                                             didik baru; asal dan konversinya diisi lewat intake. --}}
+                                        <x-button href="{{ route('admin.pindahan.create', ['pendaftar' => $p->uuid]) }}" size="sm">
+                                            {{ __('pindahan.aksi.intake_pmb') }}
+                                        </x-button>
                                     @elseif (in_array($p->status->value, ['lulus', 'daftar_ulang'], true))
                                         <form method="POST" action="{{ route('admin.pmb.daftar-ulang', $p) }}"
                                             class="flex items-center gap-1.5"

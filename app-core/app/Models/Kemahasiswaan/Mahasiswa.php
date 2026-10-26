@@ -8,6 +8,7 @@ use App\Enums\Gender;
 use App\Enums\JenisDaftar;
 use App\Enums\StudentStatus;
 use App\Models\Akademik\Konsentrasi;
+use App\Models\Akademik\KonversiKredit;
 use App\Models\Akademik\Krs;
 use App\Models\Akademik\Kurikulum;
 use App\Models\Akademik\Nilai;
@@ -130,6 +131,12 @@ class Mahasiswa extends Authenticatable implements OAuthenticatable
         return $this->hasMany(Nilai::class);
     }
 
+    /** Credit recognised from elsewhere, in every state — filter with diakui(). */
+    public function konversiKredit(): HasMany
+    {
+        return $this->hasMany(KonversiKredit::class);
+    }
+
     public function tagihan(): HasMany
     {
         return $this->hasMany(Tagihan::class);
@@ -248,6 +255,27 @@ class Mahasiswa extends Authenticatable implements OAuthenticatable
         return (int) ($this->statusPerSemester()
             ->orderByDesc('tahun_akademik_id')
             ->value('sks_kumulatif') ?? 0);
+    }
+
+    /**
+     * Regular semesters spent at the origin institution before entering here.
+     *
+     * Counted from the origin's entry term to this campus's entry term, with
+     * short terms (kode ending 3) folded into the even semester as PDDIKTI
+     * does not count them. Zero when either term is unknown: an unrecorded
+     * origin is not a reason to shorten anybody's study period.
+     */
+    public function semesterDiAsal(): int
+    {
+        $sah = static fn (?string $kode): bool => $kode !== null && preg_match('/^\d{4}[123]$/', $kode) === 1;
+
+        if (!$sah($this->term_masuk_asal) || !$sah($this->term_masuk)) {
+            return 0;
+        }
+
+        $urutan = static fn (string $kode): int => (int) substr($kode, 0, 4) * 2 + min(2, (int) substr($kode, 4, 1));
+
+        return max(0, $urutan($this->term_masuk) - $urutan($this->term_masuk_asal));
     }
 
     /** @param Builder<self> $query */
