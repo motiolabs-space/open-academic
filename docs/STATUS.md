@@ -39,6 +39,40 @@ fixture lima program untuk kampus demo.
 
 **8 tes** (`FeederFlagshipTest`).
 
+### #27b — surat permohonan PDM/PJK
+
+Dua jenis surat baru, `PermohonanPdm` dan `PermohonanPjk` (kode PDM/PJK, urutan
+nomor sendiri lewat `PenomoranSurat`, tanpa masa berlaku). Keduanya tidak dapat
+diajukan mahasiswa: `JenisSurat::dapatDiajukan()` menyaringnya, layar mahasiswa
+kini memvalidasi dengan daftar itu (`Rule::enum()->only()`), dan
+`SuratService::ajukan()` menolaknya.
+
+Terbit dari panel Perubahan Data di `/admin/feeder`. Satu surat per mahasiswa
+per prosedur memuat **seluruh** permintaan yang masih menunggu surat
+(`FeederChangeRequest::perluSurat()`): jalur PDDIKTI admin berstatus belum
+diajukan, **atau jalur web service yang ditolak** — penolakannya menjadi alasan
+di surat, sesuai catatan #27 bahwa NIM yang ditolak karena pelaporan tertutup
+diajukan lewat PDDIKTI admin. Formulirnya tampil sekali per kelompok, bukan per
+baris; alasan wajib, disimpan di `surat.keperluan`.
+
+`PermohonanFeederSurat` menautkan permintaan ke surat (`feeder_change_requests.surat_id`,
+migrasi baru) **sebelum** menerbitkannya, sehingga `PerakitKonten` merakit isi
+dari baris itu seperti surat lain merakit dari catatannya: kolom, nilai tercatat
+di PDDIKTI → seharusnya (status keluar ditulis namanya beserta kodenya), alasan
+per baris, dan lampiran yang diturunkan dari kolomnya — SPTJM selalu, lalu KTP,
+akta, ijazah sebelumnya, KK, SK NIM, SK yudisium, transkrip, ijazah, atau SK
+keluar sesuai kolom, sekali masing-masing. Daftar lampiran ikut dibekukan,
+jadi kampus yang LLDIKTI-nya meminta lebih mengubah katalognya tanpa mengubah
+surat yang sudah terkirim. Penerimanya `config('surat.tujuan_pddikti')`.
+
+Sesudah terbit, setiap permintaan melewati `FeederPerubahanService::ajukan()`
+dengan nomor surat itu: status *diajukan*, `nomor_surat` tercatat balik, dan
+konsol menautkan unduhan PDF-nya. Mahasiswa menerima notifikasi `SuratTerbit`
+seperti surat lain dan melihat suratnya di portal — surat itu tentang datanya
+sendiri. Keputusan: ADR-026.
+
+**12 tes** (`SuratPermohonanFeederTest`).
+
 ## Sesi 52 — 2026-10-26 · P5 tuntas: wisuda didaftar sendiri, dan lulusan kesehatan menunggu ukom dengan nama
 
 Pekerjaan P5 #30 dan #31. Branch `feature/wisuda-mandiri-ukom`, dari `main`
