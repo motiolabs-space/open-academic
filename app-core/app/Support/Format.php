@@ -81,6 +81,39 @@ final class Format
             : self::HARI[(int) $date->dayOfWeek].', '.self::tanggalPanjang($date);
     }
 
+    /**
+     * "12 – 23 Okt 2026", "28 Okt – 3 Nov 2026", "29 Des 2026 – 2 Jan 2027".
+     *
+     * Only what differs between the two ends is repeated.
+     */
+    public static function rentangTanggal(Carbon|string|null $mulai, Carbon|string|null $selesai): string
+    {
+        $a = self::carbon($mulai);
+        $b = self::carbon($selesai);
+
+        if ($a === null || $b === null || $a->isSameDay($b)) {
+            return self::tanggal($a ?? $b);
+        }
+
+        if ($a->year !== $b->year) {
+            return self::tanggal($a).' – '.self::tanggal($b);
+        }
+
+        if ($a->month !== $b->month) {
+            return sprintf('%d %s – %s', $a->day, self::BULAN[$a->month], self::tanggal($b));
+        }
+
+        return sprintf('%d – %s', $a->day, self::tanggal($b));
+    }
+
+    /** "Oktober 2026" */
+    public static function bulanTahun(Carbon|string|null $tanggal): string
+    {
+        $date = self::carbon($tanggal);
+
+        return $date === null ? '—' : self::BULAN_PANJANG[$date->month].' '.$date->year;
+    }
+
     /** "07.30" — Indonesian clock notation uses a dot. */
     public static function jam(Carbon|string|null $waktu): string
     {

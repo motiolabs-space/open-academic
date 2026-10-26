@@ -159,11 +159,12 @@ return [
         'tanpa_ruang' => 'belum ada ruang untuk sesi ini',
         'kursi' => ':peserta peserta, tetapi hanya :kursi kursi',
         'kapasitas' => 'ruang :ruang diberi :kursi kursi, melebihi kapasitasnya (:kapasitas)',
+        'libur' => 'jatuh pada hari libur akademik: :judul',
     ],
 
     'susun' => [
         'tanpa_peserta' => 'Belum ada mahasiswa dengan KRS disetujui.',
-        'tanpa_slot' => 'Rentang tanggal tidak memuat satu pun sesi ujian.',
+        'tanpa_slot' => 'Rentang tanggal tidak memuat satu pun sesi ujian di luar hari libur akademik.',
         'tidak_muat' => 'Tidak ada sesi yang bebas bentrok bagi :jumlah pesertanya dengan ruang yang cukup. Perpanjang rentang tanggal, tambah sesi, atau tambah ruang.',
     ],
 

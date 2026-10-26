@@ -3,8 +3,11 @@
 declare(strict_types=1);
 
 use App\Enums\JenisDaftar;
+use App\Enums\JenisPeristiwa;
 use App\Enums\JenisUjianKelas;
+use App\Enums\StatusPeristiwa;
 use App\Models\Akademik\JadwalUjian;
+use App\Models\Akademik\KalenderPeristiwa;
 use App\Models\Akademik\KelasKuliah;
 use App\Models\Akademik\TahunAkademik;
 use App\Models\Bridge\BridgeConsumer;
@@ -130,6 +133,10 @@ it('membuka layar mahasiswa dalam anggaran kueri', function (string $url, int $a
     // Ruang duduk seluruh sesi dihitung dari satu kueri peserta, bukan dua per
     // sesi — tanpa itu layar ini tumbuh bersama jumlah mata kuliah.
     ['/mahasiswa/jadwal-ujian', 18],
+    // Tujuh sumber kalender satu kueri masing-masing, ditambah sesi ujian
+    // milik mahasiswa dan ruang duduknya — tidak tumbuh per peristiwa.
+    ['/mahasiswa/kalender', 25],
+    ['/mahasiswa/kalender?tampilan=daftar', 25],
     ['/mahasiswa/khs', 25],
     ['/mahasiswa/tagihan', 20],
     ['/mahasiswa/tugas-akhir', 25],
@@ -152,6 +159,7 @@ it('membuka layar dosen dalam anggaran kueri', function (string $url, int $angga
     ['/dosen', 25],
     ['/dosen/kelas', 25],
     ['/dosen/jadwal-ujian', 16],
+    ['/dosen/kalender', 26],
     ['/dosen/nilai', 25],
     ['/dosen/presensi', 25],
     ['/dosen/persetujuan-krs', 25],
@@ -196,6 +204,8 @@ it('membuka layar admin dalam anggaran kueri', function (string $url, int $angga
     // dalam dua kueri, apa pun jumlah sesinya.
     ['/admin/jadwal-ujian', 28],
     ['/admin/jadwal-ujian/susun', 12],
+    ['/admin/kalender', 18],
+    ['/admin/kalender/peristiwa', 12],
 
     // Ditambahkan 18 Agu 2026 sesudah layar ini ditemukan 500 di MySQL: view-nya
     // merender `prodiPilihan2` yang tidak ikut di-eager-load, dan penjaga N+1
@@ -416,6 +426,18 @@ it('menerbitkan UTS semester aktif yang bebas bentrok di kampus demo', function 
     expect(JadwalUjian::term($term->id)->terbit()->count())->toBeGreaterThan(0)
         ->and($layanan->jenisTerbit($term))->toBe(JenisUjianKelas::Uts)
         ->and(collect($layanan->laporanBentrok($term))->flatten()->where('menghalangi', true))->toBeEmpty();
+});
+
+it('menanam libur dan kegiatan terbit pada semester aktif, di luar UTS demo', function () {
+    $term = TahunAkademik::aktif();
+
+    $dalamSemester = KalenderPeristiwa::query()->terbit()->beririsan($term->tanggal_mulai, $term->tanggal_selesai);
+
+    expect((clone $dalamSemester)->where('jenis', JenisPeristiwa::Libur->value)->count())->toBeGreaterThanOrEqual(2)
+        ->and((clone $dalamSemester)->where('jenis', JenisPeristiwa::Kegiatan->value)->count())->toBeGreaterThanOrEqual(2)
+        ->and(KalenderPeristiwa::query()->where('status', StatusPeristiwa::Draf->value)->count())->toBeGreaterThanOrEqual(1)
+        // Libur demo tidak boleh membuat UTS demo membawa peringatan.
+        ->and(collect(app(JadwalUjianService::class)->laporanBentrok($term))->flatten()->where('jenis', 'libur'))->toBeEmpty();
 });
 
 it('membuka detail jadwal ujian dan mencetak kartu dari jadwal ujian dalam anggaran kueri', function () {
