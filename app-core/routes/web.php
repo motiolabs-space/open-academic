@@ -9,6 +9,8 @@ use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\BerkasController;
 use App\Http\Controllers\Dosen;
 use App\Http\Controllers\Helpdesk;
+use App\Http\Controllers\KalenderController;
+use App\Http\Controllers\KalenderIcsController;
 use App\Http\Controllers\Mahasiswa;
 use App\Http\Controllers\NotifikasiController;
 use App\Http\Controllers\Sso;
@@ -50,6 +52,22 @@ Route::prefix('verifikasi')->name('verifikasi.')->group(function (): void {
         ->middleware('throttle:verifikasi')
         ->name('surat');
 });
+
+/*
+|--------------------------------------------------------------------------
+| Langganan Kalender Akademik — publik, bertoken
+|--------------------------------------------------------------------------
+|
+| Google Calendar dan Outlook mengambil feed ini dari server mereka sendiri,
+| tanpa sesi siapa pun. Token di URL adalah satu-satunya pemeriksaan akses,
+| jadi isinya tidak memuat nama, NIM, atau surel — lihat
+| LanggananKalenderService.
+|
+*/
+Route::get('/kalender/{token}.ics', KalenderIcsController::class)
+    ->where('token', '[A-Za-z0-9]+')
+    ->middleware('throttle:60,1')
+    ->name('kalender.ics');
 
 /*
 |--------------------------------------------------------------------------
@@ -154,6 +172,11 @@ Route::middleware(['auth:mahasiswa', 'term.active'])->prefix('mahasiswa')->name(
 
     Route::get('/jadwal', Mahasiswa\JadwalController::class)->name('jadwal');
     Route::get('/jadwal-ujian', Mahasiswa\JadwalUjianController::class)->name('jadwal-ujian');
+
+    Route::get('/kalender', [KalenderController::class, 'index'])->name('kalender');
+    Route::post('/kalender/langganan', [KalenderController::class, 'langganan'])->name('kalender.langganan');
+    Route::delete('/kalender/langganan', [KalenderController::class, 'cabut'])->name('kalender.langganan.cabut');
+
     Route::get('/khs', Mahasiswa\KhsController::class)->name('khs');
     Route::get('/khs/transkrip', Mahasiswa\TranskripController::class)->name('transkrip');
     Route::get('/tagihan', Mahasiswa\TagihanController::class)->name('tagihan');
@@ -209,6 +232,10 @@ Route::middleware(['auth:dosen', 'term.active'])->prefix('dosen')->name('dosen.'
 
     Route::get('/kelas', Dosen\KelasController::class)->name('kelas');
     Route::get('/jadwal-ujian', Dosen\JadwalUjianController::class)->name('jadwal-ujian');
+
+    Route::get('/kalender', [KalenderController::class, 'index'])->name('kalender');
+    Route::post('/kalender/langganan', [KalenderController::class, 'langganan'])->name('kalender.langganan');
+    Route::delete('/kalender/langganan', [KalenderController::class, 'cabut'])->name('kalender.langganan.cabut');
 
     Route::get('/nilai', [Dosen\NilaiController::class, 'index'])->name('nilai');
     Route::get('/nilai/{kelas}', [Dosen\NilaiController::class, 'edit'])->name('nilai.kelas');
@@ -414,6 +441,19 @@ Route::middleware(['auth:staff', 'term.active'])->prefix('admin')->name('admin.'
     Route::get('/jadwal-ujian/{jadwal}/ubah', [Admin\JadwalUjianController::class, 'edit'])->name('jadwal-ujian.edit');
     Route::put('/jadwal-ujian/{jadwal}', [Admin\JadwalUjianController::class, 'update'])->name('jadwal-ujian.update');
     Route::delete('/jadwal-ujian/{jadwal}', [Admin\JadwalUjianController::class, 'destroy'])->name('jadwal-ujian.destroy');
+
+    // Kalender akademik: tampilan bersama ketiga portal, plus layar kelola
+    // untuk peristiwa yang tidak dimiliki modul lain. "baru" sebelum
+    // {peristiwa}, agar tidak tertangkap sebagai UUID.
+    Route::get('/kalender', [KalenderController::class, 'index'])->name('kalender');
+    Route::post('/kalender/langganan', [KalenderController::class, 'langganan'])->name('kalender.langganan');
+    Route::delete('/kalender/langganan', [KalenderController::class, 'cabut'])->name('kalender.langganan.cabut');
+    Route::get('/kalender/peristiwa', [Admin\PeristiwaKalenderController::class, 'index'])->name('kalender.peristiwa.index');
+    Route::get('/kalender/peristiwa/baru', [Admin\PeristiwaKalenderController::class, 'create'])->name('kalender.peristiwa.create');
+    Route::post('/kalender/peristiwa', [Admin\PeristiwaKalenderController::class, 'store'])->name('kalender.peristiwa.store');
+    Route::get('/kalender/peristiwa/{peristiwa}/ubah', [Admin\PeristiwaKalenderController::class, 'edit'])->name('kalender.peristiwa.edit');
+    Route::put('/kalender/peristiwa/{peristiwa}', [Admin\PeristiwaKalenderController::class, 'update'])->name('kalender.peristiwa.update');
+    Route::delete('/kalender/peristiwa/{peristiwa}', [Admin\PeristiwaKalenderController::class, 'destroy'])->name('kalender.peristiwa.destroy');
 
     Route::get('/dosen', [Admin\DosenController::class, 'index'])->name('dosen');
     Route::post('/dosen', [Admin\DosenController::class, 'store'])->name('dosen.store');

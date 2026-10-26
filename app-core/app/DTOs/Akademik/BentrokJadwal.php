@@ -77,6 +77,19 @@ final readonly class BentrokJadwal
         return new self('kapasitas', $pesan, false);
     }
 
+    /**
+     * A session on a published academic holiday.
+     *
+     * A warning, not a block: a campus does sometimes examine on a declared
+     * day off (a make-up sitting, a holiday declared after the timetable was
+     * set), and the registrar is the one who knows which. What must not happen
+     * is doing it without noticing.
+     */
+    public static function libur(string $pesan): self
+    {
+        return new self('libur', $pesan, false);
+    }
+
     public static function kohor(string $pesan): self
     {
         return new self('kohor', $pesan, false);
