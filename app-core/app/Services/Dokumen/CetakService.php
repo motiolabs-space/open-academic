@@ -4,12 +4,15 @@ declare(strict_types=1);
 
 namespace App\Services\Dokumen;
 
+use App\Enums\JenisUjianKelas;
 use App\Enums\KrsStatus;
 use App\Exceptions\AturanAkademikException;
+use App\Models\Akademik\JadwalUjian;
 use App\Models\Akademik\KelasKuliah;
 use App\Models\Akademik\Krs;
 use App\Models\Kemahasiswaan\Mahasiswa;
 use App\Models\Keuangan\Tagihan;
+use App\Services\Akademik\JadwalUjianService;
 use App\Services\Akademik\PresensiService;
 use App\Services\Surat\PembuatQr;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -31,6 +34,7 @@ class CetakService
         private readonly PengaturanDokumen $pengaturan,
         private readonly PresensiService $presensi,
         private readonly PembuatQr $qr,
+        private readonly JadwalUjianService $jadwalUjian,
     ) {}
 
     /**
@@ -66,6 +70,12 @@ class CetakService
     /**
      * Exam card for one study plan.
      *
+     * Two modes. Once any exam session of the term is published, the card is
+     * printed from the exam timetable — date, time, and the room this student
+     * is seated in — for the latest exam type published. Until then it is
+     * printed from the weekly class timetable, as it always was: a campus that
+     * does not schedule its exams here keeps the card it had.
+     *
      * @throws AturanAkademikException when the student is not eligible
      */
     public function kartuUjian(Krs $krs): PdfDocument
@@ -85,16 +95,28 @@ class CetakService
             );
         }
 
+        $jenis = $this->jadwalUjian->jenisTerbit($krs->tahunAkademik);
+
         return Pdf::loadView('pdf.cetak.kartu-ujian', [
             'dok' => $this->pengaturan->untuk('kartu_ujian'),
             'krs' => $krs,
             'mahasiswa' => $krs->mahasiswa,
-            'subjudul' => $krs->tahunAkademik->nama,
+            'subjudul' => $jenis === null
+                ? $krs->tahunAkademik->nama
+                : $jenis->label().' · '.$krs->tahunAkademik->nama,
+            'jenis' => $jenis,
+
+            // Printed only where it decides something. When arrears withhold
+            // the card, a card that exists is itself proof of a clear balance,
+            // and saying so spares the invigilator a phone call.
+            'tampilkanKeuangan' => (bool) config('dokumen.kartu_ujian.tahan_bila_menunggak'),
 
             // Courses the student may not sit are listed and marked rather than
             // dropped: a card that is simply shorter than the study plan sends
             // the student to the invigilator to find out why.
-            'baris' => $this->barisKartuUjian($krs),
+            'baris' => $jenis === null
+                ? $this->barisKartuUjian($krs)
+                : $this->barisKartuUjianTerjadwal($krs, $jenis),
 
             // NIM again, for the invigilator's scanner.
             'qr' => $this->qr->dataUri($krs->mahasiswa->nim, 90),
@@ -164,6 +186,52 @@ class CetakService
                 ];
             })
             ->sortBy(fn (array $b): string => $b['kelas']->mataKuliah->kode)
+            ->values();
+    }
+
+    /**
+     * One row per enrolled class, from the published exam timetable.
+     *
+     * The attendance hold applies only to an exam type that requires
+     * attendance — a mid-term card does not mark anyone for falling short of a
+     * term's worth of attendance half-way through the term.
+     *
+     * A class whose session is not published yet stays on the card with no
+     * date, for the same reason ineligible rows stay: a shorter card raises
+     * questions at the door.
+     *
+     * @return Collection<int, array<string, mixed>>
+     */
+    private function barisKartuUjianTerjadwal(Krs $krs, JenisUjianKelas $jenis): Collection
+    {
+        $tahanKehadiran = $jenis->butuhKehadiran()
+            && (bool) config('dokumen.kartu_ujian.tahan_bila_kehadiran_kurang');
+
+        $sesi = JadwalUjian::query()
+            ->with('ruang.ruang')
+            ->terbit()
+            ->jenis($jenis)
+            ->whereIn('kelas_kuliah_id', $krs->detail->pluck('kelas_kuliah_id'))
+            ->get()
+            ->keyBy('kelas_kuliah_id');
+
+        $ruang = $this->jadwalUjian->ruangUntukBanyak($sesi->values(), $krs->mahasiswa);
+
+        return $krs->detail
+            ->map(function ($detail) use ($krs, $sesi, $ruang, $tahanKehadiran): array {
+                $kelas = $detail->kelasKuliah;
+                $ujian = $sesi->get($kelas->id);
+
+                return [
+                    'kelas' => $kelas,
+                    'ujian' => $ujian,
+                    'ruang' => $ujian === null ? null : ($ruang[$ujian->id] ?? null),
+                    'persen' => $this->presensi->persenKehadiran($krs->mahasiswa, $kelas),
+                    'layak' => !$tahanKehadiran || $this->presensi->layakUas($krs->mahasiswa, $kelas),
+                ];
+            })
+            ->sortBy(fn (array $b): string => ($b['ujian']?->mulai()->format('Y-m-d H:i') ?? '9999')
+                .$b['kelas']->mataKuliah->kode)
             ->values();
     }
 

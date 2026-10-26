@@ -510,6 +510,58 @@
   calon berhenti di langkah pertama. Akun pendaftar dan akun mahasiswa adalah dua
   akun; calon yang diterima memakai NIM dan kata sandi dari bagian akademik.
 
+## ADR-025 — Jadwal ujian: draf boleh bentrok, terbit tidak; bentrok mahasiswa dari KRS disetujui (2026-10-26)
+
+- **Konteks.** Roadmap #34. Kartu ujian dicetak dari jadwal kuliah mingguan,
+  padahal ujian terjadi sekali, pada tanggal tertentu, sering di beberapa ruang
+  sekaligus dengan pengawas, bukan pengampu. Jadwal kuliah menjadwalkan
+  *penawaran*, jadi paling buruk ia menawarkan dua kelas bersamaan dan mahasiswa
+  memilih; jadwal ujian menjadwalkan *orang yang sudah terdaftar*, jadi dua ujian
+  bersamaan berarti satu terlewat. `BentrokJadwal::mahasiswa()` sudah ada untuk
+  ujian tugas akhir, tetapi tidak ada entitas UTS/UAS.
+- **Keputusan.** (1) Tabel `jadwal_ujian` per kelas per `JenisUjianKelas`
+  (UTS/UAS; enum terpisah dari `JenisUjian` tugas akhir), dengan `tahun_akademik_id`
+  disalin dari kelas supaya pembaca per semester — kartu, portal, dan kelak
+  kalender #35 — tidak masing-masing menulis join-nya sendiri. Ruang di
+  `jadwal_ujian_ruang` dengan **kursi per ruang** (bawaan kapasitas ruang, boleh
+  diturunkan untuk jarak duduk); pengawas di `jadwal_ujian_pengawas` dengan dua
+  FK nullable (`dosen_id`/`staff_id`), bukan morph, supaya basis data tetap
+  menolak orang yang tidak ada. (2) **Draf boleh disimpan dengan bentrok; terbit
+  tidak.** BAAK yang sedang menyusun perlu melihat seluruh gambaran, bukan ditolak
+  satu baris demi satu baris. `terbitkan()` per semester × jenis × (prodi) bersifat
+  **semua-atau-tidak**: setiap draf diperiksa terhadap yang sudah terbit dan
+  sesama draf dalam cakupan, dan satu penghalang menahan seluruhnya. Jadwal yang
+  sudah terbit diperlakukan hidup: perubahannya langsung melewati gerbang yang
+  sama, diumumkan kepada peserta, pengampu, pengawas baru, dan pengawas yang
+  dilepas; menghapusnya ditolak. (3) Bentrok penghalang: ruang ganda, pengawas
+  ganda, mahasiswa dengan dua ujian beririsan (dari **KRS disetujui** yang belum
+  dihapus), dan peserta melebihi kursi (termasuk sesi tanpa ruang). Kursi di atas
+  kapasitas ruang hanya peringatan. Bentrok mahasiswa dilaporkan per pasangan sesi
+  dengan jumlah dan contoh NIM, bukan satu baris per orang. Jadwal kuliah mingguan
+  **tidak** diperiksa: kuliah lazimnya berhenti selama pekan ujian, dan memeriksanya
+  akan menandai hampir setiap sesi. (4) Peserta dibagi ke ruang menurut urutan
+  NIM dan kursi, dihitung saat dibaca — bukan disimpan — sehingga mahasiswa yang
+  ditambahkan belakangan menempati urutannya tanpa menggeser ruang orang lain
+  secara acak. (5) Kelayakan memakai kebijakan kartu ujian yang sudah ada di
+  `config/dokumen.php`: tahan karena kehadiran hanya untuk jenis yang
+  `butuhKehadiran()` (UAS), ambangnya `PresensiService::memenuhiAmbangUas()`;
+  tahan karena tunggakan dari `Tagihan::tunggakanPerMahasiswa()`. Satu kebijakan,
+  dibaca daftar peserta dan kartu. (6) Kartu ujian dicetak dari jadwal ujian bila
+  ada sesi terbit pada semester itu — jenis terakhir yang terbit (UAS mengalahkan
+  UTS); bila tidak ada, perilaku lama. (7) Hak kelola memakai `kelas.manage` yang
+  sudah ada: sesi ujian adalah atribut penawaran kelas, dan izin terpisah akan
+  membiarkan orang menempatkan ujian untuk kelas yang jadwal kuliahnya tidak dapat
+  ia lihat. (8) Notifikasi terbit satu per orang per penerbitan, membawa jumlah
+  sesinya — bukan satu per sesi.
+- **Konsekuensi.** Penyusunan massal rakus (kelas terbesar lebih dulu, sesi
+  paling awal yang bebas bentrok dan muat), bukan optimal; kelas yang tidak dapat
+  ditempatkan dilaporkan dengan alasannya, tidak dibuang diam-diam. Kelas tanpa
+  peserta KRS disetujui tidak disusun. Bila KRS berubah sesudah terbit, pembagian
+  ruang bergeser mengikuti NIM dan sesi bisa kekurangan kursi tanpa peringatan
+  sampai layar BAAK dibuka; gerbang terbit tidak berjalan ulang dengan sendirinya.
+  Kalender #35 membaca `JadwalUjian::terbit()`, `scopeDalamRentang()`, `mulai()`
+  dan `selesai()` — bukan menyusun ulang tanggal dan jam sendiri.
+
 ## ADR-026 — Surat permohonan PDM/PJK: satu surat per mahasiswa per prosedur, dirakit dari permintaannya (2026-10-26)
 
 - **Konteks.** #27 (ADR-017) mencatat setiap perubahan kolom terkunci sebagai

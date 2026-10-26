@@ -81,6 +81,70 @@ belum diisi dari jalur gelombang.
 
 ---
 
+## Sesi 55 — 2026-10-26 · Jadwal UTS/UAS: entitas sendiri, bentrok mahasiswa, kartu dari jadwal ujian
+
+Pekerjaan P6 #34. Branch `feature/jadwal-ujian`, dari `main` sesudah PR #17.
+Berjalan paralel dengan sesi #32 (PMB daring) dan paket kecil #45/#27b; konflik
+teks di berkas ini, `ROADMAP.md`, dan `DECISIONS.md` wajar.
+
+### Yang dibangun
+
+Tabel `jadwal_ujian` (per kelas per `JenisUjianKelas` UTS/UAS, tanggal, jam,
+status draf → terbit, `tahun_akademik_id` disalin dari kelas), `jadwal_ujian_ruang`
+(beberapa ruang, kursi per ruang), dan `jadwal_ujian_pengawas` (dosen **atau**
+staf, opsional ditempatkan di satu ruang). `JadwalUjianService` memegang
+seluruhnya: simpan, ubah, hapus draf, laporan bentrok satu semester, terbitkan,
+susun massal + simpan rencana, daftar peserta dengan kelayakan, dan pembaca untuk
+portal. Layar BAAK **Jadwal Ujian** (`/admin/jadwal-ujian`: daftar dengan bentrok
+di atas, formulir, detail peserta per ruang, susun massal dengan pratinjau),
+`/mahasiswa/jadwal-ujian` (dengan ruang duduknya), `/dosen/jadwal-ujian` (yang
+diawasi dan yang diampu). `JadwalUjianPolicy` di atas `kelas.view`/`kelas.manage`.
+String di `lang/id/jadwal_ujian.php`. Keputusan: ADR-025.
+
+### Bentrok
+
+Ruang ganda, pengawas ganda, peserta melebihi kursi (termasuk sesi tanpa ruang),
+dan **mahasiswa dengan dua ujian bersamaan** — dari KRS disetujui yang belum
+dihapus, satu kueri untuk seluruh kelas semester. Kursi di atas kapasitas ruang
+hanya peringatan. Draf boleh disimpan dengan bentrok; terbit semua-atau-tidak
+per semester × jenis × prodi, dan jadwal terbit yang diubah langsung melewati
+gerbang yang sama. `BentrokJadwal` mendapat `pengawas()` dan `kursi()`.
+
+### Kartu ujian dua mode
+
+Bila ada sesi terbit pada semester itu, `CetakService::kartuUjian()` mencetak
+tanggal, jam, dan **ruang duduk mahasiswa** dari jadwal ujian jenis terakhir yang
+terbit (UAS mengalahkan UTS); bila tidak, perilaku lama dari jadwal kuliah.
+Penahanan karena kehadiran kini hanya berlaku pada UAS di mode jadwal ujian.
+Ambang kehadiran diangkat ke `PresensiService::memenuhiAmbangUas()` supaya daftar
+peserta yang menghitung sekelas sekaligus tidak menyalin angkanya.
+
+### Demo
+
+`JadwalUjianSeeder` menyusun UTS semester aktif lewat penyusun massal (dua pekan
+mulai pekan ke-8) dan menerbitkannya lewat gerbang bentrok yang sama — 20 sesi;
+lima kelas pilihan tanpa peserta KRS disetujui sengaja tidak terjadwal. UAS
+dibiarkan kosong untuk didemokan. SmokeLayarTest memaku anggaran kueri layar baru
+dan bahwa UTS demo terbit tanpa bentrok penghalang.
+
+### Yang tersingkap
+
+`PresensiService::pesertaKelas()` berdoc "through an approved study plan" tetapi
+tidak menyaring status KRS — absensi cetak dan rekap kehadiran ikut memuat
+mahasiswa yang KRS-nya masih draf. Tidak diubah di sini; dicatat untuk perbaikan
+terpisah. Jadwal ujian memakai kueri pesertanya sendiri yang menyaring status.
+
+Migrasi dan `JadwalUjianSeeder` dicoba di MariaDB 10.4 lokal (20 sesi terbit).
+`migrate:fresh --seed` di sana gagal **sesudahnya**, di `KonversiSeeder`: NIM
+dirakit dari `kode_pddikti` berpanjang UUID — diperbaiki terpisah di Sesi 53
+(PR #23) dan sudah tergabung ke branch ini. Belum diubah: alasan penahanan kartu ujian membagi tunggakan dengan 100, sedangkan
+CLAUDE.md §8 menyimpan rupiah penuh; tesnya menulis nominal dalam sen
+(`500_000_00`), jadi satuan mana yang benar perlu diputuskan dulu.
+
+**48 tes baru** (JadwalUjianTest 42, SmokeLayarTest 6).
+
+---
+
 ## Sesi 54 — 2026-10-26 · Tiga sisa kecil: klaim flagship MBKM, surat PDM/PJK, spec Bridge yang dipaku tes
 
 Branch `feature/paket-kecil-flagship-surat-spec`, dari `main` sesudah PR #17;
