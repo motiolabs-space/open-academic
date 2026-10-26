@@ -144,6 +144,12 @@ class Dosen extends Authenticatable implements OAuthenticatable
         return $this->hasMany(BkdLaporan::class);
     }
 
+    /** The credit ledger, Kum A–E — see AngkaKreditService. */
+    public function angkaKredit(): HasMany
+    {
+        return $this->hasMany(AngkaKreditDosen::class);
+    }
+
     /*
      |---------------------------------------------------------------------
      | Kepegawaian mendalam

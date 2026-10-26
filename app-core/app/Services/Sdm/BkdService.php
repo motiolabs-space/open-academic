@@ -39,6 +39,7 @@ class BkdService
     public function __construct(
         private readonly BebanKerjaService $beban,
         private readonly Notifier $notifier,
+        private readonly AngkaKreditService $angkaKredit,
     ) {}
 
     /**
@@ -254,11 +255,18 @@ class BkdService
             );
         }
 
-        $laporan->update([
-            'status' => StatusBkd::Disahkan,
-            'disahkan_by_staff_id' => $staff->id,
-            'disahkan_at' => now(),
-        ]);
+        DB::transaction(function () use ($laporan, $staff): void {
+            $laporan->update([
+                'status' => StatusBkd::Disahkan,
+                'disahkan_by_staff_id' => $staff->id,
+                'disahkan_at' => now(),
+            ]);
+
+            // Endorsement is what makes a semester count as credit, so the
+            // ledger is written in the same transaction — never a report
+            // endorsed with its credit missing, or credit for one that is not.
+            $this->angkaKredit->catatBkd($laporan);
+        });
     }
 
     /**

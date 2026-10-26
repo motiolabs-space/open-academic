@@ -56,7 +56,7 @@ Akun demo: `mahasiswa1@demo.test` · kata sandi `password`
 | Profil Akademik | `/mahasiswa/profil` | Data diri, status, cuti |
 | Aplikasi Terhubung | `/aplikasi-terhubung` | Klien OAuth2 yang diberi izin |
 
-## Portal Dosen — 15 modul
+## Portal Dosen — 16 modul
 
 Akun demo: `dosen1@demo.test` · kata sandi `password`
 
@@ -77,8 +77,9 @@ Akun demo: `dosen1@demo.test` · kata sandi `password`
 | | Penilaian BKD | `/dosen/bkd/penilaian` |
 | | Portofolio | `/dosen/portofolio` |
 | | Riwayat Kepegawaian | `/dosen/kepegawaian` — 14 riwayat, diajukan untuk divalidasi |
+| | Angka Kredit | `/dosen/angka-kredit` — buku besar Kum A–E sendiri |
 
-## Portal Staf — 36 modul
+## Portal Staf — 37 modul
 
 Akun demo: `admin@demo.test` · kata sandi `password`
 
@@ -105,6 +106,7 @@ Akun demo: `admin@demo.test` · kata sandi `password`
 | | Akun Staf | `/admin/staf` |
 | | Unit Kerja | `/admin/unit-kerja` |
 | | Beban Kerja Dosen | `/admin/bkd` |
+| | Angka Kredit | `/admin/angka-kredit` — rekap per dosen/jenjang, lembar penyetaraan .xlsx |
 | | Evaluasi Dosen | `/admin/edom` |
 | **KEUANGAN** | Matriks Tarif | `/admin/tarif` |
 | | Tagihan & Rekonsiliasi | `/admin/keuangan` |

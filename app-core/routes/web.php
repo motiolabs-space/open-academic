@@ -259,6 +259,8 @@ Route::middleware(['auth:dosen', 'term.active'])->prefix('dosen')->name('dosen.'
     Route::put('/kepegawaian/{jenis}/{riwayat}', [Dosen\KepegawaianController::class, 'update'])->name('kepegawaian.update');
     Route::delete('/kepegawaian/{jenis}/{riwayat}', [Dosen\KepegawaianController::class, 'destroy'])->name('kepegawaian.destroy');
 
+    Route::get('/angka-kredit', Dosen\AngkaKreditController::class)->name('angka-kredit');
+
     Route::get('/tugas-akhir', [Dosen\TugasAkhirController::class, 'index'])->name('tugas-akhir');
     Route::get('/tugas-akhir/{tugasAkhir}', [Dosen\TugasAkhirController::class, 'show'])->name('tugas-akhir.show');
     Route::post('/tugas-akhir/bimbingan/{bimbingan}/setujui', [Dosen\TugasAkhirController::class, 'setujuiBimbingan'])->name('tugas-akhir.bimbingan.setujui');
@@ -443,6 +445,17 @@ Route::middleware(['auth:staff', 'term.active'])->prefix('admin')->name('admin.'
     Route::delete('/kepegawaian/{jenis}/{riwayat}', [Admin\RiwayatKepegawaianController::class, 'destroy'])->name('kepegawaian.destroy');
     Route::post('/kepegawaian/{jenis}/{riwayat}/setujui', [Admin\RiwayatKepegawaianController::class, 'setujui'])->name('kepegawaian.setujui');
     Route::post('/kepegawaian/{jenis}/{riwayat}/tolak', [Admin\RiwayatKepegawaianController::class, 'tolak'])->name('kepegawaian.tolak');
+
+    // Buku besar angka kredit. Rute statis didahulukan supaya "ekspor" tidak
+    // terbaca sebagai UUID dosen.
+    Route::get('/angka-kredit', [Admin\AngkaKreditController::class, 'index'])->name('angka-kredit.index');
+    Route::get('/angka-kredit/ekspor', [Admin\AngkaKreditController::class, 'ekspor'])->name('angka-kredit.ekspor');
+    Route::post('/angka-kredit/susun', [Admin\AngkaKreditController::class, 'susunSemua'])->name('angka-kredit.susun-semua');
+    Route::delete('/angka-kredit/baris/{baris}', [Admin\AngkaKreditController::class, 'destroy'])->name('angka-kredit.destroy');
+    Route::get('/angka-kredit/{dosen}', [Admin\AngkaKreditController::class, 'show'])->name('angka-kredit.show');
+    Route::post('/angka-kredit/{dosen}/susun', [Admin\AngkaKreditController::class, 'susun'])->name('angka-kredit.susun');
+    Route::post('/angka-kredit/{dosen}/manual', [Admin\AngkaKreditController::class, 'store'])->name('angka-kredit.store');
+    Route::put('/angka-kredit/{dosen}/nuptk', [Admin\AngkaKreditController::class, 'nuptk'])->name('angka-kredit.nuptk');
 
     Route::get('/staf', [Admin\StaffController::class, 'index'])->name('staff');
     Route::post('/staf', [Admin\StaffController::class, 'store'])->name('staff.store');

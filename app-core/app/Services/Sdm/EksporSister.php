@@ -125,7 +125,7 @@ class EksporSister
             'label' => 'Biodata Dosen',
             'tersedia' => true,
             'alasan' => null,
-            'header' => ['NIDN', 'NIP', 'Nama', 'Gelar Depan', 'Gelar Belakang',
+            'header' => ['NIDN', 'NUPTK', 'NIP', 'Nama', 'Gelar Depan', 'Gelar Belakang',
                 'Jenis Kelamin', 'Tempat Lahir', 'Tanggal Lahir', 'Program Studi',
                 'Status Kepegawaian', 'Pendidikan Tertinggi', 'Praktisi'],
         ],
@@ -378,6 +378,7 @@ class EksporSister
     {
         return $this->dosen(['prodi'])->map(fn (Dosen $d): array => [
             $d->nidn,
+            $d->nuptk,
             $d->nip,
             $d->namaLengkap(),
             $d->gelar_depan,

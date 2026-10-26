@@ -7,6 +7,7 @@ namespace Database\Seeders;
 use App\Models\System\Setting;
 use App\Support\Demo;
 use Database\Seeders\Demo\AkuntansiSeeder;
+use Database\Seeders\Demo\AngkaKreditSeeder;
 use Database\Seeders\Demo\BeasiswaSeeder;
 use Database\Seeders\Demo\EdomSeeder;
 use Database\Seeders\Demo\HelpdeskSeeder;
@@ -146,6 +147,10 @@ class DemoCampusSeeder extends Seeder
             // kerja yang ditanam di sana. Sesudah KepegawaianSeeder: berkas
             // lengkap ditempelkan pada dosen yang riwayat jabatannya sudah ada.
             RiwayatKepegawaianSeeder::class,
+
+            // Sesudah KepegawaianSeeder (jabatan, ijazah, BKD disahkan): buku
+            // besar angka kredit menyusun barisnya dari ketiganya.
+            AngkaKreditSeeder::class,
 
             // Sesudah MutuSeeder: kategori helpdesk menunjuk unit kerja yang
             // ditanam di sana, dan tiket contoh didisposisi ke unit itu.

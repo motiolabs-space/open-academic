@@ -636,3 +636,42 @@
   Bahasa yang dihapus lalu ditambah ulang memulihkan baris lamanya, karena
   indeks unik `(dosen_id, bahasa)` ikut menghitung baris terhapus. Riwayat
   tidak membawa notifikasi; dosen melihat status dan alasannya di portal.
+- **Konteks (#40).** Angka kredit hanya ada sebagai satu angka pada jabatan
+  fungsional; tidak ada buku besar Kum A–E, sehingga kesiapan usulan dan lembar
+  AK penyetaraan dihitung di luar aplikasi dari BKD yang sudah tersimpan di
+  sini. Layanan PAK 2026 mengonversi kinerja sebelum 2026 dengan SKS BKD × 4 dan
+  membatasi Kum D dan E masing-masing 10 %; penilaiannya terjadi di platform
+  kementerian.
+- **Keputusan (#40).** (1) Buku besar `angka_kredit_dosen`, satu baris per
+  butir per unsur, dalam perseratus; **tidak ada total tersimpan** — rekap
+  selalu dihitung. (2) Lima unsur `UnsurAngkaKredit` terpisah dari `UnsurBkd`;
+  "pendidikan" BKD adalah Kum B. (3) Empat sumber: dua turunan (BKD **disahkan**,
+  ijazah S2/S3) yang disusun ulang di tempat dan dijaga indeks unik per sumber
+  per unsur, dua isian staf (konversi semester lama, penyesuaian beralasan).
+  (4) Konversi × 4 untuk semester yang **mulai** sebelum 1 Januari 2026; sesudahnya
+  faktor kampus yang ditandai *perkiraan*, karena klaimnya terjadi di platform.
+  Konversi manual ditolak untuk semester sejak 2026 dan untuk semester × unsur
+  yang sudah dikreditkan dari BKD. (5) DUPAK = baris sesudah TMT jabatan berlaku;
+  AK kumulatif = AK jabatan itu + DUPAK. Ijazah dibandingkan per tahun dan tahun
+  TMT tidak dihitung. (6) Batas D/E ditegakkan pada rekap sebagai **titik tetap**
+  terhadap total sesudah pembatasan — angka yang tertulis di lembar dan diperiksa
+  saat diunggah — bukan terhadap total mentah. (7) Syarat jenjang berikutnya di
+  `config/angka_kredit.php`: AK kumulatif (bawaan enum) dan bagian minimum Kum C
+  dari AK yang masih dibutuhkan; "siap" = keduanya terpenuhi. (8) Lembar
+  penyetaraan .xlsx ditulis `LembarKerjaXlsx` di atas ext-zip, bukan pustaka
+  spreadsheet; NUPTK dan TMT sebagai sel teks, AK sebagai angka; dosen tanpa
+  NUPTK dikeluarkan dan disebut di layar. `dosen.nuptk` ditambahkan. (9) Ekspor
+  dan isian manual memakai `dosen.manage`; membaca memakai `dosen.view`; dosen
+  membaca buku besarnya sendiri.
+- **Yang dipilih untuk TIDAK dibangun (#40).** Tim penilai, plotting, pejabat
+  pengesah, TTE, DUPAK PDF, nomor surat — semuanya di platform kementerian.
+  Pengali predikat kinerja tahunan pasca-2026 tidak dimodelkan; faktor
+  "sesudah" adalah perkiraan kampus. Syarat PTNBH/PTS untuk penyetaraan tidak
+  diperiksa per baris. Riwayat pendidikan (sumber Kum A) belum melewati alur
+  validasi #39 — ijazah yang diketik dosen langsung terhitung, seperti ia sudah
+  langsung terbaca di ekspor SISTER.
+- **Konsekuensi (#40).** BKD yang disahkan langsung mengkredit buku besar;
+  koreksi sesudahnya cukup "Susun ulang". Persentase penelitian bawaan adalah
+  tafsir, bukan kutipan regulasi, dan dapat diubah lewat env. Kolom lembar
+  penyetaraan mengikuti panduan operator; templat yang berubah cukup diubah di
+  `AngkaKreditService::KOLOM_PENYETARAAN`.

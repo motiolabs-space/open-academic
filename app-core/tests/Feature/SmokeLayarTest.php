@@ -173,6 +173,11 @@ it('membuka layar dosen dalam anggaran kueri', function (string $url, int $angga
     ['/dosen/bkd', 12],
     ['/dosen/bkd/penilaian', 13],
     ['/dosen/portofolio', 13],
+    // dosen1 memegang berkas kepegawaian lengkap demo. Empat belas relasi,
+    // satu kueri masing-masing, validator sekali untuk semuanya — anggaran
+    // ini tidak boleh tumbuh per baris riwayat.
+    ['/dosen/kepegawaian', 25],
+    ['/dosen/angka-kredit', 10],
     ['/dosen/helpdesk', 20],
     ['/notifikasi', 25],
 ]);
@@ -210,6 +215,11 @@ it('membuka layar admin dalam anggaran kueri', function (string $url, int $angga
     ['/admin/beasiswa', 25],
     ['/admin/edom', 24],
     ['/admin/bkd', 20],
+    // Antrean: satu kueri per riwayat, apa pun jumlah ajuannya.
+    ['/admin/kepegawaian/validasi', 28],
+    // Rekap kampus dan lembar penyetaraan dari tiga kueri, apa pun jumlah
+    // dosennya — lembar penyetaraan memakai rekap yang sama, bukan menghitung ulang.
+    ['/admin/angka-kredit', 12],
     ['/admin/akuntansi', 16],
     ['/admin/kurikulum-lanjutan', 18],
     ['/admin/unit-kerja', 12],
@@ -221,6 +231,28 @@ it('membuka layar admin dalam anggaran kueri', function (string $url, int $angga
     ['/admin/spmi', 21],
     ['/notifikasi', 25],
 ]);
+
+/*
+ * Berkas kepegawaian dan buku besar angka kredit satu dosen — dosen demo
+ * pertama, yang riwayatnya lengkap dan buku besarnya memuat konversi, BKD
+ * disahkan, ijazah, dan penyesuaian.
+ */
+it('membuka berkas kepegawaian dan buku besar angka kredit satu dosen dalam anggaran kueri', function () {
+    $staff = Staff::where('email', 'admin@demo.test')->firstOrFail();
+    $dosen = Dosen::whereNotNull('nidn')->orderBy('id')->firstOrFail();
+
+    dalamAnggaranKueri(
+        fn () => $this->actingAs($staff, 'staff')->get("/admin/dosen/{$dosen->uuid}/kepegawaian")
+            ->assertOk()->assertSee('Penata'),
+        29,
+    );
+
+    dalamAnggaranKueri(
+        fn () => $this->actingAs($staff, 'staff')->get("/admin/angka-kredit/{$dosen->uuid}")
+            ->assertOk()->assertSee('Konversi BKD lama'),
+        6,
+    );
+});
 
 /*
  * Profil pindahan demo: dibuat lewat intake sungguhan oleh KonversiSeeder,

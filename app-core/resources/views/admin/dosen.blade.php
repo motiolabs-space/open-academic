@@ -140,6 +140,9 @@
                     <x-field label="NIP" name="nip" />
                 </div>
 
+                <x-field label="NUPTK" name="nuptk"
+                    hint="Dicocokkan bersama nama saat lembar penyetaraan angka kredit diunggah." />
+
                 <x-field label="Homebase" name="prodi_id"
                     :options="$daftarProdi->mapWithKeys(fn ($p) => [$p->id => $p->namaLengkap()])" />
 

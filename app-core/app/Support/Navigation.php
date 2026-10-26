@@ -89,6 +89,7 @@ final class Navigation
                     self::item('Penilaian BKD', '✓', 'dosen.bkd.penilaian'),
                     self::item('Portofolio', '◈', 'dosen.portofolio'),
                     self::item('Riwayat Kepegawaian', '◎', 'dosen.kepegawaian'),
+                    self::item('Angka Kredit', '∑', 'dosen.angka-kredit'),
                 ],
             ],
             [
@@ -175,6 +176,7 @@ final class Navigation
                     self::item('Akun Staf', '◉', 'admin.staff'),
                     self::item('Unit Kerja', '⌗', 'admin.unit-kerja'),
                     self::item('Beban Kerja Dosen', '⊞', 'admin.bkd.index'),
+                    self::item('Angka Kredit', '∑', 'admin.angka-kredit.index'),
                     self::item('Evaluasi Dosen', '☆', 'admin.edom.index'),
                 ],
             ],

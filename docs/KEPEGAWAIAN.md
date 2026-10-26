@@ -189,3 +189,136 @@ lang/id/kepegawaian.php
 database/seeders/Demo/RiwayatKepegawaianSeeder.php
 tests/Feature/Sdm/{KepegawaianDosenTest,RiwayatKepegawaianTest}.php
 ```
+
+---
+
+# Angka kredit — buku besar Kum A–E (#40)
+
+Buku besar, **bukan dasbor dan bukan penilaian.** Penilaian PAK terjadi di
+platform kementerian, oleh tim penilai yang jabatannya minimal satu tingkat di
+atas yang dinilai, dan disahkan dengan TTE. Tidak ada alur tim penilai, plotting,
+atau tanda tangan di sini, dan tidak akan ada. Yang dikerjakan aplikasi ini:
+menyimpan baris yang akan ditanyakan platform itu, menjumlahkannya seperti
+borangnya menjumlah, dan menyatakan seberapa jauh jumlah itu dari syarat jenjang
+berikutnya.
+
+## Lima unsur, bukan empat
+
+| Kum | Unsur | Sumber di Open Academic |
+|---|---|---|
+| A | Pendidikan (ijazah) | `riwayat_pendidikan_dosen` — S2 150, S3 200 (`config/angka_kredit.php`) |
+| B | Pendidikan & pengajaran | unsur *pendidikan* BKD yang disahkan |
+| C | Penelitian | unsur *penelitian* BKD yang disahkan |
+| D | Pengabdian | unsur *pengabdian* BKD yang disahkan |
+| E | Penunjang | unsur *penunjang* BKD yang disahkan |
+
+Unsur "pendidikan" BKD adalah **Kum B**, bukan Kum A — satu-satunya pemetaan
+yang mudah keliru, jadi ia tinggal di `UnsurAngkaKredit::dariUnsurBkd()` saja.
+
+## Empat sumber baris
+
+| Sumber | Ditulis oleh | Disunting? |
+|---|---|---|
+| BKD disahkan | `BkdService::sahkan()` → `catatBkd()` | Tidak — mengikuti laporannya |
+| Ijazah (portofolio) | simpan riwayat pendidikan → `catatPendidikan()` | Tidak — mengikuti ijazahnya |
+| Konversi BKD lama | staf, layar buku besar | Hapus dan catat ulang |
+| Penyesuaian | staf, dengan keterangan wajib; boleh negatif | Hapus dan catat ulang |
+
+"Disetujui" untuk BKD berarti **disahkan** — ditandatangani lembaga — bukan
+sekadar diajukan atau dinilai. Baris turunan disusun ulang di tempat
+(`openacademic:susun-angka-kredit`, tombol "Susun ulang"); menyusun dua kali
+memperbarui baris yang sama, dijaga indeks unik per sumber per unsur. Baris
+manual tidak pernah disentuh penyusunan ulang.
+
+## Konversi: SKS BKD × 4, hanya sebelum 2026
+
+Kinerja yang **mulai sebelum 1 Januari 2026** dikonversi `SKS × 4 = AK`
+(ketentuan layanan PAK 2026). 20251 (mulai Agustus 2025) masih terkonversi;
+20252 (Februari 2026) tidak. Sesudahnya, kinerja diklaim langsung dari LKD/BKD
+di platform kementerian — buku besar tetap mencatatnya dengan faktor kampus
+(`ANGKA_KREDIT_FAKTOR_SESUDAH_RATUS`, bawaan 400) supaya kesiapan dapat
+diperkirakan, tetapi barisnya ditandai **perkiraan** di layar.
+
+Konversi manual ditolak untuk semester sejak 2026, dan untuk semester × unsur
+yang sudah terhitung dari BKD disahkan — menghitung pekerjaan yang sama dua kali
+adalah kesalahan paling mungkin saat kampus mengisi arsip lama.
+
+Semua angka dalam **perseratus** sebagai integer, alasan yang sama dengan
+`BKD_*_RATUS`. Float hanya ada di sel ekspor.
+
+## Hanya sesudah TMT jabatan berlaku
+
+Rekap menjumlah **AK kumulatif terakhir** (angka kredit pada jabatan berlaku)
+dengan baris yang kinerjanya selesai **sesudah TMT** jabatan itu — yang sebelumnya
+sudah terhitung di dalamnya. Ijazah dibandingkan per tahun dan hanya tahun yang
+lebih kemudian yang dihitung: ijazah yang lulus pada tahun pengangkatan hampir
+pasti yang mengantarkannya. Kesalahan yang lebih aman adalah meremehkan kesiapan.
+
+## Batas Kum D dan E: titik tetap, bukan sepuluh persen dari total mentah
+
+Pengabdian dan penunjang masing-masing paling banyak **10 % dari total DUPAK**.
+Ditegakkan pada **rekap**, bukan pada baris: buku besar menyimpan yang dikerjakan,
+rekap menyajikan yang dapat diakui, dan layar menampilkan keduanya.
+
+Sepuluh persen dari *total sesudah dibatasi* — angka yang tertulis di lembar
+dan diperiksa saat diunggah. A+B+C = 100 dan D = 50: 10 % dari 150 adalah 15,
+tetapi 15 dari total 115 adalah 13 %. `batasiUnsur()` menurunkan D dan E sampai
+tidak satu pun melebihi bagiannya dari jumlah yang memuat keduanya — (S+E)/9
+bila hanya D yang terbatas, S/8 bila keduanya — dan tidak pernah menaikkan
+unsur di atas yang sebenarnya dikerjakan.
+
+## Kesiapan usulan
+
+Per jabatan **tujuan**, dari `config/angka_kredit.php`:
+
+- AK kumulatif minimum (bawaan `JabatanFungsional::angkaKreditMinimum()`);
+- bagian minimum Kum C dari AK yang **masih dibutuhkan** untuk naik (bawaan 0 /
+  35 / 40 / 45 % untuk AA / L / LK / GB) — tafsir pedoman yang wajib diperiksa
+  kampus sendiri, sikap yang sama dengan rubrik BKD.
+
+"Siap" = selisih nol **dan** bagian penelitian terpenuhi. Itu pernyataan tentang
+angka, bukan janji persetujuan.
+
+## Lembar penyetaraan (.xlsx)
+
+Untuk dosen tetap berjabatan AA/L/LK dengan TMT paling lambat 31 Desember 2023
+(`ANGKA_KREDIT_PENYETARAAN_TMT`). Bahwa kampusnya PTNBH/PTS adalah syarat
+lembaga, tidak diperiksa per baris.
+
+| Kolom | Isi | Sel |
+|---|---|---|
+| NUPTK | `dosen.nuptk` | teks |
+| Nama | `dosen.nama`, tanpa gelar | teks |
+| Jabatan Fungsional | AA / L / LK | teks |
+| TMT Jabatan Fungsional | `TTTT-BB-HH` | teks |
+| AK Kumulatif Terakhir | AK jabatan berlaku | angka, 2 desimal |
+| Kum A … Kum E | yang diakui (D/E sesudah dibatasi) | angka |
+| Total DUPAK | A+…+E diakui | angka |
+| AK Penyetaraan | AK terakhir + total DUPAK | angka |
+
+NUPTK dan TMT ditulis sebagai **sel teks**: ditulis sebagai angka, Excel
+"membantu" NUPTK menjadi notasi ilmiah dan TMT menjadi nomor seri tanggal, lalu
+unggahan yang mencocokkannya dengan PDDIKTI menolak barisnya. Dosen tanpa NUPTK
+**tidak dimasukkan** dan disebut di layar — satu baris tak cocok adalah unggahan
+gagal yang ditemukan sesudahnya. Penulisnya `LembarKerjaXlsx`, ±150 baris di atas
+ext-zip, bukan pustaka spreadsheet. DUPAK PDF per dosen dan nomor surat tetap
+disiapkan di luar aplikasi.
+
+## Berkas
+
+```
+database/migrations/2026_10_27_170000_create_angka_kredit_dosen_table.php  — + dosen.nuptk
+config/angka_kredit.php
+app/Enums/{UnsurAngkaKredit,SumberAngkaKredit}.php
+app/Models/Sdm/AngkaKreditDosen.php
+app/DTOs/Sdm/{RekapAngkaKredit,AngkaKreditManualData}.php
+app/Services/Sdm/AngkaKreditService.php
+app/Support/LembarKerjaXlsx.php
+app/Policies/Sdm/AngkaKreditDosenPolicy.php
+app/Http/Controllers/{Admin,Dosen}/AngkaKreditController.php
+app/Console/Commands/SusunAngkaKreditCommand.php
+resources/views/angka-kredit/*.blade.php
+lang/id/angka_kredit.php
+database/seeders/Demo/AngkaKreditSeeder.php
+tests/Feature/Sdm/AngkaKreditTest.php
+```
