@@ -25,6 +25,9 @@ class FakeFeederClient implements FeederClientInterface
     /** @var array<string, FeederResponse> act => canned reply */
     private array $balasan = [];
 
+    /** @var array<string, array<int, array<string, mixed>>> act => rows a Get answers, filtered */
+    private array $isi = [];
+
     private bool $tersedia = true;
 
     public function __construct(private readonly string $fixturePath = '') {}
@@ -47,6 +50,55 @@ class FakeFeederClient implements FeederClientInterface
         $this->balasan[$act] = new FeederResponse(0, '', $data);
 
         return $this;
+    }
+
+    /**
+     * Rows a Get act answers, narrowed by the request's filter.
+     *
+     * Unlike balas(), the filter is honoured — equality on every field it
+     * names, which is all the live client ever sends. A caller that forgets
+     * to filter by programme would otherwise pass while reading the whole
+     * campus.
+     *
+     * @param array<int, array<string, mixed>> $rows
+     */
+    public function isi(string $act, array $rows): self
+    {
+        $this->isi[$act] = array_values($rows);
+
+        return $this;
+    }
+
+    /**
+     * Students PDDIKTI already holds, as the two lists adoption reads.
+     *
+     * Each person is one registration: id_mahasiswa, id_registrasi_mahasiswa,
+     * nim, nik, nama_mahasiswa, tanggal_lahir, id_prodi, id_periode_masuk.
+     * The enrolment list gets the NIM, the person list the NIK — the same
+     * split as the live service, so a matcher that reads only one of them
+     * fails here too.
+     *
+     * @param array<int, array<string, mixed>> $orang
+     */
+    public function mahasiswaTerdaftar(array $orang): self
+    {
+        $this->isi((string) config('feeder.adopt.riwayat.get_action'), array_map(fn (array $o): array => [
+            'id_registrasi_mahasiswa' => $o['id_registrasi_mahasiswa'],
+            'id_mahasiswa' => $o['id_mahasiswa'],
+            'nim' => $o['nim'],
+            'nama_mahasiswa' => $o['nama_mahasiswa'],
+            'id_prodi' => $o['id_prodi'],
+            'id_periode_masuk' => $o['id_periode_masuk'],
+        ], $orang));
+
+        return $this->isi((string) config('feeder.adopt.biodata.get_action'), array_map(fn (array $o): array => [
+            'id_mahasiswa' => $o['id_mahasiswa'],
+            'nama_mahasiswa' => $o['nama_mahasiswa'],
+            'nik' => $o['nik'] ?? null,
+            'tanggal_lahir' => $o['tanggal_lahir'] ?? null,
+            'id_prodi' => $o['id_prodi'],
+            'id_periode' => $o['id_periode_masuk'],
+        ], $orang));
     }
 
     public function matikan(): self
@@ -81,6 +133,10 @@ class FakeFeederClient implements FeederClientInterface
 
         if (isset($this->balasan[$act])) {
             return $this->balasan[$act];
+        }
+
+        if (isset($this->isi[$act])) {
+            return new FeederResponse(0, '', $this->saring($this->isi[$act], (array) ($payload['filter'] ?? [])));
         }
 
         if (str_starts_with($act, 'Get')) {
@@ -150,6 +206,24 @@ class FakeFeederClient implements FeederClientInterface
     public function tersedia(): bool
     {
         return $this->tersedia;
+    }
+
+    /**
+     * @param array<int, array<string, mixed>> $rows
+     * @param array<string, mixed> $filter
+     * @return array<int, array<string, mixed>>
+     */
+    private function saring(array $rows, array $filter): array
+    {
+        return array_values(array_filter($rows, function (array $baris) use ($filter): bool {
+            foreach ($filter as $kolom => $nilai) {
+                if ((string) ($baris[$kolom] ?? '') !== (string) $nilai) {
+                    return false;
+                }
+            }
+
+            return true;
+        }));
     }
 
     /**

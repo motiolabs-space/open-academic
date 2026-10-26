@@ -14,6 +14,7 @@ use App\Models\Akademik\Kurikulum;
 use App\Models\Akademik\Nilai;
 use App\Models\Akademik\Prodi;
 use App\Models\Akademik\TahunAkademik;
+use App\Models\Feeder\FeederAdoption;
 use App\Models\Feeder\FeederChangeRequest;
 use App\Models\Keuangan\Tagihan;
 use App\Models\Sdm\Dosen;
@@ -177,6 +178,17 @@ class Mahasiswa extends Authenticatable implements OAuthenticatable
     public function perubahanFeeder(): HasMany
     {
         return $this->hasMany(FeederChangeRequest::class)->orderByDesc('id');
+    }
+
+    /**
+     * What adoption runs concluded about this student at PDDIKTI.
+     *
+     * An ambiguous one means PDDIKTI may already hold them; the biodata is
+     * not inserted until a person links or separates it.
+     */
+    public function adopsiFeeder(): HasMany
+    {
+        return $this->hasMany(FeederAdoption::class)->orderByDesc('id');
     }
 
     /** Official letters requested by or issued to this student. */

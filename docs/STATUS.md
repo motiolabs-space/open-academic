@@ -4,7 +4,7 @@
 
 ---
 
-## Sesi 47 — 2026-10-26 · Mahasiswa pindahan: kolom #25 akhirnya punya layar
+## Sesi 51 — 2026-10-26 · Mahasiswa pindahan: kolom #25 akhirnya punya layar
 
 Pekerjaan P6 #33. Branch `feature/mahasiswa-pindahan`, dari `main` sesudah PR
 #14. Berjalan paralel dengan sesi #44 dan #30/#31; konflik teks di berkas ini
@@ -54,6 +54,93 @@ pindahan dengan satu pendaftar yang menunggu intake.
 
 **37 tes baru** (MahasiswaPindahanTest 36, SmokeLayarTest profil pindahan 1;
 dua layar ditambahkan ke daftar anggaran kueri).
+
+---
+
+## Sesi 50 — 2026-10-26 · Adopsi mahasiswa PDDIKTI: kampus yang pindah tidak lagi mendaftarkan ulang angkatannya
+
+Roadmap #44, branch `feature/feeder-adopsi-mahasiswa`. Berjalan paralel dengan
+sesi #33 dan #30/#31; konflik teks di ROADMAP/STATUS diterima sebagai wajar.
+
+### Masalahnya
+
+Kampus yang datang dari SIAKAD lain sudah punya seluruh mahasiswanya di PDDIKTI.
+`MahasiswaMapper` hanya `InsertBiodataMahasiswa`, dan rekonsiliasi sengaja tidak
+membaca biodata — jadi sinkronisasi pertama mendaftarkan ulang semua orang itu.
+
+### Rancangan (ADR-020)
+
+`FeederAdopsi` membaca `GetListRiwayatPendidikanMahasiswa` (NIM, registrasi) dan
+`GetListMahasiswa` (NIK) per prodi + periode masuk, digabung pada `id_mahasiswa`.
+NIM menemukan, NIK menegaskan, nama hanya pengganti NIK yang kosong. Yang jelas
+diadopsi: `feeder_id`/`feeder_registrasi_id` diisi dan buku besar mendapat satu
+baris per entitas (`direction = adopt`, hash muatan lokal) — hanya bila belum
+pernah ada sukses, supaya hash dorongan sungguhan tidak tertimpa. Dorongan
+berikutnya mencatat *Skipped*; tidak ada `Insert`/`Update` yang terkirim.
+Yang ragu (dua kandidat, NIM sama NIK beda, NIK sama NIM beda, sudah tertaut ke
+data lain) tidak pernah diadopsi otomatis: ditautkan atau dipisahkan di
+`/admin/feeder/adopsi` dengan alasan wajib, ter-audit, dan bertahan saat adopsi
+diulang. Validator menolak biodatanya (`kandidat_feeder_belum_diadopsi`) sampai
+diputuskan. NIK tidak disimpan di laporan — hanya `nik_cocok`.
+
+### Yang ditemukan saat menulis tes
+
+Sesudah satu dari dua registrasi kembar ditautkan manual, kembarannya muncul
+sebagai "hanya di Feeder". Tes awalnya mengharapkan sebaliknya; kodenya yang
+benar — itu registrasi ganda di PDDIKTI yang memang perlu dilihat operator.
+Cabang "satu baris Feeder diperebutkan dua mahasiswa lokal" dibuang: NIM unik,
+jadi dua adopsi atas satu baris tidak mungkin terjadi.
+
+### Yang baru
+
+Migrasi `feeder_adoptions`, enum `StatusAdopsiFeeder` dan `AlasanAmbiguAdopsi`,
+model `FeederAdoption` (`HasLogAktivitas`), `FeederAdopsi`,
+`FeederAdopsiController` + policy + dua FormRequest, layar `feeder-adopsi`
+(tautan dari konsol Feeder), `openacademic:feeder-adopsi {prodi|semua}
+[--periode=]`, `config/feeder.php` → `adopt`, string di `lang/id/feeder.php`.
+`FakeFeederClient::isi()` menghormati filter (prodi/periode) dan
+`mahasiswaTerdaftar()` memisah fixture ke dua daftar seperti layanan aslinya;
+fixture kasus di `tests/Fixtures/feeder/mahasiswa-terdaftar.json`.
+
+**33 tes baru** (FeederAdopsiTest). Suite penuh paralel: 1.294 tes hijau (3.292 asersi).
+
+### Tersisa
+
+- #44b: klaim mahasiswa lampau (`GetListDaftarLampau`/`KlaimMahasiswaLampau`).
+- Nama aksi dan field Feeder untuk kedua daftar perlu diverifikasi terhadap
+  dokumentasi build Feeder kampus; keduanya dapat diganti di konfigurasi.
+- Validator hanya tahu kandidat yang sudah pernah dibaca: kampus yang lupa
+  menjalankan adopsi belum diperingatkan.
+
+---
+
+## Sesi 49 — 2026-10-26 · CI ikut versi produksi: PHP 8.2, 8.4, 8.5
+
+Bukan fitur. Produksi berjalan di PHP 8.4 atau 8.5, sementara CI dan laptop
+pengembang menguji di 8.2 — tes hijau tidak membuktikan apa pun tentang versi
+tempat kode benar-benar dijalankan. CI kini matriks 8.2/8.4/8.5 (ADR-023); Pint
+dan build aset sekali saja, di 8.4. Batas bawah `^8.2` tidak diubah.
+
+Sebelum matriks dibuka, suite penuh dijalankan di PHP 8.4.27: 1.261 tes hijau
+(3.179 asersi), **nol** peringatan deprecation.
+
+Di laptop pengembang, XAMPP dinaikkan dari 8.2.12 (terdampak celah inti PHP
+21 Oktober) ke 8.4.27. Dua hal yang tersingkap dan layak diingat siapa pun yang
+mengulanginya di XAMPP:
+
+1. **Apache memuat DLL pendukung PHP dari `apache\bin`, bukan dari `php\`.**
+   XAMPP menyalin `icu71`, `libssh2`, `nghttp2`, dan lainnya ke sana untuk 8.2.
+   Tanpa salinan versi 8.4 (`icu77`, `brotlidec`, `libsodium`, `libssh2`
+   1.11.1, `nghttp2` 1.70), `curl` dan `intl` lolos di CLI tetapi gagal dimuat di
+   Apache. OpenSSL milik Apache (3.1.3) lebih baru daripada milik PHP (3.0.22)
+   dan dibiarkan. `sodium` ternyata **selalu** gagal dimuat di Apache sejak
+   sebelum upgrade — 96 baris di log — dan kini termuat.
+2. **`imap` keluar dari inti PHP di 8.4.** `php.ini` mengaktifkannya; barisnya
+   dinonaktifkan. Tidak ada proyek di `htdocs` yang benar-benar butuh: klien
+   IMAP yang ada memakai socket sendiri.
+
+Folder lama disimpan di `C:\xampp\php-8.2.12-backup`, DLL Apache yang ditimpa
+di `C:\xampp\apache\bin-backup-2026-10-26`.
 
 ---
 

@@ -305,6 +305,36 @@ return [
 
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Adoption
+    |--------------------------------------------------------------------------
+    |
+    | A campus moving here from another SIAKAD already has its students at
+    | PDDIKTI. Adoption reads them back per programme and intake term and
+    | gives matching local students their Feeder identifiers, so the first
+    | sync updates or skips them instead of registering them again.
+    |
+    | Two lists, joined on id_mahasiswa: the enrolment list carries the NIM
+    | and id_registrasi_mahasiswa, the person list the NIK. ":prodi" becomes
+    | the programme's id_sms (prodi.kode_pddikti), ":periode" the intake term
+    | code. Act and field names follow the community's usage and should be
+    | checked against the Feeder build's own documentation; a wrong act name
+    | surfaces as a Feeder error rather than as "no students found".
+    |
+    */
+
+    'adopt' => [
+        'riwayat' => [
+            'get_action' => 'GetListRiwayatPendidikanMahasiswa',
+            'filter' => ['id_prodi' => ':prodi', 'id_periode_masuk' => ':periode'],
+        ],
+        'biodata' => [
+            'get_action' => 'GetListMahasiswa',
+            'filter' => ['id_prodi' => ':prodi', 'id_periode' => ':periode'],
+        ],
+    ],
+
     // Rows pulled per page when reading Feeder back. Higher is fewer requests
     // and more memory; a term of KRS at a mid-sized campus is tens of
     // thousands of rows, so it is paged rather than fetched whole.

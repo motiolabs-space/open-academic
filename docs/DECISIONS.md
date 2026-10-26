@@ -304,6 +304,54 @@
   Entra ID memerlukan `IDP_REQUIRE_VERIFIED_EMAIL=false` yang disetel sadar,
   karena ia tidak mengirim `email_verified` untuk anggota tenant.
 
+## ADR-020 — Adopsi mahasiswa PDDIKTI: NIM menemukan, NIK menegaskan, keraguan diputuskan orang (2026-10-26)
+
+- **Konteks.** Roadmap #44. Kampus yang pindah dari SIAKAD lain sudah punya
+  seluruh mahasiswanya di PDDIKTI, sedangkan mapper biodata hanya mengenal
+  `InsertBiodataMahasiswa` dan rekonsiliasi sengaja tidak membaca biodata
+  (satu-satunya kunci uniknya NIK, yang tidak boleh tersalin ke tabel selisih).
+  Sinkronisasi pertama akan mendaftarkan ulang semua orang itu: ditolak karena
+  NIK, atau lebih buruk, menjadi orang kedua di PDDIKTI. Penautan yang salah
+  sama berbahayanya — nilai, SKS, dan kelak nomor ijazah seorang mahasiswa
+  terlapor atas nama orang lain, dan tidak ada yang di hilir yang akan
+  menyadarinya.
+- **Keputusan.** `FeederAdopsi` membaca `GetListRiwayatPendidikanMahasiswa`
+  (NIM, `id_registrasi_mahasiswa`) dan `GetListMahasiswa` (NIK) per prodi +
+  periode masuk, digabung pada `id_mahasiswa`; nama aksi dan filternya di
+  `config/feeder.php` → `adopt`, dan penolakan Feeder menghentikan proses
+  seperti pada rekonsiliasi. Pencocokan: (1) kandidat = baris yang NIM-nya
+  sama ∪ baris yang NIK-nya sama; (2) satu kandidat, NIM dan NIK sama →
+  **diadopsi**, apa pun namanya (NIK mengalahkan nama); (3) NIK kosong di salah
+  satu sisi → nama yang dinormalkan menggantikannya dan harus sama; (4) dua
+  kandidat, NIM sama tetapi NIK beda, NIK sama tetapi NIM beda, atau mahasiswa
+  yang sudah memegang id Feeder lain → **ambigu**, tidak pernah diadopsi
+  otomatis. NIK-sama-NIM-beda sengaja ambigu meski orangnya hampir pasti sama:
+  mengadopsinya akan meninggalkan NIM lama di PDDIKTI di balik buku besar yang
+  menyatakan tidak ada yang perlu dikirim. Yang diadopsi mendapat `feeder_id`
+  dan `feeder_registrasi_id` serta satu baris `feeder_sync_logs` per entitas
+  (`direction = adopt`, status `success`, hash muatan lokal saat ini), **hanya
+  bila** buku besar belum pernah mencatat sukses untuknya — hash lama dari
+  dorongan sungguhan tidak ditimpa. Laporan di `feeder_adoptions` (empat
+  keadaan otomatis, diganti setiap kali dijalankan) tanpa NIK, hanya
+  `nik_cocok`. Yang ambigu diputuskan orang di `/admin/feeder/adopsi`:
+  *tautkan* ke salah satu kandidat atau *pisahkan* ("bukan orang yang sama"),
+  keduanya wajib alasan, tercatat di Log Aktivitas, dan bertahan saat adopsi
+  diulang. Validator pra-kirim menolak biodata mahasiswa yang masih ambigu
+  (`kandidat_feeder_belum_diadopsi`). Klaim mahasiswa lampau
+  (`GetListDaftarLampau` / `KlaimMahasiswaLampau`) dipisah ke #44b.
+- **Konsekuensi.** Tidak ada satu pun `Insert`/`Update` yang terkirim saat
+  adopsi; dorongan berikutnya mencatat `Skipped` bagi yang teradopsi. Harganya
+  di buku besar: selisih isi biodata antara laporan SIAKAD lama
+  dan data lokal hari ini (alamat, telepon) tidak terkirim sampai data lokalnya
+  berubah, karena hash yang dicatat adalah hash muatan lokal — nama yang
+  berbeda ditampilkan di layar adopsi, kolom lain tidak dibandingkan. Baris
+  adopsi dihitung sebagai "Terkirim" di kartu entitas dan ikut dipertimbangkan
+  "Hapus yang tiada": catatan PDDIKTI milik kampus, bukan milik aplikasi yang
+  dulu mengirimnya. Validator hanya tahu kandidat yang sudah pernah dibaca;
+  kampus yang lupa menjalankan adopsi tidak diperingatkan. Nama aksi dan field
+  Feeder mengikuti pemakaian komunitas dan perlu diverifikasi terhadap
+  dokumentasi build Feeder kampus.
+
 ## ADR-021 — SKS diakui pindahan diturunkan dari konversi; semester masuk dan batas KRS pertama membacanya (2026-10-26)
 
 - **Konteks.** Sejak #25 `mahasiswa` punya `jenis_daftar`, `pt_asal`,
@@ -344,3 +392,20 @@
   daftar ulang biasa; `PmbService::daftarUlang()` kini juga mengisi `term_masuk`,
   yang selama ini kosong sehingga setiap mahasiswa hasil PMB gagal pemeriksaan
   periode masuk.
+
+## ADR-023 — CI menguji PHP 8.2, 8.4, dan 8.5; produksi berjalan di 8.4/8.5 (2026-10-26)
+
+- **Konteks.** `composer.json` mengizinkan `^8.2` dan CI hanya menguji 8.2,
+  padahal instalasi produksi berjalan di PHP 8.4 atau 8.5. Tes yang hijau di
+  CI tidak membuktikan apa pun tentang versi tempat kode benar-benar dijalankan;
+  perilaku yang berubah atau usang di 8.4/8.5 baru akan tampak di server. Celah
+  inti PHP 21 Oktober 2026 sekaligus memaksa XAMPP pengembang naik dari 8.2.12.
+- **Keputusan.** Job CI menjadi matriks `['8.2', '8.4', '8.5']` dengan
+  `fail-fast: false`. Pest berjalan di ketiganya; Pint dan `npm run build` tidak
+  bergantung pada versi PHP dan hanya berjalan di 8.4. Batas bawah `^8.2` tetap,
+  supaya kampus di shared hosting yang masih di 8.2 tidak terkunci keluar.
+  Lingkungan pengembang disarankan mengikuti produksi (8.4).
+- **Konsekuensi.** Waktu CI kira-kira tiga kali lipat untuk langkah tes, berjalan
+  paralel. Begitu dukungan keamanan PHP 8.2 berakhir (31 Desember 2026), batas
+  bawah layak dinaikkan ke `^8.4` dan 8.2 dikeluarkan dari matriks — keputusan
+  terpisah, karena memutus instalasi yang masih di 8.2.
