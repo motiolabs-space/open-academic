@@ -36,8 +36,14 @@ beforeEach(function () {
     $this->seed(RolePermissionSeeder::class);
 
     $this->term = TahunAkademik::factory()->berjalan()->create(['is_active' => true, 'tahun_mulai' => 2026]);
-    $this->prodiA = Prodi::factory()->create(['kode' => 'IF', 'kode_pddikti' => '55201', 'nama' => 'Informatika']);
-    $this->prodiB = Prodi::factory()->create(['kode' => 'SI', 'kode_pddikti' => '57201', 'nama' => 'Sistem Informasi']);
+    // kode_pddikti holds PDDIKTI's id_sms, a UUID, as on a campus that has
+    // pulled its Feeder references; the NIM is built from the short `kode`.
+    $this->prodiA = Prodi::factory()->create([
+        'kode' => 'IF', 'kode_pddikti' => 'f127ba98-41bc-3d06-9935-a0fcf911fd19', 'nama' => 'Informatika',
+    ]);
+    $this->prodiB = Prodi::factory()->create([
+        'kode' => 'SI', 'kode_pddikti' => '0a9c3e21-7d44-4f1b-8e2a-5b6c7d8e9f10', 'nama' => 'Sistem Informasi',
+    ]);
 
     $this->gelombang = PmbGelombang::create([
         'tahun_akademik_id' => $this->term->id,

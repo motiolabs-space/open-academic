@@ -384,7 +384,7 @@ sudah ada di PDDIKTI. #33 murah karena datanya sudah ada sejak #25. #32 adalah
 pekerjaan terbesar dan satu-satunya yang membuka portal keempat (calon
 mahasiswa); kerjakan setelah Feeder tuntas, supaya pendaftar yang diterima
 langsung punya riwayat pendidikan yang benar (#25). **#32 selesai** 26 Oktober
-2026 (Sesi 53, ADR-024).
+2026 (Sesi 56, ADR-024).
 
 ### Yang dipelajari dan sengaja tidak diikuti
 

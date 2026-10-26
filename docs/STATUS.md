@@ -4,7 +4,7 @@
 
 ---
 
-## Sesi 53 — 2026-10-26 · PMB daring: calon mendaftar sendiri, portal keempat
+## Sesi 56 — 2026-10-26 · PMB daring: calon mendaftar sendiri, portal keempat
 
 Roadmap #32, branch `feature/pmb-daring`. Berjalan paralel dengan sesi #34
 (jadwal ujian) dan paket kecil #45/#27b/OpenAPI; konflik teks di berkas ini,
