@@ -19,6 +19,7 @@ use App\Services\Feeder\Mappers\BimbingMbkmMapper;
 use App\Services\Feeder\Mappers\BimbingTugasAkhirMapper;
 use App\Services\Feeder\Mappers\DosenPengajarMapper;
 use App\Services\Feeder\Mappers\FeederMapper;
+use App\Services\Feeder\Mappers\FlagshipMbkmMapper;
 use App\Services\Feeder\Mappers\KelasKuliahMapper;
 use App\Services\Feeder\Mappers\KomponenEvaluasiMapper;
 use App\Services\Feeder\Mappers\KonversiMbkmMapper;
@@ -92,6 +93,7 @@ class FeederSyncService
         'prestasi' => PrestasiMapper::class,
         'transfer_kredit' => TransferKreditMapper::class,
         'konversi_mbkm' => KonversiMbkmMapper::class,
+        'flagship_mbkm' => FlagshipMbkmMapper::class,
         'lulus_do' => LulusDoMapper::class,
     ];
 
@@ -504,7 +506,7 @@ class FeederSyncService
             KelasKuliahMapper::class => ['id_kelas_kuliah' => $feederId],
             DosenPengajarMapper::class => ['id_aktivitas_mengajar' => $feederId],
             KomponenEvaluasiMapper::class => ['id_komponen_evaluasi' => $feederId],
-            AktivitasMbkmMapper::class, TugasAkhirMapper::class => ['id_aktivitas' => $feederId],
+            AktivitasMbkmMapper::class, TugasAkhirMapper::class, FlagshipMbkmMapper::class => ['id_aktivitas' => $feederId],
             AnggotaMbkmMapper::class, AnggotaTugasAkhirMapper::class => ['id_anggota' => $feederId],
             BimbingMbkmMapper::class, BimbingTugasAkhirMapper::class => ['id_bimbing_mahasiswa' => $feederId],
             UjiTugasAkhirMapper::class => ['id_uji' => $feederId],

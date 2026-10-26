@@ -22,7 +22,7 @@ beforeEach(function () {
     $this->seed(RolePermissionSeeder::class);
 
     $this->term = TahunAkademik::factory()->berjalan()->create(['is_active' => true]);
-    $this->prodi = Prodi::factory()->create(['kode' => 'IF', 'kode_pddikti' => '55201']);
+    $this->prodi = Prodi::factory()->create(['kode' => '55201', 'kode_pddikti' => fake()->uuid()]);
     $this->staf = Staff::factory()->create();
     $this->staf->assignRole('baak');
 

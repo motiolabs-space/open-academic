@@ -42,6 +42,14 @@ class FeederController extends Controller
 
         $term = Portal::term();
 
+        $perubahan = FeederChangeRequest::query()
+            ->with(['mahasiswa', 'surat'])
+            ->terbuka()
+            ->orderBy('status')
+            ->latest('id')
+            ->limit(60)
+            ->get();
+
         return view('admin.feeder', [
             'judul' => 'Neo Feeder PDDIKTI',
             'konteks' => $term->nama.' · mode '.config('feeder.driver'),
@@ -58,13 +66,8 @@ class FeederController extends Controller
                 ->get(),
             'validasiTerakhir' => $this->validasiTerakhir(),
             'selisih' => $this->selisihTerakhir($term->kode),
-            'perubahan' => FeederChangeRequest::query()
-                ->with('mahasiswa')
-                ->terbuka()
-                ->orderBy('status')
-                ->latest('id')
-                ->limit(60)
-                ->get(),
+            'perubahan' => $perubahan,
+            'kelompokSurat' => $this->kelompokSurat($perubahan),
             'perubahanSelesai' => FeederChangeRequest::query()
                 ->where('status', StatusPerubahanFeeder::Selesai->value)
                 ->count(),
@@ -244,6 +247,25 @@ class FeederController extends Controller
                 'dapat_dihapus' => app(FeederSyncService::MAPPERS[$entity])->actHapus() !== null,
             ];
         })->values();
+    }
+
+    /**
+     * The requests that still need a letter, grouped the way a letter carries
+     * them: one student, one procedure. Keyed by the id of the row the form
+     * is shown on, so the console offers one letter per group, not per row.
+     *
+     * @param Collection<int, FeederChangeRequest> $perubahan
+     * @return array<int, array<int, string>> request id => uuids the letter carries
+     */
+    private function kelompokSurat(Collection $perubahan): array
+    {
+        return $perubahan
+            ->filter(fn (FeederChangeRequest $p): bool => $p->perluSurat())
+            ->groupBy(fn (FeederChangeRequest $p): string => $p->mahasiswa_id.'|'.$p->jenis->value)
+            ->mapWithKeys(fn (Collection $kelompok): array => [
+                $kelompok->first()->id => $kelompok->pluck('uuid')->all(),
+            ])
+            ->all();
     }
 
     /** @return Collection<int, FeederValidationIssue> */

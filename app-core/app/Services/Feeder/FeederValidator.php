@@ -24,6 +24,7 @@ use App\Models\Akademik\PeriodePerkuliahan;
 use App\Models\Akademik\SkalaNilaiProdi;
 use App\Models\Feeder\FeederChangeRequest;
 use App\Models\Feeder\FeederMapping;
+use App\Models\Feeder\FeederRef;
 use App\Models\Feeder\FeederValidationIssue;
 use App\Models\Kemahasiswaan\AktivitasMahasiswa;
 use App\Models\Kemahasiswaan\Mahasiswa;
@@ -130,6 +131,7 @@ class FeederValidator
             'prestasi' => $this->prestasi($model),
             'transfer_kredit' => $this->transferKredit($model),
             'konversi_mbkm' => $this->konversiMbkm($model),
+            'flagship_mbkm' => $this->flagshipMbkm($model),
             'lulus_do' => $this->lulusDo($model),
             default => collect(),
         };
@@ -796,6 +798,36 @@ class FeederValidator
 
         if ($d->nilai?->nilai_huruf === null) {
             $isu->push($this->error('huruf_kosong', 'Nilai huruf belum ditetapkan.'));
+        }
+
+        return $isu;
+    }
+
+    /**
+     * A flagship claim rests on an activity and a member PDDIKTI already
+     * holds, and on a programme PDDIKTI still lists. A code that vanished
+     * from the latest reference pull is a programme the ministry retired or
+     * renumbered; claiming it would be refused, so it is caught here.
+     *
+     * @param AktivitasMahasiswa $a
+     */
+    private function flagshipMbkm(Model $a): Collection
+    {
+        $isu = collect();
+
+        if (blank($a->feeder_id)) {
+            $isu->push($this->error('aktivitas_belum_sinkron', __('feeder.flagship.validasi.aktivitas_belum_sinkron')));
+        }
+
+        if (blank($a->feeder_anggota_id)) {
+            $isu->push($this->error('anggota_belum_sinkron', __('feeder.flagship.validasi.anggota_belum_sinkron')));
+        }
+
+        if (!FeederRef::query()->type('program_flagship')->where('code', $a->flagship_kode)->exists()) {
+            $isu->push($this->error('program_flagship_tidak_dikenal', __('feeder.flagship.validasi.program_tidak_dikenal', [
+                'kode' => $a->flagship_kode,
+                'act' => config('feeder.references.program_flagship'),
+            ])));
         }
 
         return $isu;

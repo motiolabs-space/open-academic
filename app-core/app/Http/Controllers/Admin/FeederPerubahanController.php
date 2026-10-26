@@ -6,19 +6,44 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\AjukanPerubahanFeederRequest;
+use App\Http\Requests\Admin\TerbitkanSuratPerubahanRequest;
 use App\Models\Feeder\FeederChangeRequest;
 use App\Services\Feeder\FeederPerubahanService;
+use App\Services\Surat\PermohonanFeederSurat;
 use App\Support\Portal;
 use Illuminate\Http\RedirectResponse;
 
 /**
- * The three things an operator does with a PDM/PJK request: file it at
- * PDDIKTI admin, send it through the web service where that is allowed, and
- * declare it done once PDDIKTI holds the new value.
+ * The things an operator does with a PDM/PJK request: issue the letter that
+ * files it at PDDIKTI admin (or record one written elsewhere), send it
+ * through the web service where that is allowed, and declare it done once
+ * PDDIKTI holds the new value.
  */
 class FeederPerubahanController extends Controller
 {
-    public function __construct(private readonly FeederPerubahanService $perubahan) {}
+    public function __construct(
+        private readonly FeederPerubahanService $perubahan,
+        private readonly PermohonanFeederSurat $surat,
+    ) {}
+
+    /** Issues one request letter for several requests of the same student (#27b). */
+    public function terbitkanSurat(TerbitkanSuratPerubahanRequest $request): RedirectResponse
+    {
+        $permintaan = FeederChangeRequest::query()
+            ->whereIn('uuid', $request->validated('perubahan'))
+            ->orderBy('id')
+            ->get();
+
+        $permintaan->each(fn (FeederChangeRequest $p) => $this->authorize('update', $p));
+
+        $surat = $this->surat->terbitkan($permintaan, Portal::user(), $request->validated('alasan'));
+
+        return back()->with('sukses', __('surat.permohonan_feeder.pesan.terbit', [
+            'nomor' => $surat->nomor,
+            'nim' => $surat->isi('nim'),
+            'jumlah' => $permintaan->count(),
+        ]));
+    }
 
     public function ajukan(AjukanPerubahanFeederRequest $request, FeederChangeRequest $perubahan): RedirectResponse
     {

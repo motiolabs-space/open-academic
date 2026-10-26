@@ -137,4 +137,14 @@ class FeederException extends RuntimeException
             .'belum ditetapkan pada config/feeder.php (bagian reconcile).',
         );
     }
+
+    public static function klaimFlagshipTidakDapatDicabut(): self
+    {
+        return new self(__('feeder.flagship.galat.tidak_dapat_dicabut'));
+    }
+
+    public static function programFlagshipTidakDikenal(string $kode): self
+    {
+        return new self(__('feeder.flagship.galat.program_tidak_dikenal', ['kode' => $kode]));
+    }
 }

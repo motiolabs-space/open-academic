@@ -197,6 +197,9 @@
                         @if ($p->nomor_surat)
                             · {{ __('feeder.perubahan.surat', ['nomor' => $p->nomor_surat]) }}
                         @endif
+                        @if ($p->surat)
+                            · <a href="{{ route('admin.surat.unduh', $p->surat) }}" class="text-navy underline">{{ __('surat.permohonan_feeder.konsol.unduh') }}</a>
+                        @endif
                         @if ($p->error_message)
                             · <span class="text-danger">{{ __('feeder.perubahan.gagal', ['sebab' => $p->error_message]) }}</span>
                         @endif
@@ -210,6 +213,19 @@
                             <x-button type="submit" class="px-3 py-1.5 text-xs" :disabled="! $aktif">{{ __('feeder.perubahan.tombol.kirim') }}</x-button>
                         </form>
                     @endif
+
+                    @isset($kelompokSurat[$p->id])
+                        <form method="POST" action="{{ route('admin.feeder.perubahan.surat') }}" class="flex items-center gap-2">
+                            @csrf
+                            @foreach ($kelompokSurat[$p->id] as $uuid)
+                                <input type="hidden" name="perubahan[]" value="{{ $uuid }}">
+                            @endforeach
+                            <input type="text" name="alasan" required maxlength="255" placeholder="{{ __('surat.permohonan_feeder.konsol.alasan') }}"
+                                title="{{ trans_choice('surat.permohonan_feeder.konsol.mencakup', count($kelompokSurat[$p->id]), ['jumlah' => count($kelompokSurat[$p->id])]) }}"
+                                class="w-44 rounded-control border border-line-input bg-surface px-2 py-1.5 text-[12px]" />
+                            <x-button type="submit" class="px-3 py-1.5 text-xs">{{ __('surat.permohonan_feeder.konsol.terbitkan') }}</x-button>
+                        </form>
+                    @endisset
 
                     @if ($p->status === \App\Enums\StatusPerubahanFeeder::Menunggu)
                         <form method="POST" action="{{ route('admin.feeder.perubahan.ajukan', $p) }}" class="flex items-center gap-2">

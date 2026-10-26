@@ -13,7 +13,9 @@ info:
     ### Otorisasi
     Setiap endpoint menyatakan scope yang dibutuhkannya. Daftar scope melekat
     pada aplikasi konsumen, bukan pada token — mencabut scope berlaku seketika
-    tanpa perlu menerbitkan token baru.
+    tanpa perlu menerbitkan token baru. Scope tiap operasi tercantum pada
+    `security`-nya (daftar peran skema bearer, OpenAPI 3.1); seluruhnya wajib
+    dimiliki.
 
     ### Batas privasi
     Payload sengaja lebih sempit dari model internalnya. NIK, alamat rumah,
@@ -45,10 +47,12 @@ tags:
   - name: Terms
   - name: Evaluations
   - name: Workload
+  - name: IKU
 
 paths:
   /students:
     get:
+      security: [{ bearerAuth: [students.read] }]
       tags: [Students]
       summary: Daftar mahasiswa
       description: Membutuhkan scope `students.read`.
@@ -77,6 +81,7 @@ paths:
 
   /students/{uuid}:
     get:
+      security: [{ bearerAuth: [students.read] }]
       tags: [Students]
       summary: Satu mahasiswa, lengkap dengan riwayat semester
       parameters:
@@ -94,6 +99,7 @@ paths:
 
   /students/statistics:
     get:
+      security: [{ bearerAuth: [students.read] }]
       tags: [Students]
       summary: Cacah agregat per status dan per program studi
       description: Agar dasbor tidak perlu menelusuri seluruh halaman hanya untuk menghitung.
@@ -102,6 +108,7 @@ paths:
 
   /lecturers:
     get:
+      security: [{ bearerAuth: [lecturers.read] }]
       tags: [Lecturers]
       summary: Daftar dosen
       description: Membutuhkan scope `lecturers.read`.
@@ -125,6 +132,7 @@ paths:
 
   /lecturers/{uuid}:
     get:
+      security: [{ bearerAuth: [lecturers.read] }]
       tags: [Lecturers]
       summary: Satu dosen beserta penugasannya
       parameters:
@@ -135,6 +143,7 @@ paths:
 
   /classes:
     get:
+      security: [{ bearerAuth: [classes.read] }]
       tags: [Classes]
       summary: Kelas kuliah pada satu semester
       description: Membutuhkan scope `classes.read`.
@@ -150,6 +159,7 @@ paths:
           schema: { type: boolean }
           description: Hanya kelas yang diampu bersama praktisi (bukti IKU 4)
         - $ref: '#/components/parameters/PerPage'
+        - $ref: '#/components/parameters/Page'
       responses:
         '200':
           description: OK
@@ -159,10 +169,64 @@ paths:
                 type: object
                 properties:
                   data: { type: array, items: { $ref: '#/components/schemas/CourseClass' } }
-        '404': { description: Kode semester tidak dikenal }
+                  links: { $ref: '#/components/schemas/PaginationLinks' }
+                  meta: { $ref: '#/components/schemas/PaginationMeta' }
+        '403': { $ref: '#/components/responses/ScopeDitolak' }
+        '404': { description: 'Kode semester tidak dikenal, atau tidak ada semester aktif' }
+
+  /classes/{uuid}:
+    get:
+      security: [{ bearerAuth: [classes.read] }]
+      tags: [Classes]
+      summary: Satu kelas kuliah, lengkap dengan pengajar dan jadwal
+      description: |
+        Membutuhkan scope `classes.read`. Bentuknya sama dengan satu butir
+        `/classes`; tidak dibatasi semester, jadi kelas semester lampau tetap
+        dapat dibaca lewat uuid-nya. Satu objek, tidak berhalaman.
+      parameters:
+        - { name: uuid, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/CourseClass' }
+              example:
+                data:
+                  uuid: e59d244c-b129-4dcc-9c02-a0a9214562fb
+                  semester: "20261"
+                  kode_kelas: A
+                  mata_kuliah: { kode: IF2103, nama: Basis Data, sks: 3 }
+                  prodi: { kode: "55201", nama: Informatika }
+                  kuota: 40
+                  terisi: 36
+                  mode: tatap_muka
+                  metode_pembelajaran: { case_method: true, team_based_project: false, kolaboratif: true }
+                  status_nilai: belum
+                  pengajar:
+                    - uuid: 7b29bf23-6746-46e8-94a9-55f4e60bd0a0
+                      nama: Lintang Nuraini, S.Kom., M.Kom.
+                      nidn: "0406098043"
+                      peran: pengampu
+                      praktisi: false
+                      instansi: null
+                    - uuid: 0c1f8e7a-55d2-4b6e-9a1d-3f2b7c9e4d10
+                      nama: Bayu Prasetyo
+                      nidn: null
+                      peran: praktisi
+                      praktisi: true
+                      instansi: PT Nusantara Digital
+                  jadwal:
+                    - { hari: Senin, jam_mulai: "07:30", jam_selesai: "10:00", ruang: R-301 }
+        '403': { $ref: '#/components/responses/ScopeDitolak' }
+        '404': { description: Tidak ditemukan }
 
   /student-activities:
     get:
+      security: [{ bearerAuth: [activities.read] }]
       tags: [Activities]
       summary: Aktivitas MBKM mahasiswa
       description: |
@@ -189,6 +253,7 @@ paths:
 
   /graduates:
     get:
+      security: [{ bearerAuth: [graduates.read] }]
       tags: [Graduates]
       summary: Lulusan yang sudah ditetapkan
       description: Membutuhkan scope `graduates.read`. Populasi awal tracer study IKU 1.
@@ -199,8 +264,92 @@ paths:
       responses:
         '200': { description: OK }
 
+  /iku-data:
+    get:
+      security: [{ bearerAuth: [students.read, lecturers.read, classes.read, activities.read, graduates.read] }]
+      tags: [IKU]
+      summary: Cacahan fakta transaksional di balik IKU 1, 2, 3, 4, 7, dan 11
+      description: |
+        Membutuhkan **kelima** scope `students.read`, `lecturers.read`,
+        `classes.read`, `activities.read`, dan `graduates.read` — endpoint
+        ringkas tidak boleh menjadi jalan pintas membaca data yang scope-nya
+        tidak diberikan.
+
+        **Bukan kalkulator IKU.** Tidak ada skor, ambang, maupun target. Setiap
+        angka adalah cacah catatan yang juga dikembalikan endpoint daftar,
+        dijumlahkan agar dasbor tidak perlu menelusuri seluruh halaman. Angka
+        yang bergantung pada ketentuan menteri — ambang 20 SKS MBKM, misalnya —
+        dikembalikan per kelompok, dan keputusannya milik konsumen.
+
+        Satu objek, tidak berhalaman. Cacahan per kode (`per_jenis`,
+        `per_status_pekerjaan`, `per_jenis_mitra`, `per_status_mahasiswa`)
+        berupa objek kode → cacah; **bila tidak ada satu pun catatan, dikirim
+        sebagai larik kosong `[]`**, bukan `{}`.
+
+        Lulusan dan efisiensi bersifat kumulatif (seluruh lulusan, seluruh
+        mahasiswa aktif); `semester` hanya menyaring `pada_semester_ini` dan
+        butir IKU lainnya.
+      parameters:
+        - $ref: '#/components/parameters/Semester'
+        - { name: prodi, in: query, schema: { type: string }, description: Kode program studi. Kosong berarti seluruh kampus. }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/IkuData' }
+              example:
+                data:
+                  semester: "20261"
+                  prodi: semua
+                  catatan: Cacahan fakta transaksional. Tidak memuat skor, ambang, maupun target — perhitungan indikator dilakukan konsumen.
+                  iku_1_lulusan:
+                    total_lulusan: 412
+                    pada_semester_ini: 58
+                    per_status_pekerjaan: { bekerja: 190, wirausaha: 21, studi_lanjut: 12, belum_ditelusuri: 189 }
+                    rata_ipk: 3.41
+                  iku_2_pengalaman_luar_kampus:
+                    total_catatan: 96
+                    terverifikasi: 88
+                    belum_terverifikasi: 8
+                    mahasiswa_terlibat: 81
+                    per_jenis: { magang: 54, studi_independen: 20, pertukaran_pelajar: 14 }
+                    per_sks_konversi: { "0-5": 9, "6-19": 17, "20+": 62 }
+                  iku_3_dosen_luar_kampus:
+                    total_penugasan: 14
+                    dosen_terlibat: 11
+                    per_jenis: { tugas_industri: 8, penelitian: 4, pengabdian: 2 }
+                    per_jenis_mitra: { industri: 8, kampus: 6 }
+                  iku_4_praktisi_mengajar:
+                    total_kelas: 240
+                    kelas_dengan_praktisi: 19
+                    praktisi_terlibat: 12
+                    penugasan_praktisi_mengajar:
+                      total_penugasan: 12
+                      dosen_terlibat: 12
+                      per_jenis: { praktisi_mengajar: 12 }
+                      per_jenis_mitra: { industri: 12 }
+                  iku_7_kelas_kolaboratif:
+                    total_kelas: 240
+                    case_method: 61
+                    team_based_project: 44
+                    keduanya: 12
+                    salah_satu: 93
+                  iku_11_efisiensi:
+                    mahasiswa_aktif: 3120
+                    dosen_aktif_ber_nidn: 104
+                    rasio_dosen_mahasiswa: 30
+                    per_status_mahasiswa: { A: 3120, C: 41, N: 77, L: 412 }
+                    jumlah_prodi: 9
+        '403': { $ref: '#/components/responses/ScopeDitolak' }
+        '404': { description: 'Kode semester tidak dikenal, atau tidak ada semester aktif' }
+
   /teaching-evaluations:
     get:
+      security: [{ bearerAuth: [evaluations.read, lecturers.read] }]
       tags: [Evaluations]
       summary: Rekap agregat evaluasi dosen (EDOM)
       description: |
@@ -257,6 +406,7 @@ paths:
 
   /lecturer-workload:
     get:
+      security: [{ bearerAuth: [workload.read, lecturers.read] }]
       tags: [Workload]
       summary: Portofolio & beban kerja dosen (bahan SISTER/BKD)
       description: |
@@ -298,10 +448,11 @@ paths:
                       per-dosen memuat `dosen` (riwayat pendidikan, jabatan,
                       sertifikasi) dan `semester` (kegiatan beserta laporan BKD).
         '403': { $ref: '#/components/responses/ScopeDitolak' }
-        '404': { description: NIDN tidak ditemukan, atau tidak ada semester aktif }
+        '404': { description: 'NIDN tidak ditemukan, atau tidak ada semester aktif' }
 
   /academic-terms:
     get:
+      security: [{ bearerAuth: [terms.read] }]
       tags: [Terms]
       summary: Seluruh tahun akademik
       description: Membutuhkan scope `terms.read`.
@@ -317,6 +468,7 @@ paths:
 
   /academic-terms/current:
     get:
+      security: [{ bearerAuth: [terms.read] }]
       tags: [Terms]
       summary: Semester yang sedang aktif
       responses:
@@ -360,9 +512,20 @@ components:
       type: object
       properties:
         current_page: { type: integer }
+        from: { type: [integer, "null"] }
+        to: { type: [integer, "null"] }
         per_page: { type: integer }
         total: { type: integer }
         last_page: { type: integer }
+        path: { type: string, format: uri }
+
+    PaginationLinks:
+      type: object
+      properties:
+        first: { type: string, format: uri }
+        last: { type: string, format: uri }
+        prev: { type: [string, "null"], format: uri }
+        next: { type: [string, "null"], format: uri }
 
     Student:
       type: object
@@ -440,9 +603,14 @@ components:
             kode: { type: string }
             nama: { type: string }
             sks: { type: integer }
-        prodi: { $ref: '#/components/schemas/ProdiRingkas' }
+        prodi:
+          type: object
+          properties:
+            kode: { type: string }
+            nama: { type: string }
         kuota: { type: integer }
         terisi: { type: integer }
+        mode: { type: string, enum: [tatap_muka, daring, hybrid] }
         metode_pembelajaran:
           type: object
           description: Bukti IKU 7
@@ -450,15 +618,28 @@ components:
             case_method: { type: boolean }
             team_based_project: { type: boolean }
             kolaboratif: { type: boolean }
+        status_nilai: { type: string, enum: [belum, sebagian, final] }
         pengajar:
+          type: array
+          description: Bukti IKU 4 lewat `peran = praktisi`
+          items:
+            type: object
+            properties:
+              uuid: { type: string, format: uuid }
+              nama: { type: string, description: Nama lengkap beserta gelar }
+              nidn: { type: [string, "null"] }
+              peran: { type: string, enum: [pengampu, pendamping, praktisi] }
+              praktisi: { type: boolean }
+              instansi: { type: [string, "null"], description: Instansi asal praktisi }
+        jadwal:
           type: array
           items:
             type: object
             properties:
-              uuid: { type: string }
-              nama: { type: string }
-              peran: { type: string, enum: [pengampu, pendamping, praktisi] }
-              praktisi: { type: boolean }
+              hari: { type: string, example: Senin }
+              jam_mulai: { type: string, example: "07:30" }
+              jam_selesai: { type: string, example: "10:00" }
+              ruang: { type: [string, "null"], description: Kode ruang }
 
     StudentActivity:
       type: object
@@ -496,6 +677,75 @@ components:
         kode: { type: string }
         nama: { type: string }
         jenjang: { type: string }
+
+    CacahPerKode:
+      description: Kode → cacah. Dikirim sebagai `[]` bila tidak ada satu pun catatan.
+      oneOf:
+        - type: object
+          additionalProperties: { type: integer }
+        - type: array
+          maxItems: 0
+
+    CacahPenugasan:
+      type: object
+      properties:
+        total_penugasan: { type: integer }
+        dosen_terlibat: { type: integer }
+        per_jenis: { $ref: '#/components/schemas/CacahPerKode' }
+        per_jenis_mitra: { $ref: '#/components/schemas/CacahPerKode' }
+
+    IkuData:
+      type: object
+      properties:
+        semester: { type: string, example: "20261" }
+        prodi: { type: string, description: 'Kode prodi yang diminta, atau `semua`' }
+        catatan: { type: string }
+        iku_1_lulusan:
+          type: object
+          properties:
+            total_lulusan: { type: integer }
+            pada_semester_ini: { type: integer }
+            per_status_pekerjaan: { $ref: '#/components/schemas/CacahPerKode' }
+            rata_ipk: { type: number, description: 0 bila belum ada lulusan }
+        iku_2_pengalaman_luar_kampus:
+          type: object
+          properties:
+            total_catatan: { type: integer }
+            terverifikasi: { type: integer }
+            belum_terverifikasi: { type: integer }
+            mahasiswa_terlibat: { type: integer, description: Dari catatan terverifikasi }
+            per_jenis: { $ref: '#/components/schemas/CacahPerKode' }
+            per_sks_konversi:
+              type: object
+              description: Dikelompokkan, bukan diambangi — ambangnya milik konsumen.
+              properties:
+                "0-5": { type: integer }
+                "6-19": { type: integer }
+                "20+": { type: integer }
+        iku_3_dosen_luar_kampus: { $ref: '#/components/schemas/CacahPenugasan' }
+        iku_4_praktisi_mengajar:
+          type: object
+          properties:
+            total_kelas: { type: integer }
+            kelas_dengan_praktisi: { type: integer }
+            praktisi_terlibat: { type: integer }
+            penugasan_praktisi_mengajar: { $ref: '#/components/schemas/CacahPenugasan' }
+        iku_7_kelas_kolaboratif:
+          type: object
+          properties:
+            total_kelas: { type: integer }
+            case_method: { type: integer }
+            team_based_project: { type: integer }
+            keduanya: { type: integer }
+            salah_satu: { type: integer }
+        iku_11_efisiensi:
+          type: object
+          properties:
+            mahasiswa_aktif: { type: integer }
+            dosen_aktif_ber_nidn: { type: integer }
+            rasio_dosen_mahasiswa: { type: [number, "null"], description: Null bila tidak ada dosen ber-NIDN }
+            per_status_mahasiswa: { $ref: '#/components/schemas/CacahPerKode' }
+            jumlah_prodi: { type: integer }
 
   # ---------------------------------------------------------------------------
   # Webhook — sisi dorong dari kontrak ini
