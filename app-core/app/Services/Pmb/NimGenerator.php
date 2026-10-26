@@ -77,22 +77,13 @@ class NimGenerator
     /**
      * The programme's slot in the number.
      *
-     * Prefers the national five-digit programme code when that is what
-     * `kode_pddikti` holds: it is stable nationally, so a NIM built on it stays
-     * meaningful if the campus renames its internal codes.
-     *
-     * Only then. Once the Feeder reference pull has run, the column holds the
-     * programme's `id_prodi` — a UUID the mappers send — and a NIM built on it
-     * came out as "26f127ba98-…0001": 46 characters into a 32-character
-     * column, which MySQL refuses outright and SQLite stored without a word.
-     * The local code is the fallback for anything that is not the national
-     * format.
+     * Prefers the PDDIKTI code when present: it is the one identifier that is
+     * stable nationally, so a NIM built on it stays meaningful if the campus
+     * renames its internal codes.
      */
     private function kodeProdi(Prodi $prodi): string
     {
-        $nasional = (string) $prodi->kode_pddikti;
-
-        return preg_match('/^\d{5}$/', $nasional) === 1 ? $nasional : $prodi->kode;
+        return $prodi->kode_pddikti ?: $prodi->kode;
     }
 
     private function urutBerikutnya(string $awalan, int $panjang): int
