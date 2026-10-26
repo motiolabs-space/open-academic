@@ -81,6 +81,9 @@
                                 </td>
                                 <td class="px-5 py-3">
                                     <div class="flex justify-end gap-1.5">
+                                        <x-button variant="outline" size="sm" :href="route('admin.dosen.kepegawaian', $d)">
+                                            {{ __('kepegawaian.judul') }}
+                                        </x-button>
                                         <form method="POST" action="{{ route('admin.dosen.reset-sandi', $d) }}"
                                             onsubmit="return confirm('Terbitkan kata sandi baru untuk {{ $d->nama }}? Kata sandi lamanya langsung tidak berlaku.');">
                                             @csrf

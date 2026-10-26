@@ -592,3 +592,47 @@
   resmi yang dapat diverifikasi dari sini; perubahan cukup di satu konstanta.
   Penerima surat dapat diatur per kampus (`SURAT_TUJUAN_PDDIKTI`) karena
   sebagian mengajukan lewat LLDIKTI wilayahnya.
+
+## ADR-028 — Riwayat kepegawaian: satu alur validasi di atas tabel bertipe; buku besar angka kredit, bukan penilaian (2026-10-27)
+
+- **Konteks.** #39: SISTER meminta "Profil Dosen" per kelompok, dan sebagian
+  besar kelompok itu tidak punya tempat di sini — delapan riwayat tanpa tabel,
+  enam dengan tabel tanpa layar. Tidak satu pun riwayat punya status: apa pun
+  yang masuk dianggap fakta, sehingga ekspor SISTER akan memuat klaim yang
+  belum pernah diperiksa begitu dosen dapat mengisinya sendiri.
+- **Keputusan (#39).** (1) Delapan tabel baru, tetap bertipe (alasan
+  KEPEGAWAIAN.md), dan **lima kolom validasi yang sama** pada keempat belasnya:
+  `status` (bawaan *diajukan*), `alasan_tolak`, `divalidasi_oleh`,
+  `divalidasi_at`, `dokumen_path`. Enam tabel lama di-backfill *disetujui*
+  karena seluruh barisnya ditulis staf atau seeder. (2) Dua jalur, satu keadaan:
+  dosen **mengajukan** (selalu *diajukan*), staf **mencatat** (langsung
+  *disetujui* atas namanya — staf adalah peninjaunya, dan langkah setuju
+  terpisah adalah orang yang menyetujui dirinya sendiri). (3) Kosakata tunggal
+  `JenisRiwayat` + satu definisi bidang `FormulirRiwayat` + satu policy
+  `RiwayatKepegawaianPolicy` yang didaftarkan untuk keempat belas model, dan
+  parameter rute `{riwayat}` yang diikat dari `{jenis}` di satu tempat —
+  alih-alih empat belas controller yang akan menyimpang. (4) Efek persetujuan
+  hanya di tempat yang memang beraturan: **pangkat berlaku** = disetujui
+  ber-TMT terakhir (bukan terakhir disetujui, supaya SK lama yang diajukan
+  belakangan tidak menurunkan siapa pun); **mutasi** tetap menulis penunjuk dan
+  riwayat bersama, dan tidak disunting/dihapus — koreksinya mutasi baru;
+  **tugas belajar** disetujui membebaskan BKD selama beririsan dengan semester,
+  dibaca di `wajibMelapor()`/`wajibBkd()`, bukan disalin; **pensiun** disetujui
+  menutup akun pada TMT-nya lewat `halanganNonaktifDosen()` yang sama dengan
+  tombol nonaktif, harian lewat `openacademic:tutup-akun-pensiun`. (5) Mutasi,
+  kontrak, dan pensiun **diisi staf saja**. (6) Ekspor SISTER hanya memuat baris
+  disetujui; kelompok yang kini dapat diisi dibuka di katalog, keluarga tetap
+  sengaja tidak diekspor.
+- **Yang dipilih untuk TIDAK ditegakkan (#39).** Jabatan struktural tidak
+  mengurangi beban BKD (sudah keputusan asesor di `config/bkd.php`); kontrak
+  yang berakhir tidak menutup akun (perpanjangan lazim terlambat diproses);
+  akun pensiunan yang masih memegang kelas/perwalian dibiarkan aktif dan
+  dilaporkan, bukan dipaksa tutup; tiga riwayat G7 (pendidikan, jabatan
+  fungsional, sertifikasi) belum dipindah ke alur validasi; riwayat tenaga
+  kependidikan (staf) tidak dicakup.
+- **Konsekuensi (#39).** Bawaan kolom *diajukan* berarti kode lama yang
+  menulis baris tanpa status menghasilkan ajuan, bukan fakta —
+  `naikPangkat()`/`catatMutasi()` kini menulis *disetujui* secara eksplisit.
+  Bahasa yang dihapus lalu ditambah ulang memulihkan baris lamanya, karena
+  indeks unik `(dosen_id, bahasa)` ikut menghitung baris terhapus. Riwayat
+  tidak membawa notifikasi; dosen melihat status dan alasannya di portal.

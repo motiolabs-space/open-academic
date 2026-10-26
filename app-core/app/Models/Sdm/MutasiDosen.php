@@ -6,6 +6,7 @@ namespace App\Models\Sdm;
 
 use App\Traits\HasLogAktivitas;
 use App\Traits\HasUuid;
+use App\Traits\HasValidasiRiwayat;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -17,6 +18,7 @@ class MutasiDosen extends Model
     use HasFactory;
     use HasLogAktivitas;
     use HasUuid;
+    use HasValidasiRiwayat;
     use SoftDeletes;
 
     protected $table = 'mutasi_dosen';
@@ -26,11 +28,6 @@ class MutasiDosen extends Model
     protected function casts(): array
     {
         return ['tmt' => 'date'];
-    }
-
-    public function dosen(): BelongsTo
-    {
-        return $this->belongsTo(Dosen::class);
     }
 
     public function unitAsal(): BelongsTo

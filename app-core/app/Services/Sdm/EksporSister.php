@@ -4,10 +4,9 @@ declare(strict_types=1);
 
 namespace App\Services\Sdm;
 
+use App\Enums\JenisRiwayat;
 use App\Models\Sdm\Dosen;
 use App\Models\Sdm\JabatanFungsionalDosen;
-use App\Models\Sdm\MutasiDosen;
-use App\Models\Sdm\PangkatDosen;
 use App\Models\Sdm\RiwayatPendidikanDosen;
 use App\Models\Sdm\SertifikasiDosen;
 use Illuminate\Database\Eloquent\Builder;
@@ -24,15 +23,20 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
  * group by group. This produces exactly that shape — while there is still
  * nothing to send it to.
  *
- * Two things it refuses to do, both for the same reason:
+ * Three things it refuses to do:
  *
- *  1. **It does not export a group the application cannot record.** Four of
- *     the twelve groups have a table and a relation and no way to fill either.
- *     Their export would be an empty file, and an empty file reads as "this
- *     campus has nobody with a professional membership" when it means "this
- *     application cannot store one". The catalogue says which is which.
+ *  1. **It does not export a group the application cannot record.** An empty
+ *     file reads as "this campus has nobody with a professional membership"
+ *     when it would mean "this application cannot store one". Until #39 four
+ *     groups were in that state; the catalogue still says so for any group
+ *     that ever is again.
  *
- *  2. **It does not export family members.** SISTER holds them; a CSV that
+ *  2. **It does not export what nobody has checked.** Personnel histories
+ *     carry a review status (see RiwayatKepegawaianService), and only approved
+ *     rows leave. A self-reported decree in a ministry submission is the same
+ *     unchecked claim the review exists to stop.
+ *
+ *  3. **It does not export family members.** SISTER holds them; a CSV that
  *     circulates by email is a different channel from a ministry submission,
  *     and names and birthdates of a lecturer's children have no business in
  *     the careless one. Same rule that already keeps NIK out of the shared
@@ -95,6 +99,24 @@ class EksporSister
      |-------------------------------------------------------------------- */
 
     /**
+     * Groups whose rows carry a review status, and the history behind each.
+     *
+     * Only approved rows are counted or exported for these.
+     */
+    private const RIWAYAT = [
+        'pangkat' => JenisRiwayat::Pangkat,
+        'inpassing' => JenisRiwayat::Inpassing,
+        'jabatan_struktural' => JenisRiwayat::JabatanStruktural,
+        'tugas_belajar' => JenisRiwayat::TugasBelajar,
+        'diklat' => JenisRiwayat::Diklat,
+        'pengalaman_kerja' => JenisRiwayat::PengalamanKerja,
+        'mutasi' => JenisRiwayat::Mutasi,
+        'penghargaan_sanksi' => JenisRiwayat::PenghargaanSanksi,
+        'bahasa' => JenisRiwayat::Bahasa,
+        'organisasi' => JenisRiwayat::Organisasi,
+    ];
+
+    /**
      * @var array<string, array{label: string, tersedia: bool, alasan: string|null, catatan?: string, header: array<int, string>}>
      */
     private const GRUP = [
@@ -126,20 +148,53 @@ class EksporSister
         ],
 
         /*
-         * Pangkat and mutasi carry a caveat rather than a refusal.
-         *
-         * Their export works and RiwayatKepegawaianService can write them, but
-         * nothing in the application calls it — no screen, no route. So a
-         * campus reads "0 baris" and concludes it has no promotions on record,
-         * when what it has is no way to record one. The count is true and the
-         * conclusion is false, which is why the note travels with the row.
+         * Pangkat and mutasi used to carry a caveat — the service could write
+         * them and no screen called it, so "0 baris" read as "no promotions".
+         * Both have screens now (#39), and the caveat went with the gap. The
+         * `catatan` slot stays for the next group that is in that state.
          */
         'pangkat' => [
             'label' => 'Pangkat & Golongan',
             'tersedia' => true,
             'alasan' => null,
-            'catatan' => 'Servisnya siap, tetapi belum ada layar untuk mencatat kenaikan pangkat.',
             'header' => ['NIDN', 'Nama', 'Pangkat', 'Golongan', 'TMT', 'Nomor SK', 'Tanggal SK'],
+        ],
+
+        'inpassing' => [
+            'label' => 'Inpassing',
+            'tersedia' => true,
+            'alasan' => null,
+            'header' => ['NIDN', 'Nama', 'Pangkat', 'Golongan', 'Angka Kredit', 'Nomor SK', 'Tanggal SK', 'TMT'],
+        ],
+
+        'jabatan_struktural' => [
+            'label' => 'Jabatan Struktural',
+            'tersedia' => true,
+            'alasan' => null,
+            'header' => ['NIDN', 'Nama', 'Jabatan', 'Unit Kerja', 'Nomor SK', 'Tanggal SK', 'TMT', 'TMT Selesai'],
+        ],
+
+        'tugas_belajar' => [
+            'label' => 'Studi Lanjut',
+            'tersedia' => true,
+            'alasan' => null,
+            'header' => ['NIDN', 'Nama', 'Jenis', 'Jenjang', 'Perguruan Tinggi', 'Program Studi', 'Negara',
+                'Sumber Biaya', 'Nomor SK', 'Mulai', 'Selesai'],
+        ],
+
+        'diklat' => [
+            'label' => 'Diklat',
+            'tersedia' => true,
+            'alasan' => null,
+            'header' => ['NIDN', 'Nama', 'Nama Diklat', 'Jenis', 'Penyelenggara', 'Tingkat', 'Mulai',
+                'Selesai', 'Jumlah Jam', 'Nomor Sertifikat'],
+        ],
+
+        'pengalaman_kerja' => [
+            'label' => 'Pengalaman Kerja',
+            'tersedia' => true,
+            'alasan' => null,
+            'header' => ['NIDN', 'Nama', 'Instansi', 'Jabatan', 'Bidang', 'Mulai', 'Selesai'],
         ],
 
         'sertifikasi' => [
@@ -154,38 +209,38 @@ class EksporSister
             'label' => 'Mutasi & Penempatan',
             'tersedia' => true,
             'alasan' => null,
-            'catatan' => 'Servisnya siap, tetapi belum ada layar untuk mencatat mutasi.',
             'header' => ['NIDN', 'Nama', 'Jenis', 'Unit Asal', 'Unit Tujuan',
                 'TMT', 'Nomor SK', 'Keterangan'],
         ],
 
-        /*
-         * Below: groups whose tables exist and whose data cannot get in.
-         *
-         * Listed rather than omitted. A group missing from the screen looks
-         * like a group SISTER does not ask about.
-         */
-
         'penghargaan_sanksi' => [
             'label' => 'Penghargaan & Sanksi',
-            'tersedia' => false,
-            'alasan' => 'Tabelnya ada, tetapi belum ada layar untuk mengisinya.',
-            'header' => [],
+            'tersedia' => true,
+            'alasan' => null,
+            'header' => ['NIDN', 'Nama', 'Jenis', 'Nama Penghargaan/Sanksi', 'Tingkat', 'Pemberi',
+                'Tanggal', 'Nomor SK'],
         ],
 
         'bahasa' => [
             'label' => 'Kemampuan Bahasa',
-            'tersedia' => false,
-            'alasan' => 'Tabelnya ada, tetapi belum ada layar untuk mengisinya.',
-            'header' => [],
+            'tersedia' => true,
+            'alasan' => null,
+            'header' => ['NIDN', 'Nama', 'Bahasa', 'Kemampuan', 'Sertifikat', 'Skor'],
         ],
 
         'organisasi' => [
             'label' => 'Organisasi Profesi',
-            'tersedia' => false,
-            'alasan' => 'Tabelnya ada, tetapi belum ada layar untuk mengisinya.',
-            'header' => [],
+            'tersedia' => true,
+            'alasan' => null,
+            'header' => ['NIDN', 'Nama', 'Organisasi', 'Peran', 'Tingkat', 'Tahun Mulai', 'Tahun Selesai'],
         ],
+
+        /*
+         * Below: groups that exist and are deliberately not exported.
+         *
+         * Listed rather than omitted. A group missing from the screen looks
+         * like a group SISTER does not ask about.
+         */
 
         'keluarga' => [
             'label' => 'Anggota Keluarga',
@@ -223,9 +278,8 @@ class EksporSister
         $anak = [
             'riwayat_pendidikan' => RiwayatPendidikanDosen::class,
             'jabatan_fungsional' => JabatanFungsionalDosen::class,
-            'pangkat' => PangkatDosen::class,
             'sertifikasi' => SertifikasiDosen::class,
-            'mutasi' => MutasiDosen::class,
+            ...collect(self::RIWAYAT)->map(fn (JenisRiwayat $j): string => $j->model())->all(),
         ];
 
         $query = DB::query()->selectSub(
@@ -240,6 +294,7 @@ class EksporSister
             $query->selectSub(
                 $model::query()
                     ->whereHas('dosen', fn (Builder $q): Builder => $q->aktif())
+                    ->when(isset(self::RIWAYAT[$kunci]), fn (Builder $q): Builder => $q->disetujui())
                     ->selectRaw('count(*)')
                     ->getQuery(),
                 $kunci,
@@ -263,8 +318,59 @@ class EksporSister
             'pangkat' => $this->pangkat(),
             'sertifikasi' => $this->sertifikasi(),
             'mutasi' => $this->mutasi(),
+            'inpassing' => $this->riwayat('inpassing', fn ($r): array => [
+                $r->pangkat, $r->golongan,
+                $r->angka_kredit_ratus === null ? null : $r->angka_kredit_ratus / 100,
+                $r->nomor_sk, $r->tanggal_sk?->toDateString(), $r->tmt->toDateString(),
+            ]),
+            'jabatan_struktural' => $this->riwayat('jabatan_struktural', fn ($r): array => [
+                $r->nama_jabatan, $r->unitKerja?->nama, $r->nomor_sk,
+                $r->tanggal_sk?->toDateString(), $r->tmt->toDateString(), $r->tmt_selesai?->toDateString(),
+            ], ['unitKerja']),
+            'tugas_belajar' => $this->riwayat('tugas_belajar', fn ($r): array => [
+                $r->jenis->value, $r->jenjang->value, $r->perguruan_tinggi, $r->program_studi, $r->negara,
+                $r->sumber_biaya, $r->nomor_sk, $r->tanggal_mulai->toDateString(), $r->tanggal_selesai?->toDateString(),
+            ]),
+            'diklat' => $this->riwayat('diklat', fn ($r): array => [
+                $r->nama, $r->jenis->value, $r->penyelenggara, $r->tingkat?->value,
+                $r->tanggal_mulai->toDateString(), $r->tanggal_selesai?->toDateString(),
+                $r->jumlah_jam, $r->nomor_sertifikat,
+            ]),
+            'pengalaman_kerja' => $this->riwayat('pengalaman_kerja', fn ($r): array => [
+                $r->instansi, $r->jabatan, $r->bidang,
+                $r->tanggal_mulai->toDateString(), $r->tanggal_selesai?->toDateString(),
+            ]),
+            'penghargaan_sanksi' => $this->riwayat('penghargaan_sanksi', fn ($r): array => [
+                $r->jenis, $r->nama, $r->tingkat, $r->pemberi, $r->tanggal->toDateString(), $r->nomor_sk,
+            ]),
+            'bahasa' => $this->riwayat('bahasa', fn ($r): array => [
+                $r->bahasa, $r->kemampuan, $r->sertifikat, $r->skor,
+            ]),
+            'organisasi' => $this->riwayat('organisasi', fn ($r): array => [
+                $r->nama, $r->peran, $r->tingkat, $r->tahun_mulai, $r->tahun_selesai,
+            ]),
             default => collect(),
         };
+    }
+
+    /**
+     * One reviewed history as rows: approved only, NIDN and name first.
+     *
+     * @param callable(Model): array<int, mixed> $kolom
+     * @param array<int, string> $relasiAnak
+     * @return Collection<int, array<int, mixed>>
+     */
+    private function riwayat(string $grup, callable $kolom, array $relasiAnak = []): Collection
+    {
+        $jenis = self::RIWAYAT[$grup];
+        $relasi = $jenis->relasi();
+
+        return $this->dosen([$relasi => fn ($q) => $q->disetujui()->with($relasiAnak)])
+            ->flatMap(fn (Dosen $d): array => $d->{$relasi}
+                ->sortByDesc(fn (Model $m) => $m->getAttribute($jenis->kolomUrut()))
+                ->map(fn (Model $r): array => [$d->nidn, $d->namaLengkap(), ...$kolom($r)])
+                ->values()
+                ->all());
     }
 
     /** @return Collection<int, array<int, mixed>> */
@@ -327,7 +433,7 @@ class EksporSister
     /** @return Collection<int, array<int, mixed>> */
     private function pangkat(): Collection
     {
-        return $this->dosen(['pangkat'])
+        return $this->dosen(['pangkat' => fn ($q) => $q->disetujui()])
             ->flatMap(fn (Dosen $d): array => $d->pangkat
                 ->sortByDesc('tmt')
                 ->map(fn ($p): array => [
@@ -362,7 +468,7 @@ class EksporSister
     /** @return Collection<int, array<int, mixed>> */
     private function mutasi(): Collection
     {
-        return $this->dosen(['mutasi.unitAsal', 'mutasi.unitTujuan'])
+        return $this->dosen(['mutasi' => fn ($q) => $q->disetujui()->with(['unitAsal', 'unitTujuan'])])
             ->flatMap(fn (Dosen $d): array => $d->mutasi
                 ->sortByDesc('tmt')
                 ->map(fn ($m): array => [

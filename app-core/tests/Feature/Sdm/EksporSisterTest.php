@@ -43,21 +43,18 @@ function tangkapUnduhan(StreamedResponse $respons): string
 }
 
 describe('katalog', function () {
-    it('menyebut kelompok yang belum punya jalur pengisian, bukan menyembunyikannya', function () {
+    it('membuka penghargaan, bahasa, dan organisasi begitu layar pengisiannya ada', function () {
         /*
-         * Empat kelompok punya tabel dan relasi tanpa satu pun layar untuk
-         * mengisinya. Menghilangkannya dari daftar akan membuatnya terlihat
-         * seperti kelompok yang memang tidak ditanyakan SISTER.
+         * Sampai #39 ketiganya punya tabel tanpa satu pun layar, dan katalog
+         * menolaknya dengan alasan itu. Kini dosen mengisinya di portal dan
+         * bagian kepegawaian memvalidasinya, jadi penolakannya ikut hilang.
          */
         $katalog = $this->sister->katalog();
 
-        expect($katalog)->toHaveKeys([
-            'penghargaan_sanksi', 'bahasa', 'organisasi', 'keluarga',
-        ]);
-
-        foreach (['penghargaan_sanksi', 'bahasa', 'organisasi'] as $kunci) {
-            expect($katalog[$kunci]['tersedia'])->toBeFalse()
-                ->and($katalog[$kunci]['alasan'])->toContain('belum ada layar');
+        foreach (['penghargaan_sanksi', 'bahasa', 'organisasi', 'diklat', 'inpassing',
+            'jabatan_struktural', 'tugas_belajar', 'pengalaman_kerja'] as $kunci) {
+            expect($katalog[$kunci]['tersedia'])->toBeTrue()
+                ->and($katalog[$kunci]['alasan'])->toBeNull();
         }
     });
 
@@ -70,22 +67,18 @@ describe('katalog', function () {
             ->and($keluarga['alasan'])->toContain('Sengaja tidak diekspor');
     });
 
-    it('menyertai pangkat dan mutasi dengan catatan, karena nol barisnya menyesatkan', function () {
+    it('melepas catatan pangkat dan mutasi setelah keduanya punya layar', function () {
         /*
-         * Ekspornya jalan dan RiwayatKepegawaianService bisa menulisnya, tetapi
-         * tak ada satu pun layar yang memanggilnya. Kampus membaca "0 baris"
-         * lalu menyimpulkan tidak ada kenaikan pangkat tercatat — angkanya
-         * benar, kesimpulannya salah.
+         * Dulu nol baris pangkat menyesatkan: servisnya ada, layarnya tidak.
+         * Sekarang keduanya diisi lewat layar kepegawaian, jadi nol berarti
+         * memang belum ada yang tercatat — dan catatannya tidak perlu lagi.
          */
         $katalog = $this->sister->katalog();
 
-        foreach (['pangkat', 'mutasi'] as $kunci) {
+        foreach (['pangkat', 'mutasi', 'biodata'] as $kunci) {
             expect($katalog[$kunci]['tersedia'])->toBeTrue()
-                ->and($katalog[$kunci]['catatan'])->toContain('belum ada layar');
+                ->and($katalog[$kunci]['catatan'])->toBeNull();
         }
-
-        // Kelompok yang jalur pengisiannya utuh tidak membawa catatan apa pun.
-        expect($katalog['biodata']['catatan'])->toBeNull();
     });
 
     it('menghitung baris untuk kelompok yang tersedia', function () {
@@ -112,8 +105,8 @@ describe('berkas', function () {
             ->and($isi)->not->toContain('NIK');
     });
 
-    it('menolak mengekspor kelompok yang tidak dapat direkam', function () {
-        expect(fn () => $this->sister->csv('bahasa'))
+    it('menolak mengekspor kelompok yang sengaja tidak diekspor', function () {
+        expect(fn () => $this->sister->csv('keluarga'))
             ->toThrow(RuntimeException::class, 'tidak dapat diekspor');
     });
 
@@ -124,14 +117,14 @@ describe('berkas', function () {
 });
 
 describe('layar dan rute', function () {
-    it('menampilkan seluruh kelompok beserta alasan yang belum tersedia', function () {
+    it('menampilkan seluruh kelompok beserta alasan yang tidak diekspor', function () {
         $this->actingAs($this->staf, 'staff')
             ->get('/admin/bkd')
             ->assertOk()
             ->assertSee('Kelompok Data SISTER')
             ->assertSee('Riwayat Pendidikan')
             ->assertSee('Organisasi Profesi')
-            ->assertSee('belum ada layar untuk mengisinya');
+            ->assertSee('Sengaja tidak diekspor');
     });
 
     it('mengunduh kelompok yang tersedia', function () {

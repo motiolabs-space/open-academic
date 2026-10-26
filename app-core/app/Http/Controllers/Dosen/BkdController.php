@@ -97,7 +97,8 @@ class BkdController extends Controller
             'ringkas' => $ringkas,
             'peringatan' => $this->beban->pelanggaranBatas($ringkas),
             'batas' => config('bkd.batas'),
-            'wajib' => $dosen->wajibBkd(),
+            'wajib' => $dosen->wajibBkd($term),
+            'tugasBelajar' => $dosen->sedangTugasBelajar($term),
         ]);
     }
 

@@ -223,7 +223,7 @@ class PortofolioDosen
             ->get()
             ->keyBy('dosen_id');
 
-        return app(BkdService::class)->wajibMelapor()
+        return app(BkdService::class)->wajibMelapor($term)
             ->with('prodi')
             ->orderBy('nama')
             ->get()

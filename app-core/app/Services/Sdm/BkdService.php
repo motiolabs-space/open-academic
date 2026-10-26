@@ -268,7 +268,7 @@ class BkdService
      */
     public function belumMelapor(TahunAkademik $term): Collection
     {
-        return $this->wajibMelapor()
+        return $this->wajibMelapor($term)
             ->whereDoesntHave('laporanBkd', fn ($q) => $q
                 ->where('tahun_akademik_id', $term->id)
                 ->where('status', '!=', StatusBkd::Draft->value))
@@ -283,13 +283,25 @@ class BkdService
      * are asked. A campus may widen it — see config('bkd.wajib') — but that is
      * a choice to impose paperwork the regulation does not.
      *
+     * Approved study leave (tugas belajar, not izin belajar) that overlaps the
+     * term takes a lecturer out of it whatever the setting: leave releases them
+     * from teaching, and chasing somebody on leave for a teaching report is the
+     * reminder that teaches people to ignore reminders. Without a term, today
+     * is the period asked about.
+     *
      * @return Builder<Dosen>
      */
-    public function wajibMelapor()
+    public function wajibMelapor(?TahunAkademik $term = null)
     {
-        return Dosen::aktif()->when(
-            config('bkd.wajib') === 'serdos',
-            fn ($q) => $q->whereHas('sertifikasi', fn ($s) => $s->serdos()),
-        );
+        [$mulai, $selesai] = $term === null
+            ? [now()->toDateString(), now()->toDateString()]
+            : [$term->tanggal_mulai->toDateString(), $term->tanggal_selesai->toDateString()];
+
+        return Dosen::aktif()
+            ->when(
+                config('bkd.wajib') === 'serdos',
+                fn ($q) => $q->whereHas('sertifikasi', fn ($s) => $s->serdos()),
+            )
+            ->whereDoesntHave('tugasBelajar', fn ($q) => $q->membebaskanBkdPada($mulai, $selesai));
     }
 }
