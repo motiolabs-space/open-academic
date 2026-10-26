@@ -7,6 +7,8 @@
     'required' => false,
     'hint' => null,
     'placeholder' => null,
+    // id of a <datalist> offering suggestions; text inputs only.
+    'list' => null,
 ])
 
 @php
@@ -60,6 +62,7 @@
             id="{{ $id }}" type="{{ $type }}" name="{{ $name }}"
             value="{{ $type === 'date' && $isi ? \Illuminate\Support\Carbon::parse($isi)->toDateString() : $isi }}"
             placeholder="{{ $placeholder }}" class="{{ $kelas }}" @required($required)
+            @if ($list) list="{{ $list }}" autocomplete="off" @endif
             @if ($galat) aria-invalid="true" aria-describedby="{{ $id }}-galat" @endif
         >
     @endif

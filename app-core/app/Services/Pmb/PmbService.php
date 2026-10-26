@@ -114,6 +114,10 @@ class PmbService
                 'kurikulum_id' => $this->kurikulumBerlaku($prodi)?->id,
                 'angkatan' => $angkatan,
 
+                // PDDIKTI's id_periode_masuk. Left empty, every intake
+                // registered here failed the enrolment pre-flight check.
+                'term_masuk' => $term->kode,
+
                 // Carried over so the eventual Feeder biodata push is not
                 // blocked by data the applicant already provided.
                 'nik' => $pendaftar->nik,
@@ -189,7 +193,7 @@ class PmbService
     }
 
     /** The curriculum a new intake is bound to for the whole degree. */
-    private function kurikulumBerlaku(Prodi $prodi): ?Kurikulum
+    public function kurikulumBerlaku(Prodi $prodi): ?Kurikulum
     {
         return Kurikulum::query()
             ->where('prodi_id', $prodi->id)
@@ -202,7 +206,7 @@ class PmbService
         return 'INV-'.$term->kode.'-'.Str::upper(Str::random(8));
     }
 
-    private function kataSandiSementara(): string
+    public function kataSandiSementara(): string
     {
         return Str::lower(Str::random(4)).'-'.Str::lower(Str::random(4)).'-'.random_int(100, 999);
     }

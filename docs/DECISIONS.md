@@ -303,3 +303,44 @@
   yang MFA-nya memang dipaksakan di IdP menyalakannya dengan satu variabel.
   Entra ID memerlukan `IDP_REQUIRE_VERIFIED_EMAIL=false` yang disetel sadar,
   karena ia tidak mengirim `email_verified` untuk anggota tenant.
+
+## ADR-020 — SKS diakui pindahan diturunkan dari konversi; semester masuk dan batas KRS pertama membacanya (2026-10-26)
+
+- **Konteks.** Sejak #25 `mahasiswa` punya `jenis_daftar`, `pt_asal`,
+  `prodi_asal`, dan `sks_diakui`, dan Feeder menolak riwayat pendidikan pindahan
+  tanpa keduanya. Kolom itu hanya terisi lewat seeder. Pengakuan kredit sendiri
+  sudah ada di `konversi_kredit` (G5) dengan batas persentase. Bila `sks_diakui`
+  diketik di layar intake, dua angka yang harus sama — total di riwayat
+  pendidikan dan jumlah baris transfer kredit yang dikirim di sampingnya —
+  dipelihara oleh dua orang di dua layar. Mahasiswa pindahan juga masuk dengan
+  semester tempuh 1 dan batas SKS bawaan, seolah tidak membawa apa pun, dan
+  sebagian kampus menghitung masa studi sejak masuk di PT asal.
+- **Keputusan.** (1) `sks_diakui` **bukan input**: `KonversiService` menulisnya
+  sebagai jumlah konversi yang disetujui pada setiap persetujuan dan pencabutan,
+  hanya untuk jenis daftar yang `butuhAsal()`, dan `null` selama jumlahnya nol —
+  supaya validator tetap berkata "belum ada SKS diakui", bukan meloloskan
+  pindahan nol SKS. (2) Semester masuk = 1 + floor(`sks_diakui` /
+  `academic.pindahan.sks_per_semester`, bawaan 20), dihitung saat dibaca di
+  `BatasSksCalculator::semesterKe()` hanya bila belum ada baris status sama
+  sekali; tidak disimpan. (3) Batas SKS KRS selama belum ada semester final di
+  sini diambil dari rata-rata berbobot nilai konversi yang disetujui dan bernilai,
+  lewat matriks IPS yang sama, **terlepas dari** `konversi.hitung_ipk` — setelan
+  itu tentang apa yang diukur ijazah, bukan beban semester pertama. Konversi tanpa
+  nilai (RPL) tidak berkata apa pun, jadi bawaan tetap berlaku. Angkanya tercatat
+  sebagai `ips_acuan` KRS seperti acuan lainnya. (4) Kolom baru
+  `term_masuk_asal`; masa studi menghitung semester di asal hanya bila
+  `academic.pindahan.masa_studi_dari_asal` dinyalakan (bawaan mati), dan hanya
+  untuk batas masa studi — titik evaluasi bertingkat tetap pada studi di sini.
+  (5) Koreksi asal ditolak setelah `feeder_registrasi_id` terisi; perubahan sejak
+  itu adalah pembaruan riwayat di Feeder. (6) Saran nama PT dari referensi
+  `GetAllPT` (tipe `perguruan_tinggi` di `feeder_refs`) ditambah nama yang sudah
+  pernah dimasukkan; prodi asal hanya dari intake sebelumnya, karena PDDIKTI
+  tidak punya pengenal prodi PT lain dan payload membawanya sebagai teks.
+- **Konsekuensi.** Satu sumber angka untuk layar, KRS, semester tempuh, dan
+  payload Feeder. Riwayat yang sudah terkirim lalu konversinya berubah akan
+  berbeda dari PDDIKTI sampai diperbarui — hal yang sama berlaku untuk setiap
+  baris transfer kredit, dan layar menampilkan isu validator yang sama dengan
+  sinkronisasi. Pendaftar dari gelombang transfer/RPL diarahkan ke intake, bukan
+  daftar ulang biasa; `PmbService::daftarUlang()` kini juga mengisi `term_masuk`,
+  yang selama ini kosong sehingga setiap mahasiswa hasil PMB gagal pemeriksaan
+  periode masuk.

@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Enums\JenisDaftar;
 use App\Models\Akademik\KelasKuliah;
 use App\Models\Bridge\BridgeConsumer;
 use App\Models\Kemahasiswaan\Mahasiswa;
@@ -189,6 +190,8 @@ it('membuka layar admin dalam anggaran kueri', function (string $url, int $angga
     ['/admin/helpdesk', 20],
     ['/admin/helpdesk/pengaturan', 14],
     ['/admin/konversi', 25],
+    ['/admin/pindahan', 14],
+    ['/admin/pindahan/baru', 11],
     ['/admin/beasiswa', 25],
     ['/admin/edom', 24],
     ['/admin/bkd', 20],
@@ -203,6 +206,28 @@ it('membuka layar admin dalam anggaran kueri', function (string $url, int $angga
     ['/admin/spmi', 21],
     ['/notifikasi', 25],
 ]);
+
+/*
+ * Profil pindahan demo: dibuat lewat intake sungguhan oleh KonversiSeeder,
+ * dengan tiga konversi diakui dan satu menunggu. Ringkasannya menjalankan
+ * aturan FeederValidator yang sama dengan sinkronisasi — termasuk pemetaan
+ * jenis daftar dan perubahan data yang terbuka — jadi ia tidak boleh tumbuh
+ * per baris konversi.
+ */
+it('membuka profil pindahan demo dalam anggaran kueri', function () {
+    $staff = Staff::where('email', 'admin@demo.test')->firstOrFail();
+    $pindahan = Mahasiswa::where('email', 'nadia.pindahan@demo.test')->firstOrFail();
+
+    // SKS diakuinya adalah jumlah konversi yang disetujui, bukan angka seeder.
+    expect($pindahan->jenis_daftar)->toBe(JenisDaftar::Pindahan)
+        ->and($pindahan->sks_diakui)->toBe((int) $pindahan->konversiKredit()->diakui()->sum('sks_diakui'))
+        ->and($pindahan->sks_diakui)->toBeGreaterThan(0);
+
+    dalamAnggaranKueri(
+        fn () => $this->actingAs($staff, 'staff')->get('/admin/pindahan/'.$pindahan->uuid)->assertOk(),
+        18,
+    );
+});
 
 it('melayani endpoint Bridge dalam anggaran kueri', function (string $url, int $anggaran) {
     $consumer = BridgeConsumer::query()->orderBy('id')->firstOrFail();

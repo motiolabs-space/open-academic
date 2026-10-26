@@ -61,7 +61,7 @@ class FeederValidator
         $rows = $mapper->rows($termCode);
 
         $temuan = $rows->flatMap(fn (Model $model): Collection => $this
-            ->periksaBaris($entity, $model, $mapper)
+            ->periksaBaris($entity, $model)
             ->map(fn (array $isu): array => $isu + [
                 'batch_id' => $batch,
                 'entity' => $entity,
@@ -84,11 +84,25 @@ class FeederValidator
     }
 
     /**
+     * The same rules for one record, without recording anything.
+     *
+     * For screens that want to say "Feeder would refuse this" at the moment a
+     * record is entered, using the very rules a sync will apply rather than a
+     * second copy that drifts.
+     *
+     * @return Collection<int, array{rule: string, severity: string, message: string}>
+     */
+    public function isuUntuk(string $entity, Model $model): Collection
+    {
+        return $this->periksaBaris($entity, $model);
+    }
+
+    /**
      * Rules for one row.
      *
      * @return Collection<int, array{rule: string, severity: string, message: string}>
      */
-    private function periksaBaris(string $entity, Model $model, FeederMapper $mapper): Collection
+    private function periksaBaris(string $entity, Model $model): Collection
     {
         return match ($entity) {
             'skala_nilai_prodi' => $this->skalaNilaiProdi($model),

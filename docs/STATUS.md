@@ -4,6 +4,59 @@
 
 ---
 
+## Sesi 45 — 2026-10-26 · Mahasiswa pindahan: kolom #25 akhirnya punya layar
+
+Pekerjaan P6 #33. Branch `feature/mahasiswa-pindahan`, dari `main` sesudah PR
+#14. Berjalan paralel dengan sesi #44 dan #30/#31; konflik teks di berkas ini
+dan `ROADMAP.md` wajar.
+
+### Satu angka, satu sumber
+
+`mahasiswa.sks_diakui` tidak pernah diketik. `KonversiService` menulisnya pada
+setiap persetujuan dan pencabutan sebagai jumlah konversi yang disetujui —
+hanya untuk jenis daftar yang `butuhAsal()`, dan `null` selama jumlahnya nol,
+supaya validator Feeder tetap berkata "belum ada SKS diakui". Semester masuk
+(1 + SKS diakui ÷ 20) dan batas SKS KRS pertama (rata-rata nilai konversi
+bernilai lewat matriks IPS yang sama) membaca angka yang sama. ADR-020.
+
+### Dua pintu, satu layar transkrip
+
+Layar baru **Pindahan & RPL** (`/admin/pindahan`): antrean pendaftar PMB
+gelombang transfer/RPL yang lulus seleksi, dan pendaftaran langsung oleh BAAK.
+Layar PMB kini mengarahkan pendaftar gelombang itu ke intake, bukan daftar ulang
+biasa yang akan mencatatnya sebagai peserta didik baru. Sesudah disimpan,
+operator mendarat di profil pindahan: ringkasan batas/diakui/sisa/menunggu,
+semester masuk, batas KRS pertama, isu Feeder (dari `FeederValidator` yang sama
+dengan sinkronisasi, lewat `isuUntuk()` baru), dan formulir transkrip asal
+banyak baris yang mencatat seluruh usulan atau tidak sama sekali. Keputusan
+tiap usulan tetap di layar Konversi Kredit, yang kini menautkan balik.
+
+### Yang baru
+
+`PindahanService`, DTO `AsalPendidikanData`/`IdentitasMahasiswaData`/
+`BarisTranskripData`/`RingkasanPindahan`, tiga FormRequest dengan aturan asal
+yang memakai predikat `butuhAsal()` yang sama dengan validator dan mapper,
+`MahasiswaPolicy::createFromPmb` (butuh `mahasiswa.manage` **dan**
+`pmb.manage`), migrasi `term_masuk_asal`, `config/academic.php` bagian
+`pindahan` (`sks_per_semester`, `masa_studi_dari_asal` bawaan mati), referensi
+Feeder `perguruan_tinggi` (`GetAllPT`) untuk saran nama PT, prop `list` pada
+`x-field`, `lang/id/pindahan.php`. Seeder demo: Nadia Paramitha dibuat lewat
+pintu langsung dengan tiga konversi diakui dan satu menunggu; gelombang
+pindahan dengan satu pendaftar yang menunggu intake.
+
+### Yang tersingkap
+
+- `PmbService::daftarUlang()` tidak pernah mengisi `term_masuk`, jadi setiap
+  mahasiswa hasil PMB gagal pemeriksaan periode masuk Feeder. Kini diisi.
+- `NimGenerator` memakai `prodi.kode_pddikti` sebagai segmen NIM, padahal kolom
+  itu menyimpan `id_prodi` (UUID) yang dikirim mapper. Di kampus demo NIM hasil
+  PMB berbentuk `26f127ba98-…0001`. **Tidak diperbaiki di sini** — tindak lanjut.
+
+**37 tes baru** (MahasiswaPindahanTest 36, SmokeLayarTest profil pindahan 1;
+dua layar ditambahkan ke daftar anggaran kueri).
+
+---
+
 ## Sesi 44 — 2026-10-24 · Delapan PR masuk, dan ROADMAP dibersihkan dari baris basi
 
 Bukan fitur. PR #6–#13 di-merge berurutan (#6, #7, #11, #8, #9, #10, #12, #13);

@@ -4,12 +4,20 @@ declare(strict_types=1);
 
 namespace Database\Seeders\Demo;
 
+use App\DTOs\Kemahasiswaan\AsalPendidikanData;
+use App\DTOs\Kemahasiswaan\BarisTranskripData;
+use App\DTOs\Kemahasiswaan\IdentitasMahasiswaData;
+use App\Enums\Gender;
+use App\Enums\JenisDaftar;
 use App\Enums\JenisKonversi;
 use App\Enums\StudentStatus;
 use App\Models\Akademik\MataKuliah;
+use App\Models\Akademik\Prodi;
+use App\Models\Akademik\TahunAkademik;
 use App\Models\Kemahasiswaan\Mahasiswa;
 use App\Models\Sdm\Staff;
 use App\Services\Akademik\KonversiService;
+use App\Services\Kemahasiswaan\PindahanService;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Collection;
 
@@ -47,44 +55,72 @@ class KonversiSeeder extends Seeder
             ->whereDoesntHave('nilai')
             ->orderByDesc('angkatan')
             ->orderBy('id')
-            ->limit(2)
+            ->limit(1)
             ->get();
 
-        if ($calon->count() < 2) {
+        if ($calon->isEmpty()) {
             return;
         }
 
-        $this->pindahan($konversi, $staf, $calon[0]);
-        $this->rpl($konversi, $staf, $calon[1]);
+        $this->pindahan($konversi, $staf);
+        $this->rpl($konversi, $staf, $calon[0]);
     }
 
-    /** Someone arriving from another campus with a transcript. */
-    private function pindahan(KonversiService $konversi, Staff $staf, Mahasiswa $mahasiswa): void
+    /**
+     * Someone arriving from another campus with a transcript.
+     *
+     * Enrolled through the transfer intake itself — the registrar's direct
+     * door — so the demo student carries what a real one would: an origin,
+     * a NIM, an intake invoice, and recognised credits that are the sum of
+     * approved conversions rather than a number the seeder made up.
+     */
+    private function pindahan(KonversiService $konversi, Staff $staf): void
     {
-        $mk = $this->mataKuliah($mahasiswa, 4);
+        $term = TahunAkademik::aktif();
+        $prodi = Prodi::query()->orderBy('id')->first();
 
-        $asal = [
-            ['Algoritma dan Pemrograman', 'A'],
-            ['Struktur Data', 'AB'],
-            ['Basis Data', 'B'],
-            ['Jaringan Komputer', 'B'],
-        ];
+        if ($term === null || $prodi === null) {
+            return;
+        }
 
-        foreach ($mk as $i => $satu) {
-            $usulan = $konversi->ajukan(
-                $mahasiswa,
-                $satu,
-                JenisKonversi::Transfer,
-                $asal[$i][0],
-                'Universitas Merdeka Nusantara',
+        $mahasiswa = app(PindahanService::class)->daftarkanLangsung(
+            IdentitasMahasiswaData::fromArray([
+                'nama' => 'Nadia Paramitha',
+                'email' => 'nadia.pindahan@demo.test',
+                'nik' => '3273015507040002',
+                'tempat_lahir' => 'Bandung',
+                'tanggal_lahir' => '2004-07-15',
+                'jenis_kelamin' => Gender::Perempuan->value,
+                'nama_ibu' => 'Sri Rahayu',
+                'telepon' => '081234560077',
+            ]),
+            $prodi,
+            $term,
+            AsalPendidikanData::fromArray([
+                'jenis_daftar' => JenisDaftar::Pindahan->value,
+                'pt_asal' => 'Universitas Merdeka Nusantara',
+                'prodi_asal' => 'Teknik Informatika',
+                'term_masuk_asal' => ((int) $term->tahun_mulai - 2).'1',
+            ]),
+        )['mahasiswa'];
+
+        // Same-named courses at the origin: a transfer between two campuses'
+        // versions of one programme, which is the ordinary case.
+        $mk = $this->mataKuliah($mahasiswa, 4)->values();
+        $huruf = ['A', 'AB', 'B', 'B'];
+
+        $usulan = app(PindahanService::class)->ajukanTranskrip($mahasiswa, $mk->map(
+            fn (MataKuliah $satu, int $i): BarisTranskripData => new BarisTranskripData(
+                $satu->id,
+                $satu->nama,
                 (int) $satu->sks,
-                $asal[$i][1],
-            );
+                $huruf[$i],
+            ),
+        )->all());
 
-            // The last one stays pending, so the decision screen has work on it.
-            if ($i < count($asal) - 1) {
-                $konversi->setujui($usulan, $staf, (int) $satu->sks, $asal[$i][1]);
-            }
+        // The last one stays pending, so the decision screen has work on it.
+        foreach ($usulan->slice(0, -1) as $i => $satu) {
+            $konversi->setujui($satu, $staf, null, $huruf[$i]);
         }
     }
 

@@ -44,6 +44,18 @@ class MahasiswaPolicy
         return $this->stafDenganIzin($actor, 'mahasiswa.manage');
     }
 
+    /**
+     * Turning an accepted transfer applicant into a student.
+     *
+     * Both halves: it closes an admissions record and opens an academic one,
+     * so an admissions clerk alone or a registrar alone is not enough.
+     */
+    public function createFromPmb(Authenticatable $actor): bool
+    {
+        return $this->stafDenganIzin($actor, 'mahasiswa.manage')
+            && $this->stafDenganIzin($actor, 'pmb.manage');
+    }
+
     public function update(Authenticatable $actor, Mahasiswa $mahasiswa): bool
     {
         // A student may maintain their own contact details; academic fields

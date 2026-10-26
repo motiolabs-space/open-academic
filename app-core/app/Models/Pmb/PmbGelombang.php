@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models\Pmb;
 
+use App\Enums\JenisDaftar;
 use App\Models\Akademik\TahunAkademik;
 use App\Traits\HasLogAktivitas;
 use App\Traits\HasUuid;
@@ -54,6 +55,27 @@ class PmbGelombang extends Model
         return $this->is_active
             && $today->gte($this->tanggal_mulai)
             && $today->lte($this->tanggal_selesai);
+    }
+
+    /**
+     * Whether applicants in this wave arrive with study done elsewhere.
+     *
+     * Their registration goes through the transfer intake instead of the
+     * ordinary daftar ulang, which would record them as new entrants.
+     */
+    public function jalurPindahan(): bool
+    {
+        return in_array($this->jalur, ['transfer', 'rpl'], true);
+    }
+
+    /** The enrolment kind the intake form starts from for this wave. */
+    public function jenisDaftarBawaan(): ?JenisDaftar
+    {
+        return match ($this->jalur) {
+            'transfer' => JenisDaftar::Pindahan,
+            'rpl' => JenisDaftar::RplPerolehan,
+            default => null,
+        };
     }
 
     /** @param Builder<self> $query */
