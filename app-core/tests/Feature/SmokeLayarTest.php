@@ -15,6 +15,7 @@ use App\Models\Pmb\PmbGelombang;
 use App\Models\Pmb\PmbPendaftar;
 use App\Models\Sdm\Dosen;
 use App\Models\Sdm\Staff;
+use App\Models\TugasAkhir\Proposal;
 use App\Models\TugasAkhir\TugasAkhir;
 use App\Services\Akademik\JadwalUjianService;
 use App\Support\Portal;
@@ -423,6 +424,26 @@ it('membuka layar KKN/PKL di tiga portal dalam anggaran kueri', function () {
         [$kelompok->pembimbing, 'dosen', '/dosen/kegiatan-lapangan', 7],
         [$kelompok->pembimbing, 'dosen', '/dosen/kegiatan-lapangan/'.$kelompok->uuid, 10],
         [$mahasiswa, 'mahasiswa', '/mahasiswa/kegiatan-lapangan', 15],
+    ] as [$aktor, $guard, $url, $anggaran]) {
+        auth()->forgetGuards();
+
+        dalamAnggaranKueri(fn () => $this->actingAs($aktor, $guard)->get($url)->assertOk(), $anggaran);
+    }
+});
+
+/*
+ * Tahap proposal tugas akhir (#38): rincian tugas akhir staf dengan riwayat
+ * versi dan telaah, dan halaman telaah calon pembimbing.
+ */
+it('membuka layar proposal tugas akhir dalam anggaran kueri', function () {
+    $staff = Staff::where('email', 'admin@demo.test')->firstOrFail();
+    $proposal = Proposal::query()->where('status', 'menunggu')->firstOrFail();
+
+    foreach ([
+        [$staff, 'staff', '/admin/tugas-akhir/'.$proposal->tugasAkhir->uuid, 22],
+        [$proposal->calonPembimbing, 'dosen', '/dosen/tugas-akhir', 12],
+        [$proposal->calonPembimbing, 'dosen', '/dosen/tugas-akhir/proposal/'.$proposal->uuid, 11],
+        [$proposal->tugasAkhir->mahasiswa, 'mahasiswa', '/mahasiswa/tugas-akhir', 12],
     ] as [$aktor, $guard, $url, $anggaran]) {
         auth()->forgetGuards();
 

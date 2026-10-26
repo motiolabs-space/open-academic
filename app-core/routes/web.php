@@ -164,6 +164,7 @@ Route::middleware(['auth:mahasiswa', 'term.active'])->prefix('mahasiswa')->name(
     Route::get('/tugas-akhir', [Mahasiswa\TugasAkhirController::class, 'index'])->name('tugas-akhir');
     Route::post('/tugas-akhir', [Mahasiswa\TugasAkhirController::class, 'ajukan'])->name('tugas-akhir.ajukan');
     Route::post('/tugas-akhir/bimbingan', [Mahasiswa\TugasAkhirController::class, 'catatBimbingan'])->name('tugas-akhir.bimbingan');
+    Route::post('/tugas-akhir/proposal', [Mahasiswa\TugasAkhirController::class, 'unggahProposal'])->name('tugas-akhir.proposal');
     Route::delete('/tugas-akhir/bimbingan/{bimbingan}', [Mahasiswa\TugasAkhirController::class, 'hapusBimbingan'])->name('tugas-akhir.bimbingan.hapus');
 
     Route::get('/capaian', Mahasiswa\PenguasaanController::class)->name('capaian');
@@ -265,6 +266,8 @@ Route::middleware(['auth:dosen', 'term.active'])->prefix('dosen')->name('dosen.'
 
     Route::get('/tugas-akhir', [Dosen\TugasAkhirController::class, 'index'])->name('tugas-akhir');
     Route::get('/tugas-akhir/{tugasAkhir}', [Dosen\TugasAkhirController::class, 'show'])->name('tugas-akhir.show');
+    Route::get('/tugas-akhir/proposal/{proposal}', [Dosen\TugasAkhirController::class, 'proposal'])->name('tugas-akhir.proposal');
+    Route::post('/tugas-akhir/proposal/{proposal}/telaah', [Dosen\TugasAkhirController::class, 'telaahProposal'])->name('tugas-akhir.proposal.telaah');
     Route::post('/tugas-akhir/bimbingan/{bimbingan}/setujui', [Dosen\TugasAkhirController::class, 'setujuiBimbingan'])->name('tugas-akhir.bimbingan.setujui');
     Route::post('/tugas-akhir/bimbingan/{bimbingan}/cabut', [Dosen\TugasAkhirController::class, 'batalkanPersetujuan'])->name('tugas-akhir.bimbingan.cabut');
     Route::post('/tugas-akhir/penguji/{penguji}/nilai', [Dosen\TugasAkhirController::class, 'nilaiUjian'])->name('tugas-akhir.penguji.nilai');
@@ -333,6 +336,10 @@ Route::middleware('auth:staff,dosen,mahasiswa')->prefix('berkas/helpdesk')->name
 // dan staf — diputuskan KegiatanLapanganLogbookPolicy.
 Route::middleware('auth:staff,dosen,mahasiswa')->prefix('berkas')->name('berkas.')->group(function (): void {
     Route::get('/kegiatan-lapangan/{logbook}', [BerkasController::class, 'logbookKegiatan'])->name('logbook-kegiatan');
+
+    // Proposal tugas akhir (#38): pemiliknya, calon/pembimbingnya, dan staf
+    // tugas akhir — diputuskan ProposalPolicy.
+    Route::get('/proposal-ta/{proposal}', [BerkasController::class, 'proposalTugasAkhir'])->name('proposal-ta');
 });
 
 /*
@@ -472,6 +479,7 @@ Route::middleware(['auth:staff', 'term.active'])->prefix('admin')->name('admin.'
     Route::get('/tugas-akhir/{tugasAkhir}', [Admin\TugasAkhirController::class, 'show'])->name('tugas-akhir.show');
     Route::post('/tugas-akhir/{tugasAkhir}/setujui', [Admin\TugasAkhirController::class, 'setujui'])->name('tugas-akhir.setujui');
     Route::post('/tugas-akhir/{tugasAkhir}/tolak', [Admin\TugasAkhirController::class, 'tolak'])->name('tugas-akhir.tolak');
+    Route::post('/tugas-akhir/proposal/{proposal}/telaah', [Admin\TugasAkhirController::class, 'telaahProposal'])->name('tugas-akhir.proposal.telaah');
     Route::post('/tugas-akhir/{tugasAkhir}/pembimbing', [Admin\TugasAkhirController::class, 'tetapkanPembimbing'])->name('tugas-akhir.pembimbing');
     Route::delete('/tugas-akhir/pembimbing/{pembimbing}', [Admin\TugasAkhirController::class, 'lepasPembimbing'])->name('tugas-akhir.pembimbing.lepas');
     Route::post('/tugas-akhir/{tugasAkhir}/ujian', [Admin\TugasAkhirController::class, 'jadwalkanUjian'])->name('tugas-akhir.ujian');

@@ -48,15 +48,40 @@ lokasi, atau kelompok berubah.
   Kelompok 01 (dengan tiga logbook), mahasiswa1 ikut. Belum dinilai: mengisi
   nilai dan mengonversinya adalah demonya.
 
-**Tes baru:** KegiatanLapanganTest 37, SmokeLayarTest 1 (anggaran kueri lima
-layar KKN/PKL di tiga portal).
+### #38 — Tahap dokumen proposal tugas akhir
+
+Saklar per prodi `wajib_proposal_ta` (bawaan mati, di layar master prodi),
+**dikunci pada tugas akhir saat judul diajukan** (`tugas_akhir.wajib_proposal`)
+— tugas akhir yang sudah berjalan tetap sah di bawah aturan lamanya, dan
+kampus yang tidak menyalakannya tidak melihat apa pun berubah.
+
+- **Alur**: mahasiswa mengunggah dokumen (PDF lewat `BerkasService`) dengan
+  calon pembimbing → calon pembimbing (portal dosen) atau staf tugas akhir
+  menelaah: revisi (catatan wajib) → versi berikutnya, diterima → judul dapat
+  disetujui lalu pembimbing dan seminar proposal seperti dulu, ditolak →
+  tugas akhir ditutup dan slot mahasiswa bebas.
+- **Riwayat**: `tugas_akhir_proposal` dan `tugas_akhir_proposal_telaah` hanya
+  bertambah; judul tersimpan per versi; berkas lama tidak dihapus.
+- **Gerbang**: `TugasAkhirService::setujuiJudul()` menolak judul
+  ber-`wajib_proposal` tanpa versi diterima.
+- **Layar**: kartu proposal di tugas akhir mahasiswa dan rincian staf, antrean
+  "Proposal menunggu telaah Anda" dan halaman telaah di portal dosen, berkas di
+  `/berkas/proposal-ta/{proposal}` di balik `ProposalPolicy`. Notifikasi ke
+  calon pembimbing saat diunggah, ke mahasiswa saat ditelaah.
+- **Demo**: `ProposalTugasAkhirSeeder` — prodi dengan mahasiswa bebas
+  terbanyak mewajibkan proposal; satu mahasiswa di versi 2 menunggu telaah
+  dosen1 (versi 1 diminta revisi), satu diterima dan menunggu persetujuan judul.
+
+**Tes baru:** KegiatanLapanganTest 37, ProposalTugasAkhirTest 16, SmokeLayarTest 2
+(anggaran kueri lima layar KKN/PKL dan empat layar proposal).
 
 ### Belum
 
 Lokasi belum dapat disunting dari layar (service-nya sudah); peserta belum
 dapat membatalkan pendaftaran mandirinya sendiri; ketua kelompok belum dikirim
 sebagai peran *ketua* ke PDDIKTI karena setiap peserta adalah aktivitas
-tersendiri.
+tersendiri. Proposal: calon pembimbing tidak dapat diganti di tengah telaah
+(hanya pada versi berikutnya), dan belum ada batas waktu telaah.
 
 ---
 

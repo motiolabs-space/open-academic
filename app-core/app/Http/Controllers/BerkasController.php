@@ -10,6 +10,7 @@ use App\Models\Kemahasiswaan\CutiMahasiswa;
 use App\Models\Kemahasiswaan\KegiatanLapanganLogbook;
 use App\Models\Kemahasiswaan\Mahasiswa;
 use App\Models\Pmb\PmbBerkas;
+use App\Models\TugasAkhir\Proposal;
 use App\Services\Berkas\BerkasService;
 use App\Support\Portal;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -108,6 +109,17 @@ class BerkasController extends Controller
         $this->authorize('view', $logbook);
 
         return $this->alirkan($logbook->berkas_path, $logbook->berkas_nama ?? 'lampiran');
+    }
+
+    /**
+     * A final-project proposal version: the student, the prospective or
+     * assigned supervisor, and final-project staff — ProposalPolicy.
+     */
+    public function proposalTugasAkhir(Proposal $proposal): StreamedResponse
+    {
+        $this->authorize('view', $proposal);
+
+        return $this->alirkan($proposal->berkas_path, $proposal->berkas_nama ?? 'proposal.pdf');
     }
 
     /**

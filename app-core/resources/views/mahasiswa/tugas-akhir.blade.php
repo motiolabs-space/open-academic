@@ -70,6 +70,42 @@
                     @endif
                 </x-card>
 
+                {{-- Dokumen proposal (#38): hanya bila prodi mewajibkannya saat judul diajukan. --}}
+                @if ($ta->wajib_proposal)
+                    @php $terakhir = $ta->proposal->first(); @endphp
+                    <x-card :title="__('tugas_akhir_proposal.kartu.proposal')">
+                        @if ($ta->status === \App\Enums\TugasAkhirStatus::Diajukan)
+                            <p class="mb-4 text-[12.5px] leading-relaxed text-ink-muted">{{ __('tugas_akhir_proposal.keterangan.tahap_aktif') }}</p>
+                        @endif
+
+                        @if ($ta->status === \App\Enums\TugasAkhirStatus::Diajukan && ($terakhir === null || $terakhir->status === \App\Enums\StatusProposal::Revisi))
+                            <form method="POST" action="{{ route('mahasiswa.tugas-akhir.proposal') }}" enctype="multipart/form-data"
+                                class="mb-5 space-y-3 rounded-control border border-line p-4">
+                                @csrf
+                                <h3 class="text-[13px] font-semibold">{{ $terakhir === null ? __('tugas_akhir_proposal.kartu.unggah') : __('tugas_akhir_proposal.kartu.unggah_revisi') }}</h3>
+                                <div>
+                                    <label for="berkas-proposal" class="mb-1.5 block text-[11px] font-semibold uppercase tracking-[0.08em] text-ink-muted">{{ __('tugas_akhir_proposal.field.berkas') }} <span class="text-danger" aria-hidden="true">*</span></label>
+                                    <input id="berkas-proposal" type="file" name="berkas" required class="block w-full text-[12.5px]">
+                                </div>
+                                <x-field :label="__('tugas_akhir_proposal.field.judul')" name="judul" :placeholder="$ta->judul" />
+                                @if ($terakhir !== null)
+                                    <x-field :label="__('tugas_akhir_proposal.field.ringkasan')" name="ringkasan" type="textarea" />
+                                @endif
+                                <x-field :label="__('tugas_akhir_proposal.field.calon_pembimbing_dosen_id')" name="calon_pembimbing_dosen_id"
+                                    :options="$pilihanCalon" :value="$terakhir?->calon_pembimbing_dosen_id" />
+                                <x-button type="submit" size="sm">{{ __('tugas_akhir_proposal.aksi.unggah') }}</x-button>
+                            </form>
+                        @elseif ($terakhir?->status === \App\Enums\StatusProposal::Menunggu)
+                            <div class="mb-4"><x-alert tone="info">{{ __('tugas_akhir_proposal.keterangan.menunggu') }}</x-alert></div>
+                        @elseif ($terakhir?->status === \App\Enums\StatusProposal::Diterima && $ta->status === \App\Enums\TugasAkhirStatus::Diajukan)
+                            <div class="mb-4"><x-alert tone="success">{{ __('tugas_akhir_proposal.keterangan.diterima') }}</x-alert></div>
+                        @endif
+
+                        <h3 class="mb-3 text-[11px] font-semibold uppercase tracking-[0.08em] text-ink-muted">{{ __('tugas_akhir_proposal.kartu.riwayat') }}</h3>
+                        @include('tugas-akhir._proposal-riwayat', ['daftarProposal' => $ta->proposal])
+                    </x-card>
+                @endif
+
                 @if ($ta->status === \App\Enums\TugasAkhirStatus::Dibimbing)
                     <x-card title="Catat Bimbingan">
                         <form method="POST" action="{{ route('mahasiswa.tugas-akhir.bimbingan') }}"

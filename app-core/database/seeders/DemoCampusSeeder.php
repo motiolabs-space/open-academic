@@ -24,6 +24,7 @@ use Database\Seeders\Demo\MutuSeeder;
 use Database\Seeders\Demo\NotifikasiSeeder;
 use Database\Seeders\Demo\PerkuliahanSeeder;
 use Database\Seeders\Demo\PmbSeeder;
+use Database\Seeders\Demo\ProposalTugasAkhirSeeder;
 use Database\Seeders\Demo\RiwayatAkademikSeeder;
 use Database\Seeders\Demo\RpsSeeder;
 use Database\Seeders\Demo\SdmSeeder;
@@ -104,6 +105,10 @@ class DemoCampusSeeder extends Seeder
             // melanggar aturannya sendiri — ijazah dengan judul yang tidak
             // tertelusur ke mana pun.
             TugasAkhirSeeder::class,
+
+            // Sesudah TugasAkhirSeeder: prodi yang mewajibkan proposal dipilih
+            // dari mahasiswa yang belum punya tugas akhir.
+            ProposalTugasAkhirSeeder::class,
 
             KelulusanSeeder::class,
 

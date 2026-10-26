@@ -642,3 +642,33 @@
   ingin melaporkannya lebih awal tetap dapat memverifikasinya di layar IKU.
   Kelas yang hanya berisi baris konversi tetap berstatus nilai *belum*.
 
+### Bagian 2 — Tahap dokumen proposal tugas akhir (#38)
+
+- **Konteks.** Tugas akhir dimulai dari pengajuan judul; seminar proposal
+  (`JenisUjian::Proposal`) sudah ada tetapi baru dapat dijadwalkan saat karya
+  dibimbing. Sebagian prodi menelaah dokumen proposal *sebelum* judul disetujui,
+  sebagian tidak sama sekali. Menambah tahap wajib untuk semua kampus mengubah
+  alur yang sudah berjalan; menyalakannya per prodi tanpa batas waktu akan
+  menahan tugas akhir yang diajukan sebelum saklar dinyalakan.
+- **Keputusan.** (1) Saklar per prodi `prodi.wajib_proposal_ta`, bawaan mati,
+  di layar master prodi. (2) **Dikunci saat pengajuan**: `TugasAkhirService::
+  ajukan()` menyalin saklar ke `tugas_akhir.wajib_proposal`; menyalakan atau
+  mematikannya kemudian tidak menjangkau tugas akhir yang sudah diajukan.
+  (3) Versi proposal (`tugas_akhir_proposal`) dan telaah
+  (`tugas_akhir_proposal_telaah`) hanya bertambah: revisi adalah versi baru,
+  keputusan adalah baris telaah baru, dan status versi berpindah sekali dari
+  *menunggu*. Berkas lewat `BerkasService` di disk privat, judul per versi
+  tersimpan di versinya (judul tugas akhir mengikuti versi terakhir).
+  (4) Penelaah: dosen yang disebut sebagai calon pembimbing pada versi itu
+  (dengan `tugas_akhir.bimbing`), atau staf dengan `tugas_akhir.manage` —
+  koordinator prodi bertindak sebagai staf; tidak ada peran baru. Revisi dan
+  penolakan wajib bercatatan. (5) **Diterima** membuka gerbang yang sudah ada:
+  `setujuiJudul()` menolak judul ber-`wajib_proposal` tanpa versi diterima;
+  sesudah judul disetujui, pembimbing dan seminar proposal berjalan seperti
+  dulu. **Ditolak** menutup tugas akhir seperti judul yang ditolak dan
+  membebaskan slot mahasiswa.
+- **Konsekuensi.** Kampus yang tidak menyalakan saklar tidak melihat apa pun
+  berubah — tidak ada kartu, tidak ada gerbang. Tahap ini tidak menggantikan
+  seminar proposal; yang menyeminarkan proposal tetap menjadwalkannya sesudah
+  pembimbing ditetapkan. Dokumen proposal bukan entitas Feeder.
+

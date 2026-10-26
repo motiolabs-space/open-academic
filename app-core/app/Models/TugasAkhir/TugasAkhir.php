@@ -52,6 +52,7 @@ class TugasAkhir extends Model
         return [
             'feeder_synced_at' => 'datetime',
             'status' => TugasAkhirStatus::class,
+            'wajib_proposal' => 'boolean',
             'tanggal_pengajuan' => 'date',
             'tanggal_disetujui' => 'date',
             'tanggal_selesai' => 'date',
@@ -88,6 +89,12 @@ class TugasAkhir extends Model
     public function ujian(): HasMany
     {
         return $this->hasMany(Ujian::class)->orderBy('tanggal');
+    }
+
+    /** Proposal versions, latest first (#38). */
+    public function proposal(): HasMany
+    {
+        return $this->hasMany(Proposal::class)->orderByDesc('versi');
     }
 
     /** Live projects — the ones occupying a student's single slot. */

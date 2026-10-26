@@ -44,6 +44,7 @@ class Prodi extends Model
             'jenjang' => EducationLevel::class,
             'is_active' => 'boolean',
             'wajib_ukom' => 'boolean',
+            'wajib_proposal_ta' => 'boolean',
         ];
     }
 

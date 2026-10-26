@@ -10,12 +10,15 @@ use App\Enums\PeranPembimbing;
 use App\Enums\PeranPenguji;
 use App\Enums\TugasAkhirStatus;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\TugasAkhir\TelaahProposalRequest;
 use App\Models\Akademik\Prodi;
 use App\Models\Akademik\Ruang;
 use App\Models\Sdm\Dosen;
 use App\Models\TugasAkhir\Pembimbing;
+use App\Models\TugasAkhir\Proposal;
 use App\Models\TugasAkhir\TugasAkhir;
 use App\Models\TugasAkhir\Ujian;
+use App\Services\TugasAkhir\ProposalService;
 use App\Services\TugasAkhir\TugasAkhirService;
 use App\Services\TugasAkhir\UjianService;
 use App\Support\Portal;
@@ -37,6 +40,7 @@ class TugasAkhirController extends Controller
     public function __construct(
         private readonly TugasAkhirService $tugasAkhir,
         private readonly UjianService $ujian,
+        private readonly ProposalService $proposal,
     ) {}
 
     public function index(Request $request): View
@@ -84,6 +88,9 @@ class TugasAkhirController extends Controller
             'bimbingan.dosen',
             'ujian.penguji.dosen',
             'ujian.ruang',
+            'proposal.calonPembimbing',
+            'proposal.telaah.dosen',
+            'proposal.telaah.staff',
         ]);
 
         // Every eligible lecturer with their current supervision load, so the
@@ -134,6 +141,16 @@ class TugasAkhirController extends Controller
         $this->tugasAkhir->tolakJudul($tugasAkhir, Portal::user(), $data['alasan']);
 
         return back()->with('sukses', 'Judul ditolak. Mahasiswa dapat mengajukan judul baru.');
+    }
+
+    /** The coordinator's decision on the latest proposal version (#38). */
+    public function telaahProposal(TelaahProposalRequest $request, Proposal $proposal): RedirectResponse
+    {
+        $keputusan = $request->keputusan();
+
+        $this->proposal->telaah($proposal, Portal::user(), $keputusan, $request->validated('catatan'));
+
+        return back()->with('sukses', __('tugas_akhir_proposal.sukses.telaah', ['keputusan' => $keputusan->label()]));
     }
 
     public function tetapkanPembimbing(Request $request, TugasAkhir $tugasAkhir): RedirectResponse

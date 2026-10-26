@@ -4,12 +4,16 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Dosen;
 
+use App\Enums\StatusProposal;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\TugasAkhir\TelaahProposalRequest;
 use App\Models\Sdm\Dosen;
 use App\Models\TugasAkhir\Bimbingan;
 use App\Models\TugasAkhir\Penguji;
+use App\Models\TugasAkhir\Proposal;
 use App\Models\TugasAkhir\TugasAkhir;
 use App\Services\TugasAkhir\BimbinganService;
+use App\Services\TugasAkhir\ProposalService;
 use App\Services\TugasAkhir\UjianService;
 use App\Support\Portal;
 use Illuminate\Http\RedirectResponse;
@@ -30,6 +34,7 @@ class TugasAkhirController extends Controller
     public function __construct(
         private readonly BimbinganService $bimbingan,
         private readonly UjianService $ujian,
+        private readonly ProposalService $proposal,
     ) {}
 
     public function index(): View
@@ -59,7 +64,16 @@ class TugasAkhirController extends Controller
             ->sortBy(fn (Penguji $p) => $p->ujian->tanggal)
             ->values();
 
+        // Proposals naming this lecturer as prospective supervisor (#38).
+        $menungguTelaah = Proposal::query()
+            ->with('tugasAkhir.mahasiswa.prodi')
+            ->where('calon_pembimbing_dosen_id', $dosen->id)
+            ->where('status', StatusProposal::Menunggu->value)
+            ->orderBy('created_at')
+            ->get();
+
         return view('dosen.tugas-akhir.index', [
+            'menungguTelaah' => $menungguTelaah,
             'judul' => 'Tugas Akhir',
             'konteks' => $dibimbing->count().' bimbingan berjalan',
             'breadcrumb' => ['Dasbor' => route('dosen.dashboard'), 'Tugas Akhir'],
@@ -95,6 +109,40 @@ class TugasAkhirController extends Controller
             'dosen' => $dosen,
             'minBimbingan' => (int) config('academic.tugas_akhir.min_bimbingan_sebelum_sidang'),
         ]);
+    }
+
+    /** A proposal's versions and reviews, and the review form while it waits (#38). */
+    public function proposal(Proposal $proposal): View
+    {
+        $this->authorize('view', $proposal);
+
+        $ta = $proposal->tugasAkhir->load([
+            'mahasiswa.prodi',
+            'proposal.calonPembimbing',
+            'proposal.telaah.dosen',
+            'proposal.telaah.staff',
+        ]);
+
+        return view('dosen.tugas-akhir.proposal', [
+            'judul' => __('tugas_akhir_proposal.judul').' · '.$ta->mahasiswa->nama,
+            'konteks' => $ta->judul,
+            'breadcrumb' => [
+                'Dasbor' => route('dosen.dashboard'),
+                'Tugas Akhir' => route('dosen.tugas-akhir'),
+                $ta->mahasiswa->nim,
+            ],
+            'ta' => $ta,
+            'proposal' => $proposal,
+        ]);
+    }
+
+    public function telaahProposal(TelaahProposalRequest $request, Proposal $proposal): RedirectResponse
+    {
+        $keputusan = $request->keputusan();
+
+        $this->proposal->telaah($proposal, $this->dosen(), $keputusan, $request->validated('catatan'));
+
+        return back()->with('sukses', __('tugas_akhir_proposal.sukses.telaah', ['keputusan' => $keputusan->label()]));
     }
 
     /**
