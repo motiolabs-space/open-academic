@@ -351,3 +351,20 @@
   kampus yang lupa menjalankan adopsi tidak diperingatkan. Nama aksi dan field
   Feeder mengikuti pemakaian komunitas dan perlu diverifikasi terhadap
   dokumentasi build Feeder kampus.
+
+## ADR-023 — CI menguji PHP 8.2, 8.4, dan 8.5; produksi berjalan di 8.4/8.5 (2026-10-26)
+
+- **Konteks.** `composer.json` mengizinkan `^8.2` dan CI hanya menguji 8.2,
+  padahal instalasi produksi berjalan di PHP 8.4 atau 8.5. Tes yang hijau di
+  CI tidak membuktikan apa pun tentang versi tempat kode benar-benar dijalankan;
+  perilaku yang berubah atau usang di 8.4/8.5 baru akan tampak di server. Celah
+  inti PHP 21 Oktober 2026 sekaligus memaksa XAMPP pengembang naik dari 8.2.12.
+- **Keputusan.** Job CI menjadi matriks `['8.2', '8.4', '8.5']` dengan
+  `fail-fast: false`. Pest berjalan di ketiganya; Pint dan `npm run build` tidak
+  bergantung pada versi PHP dan hanya berjalan di 8.4. Batas bawah `^8.2` tetap,
+  supaya kampus di shared hosting yang masih di 8.2 tidak terkunci keluar.
+  Lingkungan pengembang disarankan mengikuti produksi (8.4).
+- **Konsekuensi.** Waktu CI kira-kira tiga kali lipat untuk langkah tes, berjalan
+  paralel. Begitu dukungan keamanan PHP 8.2 berakhir (31 Desember 2026), batas
+  bawah layak dinaikkan ke `^8.4` dan 8.2 dikeluarkan dari matriks — keputusan
+  terpisah, karena memutus instalasi yang masih di 8.2.

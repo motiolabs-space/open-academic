@@ -15,8 +15,17 @@ defaults:
 
 jobs:
   quality:
-    name: Lint, Test, Build
+    name: Lint, Test, Build (PHP ${{ matrix.php }})
     runs-on: ubuntu-latest
+
+    # Production runs PHP 8.4 or 8.5; composer.json still allows ^8.2. The suite
+    # runs on all three so a green PR proves the code works on the versions it is
+    # deployed on, not only on the oldest one allowed. Pint and the asset build
+    # do not depend on the PHP version and run once, on 8.4.
+    strategy:
+      fail-fast: false
+      matrix:
+        php: ['8.2', '8.4', '8.5']
 
     steps:
       - uses: actions/checkout@v4
@@ -24,7 +33,7 @@ jobs:
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.2'
+          php-version: ${{ matrix.php }}
           extensions: mbstring, intl, pdo_mysql, pdo_sqlite, gd, zip, bcmath
           coverage: none
 
@@ -32,8 +41,8 @@ jobs:
         uses: actions/cache@v4
         with:
           path: app-core/vendor
-          key: composer-${{ hashFiles('app-core/composer.lock') }}
-          restore-keys: composer-
+          key: composer-php${{ matrix.php }}-${{ hashFiles('app-core/composer.lock') }}
+          restore-keys: composer-php${{ matrix.php }}-
 
       - name: Install PHP dependencies
         run: composer install --prefer-dist --no-interaction --no-progress
@@ -44,6 +53,7 @@ jobs:
           php artisan key:generate
 
       - name: Lint (Pint)
+        if: matrix.php == '8.4'
         run: composer lint
 
       # Paralel: paratest membagi berkas tes ke beberapa proses. Tiap proses
@@ -55,6 +65,7 @@ jobs:
         run: composer test:par
 
       - name: Setup Node
+        if: matrix.php == '8.4'
         uses: actions/setup-node@v4
         with:
           node-version: '20'
@@ -62,7 +73,9 @@ jobs:
           cache-dependency-path: app-core/package-lock.json
 
       - name: Install JS dependencies
+        if: matrix.php == '8.4'
         run: npm ci
 
       - name: Build assets
+        if: matrix.php == '8.4'
         run: npm run build
