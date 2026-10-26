@@ -4,7 +4,7 @@
 
 ---
 
-## Sesi 45 — 2026-10-26 · Adopsi mahasiswa PDDIKTI: kampus yang pindah tidak lagi mendaftarkan ulang angkatannya
+## Sesi 46 — 2026-10-26 · Adopsi mahasiswa PDDIKTI: kampus yang pindah tidak lagi mendaftarkan ulang angkatannya
 
 Roadmap #44, branch `feature/feeder-adopsi-mahasiswa`. Berjalan paralel dengan
 sesi #33 dan #30/#31; konflik teks di ROADMAP/STATUS diterima sebagai wajar.
