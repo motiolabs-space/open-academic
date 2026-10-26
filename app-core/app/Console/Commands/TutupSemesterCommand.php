@@ -95,10 +95,11 @@ class TutupSemesterCommand extends Command
 
         $this->newLine();
         $this->info(sprintf(
-            '%d dibekukan · %d terhalang · %d dilewati.',
+            '%d dibekukan · %d terhalang · %d dilewati · %d menunggu uji kompetensi.',
             $hasil['dibekukan'],
             $hasil['terhalang'],
             $hasil['dilewati'],
+            $hasil['menunggu_ukom'],
         ));
 
         return self::SUCCESS;

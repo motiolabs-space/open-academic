@@ -9,6 +9,7 @@ use App\Models\Akademik\KelasKuliah;
 use App\Models\Akademik\TahunAkademik;
 use App\Models\Kemahasiswaan\StatusMahasiswa;
 use App\Models\Sdm\Staff;
+use App\Services\Kemahasiswaan\UjiKompetensiService;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
@@ -33,7 +34,10 @@ use Illuminate\Support\Facades\DB;
  */
 class PenutupanSemesterService
 {
-    public function __construct(private readonly IndeksPrestasiCalculator $indeks) {}
+    public function __construct(
+        private readonly IndeksPrestasiCalculator $indeks,
+        private readonly UjiKompetensiService $ukom,
+    ) {}
 
     /**
      * What closing this term would do, without doing it.
@@ -103,10 +107,17 @@ class PenutupanSemesterService
      * record; silently rewriting an issued KHS is not something a batch job
      * should be able to do.
      *
-     * @return array{dibekukan: int, terhalang: int, dilewati: int}
+     * Students waiting on the competency examination take no courses, so no
+     * KRS ever creates their record for the term. It is written here, at the
+     * moment every other record for the term is frozen, so the term's activity
+     * report to PDDIKTI is complete when it is sent.
+     *
+     * @return array{dibekukan: int, terhalang: int, dilewati: int, menunggu_ukom: int}
      */
     public function tutup(TahunAkademik $term, Staff $staff): array
     {
+        $menungguUkom = $this->ukom->catatSemesterMenunggu($term);
+
         $pratinjau = $this->pratinjau($term);
 
         foreach ($pratinjau['siap'] as $status) {
@@ -136,6 +147,7 @@ class PenutupanSemesterService
             'dibekukan' => $pratinjau['siap']->count(),
             'terhalang' => $pratinjau['terhalang']->count(),
             'dilewati' => $pratinjau['sudah_final'],
+            'menunggu_ukom' => $menungguUkom,
         ];
     }
 

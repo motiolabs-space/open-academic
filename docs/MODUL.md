@@ -36,7 +36,7 @@ ekspor SISTER, borang LKPS, dan laporan KIP Kuliah.
 
 # BAGIAN I — SUDAH DIBUAT
 
-## Portal Mahasiswa — 12 modul
+## Portal Mahasiswa — 13 modul
 
 Akun demo: `mahasiswa1@demo.test` · kata sandi `password`
 
@@ -49,6 +49,7 @@ Akun demo: `mahasiswa1@demo.test` · kata sandi `password`
 | KHS & Transkrip | `/mahasiswa/khs` | Nilai per semester, transkrip PDF |
 | Capaian Pembelajaran | `/mahasiswa/capaian` | Penguasaan CPL dari komponen bernilai |
 | Tugas Akhir | `/mahasiswa/tugas-akhir` | Judul, pembimbing, log bimbingan, sidang |
+| Wisuda | `/mahasiswa/wisuda` | Periode yang dibuka, daftar periksa syarat yang sama dengan layar staf, daftar dan batal sendiri selama periode dibuka |
 | Surat & Dokumen | `/mahasiswa/surat` | Ajukan surat, unduh SKPI dwibahasa |
 | Evaluasi Dosen | `/mahasiswa/edom` | Pengisian EDOM (anonim secara skema) |
 | Tagihan & Pembayaran | `/mahasiswa/tagihan` | Tagihan, potongan, denda keterlambatan beserta penjelasannya, riwayat bayar |

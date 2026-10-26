@@ -303,3 +303,51 @@
   yang MFA-nya memang dipaksakan di IdP menyalakannya dengan satu variabel.
   Entra ID memerlukan `IDP_REQUIRE_VERIFIED_EMAIL=false` yang disetel sadar,
   karena ia tidak mengirim `email_verified` untuk anggota tenant.
+
+## ADR-020 — Syarat wisuda satu sumber; "Menunggu Uji Kompetensi" berkode lokal dan meluluskan pada tanggal ujian (2026-10-26)
+
+- **Konteks.** Roadmap #30 meminta mahasiswa mendaftar wisuda sendiri. Satu-satunya
+  syarat hari itu — yudisium ditetapkan — tertanam di `WisudaService::daftarkan()`;
+  layar mahasiswa yang menyalakan tombol "Daftar" butuh salinan kedua, dan staf
+  dapat mendaftarkan lulusan yang menunggak. Roadmap #31: prodi kesehatan tidak
+  meluluskan siapa pun sebelum lulus uji kompetensi, dan PDDIKTI mengenal status
+  aktivitas kuliah tersendiri untuk masa tunggu itu. `StudentStatus` memakai kode
+  yang meniru PDDIKTI dan `AktivitasKuliahMapper` jatuh balik ke kode lokal bila
+  pemetaan kosong; kode PDDIKTI untuk status baru ini tidak dapat diverifikasi
+  dari sini.
+- **Keputusan.** (1) `SyaratWisudaService` satu-satunya daftar periksa wisuda,
+  dibaca layar mahasiswa, antrean staf, dan `WisudaService` sebelum menulis — staf
+  kini terikat syarat yang sama. Wajib: yudisium ditetapkan, bebas tunggakan
+  (`Tagihan::tunggakanPerMahasiswa()`, definisi yang juga dibaca yudisium),
+  lulus ukom bila prodinya wajib. **Denda yang belum dibebaskan dihitung
+  tunggakan**; yang dibebaskan tidak, karena baris pembebasannya sudah
+  mengurangi `total`. Kesiapan PIN tampil sebagai informasi, tidak menghalangi:
+  seluruh butirnya diperbaiki kampus di Feeder, bukan oleh mahasiswa. Tidak ada
+  baris bebas pinjaman — modul perpustakaan tidak ada, dan baris yang selalu
+  lolos berbohong. Pembatalan sendiri hanya selama periode dibuka. (2)
+  `StudentStatus::MenungguUkom = 'U'` adalah **kode lokal** (`kodeLokal()`):
+  mapper tidak menjatuhkannya balik ke dirinya sendiri, validator AKM menolak
+  baris berstatus itu selama grup `status_mahasiswa` belum memetakannya. (3)
+  `prodi.wajib_ukom` (bawaan `false`). `YudisiumService::tetapkan()` pada prodi
+  itu menetapkan SK/IPK/predikat tetapi menaruh mahasiswa di MenungguUkom,
+  `tanggal_lulus` kosong, tanpa alumni, tanpa `student.graduated`, tanpa SKPI.
+  (4) Hasil ukom adalah peristiwa per sitting di tabel `uji_kompetensi`, yang
+  gagal ikut tercatat. Yang lulus meluluskan lewat
+  `YudisiumService::lulusSetelahUjiKompetensi()` pada **tanggal ujian, atau
+  tanggal yudisium bila ujian lebih dulu**; pengumumannya (webhook, SKPI,
+  notifikasi) menunggu commit terluar. Semester hasil itu menjadi periode keluar
+  Lulus/DO. (5) Semester tunggu ditulis `UjiKompetensiService::catatSemesterMenunggu()`
+  saat penutupan semester: catatan beku berstatus `U`, SKS dan IPS nol, IPK dan
+  SKS kumulatif dibawa dari semester beku terakhir. Evaluasi studi melewati
+  mahasiswa yang menunggu dan tidak menghitung semester `U` sebagai semester
+  tempuh (`StudentStatus::tidakDihitungMasaStudi()`). (6) Validator Lulus/DO
+  menolak **Lulus** pada prodi wajib ukom tanpa hasil yang lulus; DO dan
+  mengundurkan diri tidak disyaratkan ukom.
+- **Konsekuensi.** Kampus yang memakai status ini harus mengisi pemetaannya dari
+  `GetStatusMahasiswa` sebelum sinkron AKM pertama; seeder demo memetakannya ke
+  `U` hanya untuk kampus demo. Lulusan prodi wajib ukom tidak dapat mendaftar
+  wisuda dan tidak siap PIN sebelum lulus ukom — sesuai aturan ijazah, tetapi
+  kampus yang mewisuda sebelum pengumuman ukom harus mengubah syaratnya di satu
+  tempat itu. Mahasiswa yang menunggu tidak pernah memicu peringatan masa studi;
+  batas waktu ulang ujian, bila kampus punya, belum dimodelkan. Layar Yudisium
+  dan Wisuda menampilkan tanggal lulus mereka "—" sampai hasil yang lulus dicatat.

@@ -155,6 +155,21 @@ class Mahasiswa extends Authenticatable implements OAuthenticatable
         return $this->hasOne(Alumni::class);
     }
 
+    /** Competency-examination sittings, failed ones included. */
+    public function ujiKompetensi(): HasMany
+    {
+        return $this->hasMany(UjiKompetensi::class);
+    }
+
+    /**
+     * The passing sitting, if any. There is at most one: once it is recorded
+     * the student is Lulus and no further result is accepted.
+     */
+    public function ujiKompetensiLulus(): HasOne
+    {
+        return $this->hasOne(UjiKompetensi::class)->lulus();
+    }
+
     /** Study-evaluation findings and decisions, newest first. */
     public function evaluasiStudi(): HasMany
     {

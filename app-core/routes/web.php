@@ -633,6 +633,7 @@ Route::middleware(['auth:staff', 'term.active'])->prefix('admin')->name('admin.'
     Route::post('/yudisium/ajukan', [Admin\YudisiumController::class, 'ajukan'])->name('yudisium.ajukan');
     Route::post('/yudisium/{yudisium}/tetapkan', [Admin\YudisiumController::class, 'tetapkan'])->name('yudisium.tetapkan');
     Route::post('/yudisium/{yudisium}/batalkan', [Admin\YudisiumController::class, 'batalkan'])->name('yudisium.batalkan');
+    Route::post('/yudisium/ukom/{mahasiswa}', [Admin\YudisiumController::class, 'catatUkom'])->name('yudisium.ukom');
 
     Route::get('/wisuda', [Admin\WisudaController::class, 'index'])->name('wisuda');
     Route::post('/wisuda/periode', [Admin\WisudaController::class, 'storePeriode'])->name('wisuda.periode.store');

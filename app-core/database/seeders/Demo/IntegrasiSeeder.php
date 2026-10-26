@@ -63,6 +63,12 @@ class IntegrasiSeeder extends Seeder
             StudentStatus::DropOut->value => 'D',
             StudentStatus::Keluar->value => 'K',
             StudentStatus::GantiProdi->value => 'G',
+
+            // A local code (StudentStatus::kodeLokal()). The demo maps it to
+            // the code the demo Feeder fake accepts; a real campus must take
+            // it from GetStatusMahasiswa, and until it does the validator
+            // refuses the term's activity rows rather than send "U" blind.
+            StudentStatus::MenungguUkom->value => 'U',
         ];
 
         foreach ($statusMahasiswa as $local => $feeder) {

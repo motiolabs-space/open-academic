@@ -29,6 +29,9 @@
                                     @unless ($p->is_active)
                                         <x-chip tone="neutral" class="ml-1">nonaktif</x-chip>
                                     @endunless
+                                    @if ($p->wajib_ukom)
+                                        <x-chip tone="info" class="ml-1">{{ __('ukom.prodi_wajib') }}</x-chip>
+                                    @endif
                                 </td>
                                 <td class="px-5 py-3 text-ink-muted">{{ $p->fakultas->nama }}</td>
                                 <td class="tabular px-5 py-3 text-center">{{ $p->sks_lulus }}</td>
@@ -81,6 +84,8 @@
 
                 <x-field label="Gelar Panjang" name="gelar_panjang" placeholder="Sarjana Komputer" />
                 <x-field label="SKS Kelulusan" name="sks_lulus" type="number" required :value="144" />
+                <x-field :label="__('ukom.prodi_wajib')" name="wajib_ukom" type="checkbox"
+                    :hint="__('ukom.prodi_wajib_hint')" />
                 <x-field label="Ketua Program Studi" name="kaprodi_dosen_id"
                     :options="$daftarDosen->mapWithKeys(fn ($d) => [$d->id => $d->namaLengkap()])" />
 

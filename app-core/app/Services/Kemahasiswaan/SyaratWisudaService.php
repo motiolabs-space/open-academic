@@ -53,7 +53,7 @@ class SyaratWisudaService
             return collect();
         }
 
-        $mahasiswa->loadMissing(['yudisium', 'prodi']);
+        $mahasiswa->loadMissing(['yudisium', 'prodi', 'ujiKompetensiLulus']);
 
         $tunggakan = Tagihan::tunggakanPerMahasiswa($mahasiswa->modelKeys());
         $pin = $this->kesiapanPin->periksaBanyak($mahasiswa);
@@ -61,10 +61,40 @@ class SyaratWisudaService
         return $mahasiswa->mapWithKeys(fn (Mahasiswa $m): array => [
             $m->id => new SyaratWisuda([
                 $this->barisYudisium($m),
+                ...$this->barisUkom($m),
                 $this->barisKeuangan((int) ($tunggakan[$m->id] ?? 0)),
                 $this->barisPin($pin[$m->id]),
             ]),
         ]);
+    }
+
+    /**
+     * Only for programmes that require the competency examination; omitted
+     * elsewhere rather than shown as a pass.
+     *
+     * Required, not informational: the diploma handed over at the ceremony is
+     * not issued until the examination is passed, and the diploma number
+     * cannot be reserved for somebody PDDIKTI still lists as waiting.
+     *
+     * @return array<int, array{kode: string, label: string, terpenuhi: bool, wajib: bool, keterangan: string}>
+     */
+    private function barisUkom(Mahasiswa $m): array
+    {
+        if (!$m->prodi?->wajib_ukom) {
+            return [];
+        }
+
+        $lulus = $m->ujiKompetensiLulus;
+
+        return [[
+            'kode' => 'ukom',
+            'label' => __('ukom.syarat_wisuda'),
+            'terpenuhi' => $lulus !== null,
+            'wajib' => true,
+            'keterangan' => $lulus !== null
+                ? __('ukom.syarat_wisuda_lulus', ['tanggal' => Format::tanggal($lulus->tanggal_ujian)])
+                : __('ukom.syarat_wisuda_belum'),
+        ]];
     }
 
     /** @return array{kode: string, label: string, terpenuhi: bool, wajib: bool, keterangan: string} */

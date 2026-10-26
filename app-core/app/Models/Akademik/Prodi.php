@@ -43,6 +43,7 @@ class Prodi extends Model
         return [
             'jenjang' => EducationLevel::class,
             'is_active' => 'boolean',
+            'wajib_ukom' => 'boolean',
         ];
     }
 
