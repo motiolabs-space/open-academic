@@ -182,7 +182,10 @@ describe('daftar ulang', function () {
     });
 
     it('menolak meluluskan ke prodi yang tidak dipilih pendaftar', function () {
-        $lain = Prodi::factory()->create();
+        // Explicit code: the factory draws from 55201–55299 and does not know
+        // the fixture above already holds 55201, so a bare factory() collided
+        // on prodi.kode about once in a hundred runs.
+        $lain = Prodi::factory()->create(['kode' => '61201']);
         $pendaftar = pendaftarBaru();
 
         expect(fn () => $this->pmb->luluskan($pendaftar, $lain))
