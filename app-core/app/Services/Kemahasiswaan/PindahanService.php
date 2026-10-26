@@ -349,10 +349,15 @@ class PindahanService
 
         $ips = $this->batasSks->ipsKonversi($mahasiswa);
 
+        // sisaKuota() is batas - sudahDiakui; computed here from the two so
+        // the recognised sum is read once.
+        $batas = $this->konversi->batas($mahasiswa);
+        $diakui = $this->konversi->sudahDiakui($mahasiswa);
+
         return new RingkasanPindahan(
-            batas: $this->konversi->batas($mahasiswa),
-            diakui: $this->konversi->sudahDiakui($mahasiswa),
-            sisa: $this->konversi->sisaKuota($mahasiswa),
+            batas: $batas,
+            diakui: $diakui,
+            sisa: max(0, $batas - $diakui),
             menunggu: (int) KonversiKredit::query()
                 ->where('mahasiswa_id', $mahasiswa->id)
                 ->where('status', StatusKonversi::Diajukan->value)
