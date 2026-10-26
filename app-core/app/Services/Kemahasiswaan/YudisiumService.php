@@ -93,11 +93,7 @@ class YudisiumService
         // third copy of the same best-attempt-per-course logic.
         $perolehan = $this->perolehan->untukBanyak($mahasiswa);
 
-        $tunggakanPerMahasiswa = Tagihan::query()
-            ->whereIn('mahasiswa_id', $ids)
-            ->belumLunas()
-            ->groupBy('mahasiswa_id')
-            ->pluck(DB::raw('SUM(total - terbayar)'), 'mahasiswa_id');
+        $tunggakanPerMahasiswa = Tagihan::tunggakanPerMahasiswa($ids);
 
         // A grade still being entered can move the IPK after graduation is
         // confirmed, which would leave the diploma disagreeing with the record.

@@ -153,17 +153,19 @@
             @if ($menunggu->isNotEmpty())
                 <x-card title="Menunggu Periode Wisuda" :meta="$menunggu->count().' lulusan'" flush>
                     <div class="overflow-x-auto">
-                        <table class="w-full min-w-[680px] text-[13px]">
+                        <table class="w-full min-w-[820px] text-[13px]">
                             <thead>
                                 <tr class="border-b border-line text-left text-[11px] uppercase tracking-[0.08em] text-ink-muted">
                                     <th class="px-5 py-3 font-semibold">Lulusan</th>
                                     <th class="px-5 py-3 font-semibold">Program Studi</th>
                                     <th class="px-5 py-3 font-semibold">Tanggal Lulus</th>
+                                    <th class="px-5 py-3 font-semibold">{{ __('wisuda.staf.syarat_kolom') }}</th>
                                     <th class="px-5 py-3 text-right font-semibold">Daftarkan</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 @foreach ($menunggu as $y)
+                                    @php $sy = $syaratMenunggu[$y->mahasiswa_id] ?? null; @endphp
                                     <tr class="border-b border-line/50 last:border-b-0 odd:bg-zebra">
                                         <td class="px-5 py-3">
                                             <div class="font-medium">{{ $y->mahasiswa->nama }}</div>
@@ -173,8 +175,28 @@
                                         <td class="tabular px-5 py-3 text-ink-muted">
                                             {{ $y->tanggal_lulus?->translatedFormat('j M Y') ?? '—' }}
                                         </td>
+                                        <td class="px-5 py-3" data-syarat-wisuda="{{ $y->mahasiswa->nim }}">
+                                            @if ($sy === null || $sy->memenuhi())
+                                                <x-chip tone="success">{{ __('wisuda.staf.syarat_lengkap') }}</x-chip>
+                                            @else
+                                                <details>
+                                                    <summary class="cursor-pointer list-none">
+                                                        <x-chip tone="warning">{{ __('wisuda.staf.syarat_kurang', ['jumlah' => count($sy->belumTerpenuhi())]) }}</x-chip>
+                                                    </summary>
+                                                    <ul class="mt-2 space-y-1 text-[11.5px] text-ink-muted">
+                                                        @foreach ($sy->rincian as $r)
+                                                            @if ($r['wajib'] && ! $r['terpenuhi'])
+                                                                <li>× {{ $r['label'] }} <span class="text-ink-faint">— {{ $r['keterangan'] }}</span></li>
+                                                            @endif
+                                                        @endforeach
+                                                    </ul>
+                                                </details>
+                                            @endif
+                                        </td>
                                         <td class="px-5 py-3 text-right">
-                                            @if ($periode?->is_pendaftaran_dibuka)
+                                            @if ($sy !== null && ! $sy->memenuhi())
+                                                <span class="text-[11.5px] text-ink-faint">—</span>
+                                            @elseif ($periode?->is_pendaftaran_dibuka)
                                                 <form method="POST" action="{{ route('admin.wisuda.daftarkan', $periode) }}">
                                                     @csrf
                                                     <input type="hidden" name="yudisium_id" value="{{ $y->id }}">
@@ -210,12 +232,12 @@
                 <x-card title="Pendaftaran Massal">
                     @if ($periode->is_pendaftaran_dibuka)
                         <p class="mb-3.5 text-[13px] leading-relaxed text-ink-muted">
-                            Mendaftarkan seluruh lulusan yang kelulusannya sudah ditetapkan dan
-                            belum masuk periode mana pun, urut tanggal lulus.
+                            Mendaftarkan seluruh lulusan yang kelulusannya sudah ditetapkan,
+                            memenuhi syarat wisuda, dan belum masuk periode mana pun, urut tanggal lulus.
                         </p>
                         <form method="POST" action="{{ route('admin.wisuda.daftarkan-massal', $periode) }}">
                             @csrf
-                            <x-button type="submit" class="w-full">Daftarkan {{ $menunggu->count() }} Lulusan</x-button>
+                            <x-button type="submit" class="w-full">Daftarkan {{ $syaratMenunggu->filter->memenuhi()->count() }} Lulusan</x-button>
                         </form>
                     @else
                         <p class="text-[13px] text-ink-muted">Pendaftaran periode ini sedang ditutup.</p>

@@ -167,6 +167,12 @@ Route::middleware(['auth:mahasiswa', 'term.active'])->prefix('mahasiswa')->name(
 
     Route::get('/capaian', Mahasiswa\PenguasaanController::class)->name('capaian');
 
+    // Berparameter periode, bukan orang: pemilik pendaftarannya selalu yang
+    // sedang masuk.
+    Route::get('/wisuda', [Mahasiswa\WisudaController::class, 'index'])->name('wisuda');
+    Route::post('/wisuda/{periode}', [Mahasiswa\WisudaController::class, 'daftar'])->name('wisuda.daftar');
+    Route::delete('/wisuda/{periode}', [Mahasiswa\WisudaController::class, 'batal'])->name('wisuda.batal');
+
     Route::get('/edom', [Mahasiswa\EdomController::class, 'index'])->name('edom');
     Route::post('/edom', [Mahasiswa\EdomController::class, 'kirim'])->name('edom.kirim');
 

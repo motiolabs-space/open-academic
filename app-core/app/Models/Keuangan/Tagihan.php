@@ -20,6 +20,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 
 /**
  * A term invoice.
@@ -213,5 +215,31 @@ class Tagihan extends Model
             InvoiceStatus::BelumBayar->value,
             InvoiceStatus::Sebagian->value,
         ]);
+    }
+
+    /**
+     * Outstanding balance per student, in one grouped query.
+     *
+     * The single definition of "bebas tanggungan keuangan", read by both the
+     * graduation checklist and the ceremony checklist so the two can never
+     * disagree about the same invoice. `total` is the net figure: an unpaid
+     * late fee is in it and counts as arrears; a waived one was cancelled by
+     * its own negative row and does not.
+     *
+     * @param array<int, int> $mahasiswaIds
+     * @return Collection<int, int> keyed by student id; students who owe nothing are absent
+     */
+    public static function tunggakanPerMahasiswa(array $mahasiswaIds): Collection
+    {
+        if ($mahasiswaIds === []) {
+            return collect();
+        }
+
+        return static::query()
+            ->whereIn('mahasiswa_id', $mahasiswaIds)
+            ->belumLunas()
+            ->groupBy('mahasiswa_id')
+            ->pluck(DB::raw('SUM(total - terbayar)'), 'mahasiswa_id')
+            ->map(fn ($n): int => (int) $n);
     }
 }
