@@ -50,7 +50,7 @@
                         </div>
                         <div>
                             <dt class="text-[11px] uppercase tracking-[0.08em] text-ink-muted">{{ __('pindahan.kolom.gelombang') }}</dt>
-                            <dd>{{ $pendaftar->gelombang->nama }} · {{ ucfirst($pendaftar->gelombang->jalur) }}</dd>
+                            <dd>{{ $pendaftar->gelombang->nama }} · {{ $pendaftar->gelombang->jalur?->label() }}</dd>
                         </div>
                     </dl>
                 </x-card>
@@ -76,11 +76,11 @@
                         :value="$jenisBawaan" required class="sm:col-span-2" />
 
                     <div x-on:input.debounce.300ms="cari('pt', $event.target.value)">
-                        <x-field :label="__('pindahan.kolom.pt_asal')" name="pt_asal" list="saran-pt" required
+                        <x-field :label="__('pindahan.kolom.pt_asal')" name="pt_asal" list="saran-pt" required :value="$pendaftar?->pt_asal"
                             :hint="__('pindahan.petunjuk.pt_asal')" />
                     </div>
                     <div x-on:input.debounce.300ms="cari('prodi', $event.target.value)">
-                        <x-field :label="__('pindahan.kolom.prodi_asal')" name="prodi_asal" list="saran-prodi" required
+                        <x-field :label="__('pindahan.kolom.prodi_asal')" name="prodi_asal" list="saran-prodi" required :value="$pendaftar?->prodi_asal"
                             :hint="__('pindahan.petunjuk.prodi_asal')" />
                     </div>
 

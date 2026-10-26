@@ -100,7 +100,7 @@ Apa yang ada hari ini, dikelompokkan menurut siapa yang memakainya.
 | Konversi kredit / RPL (G5) | ✅ | Plafon persentase menjaga arti gelar |
 | Yudisium & wisuda | ✅ | Judul diambil dari catatan TA, bukan diketik ulang |
 | Surat & SKPI (G3) | ✅ | Verifikasi publik ber-QR yang benar-benar memverifikasi |
-| PMB | ✅ | Generator NIM + provisioning akun |
+| PMB | ✅ | Generator NIM + provisioning akun; pendaftaran daring oleh calon (#32, portal `/pmb`) |
 | Poin kemahasiswaan & pelanggaran | ✅ | Dua buku besar, tidak pernah dijumlahkan — [`POIN-KEMAHASISWAAN.md`](POIN-KEMAHASISWAAN.md) |
 | Career center (lowongan, forum & agenda alumni) | 🚫 | Milik Open Campus (lihat §Sengaja Bukan di Sini). Tabel `alumni` di sini hanya sumber data lulusan, disajikan lewat Campus Bridge |
 | **Tracer study** | 🚫→🟡 | Instrumennya milik Open Campus; di sini hanya `alumni.status_pekerjaan` |
@@ -347,7 +347,7 @@ sekarang punya rencana.
 
 | # | Pekerjaan | Catatan |
 |---|---|---|
-| 32 | **Pendaftaran PMB daring oleh calon** | Satu-satunya kesenjangan *besar* yang baru. `pmb_pendaftar` tidak punya akun; rute publik PMB hanya melayani berkas. Perlu: akun pendaftar, periode & syarat, jadwal seleksi, kartu ujian pendaftar, pengumuman lewat surel, penanda calon penerima KIP. Nilai seleksi dari CBT mana pun **diimpor**, bukan diselenggarakan di sini |
+| ~~32~~ | ~~**Pendaftaran PMB daring oleh calon**~~ | ✅ 26 Oktober 2026 — portal pendaftar `/pmb` di atas guard kelima `pendaftar` (tabel `pmb_akun`, verifikasi surel, lupa sandi dengan tabel token sendiri, batas laju daftar/masuk/surel; tidak dikenal SSO, tidak dapat membuka portal mahasiswa sekalipun sudah ber-NIM). Gelombang dibuka daring per gelombang (`is_daring`, bawaan mati) dengan prodi ditawarkan, daya tampung, biaya formulir, ambang, dan berkas wajib per prodi. Alur draf → ajukan → bayar formulir (buku besar `pmb_pembayaran` dicatat kasir, bukan `tagihan` — ADR-024) → verifikasi berkas → seleksi → kartu ujian PDF → pengumuman lewat surel dan portal, terpisah dari keputusan. Biodata divalidasi seperti `FeederValidator` dan disalin utuh saat daftar ulang. Nilai seleksi **diimpor** dari CSV CBT mana pun, semua-atau-tidak-sama-sekali; kelulusan otomatis per ambang sebagai opsi (`PMB_KELULUSAN_OTOMATIS`, bawaan mati). Penanda calon KIP. Pindahan/RPL diteruskan ke intake #33. docs/PMB.md |
 | ~~33~~ | ~~**Mahasiswa pindahan**~~ | ✅ 26 Oktober 2026 — layar Pindahan & RPL dengan dua pintu (pendaftar PMB gelombang transfer/RPL, dan pendaftaran langsung oleh BAAK), PT/prodi asal disarankan dari referensi `GetAllPT` dan intake sebelumnya, lalu langsung ke usulan konversi dari transkrip asal. `sks_diakui` tidak pernah diketik: jumlah konversi yang disetujui, ditulis `KonversiService` pada setiap keputusan. Semester masuk dan batas SKS KRS pertama membacanya; masa studi dari semester asal opsional (ADR-021) |
 | 34 | **Jadwal ujian (UTS/UAS)** | Entitas sendiri: sesi, ruang, pengawas, bentrok. Kartu ujian sudah dicetak, tetapi dari jadwal kuliah |
 | 35 | **Kalender akademik** 🟡 | Tanggal KRS (`krs_mulai`, `krs_selesai`, `krs_perubahan_selesai`) dan nilai (`nilai_mulai`, `nilai_selesai`) **sudah** ada di `tahun_akademik` dan sudah menggerbang KRS, penilaian, dan pengingat. Yang belum: kalender peristiwa — UTS/UAS, libur, yudisium, wisuda, EDOM — yang dapat dilihat mahasiswa dan dosen, dan yang nantinya dibaca #34 |
@@ -383,7 +383,8 @@ sekali: sinkronisasi pertama akan mencoba mendaftarkan ulang mahasiswa yang
 sudah ada di PDDIKTI. #33 murah karena datanya sudah ada sejak #25. #32 adalah
 pekerjaan terbesar dan satu-satunya yang membuka portal keempat (calon
 mahasiswa); kerjakan setelah Feeder tuntas, supaya pendaftar yang diterima
-langsung punya riwayat pendidikan yang benar (#25).
+langsung punya riwayat pendidikan yang benar (#25). **#32 selesai** 26 Oktober
+2026 (Sesi 53, ADR-024).
 
 ### Yang dipelajari dan sengaja tidak diikuti
 
@@ -572,3 +573,4 @@ Rinciannya — termasuk cacat yang ditemukan dan keputusan yang diambil — ada 
 | Repo publik · P4 Feeder #19–26, #20b · P5 PIN #28–29 | 22 Oktober 2026 |
 | P4 tuntas: #24b skala & periode per prodi, #27 PDM/PJK | 24 Oktober 2026 |
 | P5 tuntas: #30 pendaftaran wisuda mandiri, #31 menunggu uji kompetensi | 26 Oktober 2026 |
+| #32 PMB daring: portal pendaftar, seleksi impor, pengumuman | 26 Oktober 2026 |

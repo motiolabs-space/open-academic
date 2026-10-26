@@ -125,7 +125,7 @@ class SkalaPeriodeProdiService
         return [
             'pendaftar_ikut_seleksi' => (clone $pendaftar)
                 ->where('prodi_pilihan_1_id', $prodi->id)
-                ->whereNotIn('status', [ApplicantStatus::Mendaftar->value, ApplicantStatus::Verifikasi->value, ApplicantStatus::Batal->value])
+                ->whereNotIn('status', [ApplicantStatus::Draf->value, ApplicantStatus::Mendaftar->value, ApplicantStatus::Verifikasi->value, ApplicantStatus::Batal->value])
                 ->count(),
             'pendaftar_lulus_seleksi' => $diterima()
                 ->whereIn('status', [ApplicantStatus::Lulus->value, ApplicantStatus::DaftarUlang->value, ApplicantStatus::Mahasiswa->value])

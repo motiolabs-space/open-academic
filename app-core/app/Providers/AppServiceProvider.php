@@ -105,6 +105,7 @@ class AppServiceProvider extends ServiceProvider
         $this->hardenUrls();
         $this->kanalNotifikasi();
         $this->batasVerifikasi();
+        $this->batasPmb();
         $this->kunciFeeder();
     }
 
@@ -131,6 +132,26 @@ class AppServiceProvider extends ServiceProvider
     {
         RateLimiter::for('verifikasi', fn (Request $request) => Limit::perMinute(
             (int) config('surat.verifikasi.batas_per_menit'),
+        )->by($request->ip()));
+    }
+
+    /**
+     * Rate limits for the public admission pages.
+     *
+     * Registration is per IP: an anonymous form that creates rows is the
+     * easiest thing on the site to flood. The two that send email are per IP
+     * too, so the forms cannot be used to bombard somebody else's inbox.
+     * Sign-in is limited inside its request instead, per address + IP, like
+     * the main sign-in page.
+     */
+    private function batasPmb(): void
+    {
+        RateLimiter::for('pmb-daftar', fn (Request $request) => Limit::perHour(
+            (int) config('pmb.batas.daftar_per_jam'),
+        )->by($request->ip()));
+
+        RateLimiter::for('pmb-surel', fn (Request $request) => Limit::perMinute(
+            (int) config('pmb.batas.surel_per_menit'),
         )->by($request->ip()));
     }
 

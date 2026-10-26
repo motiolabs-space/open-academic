@@ -457,3 +457,55 @@
   paralel. Begitu dukungan keamanan PHP 8.2 berakhir (31 Desember 2026), batas
   bawah layak dinaikkan ke `^8.4` dan 8.2 dikeluarkan dari matriks — keputusan
   terpisah, karena memutus instalasi yang masih di 8.2.
+
+## ADR-024 — PMB daring: akun pendaftar di guard sendiri, biaya formulir di buku besar PMB, hasil terlihat hanya sesudah diumumkan (2026-10-26)
+
+- **Konteks.** Roadmap #32: calon mendaftar sendiri. `pmb_pendaftar` tidak punya
+  akun, rute publik PMB hanya melayani berkas, dan seluruh pemberitahuan sistem
+  ditujukan kepada mahasiswa, dosen, atau staf. Tiga hal harus diputuskan:
+  identitas calon, tempat biaya formulir, dan kapan calon boleh tahu hasilnya.
+- **Keputusan.**
+  (1) **Guard kelima `pendaftar`** (session) dengan provider tabel baru
+  `pmb_akun`, bukan kolom kata sandi di `pmb_pendaftar`: satu akun dapat
+  mendaftar di beberapa gelombang, pendaftar yang diinput panitia tidak punya
+  akun, dan guard terpisah adalah satu-satunya cara agar tidak ada jalur yang
+  me-resolve calon menjadi baris yang dikenal portal mahasiswa. `UserRole` tetap
+  tiga; akun pendaftar tanpa peran Spatie, tidak dikenal SSO/API, punya halaman
+  masuk sendiri (`/pmb/masuk`), broker lupa sandi dengan tabel token sendiri
+  (surel calon bisa juga surel mahasiswa), verifikasi surel wajib, dan batas laju
+  pada daftar/masuk/kirim surel. Masuk di satu sisi mengeluarkan sesi sisi lain.
+  (2) **Biaya formulir tidak ditagih lewat `tagihan`.** Rancangan awal meminta
+  "tagihan lewat modul keuangan yang ada", tetapi setiap invarian `tagihan`
+  menganggap pemiliknya mahasiswa: `mahasiswa_id` wajib dan unik per semester,
+  denda diakrualkan padanya (ADR-015), pengingat jatuh tempo dikirim ke
+  mahasiswanya, gerbang KRS dan daftar periksa wisuda membacanya, dan kontak
+  outbox akuntansi adalah UUID mahasiswa. Menjadikan `mahasiswa_id` nullable
+  akan menuntut penyaring di belasan pembaca dan membuat biaya formulir terkena
+  denda. Biaya formulir dibekukan di `pmb_pendaftar.biaya_formulir` dan dibayar ke
+  buku besar `pmb_pembayaran`, dicatat kasir (`keuangan.manage` atau
+  `pmb.manage`) di layar Biaya Formulir PMB pada menu KEUANGAN, dengan aturan
+  `PembayaranService`: tanpa kelebihan bayar, lunas diturunkan dari baris
+  berhasil, pembatalan menyimpan barisnya. Bagian keuangan hanya dapat membuka
+  bukti bayar, bukan dokumen identitas calon.
+  (3) **Status `draf` baru** sebelum `mendaftar`, di luar seluruh hitungan
+  pendaftar (corong, LKPS, skala PDDIKTI). Perpindahan status lewat satu metode
+  yang menolak sisi di luar `ApplicantStatus::bolehMenujuKe()`.
+  (4) **Keputusan dan pengumuman terpisah.** Calon melihat "Seleksi" sampai
+  gelombangnya diumumkan (`diumumkan_at`); pengumuman memberi tahu setiap yang
+  sudah diputuskan, dan keputusan sesudahnya dikirim saat diambil — setiap hasil
+  sekali per calon lewat `Notifier::kirimSekali`. Pemberitahuan PMB memakai
+  kategori Kemahasiswaan, bukan kategori baru, karena daftar kategori juga
+  layar preferensi mahasiswa dan staf.
+  (5) **Nilai seleksi diimpor**, CSV dua kolom wajib, semua-atau-tidak-sama-sekali
+  dengan seluruh galat dilaporkan sekaligus. Kelulusan otomatis per ambang prodi
+  adalah konfigurasi bawaan mati; ia memutuskan lewat `PmbService` yang sama
+  dengan staf dan hanya di prodi yang punya ambang.
+  (6) **Daya tampung** per prodi per gelombang ditegakkan pada setiap keputusan
+  lulus; **kuota** gelombang menghitung pendaftaran yang diajukan, bukan draf.
+- **Konsekuensi.** Pendapatan formulir tidak tampak di layar Tagihan &
+  Rekonsiliasi dan belum dijurnalkan ke integrasi akuntansi; bila kampus
+  membutuhkannya, outbox akuntansi perlu kontak non-mahasiswa lebih dulu.
+  Gelombang lama tetap tertutup bagi pendaftaran daring sampai staf
+  menyalakannya. Surel verifikasi menuntut worker antrean berjalan — tanpa itu
+  calon berhenti di langkah pertama. Akun pendaftar dan akun mahasiswa adalah dua
+  akun; calon yang diterima memakai NIM dan kata sandi dari bagian akademik.

@@ -34,6 +34,13 @@ class LoginController extends Controller
         'staff' => ['nip', 'email'],
     ];
 
+    /**
+     * The admission portal's guard. Never tried here — applicants sign in on
+     * their own page — but signed out here, so the one-portal-per-session rule
+     * holds in both directions.
+     */
+    private const GUARD_PENDAFTAR = 'pendaftar';
+
     public function show(): View|RedirectResponse
     {
         if ($role = $this->activeRole()) {
@@ -115,7 +122,7 @@ class LoginController extends Controller
 
     public function destroy(Request $request): RedirectResponse
     {
-        foreach (array_keys(self::IDENTITY_COLUMNS) as $guard) {
+        foreach ([...array_keys(self::IDENTITY_COLUMNS), self::GUARD_PENDAFTAR] as $guard) {
             if (Auth::guard($guard)->check()) {
                 Auth::guard($guard)->logout();
             }
@@ -129,7 +136,7 @@ class LoginController extends Controller
 
     private function logoutGuardLain(string $kecuali): void
     {
-        foreach (array_keys(self::IDENTITY_COLUMNS) as $guard) {
+        foreach ([...array_keys(self::IDENTITY_COLUMNS), self::GUARD_PENDAFTAR] as $guard) {
             if ($guard !== $kecuali && Auth::guard($guard)->check()) {
                 Auth::guard($guard)->logout();
             }

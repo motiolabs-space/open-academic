@@ -17,7 +17,7 @@
 
 | | |
 |---|---|
-| Portal | 3 — Mahasiswa, Dosen, Staf |
+| Portal | 4 — Mahasiswa, Dosen, Staf, Pendaftar PMB |
 | **Modul terpasang** | **61** — 12 mahasiswa · 14 dosen · 35 staf |
 | **Belum dibuat** | 8 modul · 7 sebagian · **1 utang teknis** (7 lunas 19 Agu 2026) · **1 risiko terbuka** |
 | Sengaja di luar cakupan | 8 |
@@ -90,7 +90,7 @@ Akun demo: `admin@demo.test` · kata sandi `password`
 | | Koreksi Nilai | `/admin/koreksi-nilai` |
 | | Penutupan Semester | `/admin/tutup-semester` |
 | **MAHASISWA** | Data Mahasiswa | `/admin/mahasiswa` |
-| | PMB | `/admin/pmb` |
+| | PMB | `/admin/pmb` — gelombang, prodi ditawarkan, jadwal, impor nilai, pengumuman di `/admin/pmb/gelombang/{uuid}`; detail pendaftar di `/admin/pmb/pendaftar/{uuid}` |
 | | Cuti Mahasiswa | `/admin/cuti` |
 | | Konversi Kredit | `/admin/konversi` |
 | | Evaluasi Studi | `/admin/evaluasi-studi` |
@@ -107,6 +107,7 @@ Akun demo: `admin@demo.test` · kata sandi `password`
 | **KEUANGAN** | Matriks Tarif | `/admin/tarif` |
 | | Tagihan & Rekonsiliasi | `/admin/keuangan` |
 | | Beasiswa & Keringanan | `/admin/beasiswa` |
+| | Biaya Formulir PMB | `/admin/pmb/formulir` |
 | | Integrasi Akuntansi | `/admin/akuntansi` |
 | **PELAPORAN** | Neo Feeder PDDIKTI | `/admin/feeder` |
 | | Campus Bridge | `/admin/bridge` |
@@ -118,6 +119,19 @@ Akun demo: `admin@demo.test` · kata sandi `password`
 | | SPMI & Audit Mutu | `/admin/spmi` |
 | | Pengumuman | `/admin/pengumuman` |
 | | Pengaturan | `/admin/pengaturan` |
+
+## Portal Pendaftar PMB
+
+Akun demo: `calon.seleksi@demo.test` (dan lima lainnya di tiap tahap) · kata
+sandi `password` · masuk di `/pmb/masuk`, bukan `/masuk`. Guard sendiri
+(`pendaftar`), tidak dapat membuka portal lain. Rincian: [PMB.md](PMB.md).
+
+| Modul | Rute | Isi |
+|---|---|---|
+| Beranda PMB (publik) | `/pmb` | Gelombang terbuka, prodi, biaya, daya tampung |
+| Akun | `/pmb/daftar` · `/pmb/masuk` · `/pmb/lupa-sandi` | Daftar dengan verifikasi surel, lupa sandi, batas laju |
+| Pendaftaran Saya | `/pmb/portal` | Daftar pendaftaran, mulai pendaftaran, pemberitahuan |
+| Satu Pendaftaran | `/pmb/portal/{uuid}` | Biodata siap Feeder, berkas, biaya formulir, jadwal seleksi, kartu ujian PDF, hasil |
 
 ## Denda keterlambatan
 

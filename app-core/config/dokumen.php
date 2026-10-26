@@ -59,6 +59,14 @@ return [
             'catatan_kaki' => 'Wajib dibawa dan diperlihatkan kepada pengawas pada setiap ujian.',
         ],
 
+        // Kartu calon mahasiswa untuk seleksi PMB (docs/PMB.md).
+        'kartu_ujian_pmb' => [
+            'label' => 'Kartu Ujian Seleksi PMB',
+            'penandatangan' => true,
+            'jabatan_bawaan' => 'Ketua Panitia PMB',
+            'catatan_kaki' => 'Wajib dibawa bersama identitas asli pada setiap tahap seleksi. Nilai diumumkan melalui portal pendaftaran.',
+        ],
+
         'absensi' => [
             'label' => 'Daftar Hadir Kuliah',
             'penandatangan' => false,

@@ -14,8 +14,12 @@ use App\Models\Akademik\TahunAkademik;
 use App\Models\Kemahasiswaan\Mahasiswa;
 use App\Models\Keuangan\Tagihan;
 use App\Models\Keuangan\TagihanItem;
+use App\Models\Pmb\PmbGelombang;
+use App\Models\Pmb\PmbGelombangProdi;
 use App\Models\Pmb\PmbPendaftar;
+use App\Notifications\Pmb\MenjadiMahasiswa;
 use App\Services\Keuangan\TarifResolver;
+use App\Services\Notifikasi\Notifier;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
@@ -34,6 +38,8 @@ class PmbService
     public function __construct(
         private readonly NimGenerator $nim,
         private readonly TarifResolver $tarif,
+        private readonly PengumumanPmbService $pengumuman,
+        private readonly Notifier $notifier,
     ) {}
 
     /** Records a selection decision. */
@@ -51,23 +57,91 @@ class PmbService
             );
         }
 
-        $pendaftar->update([
-            'status' => ApplicantStatus::Lulus,
-            'prodi_diterima_id' => $prodi->id,
-            'nilai_seleksi' => $nilai ?? $pendaftar->nilai_seleksi,
-        ]);
+        $this->pastikanSiapDiputuskan($pendaftar, ApplicantStatus::Lulus);
 
-        return $pendaftar->refresh();
+        DB::transaction(function () use ($pendaftar, $prodi, $nilai): void {
+            $this->pastikanDayaTampung($pendaftar, $prodi);
+
+            $pendaftar->update([
+                'status' => ApplicantStatus::Lulus,
+                'prodi_diterima_id' => $prodi->id,
+                'nilai_seleksi' => $nilai ?? $pendaftar->nilai_seleksi,
+            ]);
+        });
+
+        $this->pengumuman->beritahuBilaDiumumkan($pendaftar->refresh());
+
+        return $pendaftar;
     }
 
     public function tidakLuluskan(PmbPendaftar $pendaftar, ?string $catatan = null): PmbPendaftar
     {
+        $this->pastikanSiapDiputuskan($pendaftar, ApplicantStatus::TidakLulus);
+
         $pendaftar->update([
             'status' => ApplicantStatus::TidakLulus,
             'catatan' => $catatan ?? $pendaftar->catatan,
         ]);
 
-        return $pendaftar->refresh();
+        $this->pengumuman->beritahuBilaDiumumkan($pendaftar->refresh());
+
+        return $pendaftar;
+    }
+
+    /**
+     * An online applicant is decided only once the campus has let them into
+     * selection — fee settled, documents accepted.
+     *
+     * Applicants keyed in by the admissions desk keep the old latitude: the
+     * desk has their paperwork in hand and decides from whatever stage it
+     * recorded them at.
+     */
+    private function pastikanSiapDiputuskan(PmbPendaftar $pendaftar, ApplicantStatus $ke): void
+    {
+        if (!$pendaftar->daring()) {
+            return;
+        }
+
+        $dari = $pendaftar->status;
+
+        if (!in_array($dari, [ApplicantStatus::Seleksi, ApplicantStatus::Lulus, ApplicantStatus::TidakLulus], true)
+            || ($dari !== $ke && !$dari->bolehMenujuKe($ke))) {
+            throw new AturanAkademikException(__('pmb.kelulusan.belum_seleksi'));
+        }
+    }
+
+    /**
+     * Seats are counted per programme per wave, among everyone accepted there
+     * and not since withdrawn — re-registration and enrolment still hold a
+     * seat. The wave row is locked so two operators cannot fill the last seat
+     * twice.
+     */
+    private function pastikanDayaTampung(PmbPendaftar $pendaftar, Prodi $prodi): void
+    {
+        $tawaran = PmbGelombangProdi::query()
+            ->where('pmb_gelombang_id', $pendaftar->pmb_gelombang_id)
+            ->where('prodi_id', $prodi->id)
+            ->first();
+
+        if ($tawaran?->daya_tampung === null) {
+            return;
+        }
+
+        PmbGelombang::whereKey($pendaftar->pmb_gelombang_id)->lockForUpdate()->first();
+
+        $terisi = PmbPendaftar::query()
+            ->where('pmb_gelombang_id', $pendaftar->pmb_gelombang_id)
+            ->where('prodi_diterima_id', $prodi->id)
+            ->whereIn('status', [ApplicantStatus::Lulus->value, ApplicantStatus::DaftarUlang->value, ApplicantStatus::Mahasiswa->value])
+            ->whereKeyNot($pendaftar->id)
+            ->count();
+
+        if ($terisi >= $tawaran->daya_tampung) {
+            throw new AturanAkademikException(__('pmb.kelulusan.daya_tampung_penuh', [
+                'prodi' => $prodi->nama,
+                'jumlah' => $tawaran->daya_tampung,
+            ]));
+        }
     }
 
     /**
@@ -125,7 +199,15 @@ class PmbService
                 'tempat_lahir' => $pendaftar->tempat_lahir,
                 'tanggal_lahir' => $pendaftar->tanggal_lahir,
                 'jenis_kelamin' => $pendaftar->jenis_kelamin,
+                'agama_kode' => $pendaftar->agama_kode?->value,
+                'nama_ibu' => $pendaftar->nama_ibu,
+                'nama_ayah' => $pendaftar->nama_ayah,
                 'alamat' => $pendaftar->alamat,
+                'kelurahan' => $pendaftar->kelurahan,
+                'kecamatan' => $pendaftar->kecamatan,
+                'kabupaten' => $pendaftar->kabupaten,
+                'provinsi' => $pendaftar->provinsi,
+                'kode_pos' => $pendaftar->kode_pos,
                 'telepon' => $pendaftar->telepon,
 
                 'status' => StudentStatus::Aktif,
@@ -144,6 +226,11 @@ class PmbService
                 'tagihan' => $this->terbitkanTagihanAwal($mahasiswa, $term),
             ];
         });
+
+        // Queued, and dispatched only once the surrounding transaction — this
+        // one, or the transfer intake's around it — has committed.
+        $pendaftar->loadMissing('akun');
+        $this->notifier->kirim($pendaftar->akun, new MenjadiMahasiswa($pendaftar));
 
         return [...$hasil, 'kata_sandi' => $kataSandi];
     }

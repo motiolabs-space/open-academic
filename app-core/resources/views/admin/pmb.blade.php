@@ -36,11 +36,16 @@
                     <tbody>
                         @forelse ($daftarGelombang as $g)
                             <tr class="border-b border-line/50 last:border-b-0 odd:bg-zebra">
-                                <td class="tabular px-5 py-3 font-semibold">{{ $g->kode }}</td>
+                                <td class="tabular px-5 py-3 font-semibold">
+                                    <a href="{{ route('admin.pmb.gelombang', $g) }}" class="text-navy hover:underline">{{ $g->kode }}</a>
+                                </td>
                                 <td class="px-5 py-3">
                                     {{ $g->nama }}
+                                    @if ($g->is_daring)
+                                        <x-chip tone="info" class="ml-1">{{ __('pmb.admin.daring') }}</x-chip>
+                                    @endif
                                     <div class="text-[11.5px] text-ink-faint">
-                                        {{ ucfirst($g->jalur) }} · {{ $g->tahunAkademik->nama }}
+                                        {{ $g->jalur?->label() }} · {{ $g->tahunAkademik->nama }}
                                         @if ($g->kuota) · kuota {{ $g->kuota }} @endif
                                     </div>
                                 </td>
@@ -85,7 +90,7 @@
                 <x-field label="Kode" name="kode" required placeholder="PMB-2026-1" />
                 <x-field label="Nama" name="nama" required placeholder="Gelombang I 2026" />
                 <x-field label="Jalur" name="jalur" required
-                    :options="['reguler' => 'Reguler', 'prestasi' => 'Prestasi', 'rpl' => 'RPL', 'transfer' => 'Transfer']" />
+                    :options="$jalurPilihan" />
                 <div class="grid grid-cols-2 gap-3">
                     <x-field label="Mulai" name="tanggal_mulai" type="date" required />
                     <x-field label="Selesai" name="tanggal_selesai" type="date" required />
@@ -106,6 +111,10 @@
                 :options="$daftarGelombang->pluck('nama', 'id')" />
             <x-field label="Status" name="status" :value="$filter['status'] ?? ''"
                 :options="collect($statusPilihan)->mapWithKeys(fn ($s) => [$s->value => $s->label()])" />
+            <label class="flex items-center gap-2 pb-2.5 text-[12.5px]">
+                <input type="checkbox" name="kip" value="1" class="accent-navy" @checked($filter['kip'] ?? false)>
+                {{ __('pmb.admin.filter_kip') }}
+            </label>
             <x-button type="submit">Terapkan</x-button>
             @if (array_filter($filter))
                 <x-button variant="ghost" :href="route('admin.pmb')">Reset</x-button>
@@ -131,7 +140,10 @@
                         <tr class="border-b border-line/50 last:border-b-0 odd:bg-zebra align-top">
                             <td class="tabular px-5 py-3">{{ $p->nomor_pendaftaran }}</td>
                             <td class="px-5 py-3">
-                                <div class="font-medium">{{ $p->nama }}</div>
+                                <a href="{{ route('admin.pmb.pendaftar', $p) }}" class="font-medium text-navy hover:underline">{{ $p->nama }}</a>
+                                @if ($p->is_calon_kip)
+                                    <x-chip tone="gold" class="ml-1">{{ __('pmb.admin.kip') }}</x-chip>
+                                @endif
                                 <div class="text-[11.5px] text-ink-faint">{{ $p->email }}</div>
                                 @if ($p->mahasiswa)
                                     <div class="tabular mt-1 text-[11.5px] font-semibold text-navy">

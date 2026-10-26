@@ -52,8 +52,13 @@ $app = Application::configure(basePath: dirname(__DIR__))
          */
         $middleware->web(append: [PastikanDuaFaktor::class]);
 
-        // Guests land on the single sign-in page whichever portal they aimed at.
-        $middleware->redirectGuestsTo(fn () => route('login'));
+        // Guests land on the single sign-in page whichever portal they aimed
+        // at — except prospective students, whose portal has its own page.
+        // Sending an applicant to "Masuk ke Portal Akademik" asks them for a
+        // NIM they do not have yet.
+        $middleware->redirectGuestsTo(fn (Request $request) => $request->is('pmb', 'pmb/*')
+            ? route('pmb.masuk')
+            : route('login'));
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         // A refused academic rule is a normal outcome, not a crash: the person
