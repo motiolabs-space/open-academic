@@ -171,8 +171,18 @@ class PresensiService
      */
     public function layakUas(Mahasiswa $mahasiswa, KelasKuliah $kelas): bool
     {
-        $persen = $this->persenKehadiran($mahasiswa, $kelas);
+        return $this->memenuhiAmbangUas($this->persenKehadiran($mahasiswa, $kelas));
+    }
 
+    /**
+     * The threshold itself, for callers that already hold the percentage.
+     *
+     * An exam list computes a whole class's percentages in one pass and must
+     * not then re-derive the cut-off: two copies of it disagree about the
+     * student sitting exactly on the line.
+     */
+    public function memenuhiAmbangUas(?float $persen): bool
+    {
         return $persen === null
             || $persen >= (float) config('academic.attendance.min_percent_for_final_exam');
     }

@@ -39,6 +39,7 @@ final class Navigation
                     self::item('Dasbor', '▦', 'mahasiswa.dashboard'),
                     self::item('Rencana Studi (KRS)', '▤', 'mahasiswa.krs'),
                     self::item('Jadwal Kuliah', '◫', 'mahasiswa.jadwal'),
+                    self::item('Jadwal Ujian', '◪', 'mahasiswa.jadwal-ujian'),
                     self::item('Presensi Mandiri', '⛶', 'mahasiswa.presensi'),
                     self::item('KHS & Transkrip', '≡', 'mahasiswa.khs'),
                     self::item('Capaian Pembelajaran', '◔', 'mahasiswa.capaian'),
@@ -64,6 +65,7 @@ final class Navigation
                 'items' => [
                     self::item('Dasbor', '▦', 'dosen.dashboard'),
                     self::item('Kelas Diampu', '▤', 'dosen.kelas'),
+                    self::item('Jadwal Ujian', '◪', 'dosen.jadwal-ujian'),
                     self::item('Input Nilai', '≡', 'dosen.nilai'),
                     self::item('Presensi', '◫', 'dosen.presensi'),
                     self::item('RPS & Jurnal', '❏', 'dosen.rps'),
@@ -130,6 +132,7 @@ final class Navigation
                 'items' => [
                     self::item('Master Akademik', '▤', 'admin.master.index'),
                     self::item('Jadwal & Kelas', '◫', 'admin.kelas'),
+                    self::item('Jadwal Ujian', '◪', 'admin.jadwal-ujian.index'),
                     self::item('Padanan & Paket', '⇄', 'admin.kurikulum-lanjutan'),
                     self::item('Koreksi Nilai', '✎', 'admin.koreksi-nilai'),
                     self::item('Penutupan Semester', '⊟', 'admin.tutup-semester'),
