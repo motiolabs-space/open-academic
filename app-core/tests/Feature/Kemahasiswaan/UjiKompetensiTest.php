@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\DTOs\Kemahasiswaan\HasilUjiKompetensiData;
 use App\Enums\HasilEvaluasi;
 use App\Enums\HasilUjiKompetensi;
+use App\Enums\JenisDaftar;
 use App\Enums\SemesterType;
 use App\Enums\StudentStatus;
 use App\Exceptions\AturanAkademikException;
@@ -294,6 +295,50 @@ describe('transisi status', function () {
             ->assertForbidden();
 
         expect($m->fresh()->status)->toBe(StudentStatus::MenungguUkom);
+    });
+});
+
+describe('pindahan dan mahasiswa adopsi', function () {
+    it('tidak memperingatkan masa studi pindahan yang menunggu, meski semester asal dihitung', function () {
+        // Masuk di kampus asal 2021 Ganjil, pindah 2024 Ganjil: enam semester
+        // di asal, di atas batas empat. Menunggu ujian bukan alasan dievaluasi.
+        config([
+            'academic.evaluasi.tahap' => [],
+            'academic.evaluasi.masa_studi_maksimum' => 4,
+            'academic.pindahan.masa_studi_dari_asal' => true,
+        ]);
+
+        $m = calonUkom();
+        $m->update([
+            'jenis_daftar' => JenisDaftar::Pindahan,
+            'term_masuk' => '20241',
+            'term_masuk_asal' => '20211',
+        ]);
+        tetapkanUkom($m->fresh());
+        $this->ukom->catatSemesterMenunggu($this->term);
+
+        expect($m->fresh()->semesterDiAsal())->toBe(6)
+            ->and($m->fresh()->status)->toBe(StudentStatus::MenungguUkom)
+            ->and(app(EvaluasiStudiService::class)->jalankan($this->term)['temuan'])->toBe(0);
+    });
+
+    it('mengirim AKM menunggu ukom untuk mahasiswa yang diadopsi dari PDDIKTI tanpa galat', function () {
+        // Mahasiswa adopsi: feeder_id dan id registrasi berasal dari PDDIKTI,
+        // bukan dari dorongan kampus ini.
+        FeederMapping::create(['group' => 'status_mahasiswa', 'local_value' => 'U', 'feeder_code' => 'U', 'feeder_label' => 'Menunggu Uji Kompetensi']);
+
+        $m = calonUkom();
+        $m->update(['feeder_id' => 'pd-adopsi-1', 'feeder_registrasi_id' => 'reg-adopsi-1']);
+        tetapkanUkom($m->fresh());
+        $this->ukom->catatSemesterMenunggu($this->term);
+
+        $mapper = app(AktivitasKuliahMapper::class);
+        $baris = $mapper->rows($this->term->kode)->firstWhere('mahasiswa_id', $m->id);
+
+        expect($mapper->payload($baris))->toMatchArray([
+            'id_registrasi_mahasiswa' => 'reg-adopsi-1',
+            'id_status_mahasiswa' => 'U',
+        ])->and(app(FeederValidator::class)->periksa('aktivitas_kuliah', $this->term->kode, $mapper)['error'])->toBe(0);
     });
 });
 

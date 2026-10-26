@@ -253,7 +253,17 @@ describe('kredit ganda', function () {
         $this->mahasiswa->update(['status' => StudentStatus::Lulus]);
 
         expect(fn () => $this->konversi->cabut($k->fresh(), $this->staf, 'Keliru.'))
-            ->toThrow(AturanAkademikException::class, 'sudah lulus');
+            ->toThrow(AturanAkademikException::class, 'sudah ditetapkan (status Lulus)');
+    });
+
+    it('menolak mencabut konversi milik mahasiswa yang menunggu uji kompetensi', function () {
+        // Pindahan di prodi kesehatan: yudisium sudah menetapkan total SKS,
+        // termasuk kredit yang diakui; ujian kompetensi tidak mengubahnya.
+        $k = konversiDisetujui(mkKonversi(3));
+        $this->mahasiswa->update(['status' => StudentStatus::MenungguUkom]);
+
+        expect(fn () => $this->konversi->cabut($k->fresh(), $this->staf, 'Keliru.'))
+            ->toThrow(AturanAkademikException::class, 'Menunggu Uji Kompetensi');
     });
 });
 

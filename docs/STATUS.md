@@ -68,7 +68,16 @@ Seeder baru `UjiKompetensiSeeder`: Fakultas Ilmu Kesehatan, D3 Keperawatan
 (`mahasiswa.ukom@demo.test`) dengan catatan AKM `U` semester aktif dan satu
 sitting yang belum lulus. Pemetaan demo `U → U` di `IntegrasiSeeder`.
 
-**49 tes baru** (WisudaMandiriTest 27, UjiKompetensiTest 22).
+### Sesudah #44 dan #33 masuk
+
+Digabung dengan `main` sesudah PR #15 dan #16. Satu interaksi: `KonversiService::cabut()`
+menolak mencabut kredit diakui milik mahasiswa Lulus, tetapi tidak milik mahasiswa
+yang menunggu ukom — padahal total SKS-nya sudah ditetapkan yudisium. Kini keduanya
+ditolak. Pindahan yang menunggu tidak dievaluasi meski `masa_studi_dari_asal` aktif,
+dan mahasiswa adopsi mengirim AKM `U` dengan id registrasi dari PDDIKTI; keduanya
+dipaku tes. Migrasi ukom dipindah ke `120000`/`120001`, sesudah migrasi #33.
+
+**52 tes baru** (WisudaMandiriTest 27, UjiKompetensiTest 24, KonversiKreditTest 1).
 
 ---
 
