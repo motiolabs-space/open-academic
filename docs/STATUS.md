@@ -4,7 +4,7 @@
 
 ---
 
-## Sesi 54 — 2026-10-26 · Jadwal UTS/UAS: entitas sendiri, bentrok mahasiswa, kartu dari jadwal ujian
+## Sesi 55 — 2026-10-26 · Jadwal UTS/UAS: entitas sendiri, bentrok mahasiswa, kartu dari jadwal ujian
 
 Pekerjaan P6 #34. Branch `feature/jadwal-ujian`, dari `main` sesudah PR #17.
 Berjalan paralel dengan sesi #32 (PMB daring) dan paket kecil #45/#27b; konflik
