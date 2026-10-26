@@ -81,6 +81,99 @@ belum diisi dari jalur gelombang.
 
 ---
 
+## Sesi 54 — 2026-10-26 · Tiga sisa kecil: klaim flagship MBKM, surat PDM/PJK, spec Bridge yang dipaku tes
+
+Branch `feature/paket-kecil-flagship-surat-spec`, dari `main` sesudah PR #17;
+satu commit per butir. Berjalan paralel dengan #32 (PMB daring) dan #34
+(jadwal ujian) — konflik teks di berkas ini dan `ROADMAP.md` wajar.
+
+### #45 — klaim program flagship MBKM
+
+Daftar program flagship ditarik sebagai referensi (`GetListAktivitasMBKMFlagship`,
+tipe `program_flagship`), tidak di-seed. Penandanya `aktivitas_mahasiswa.flagship_kode`,
+dipilih per aktivitas di kolom baru layar Verifikasi Data IKU; pilihan hanya
+dari referensi, dan `FlagshipMbkmService` menolak kode yang tidak ada di sana.
+
+Entitas ke-26, `flagship_mbkm` (`InsertAktivitasMBKMFlagship`), bergantung pada
+`anggota_mbkm`: program mengakui peserta, bukan judul. Validator melaporkan
+aktivitas atau anggota yang belum terkirim, dan program yang hilang dari tarikan
+referensi terakhir (program yang dipensiunkan atau dinomori ulang kementerian).
+
+Klaimnya **dialamatkan pada `id_aktivitas`**, bukan pada id apa pun yang
+dibalas Feeder: PDDIKTI memegang paling banyak satu klaim per aktivitas.
+`feeder_flagship_id` menyimpan id aktivitas tempat klaim diterima; ulangan
+dilewati lewat hash, perpindahan program dikirim sebagai
+`UpdateAktivitasMBKMFlagship` berkunci aktivitas yang sama. Penanda yang
+klaimnya sudah diterima **tidak dapat dicabut dari sini** — web service tidak
+punya penarikan yang dapat diandalkan sinkron, dan mengosongkan kolom diam-diam
+akan meninggalkan klaim di PDDIKTI yang tidak diingat siapa pun di sini.
+
+Nama aksi dan medan payload (`id_aktivitas`, `id_flagship`) mengikuti pemakaian
+komunitas dan belum diverifikasi terhadap dokumentasi build Feeder; aksi yang
+salah muncul sebagai galat Feeder di ledger, bukan sebagai "tidak ada program".
+`FakeFeederClient` membalas insert-nya dengan `id_aktivitas` dan menyajikan
+fixture lima program untuk kampus demo.
+
+**8 tes** (`FeederFlagshipTest`).
+
+### #27b — surat permohonan PDM/PJK
+
+Dua jenis surat baru, `PermohonanPdm` dan `PermohonanPjk` (kode PDM/PJK, urutan
+nomor sendiri lewat `PenomoranSurat`, tanpa masa berlaku). Keduanya tidak dapat
+diajukan mahasiswa: `JenisSurat::dapatDiajukan()` menyaringnya, layar mahasiswa
+kini memvalidasi dengan daftar itu (`Rule::enum()->only()`), dan
+`SuratService::ajukan()` menolaknya.
+
+Terbit dari panel Perubahan Data di `/admin/feeder`. Satu surat per mahasiswa
+per prosedur memuat **seluruh** permintaan yang masih menunggu surat
+(`FeederChangeRequest::perluSurat()`): jalur PDDIKTI admin berstatus belum
+diajukan, **atau jalur web service yang ditolak** — penolakannya menjadi alasan
+di surat, sesuai catatan #27 bahwa NIM yang ditolak karena pelaporan tertutup
+diajukan lewat PDDIKTI admin. Formulirnya tampil sekali per kelompok, bukan per
+baris; alasan wajib, disimpan di `surat.keperluan`.
+
+`PermohonanFeederSurat` menautkan permintaan ke surat (`feeder_change_requests.surat_id`,
+migrasi baru) **sebelum** menerbitkannya, sehingga `PerakitKonten` merakit isi
+dari baris itu seperti surat lain merakit dari catatannya: kolom, nilai tercatat
+di PDDIKTI → seharusnya (status keluar ditulis namanya beserta kodenya), alasan
+per baris, dan lampiran yang diturunkan dari kolomnya — SPTJM selalu, lalu KTP,
+akta, ijazah sebelumnya, KK, SK NIM, SK yudisium, transkrip, ijazah, atau SK
+keluar sesuai kolom, sekali masing-masing. Daftar lampiran ikut dibekukan,
+jadi kampus yang LLDIKTI-nya meminta lebih mengubah katalognya tanpa mengubah
+surat yang sudah terkirim. Penerimanya `config('surat.tujuan_pddikti')`.
+
+Sesudah terbit, setiap permintaan melewati `FeederPerubahanService::ajukan()`
+dengan nomor surat itu: status *diajukan*, `nomor_surat` tercatat balik, dan
+konsol menautkan unduhan PDF-nya. Mahasiswa menerima notifikasi `SuratTerbit`
+seperti surat lain dan melihat suratnya di portal — surat itu tentang datanya
+sendiri. Keputusan: ADR-026.
+
+**12 tes** (`SuratPermohonanFeederTest`).
+
+### Spec OpenAPI Bridge — dari dua endpoint tertinggal ke tes yang membacanya
+
+`GET /classes/{uuid}` dan `GET /iku-data` masuk `bridge.yaml` dengan skema,
+scope, dan contoh yang diambil dari respons sebenarnya. `/iku-data` tidak
+berhalaman; cacahan per kode dikirim sebagai `[]` bila kosong dan `{}` bila
+berisi — dinyatakan di spec (`CacahPerKode`), tidak diubah. Skema `CourseClass`
+yang ikut tertinggal (mode, status nilai, jadwal, NIDN dan instansi pengajar;
+`prodi` tanpa jenjang) disamakan dengan `ClassResource`, dan `/classes` kini
+menyebut `links`/`meta` paginasinya.
+
+**Yang tersingkap:** berkas itu tidak pernah sah sebagai YAML — koma di dalam
+deskripsi sebaris `/lecturer-workload`. Tidak satu alat pun pernah membacanya.
+`SpecOpenApiTest` kini mem-parse-nya (`symfony/yaml` dideklarasikan di
+`require-dev`) dan memaku: setiap rute `bridge.*` punya path dan metode di spec;
+**scope di spec sama persis dengan middleware rutenya** — dinyatakan per operasi
+pada `security` (daftar peran skema bearer, sah di OpenAPI 3.1), sehingga
+scope yang ditambah di `routes/api.php` tanpa spec ikut gagal; tidak ada path
+yang sudah tidak dilayani; dan medan respons kedua endpoint tadi, beserta
+contohnya, sama dengan skemanya.
+
+**6 tes** (`SpecOpenApiTest`). Total sesi ini **26 tes baru**.
+
+---
+
 ## Sesi 53 — 2026-10-26 · NIM tidak lagi dirakit dari id_sms
 
 Perbaikan, branch `fix/nim-pindahan-mysql`. Menutup tindak lanjut yang dicatat

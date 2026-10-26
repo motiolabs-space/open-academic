@@ -9,6 +9,7 @@ use App\Enums\JenisPerubahanFeeder;
 use App\Enums\StatusPerubahanFeeder;
 use App\Models\Kemahasiswaan\Mahasiswa;
 use App\Models\Sdm\Staff;
+use App\Models\Surat\Surat;
 use App\Services\Feeder\KolomTerkunci;
 use App\Traits\HasLogAktivitas;
 use App\Traits\HasUuid;
@@ -58,6 +59,24 @@ class FeederChangeRequest extends Model
     public function diprosesOleh(): BelongsTo
     {
         return $this->belongsTo(Staff::class, 'diproses_by_staff_id');
+    }
+
+    /** The letter this request was filed with, when it was issued here. */
+    public function surat(): BelongsTo
+    {
+        return $this->belongsTo(Surat::class);
+    }
+
+    /**
+     * Whether this request still needs a letter to PDDIKTI admin: not yet
+     * filed, not already on a letter, and either a column the web service
+     * never accepts or one it was asked to take and refused.
+     */
+    public function perluSurat(): bool
+    {
+        return $this->status === StatusPerubahanFeeder::Menunggu
+            && $this->surat_id === null
+            && ($this->jalur === JalurPerubahanFeeder::PddiktiAdmin || filled($this->error_message));
     }
 
     /** Human label of the locked column, for the console and the letter. */

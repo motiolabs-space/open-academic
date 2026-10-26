@@ -4,6 +4,28 @@ declare(strict_types=1);
 
 return [
 
+    'flagship' => [
+        'kolom' => 'Flagship',
+        'bukan' => 'Bukan flagship',
+        'simpan' => 'Simpan',
+        'terklaim' => 'Terklaim di PDDIKTI',
+        'belum_ditarik' => 'Tarik referensi Feeder untuk memilih program flagship.',
+        'pesan' => [
+            'ditandai' => 'Aktivitas :nama ditandai sebagai program flagship; klaimnya dikirim lewat entitas Klaim Program Flagship MBKM.',
+            'dicabut' => 'Penanda program flagship untuk aktivitas :nama dicabut.',
+        ],
+        'galat' => [
+            'tidak_dapat_dicabut' => 'Klaim program flagship aktivitas ini sudah diterima PDDIKTI, jadi penandanya tidak dapat dicabut dari sini. '
+                .'Pindahkan ke program lain bila keliru, atau cabut klaimnya di Feeder.',
+            'program_tidak_dikenal' => 'Program flagship ":kode" tidak ada pada referensi Feeder. Tarik ulang referensi lalu pilih kembali.',
+        ],
+        'validasi' => [
+            'aktivitas_belum_sinkron' => 'Aktivitas MBKM belum terkirim ke Feeder (entitas aktivitas_mbkm).',
+            'anggota_belum_sinkron' => 'Keanggotaan aktivitas MBKM belum terkirim ke Feeder (entitas anggota_mbkm).',
+            'program_tidak_dikenal' => 'Program flagship ":kode" tidak ada pada referensi Feeder terakhir. Tarik ulang referensi (:act) lalu pilih kembali programnya.',
+        ],
+    ],
+
     'perubahan' => [
         'judul' => 'Perubahan Data Mahasiswa & Jenis Keluar',
         'meta' => ':terbuka harus diajukan · :selesai selesai',

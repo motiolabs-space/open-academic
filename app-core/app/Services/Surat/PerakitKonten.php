@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace App\Services\Surat;
 
 use App\Enums\JenisSurat;
+use App\Enums\StudentStatus;
 use App\Models\Akademik\ProdiCpl;
+use App\Models\Feeder\FeederChangeRequest;
 use App\Models\Kemahasiswaan\AktivitasMahasiswa;
 use App\Models\Kemahasiswaan\Mahasiswa;
 use App\Models\Surat\Surat;
@@ -42,6 +44,7 @@ class PerakitKonten
             JenisSurat::Pengantar => ['keperluan' => $surat->keperluan],
             JenisSurat::TranskripLegalisir => $this->transkripRingkas($mahasiswa),
             JenisSurat::Skpi => $this->skpi($mahasiswa),
+            JenisSurat::PermohonanPdm, JenisSurat::PermohonanPjk => $this->permohonanFeeder($surat),
         };
     }
 
@@ -110,6 +113,52 @@ class PerakitKonten
             'ipk' => $data['ipk'],
             'predikat' => $data['predikat'],
         ];
+    }
+
+    /**
+     * A request to PDDIKTI admin: every column it carries, old value, new
+     * value and reason, and the documents enclosed.
+     *
+     * The requests are linked to the letter before it is issued; reading them
+     * here, rather than taking them as an argument, keeps the content a
+     * function of the record like every other letter.
+     */
+    private function permohonanFeeder(Surat $surat): array
+    {
+        $permintaan = FeederChangeRequest::query()
+            ->where('surat_id', $surat->id)
+            ->orderBy('id')
+            ->get();
+
+        return [
+            'jenis_perubahan' => $permintaan->first()?->jenis->label(),
+            'tujuan' => (string) config('surat.tujuan_pddikti'),
+            'alasan' => $surat->keperluan,
+            'perubahan' => $permintaan->map(fn (FeederChangeRequest $p): array => [
+                'kolom' => $p->kolom,
+                'label' => $p->labelKolom(),
+                'lama' => $this->nilaiPddikti($p->kolom, $p->nilai_lama),
+                'baru' => $this->nilaiPddikti($p->kolom, $p->nilai_baru),
+                // A change the web service refused is filed with the refusal:
+                // it is the reason the letter exists at all.
+                'alasan' => $p->error_message !== null
+                    ? __('surat.permohonan_feeder.ditolak_ws', ['sebab' => $p->error_message])
+                    : ($p->catatan ?? $surat->keperluan),
+            ])->all(),
+            'lampiran' => PermohonanFeederSurat::lampiranUntuk($permintaan->pluck('kolom')->all()),
+        ];
+    }
+
+    /** A status code reads as its name on paper; everything else as recorded. */
+    private function nilaiPddikti(string $kolom, ?string $nilai): ?string
+    {
+        if ($kolom !== 'id_jenis_keluar' || $nilai === null) {
+            return $nilai;
+        }
+
+        $status = StudentStatus::tryFrom($nilai);
+
+        return $status !== null ? $status->label().' ('.$nilai.')' : $nilai;
     }
 
     /**
