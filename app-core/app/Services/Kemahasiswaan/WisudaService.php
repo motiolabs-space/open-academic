@@ -398,7 +398,8 @@ class WisudaService
      * Builds one diploma number from the campus's pattern.
      *
      * Placeholders mirror the NIM generator so an operator only learns one
-     * convention: {tahun}, {prodi}, {urut}.
+     * convention: {tahun}, {prodi}, {urut}. Like the NIM, {prodi} is `kode`:
+     * `kode_pddikti` is PDDIKTI's id_sms, a UUID that has no place on a diploma.
      */
     private function nomorIjazah(string $pola, WisudaPeriode $periode, WisudaPeserta $peserta): string
     {
@@ -408,7 +409,7 @@ class WisudaService
             ['{tahun}', '{prodi}', '{urut}'],
             [
                 (string) $periode->tanggal->year,
-                $prodi->kode_pddikti ?: $prodi->kode,
+                $prodi->kode,
                 str_pad((string) $peserta->nomor_urut, 4, '0', STR_PAD_LEFT),
             ],
             $pola,

@@ -4,7 +4,7 @@
 
 ---
 
-## Sesi 55 — 2026-10-26 · Tiga sisa kecil: klaim flagship MBKM, surat PDM/PJK, spec Bridge yang dipaku tes
+## Sesi 54 — 2026-10-26 · Tiga sisa kecil: klaim flagship MBKM, surat PDM/PJK, spec Bridge yang dipaku tes
 
 Branch `feature/paket-kecil-flagship-surat-spec`, dari `main` sesudah PR #17;
 satu commit per butir. Berjalan paralel dengan #32 (PMB daring) dan #34
@@ -94,6 +94,32 @@ yang sudah tidak dilayani; dan medan respons kedua endpoint tadi, beserta
 contohnya, sama dengan skemanya.
 
 **6 tes** (`SpecOpenApiTest`). Total sesi ini **26 tes baru**.
+---
+
+## Sesi 53 — 2026-10-26 · NIM tidak lagi dirakit dari id_sms
+
+Perbaikan, branch `fix/nim-pindahan-mysql`. Menutup tindak lanjut yang dicatat
+sesi 51. Ditemukan saat memverifikasi #34 di MariaDB: `migrate:fresh --seed`
+berhenti di `KonversiSeeder` dengan *Data too long for column 'nim'*.
+
+`NimGenerator` mengutamakan `prodi.kode_pddikti` untuk segmen `{prodi}`. Kolom
+itu id_sms PDDIKTI — **selalu** UUID — jadi setiap kampus yang sudah mengisinya
+untuk Feeder mendapat NIM 42 karakter yang ditolak kolom `nim` (32) di MySQL.
+Ini bug produksi, bukan hanya data demo; SQLite tidak menegakkan panjang kolom,
+jadi suite hijau. Data demo sudah benar (`kode` = `55201`).
+
+- `{prodi}` kini selalu `prodi.kode`, baik di `NimGenerator` maupun nomor
+  ijazah lokal di `WisudaService` (yang memuat, tetapi mencetak UUID di ijazah).
+- `NimGenerator` menolak pola yang melampaui 32 karakter dengan pesan aturan,
+  bukan 500 di tengah daftar ulang.
+- Fixture tes PMB, pindahan, wisuda, dan PIN memakai `kode` = `55201` dengan
+  id_sms UUID, sesuai kenyataan; sebelumnya `kode_pddikti` = `55201` menyamarkan
+  bug ini.
+
+Terverifikasi: seed demo penuh selesai di MariaDB 10.4; NIM Nadia Paramitha
+`26552010049`.
+
+---
 
 ## Sesi 52 — 2026-10-26 · P5 tuntas: wisuda didaftar sendiri, dan lulusan kesehatan menunggu ukom dengan nama
 
