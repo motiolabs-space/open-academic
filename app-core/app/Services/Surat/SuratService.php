@@ -53,6 +53,10 @@ class SuratService
             );
         }
 
+        if ($jenis->permohonanFeeder()) {
+            throw new AturanAkademikException(__('surat.permohonan_feeder.galat.bukan_permintaan'));
+        }
+
         if ($jenis->perluKeperluan() && blank($keperluan)) {
             throw new AturanAkademikException(
                 'Surat pengantar wajib menyebutkan keperluannya — kalimat itulah isi suratnya.',
@@ -234,6 +238,9 @@ class SuratService
             JenisSurat::TranskripLegalisir => $mahasiswa->nilai()->where('is_final', true)->exists()
                 ? null
                 : 'belum ada nilai yang difinalisasi, sehingga tidak ada yang dapat dilegalisir.',
+            // Which requests a letter may carry is PermohonanFeederSurat's rule,
+            // checked against the requests themselves before the letter exists.
+            JenisSurat::PermohonanPdm, JenisSurat::PermohonanPjk => null,
         };
     }
 

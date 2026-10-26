@@ -21,7 +21,7 @@
     {{-- ============ AKTIVITAS MBKM (IKU 2) ============ --}}
     <x-card class="mb-6" title="Aktivitas Mahasiswa" meta="Sumber IKU 2" flush>
         <div class="overflow-x-auto">
-            <table class="w-full min-w-[900px] text-[13px]">
+            <table class="w-full min-w-[1080px] text-[13px]">
                 <thead>
                     <tr class="border-b border-line text-left text-[11px] uppercase tracking-[0.08em] text-ink-muted">
                         <th class="px-5 py-3 font-semibold">Mahasiswa</th>
@@ -30,6 +30,7 @@
                         <th class="px-5 py-3 font-semibold">Mitra</th>
                         <th class="px-5 py-3 text-center font-semibold">SKS</th>
                         <th class="px-5 py-3 font-semibold">Status</th>
+                        <th class="px-5 py-3 font-semibold">{{ __('feeder.flagship.kolom') }}</th>
                         <th class="px-5 py-3 text-right font-semibold">Aksi</th>
                     </tr>
                 </thead>
@@ -65,6 +66,25 @@
                                     <x-chip tone="warning">Menunggu</x-chip>
                                 @endif
                             </td>
+                            <td class="px-5 py-2.5">
+                                @if ($programFlagship === [])
+                                    <span class="text-[11px] text-ink-faint">{{ __('feeder.flagship.belum_ditarik') }}</span>
+                                @else
+                                    <form method="POST" action="{{ route('admin.iku-records.aktivitas.flagship', $a) }}" class="flex items-center gap-2">
+                                        @csrf
+                                        <select name="flagship_kode" class="w-44 rounded-control border border-line-input bg-surface px-2 py-1.5 text-[12px]">
+                                            <option value="">{{ __('feeder.flagship.bukan') }}</option>
+                                            @foreach ($programFlagship as $kode => $nama)
+                                                <option value="{{ $kode }}" @selected($a->flagship_kode === (string) $kode)>{{ $nama }}</option>
+                                            @endforeach
+                                        </select>
+                                        <x-button variant="ghost" type="submit" class="px-2 py-1 text-xs">{{ __('feeder.flagship.simpan') }}</x-button>
+                                    </form>
+                                    @if ($a->feeder_flagship_id)
+                                        <div class="mt-1 text-[10.5px] text-ink-faint">{{ __('feeder.flagship.terklaim') }}</div>
+                                    @endif
+                                @endif
+                            </td>
                             <td class="px-5 py-2.5 text-right">
                                 <form method="POST" action="{{ $a->is_verified
                                     ? route('admin.iku-records.aktivitas.batal', $a)
@@ -80,7 +100,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="7" class="px-5 py-10">
+                            <td colspan="8" class="px-5 py-10">
                                 <x-empty-state
                                     title="Tidak ada aktivitas menunggu verifikasi"
                                     description="Catatan MBKM mahasiswa muncul di sini untuk diverifikasi sebelum menjadi bukti IKU 2."

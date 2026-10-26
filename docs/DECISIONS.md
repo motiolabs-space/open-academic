@@ -457,3 +457,34 @@
   paralel. Begitu dukungan keamanan PHP 8.2 berakhir (31 Desember 2026), batas
   bawah layak dinaikkan ke `^8.4` dan 8.2 dikeluarkan dari matriks — keputusan
   terpisah, karena memutus instalasi yang masih di 8.2.
+
+## ADR-026 — Surat permohonan PDM/PJK: satu surat per mahasiswa per prosedur, dirakit dari permintaannya (2026-10-26)
+
+- **Konteks.** #27 (ADR-017) mencatat setiap perubahan kolom terkunci sebagai
+  `feeder_change_requests` dan menyatakan sebagian "harus diajukan lewat
+  PDDIKTI admin", tetapi suratnya diketik di luar aplikasi dan nomornya diisi
+  tangan. PDDIKTI admin memproses PDM dan PJK sebagai formulir berbeda; beberapa
+  koreksi identitas satu mahasiswa adalah baris pada formulir yang sama. Modul
+  surat sudah punya penomoran tanpa celah, isi yang dibekukan saat terbit, dan
+  verifikasi publik — tetapi setiap surat di sana milik satu mahasiswa dan
+  diajukan olehnya.
+- **Keputusan.** (1) Dua `JenisSurat` baru, satu per prosedur, masing-masing
+  dengan urutan nomornya sendiri; tanpa masa berlaku (surat ini meminta, tidak
+  menyatakan keadaan); tidak dapat diajukan mahasiswa. (2) Satu surat = satu
+  mahasiswa × satu prosedur, memuat seluruh permintaan yang menunggu surat —
+  jalur PDDIKTI admin, atau jalur web service yang ditolak (penolakannya menjadi
+  alasan). Campuran mahasiswa atau prosedur ditolak. (3) Permintaan ditautkan
+  ke surat lewat `surat_id` sebelum surat diterbitkan, dan `PerakitKonten`
+  membaca tautan itu — isi tetap fungsi dari catatan, bukan argumen. (4)
+  Lampiran diturunkan dari kolom PDDIKTI lewat katalog di kode (SPTJM selalu)
+  dan ikut dibekukan. (5) Nomor yang terbit ditulis balik lewat
+  `FeederPerubahanService::ajukan()`, jalur yang sama dengan nomor yang diketik
+  tangan, sehingga status *diajukan* punya satu arti. (6) Surat diterbitkan
+  lewat `SuratService::terbitkan()` biasa: mahasiswa diberi tahu dan melihatnya
+  di portal, karena isinya data dirinya sendiri.
+- **Konsekuensi.** Surat yang dicabut tidak mengembalikan permintaannya ke
+  *belum diajukan*; operator menerbitkan ulang lewat jalur tangan atau
+  menandainya selesai. Katalog lampiran adalah yang lazim diminta, bukan aturan
+  resmi yang dapat diverifikasi dari sini; perubahan cukup di satu konstanta.
+  Penerima surat dapat diatur per kampus (`SURAT_TUJUAN_PDDIKTI`) karena
+  sebagian mengajukan lewat LLDIKTI wilayahnya.

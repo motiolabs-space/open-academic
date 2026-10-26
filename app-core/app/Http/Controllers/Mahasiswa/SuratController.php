@@ -65,7 +65,7 @@ class SuratController extends Controller
         $data = $request->validate([
             'jenis' => [
                 'required',
-                Rule::enum(JenisSurat::class)->except([JenisSurat::Skpi]),
+                Rule::enum(JenisSurat::class)->only(JenisSurat::dapatDiajukan()),
             ],
             'keperluan' => ['nullable', 'string', 'max:255'],
         ]);

@@ -83,6 +83,12 @@ return [
         // spells it. The enrolment payload still carries the name as text —
         // there is no identifier for another campus's programme.
         'perguruan_tinggi' => 'GetAllPT',
+
+        // The ministry's flagship MBKM programmes an activity can be claimed
+        // under. Not seeded: the list changes per cycle, and a campus picks
+        // from what PDDIKTI answers. The act name follows the community's
+        // usage; a wrong one surfaces as a Feeder error on the pull.
+        'program_flagship' => 'GetListAktivitasMBKMFlagship',
     ],
 
     /*
@@ -220,6 +226,11 @@ return [
             'label' => 'Konversi Kredit MBKM',
             'action' => 'InsertKonversiKampusMerdeka',
             'depends_on' => ['anggota_mbkm', 'nilai'],
+        ],
+        'flagship_mbkm' => [
+            'label' => 'Klaim Program Flagship MBKM',
+            'action' => 'InsertAktivitasMBKMFlagship',
+            'depends_on' => ['anggota_mbkm'],
         ],
         'lulus_do' => [
             'label' => 'Mahasiswa Lulus / DO',

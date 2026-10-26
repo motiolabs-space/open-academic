@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\TandaiFlagshipRequest;
 use App\Models\Kemahasiswaan\AktivitasMahasiswa;
 use App\Models\Sdm\PenugasanDosen;
 use App\Services\Bridge\BridgeEventPublisher;
+use App\Services\Feeder\FlagshipMbkmService;
 use App\Support\Portal;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -24,7 +26,10 @@ use Illuminate\View\View;
  */
 class IkuRecordController extends Controller
 {
-    public function __construct(private readonly BridgeEventPublisher $bridge) {}
+    public function __construct(
+        private readonly BridgeEventPublisher $bridge,
+        private readonly FlagshipMbkmService $flagship,
+    ) {}
 
     public function index(Request $request): View
     {
@@ -59,6 +64,7 @@ class IkuRecordController extends Controller
             'penugasan' => $penugasan,
             'belumSaja' => $belumSaja,
             'minSksIku2' => 20,
+            'programFlagship' => $this->flagship->pilihan(),
         ]);
     }
 
@@ -93,6 +99,18 @@ class IkuRecordController extends Controller
         $aktivitas->update(['is_verified' => false, 'verified_by_staff_id' => null, 'verified_at' => null]);
 
         return back()->with('sukses', 'Verifikasi aktivitas dicabut.');
+    }
+
+    /** Marks the activity as run under a flagship programme, for the Feeder claim (#45). */
+    public function tandaiFlagship(TandaiFlagshipRequest $request, AktivitasMahasiswa $aktivitas): RedirectResponse
+    {
+        $this->authorizeIku('mahasiswa.manage');
+
+        $this->flagship->tandai($aktivitas, $request->validated('flagship_kode'));
+
+        return back()->with('sukses', __('feeder.flagship.pesan.'.($aktivitas->flagship_kode === null ? 'dicabut' : 'ditandai'), [
+            'nama' => $aktivitas->mahasiswa->nama,
+        ]));
     }
 
     public function verifikasiPenugasan(PenugasanDosen $penugasan): RedirectResponse

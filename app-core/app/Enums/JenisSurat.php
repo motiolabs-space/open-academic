@@ -24,6 +24,11 @@ enum JenisSurat: string
     case TranskripLegalisir = 'transkrip_legalisir';
     case Skpi = 'skpi';
 
+    // Letters to PDDIKTI admin asking it to change what a student was
+    // reported with (#27b). Issued from the Feeder console, never requested.
+    case PermohonanPdm = 'permohonan_pdm';
+    case PermohonanPjk = 'permohonan_pjk';
+
     public function label(): string
     {
         return match ($this) {
@@ -32,6 +37,8 @@ enum JenisSurat: string
             self::Pengantar => 'Surat Pengantar',
             self::TranskripLegalisir => 'Transkrip Legalisir',
             self::Skpi => 'Surat Keterangan Pendamping Ijazah',
+            self::PermohonanPdm => 'Surat Permohonan Perubahan Data Mahasiswa',
+            self::PermohonanPjk => 'Surat Permohonan Perubahan Jenis Keluar',
         };
     }
 
@@ -44,6 +51,8 @@ enum JenisSurat: string
             self::Pengantar => 'SP',
             self::TranskripLegalisir => 'TRL',
             self::Skpi => 'SKPI',
+            self::PermohonanPdm => 'PDM',
+            self::PermohonanPjk => 'PJK',
         };
     }
 
@@ -72,21 +81,31 @@ enum JenisSurat: string
      * September, and one without an end date will be presented as though it is.
      *
      * The supplement and a legalised transcript describe things that already
-     * happened and cannot stop being true, so they do not expire.
+     * happened and cannot stop being true, so they do not expire. Neither does
+     * a request to PDDIKTI: it asks for something, it does not assert a state.
      */
     public function masaBerlakuHari(): ?int
     {
         return match ($this) {
             self::AktifKuliah, self::Pengantar => 90,
             self::KeteranganLulus => 180,
-            self::TranskripLegalisir, self::Skpi => null,
+            self::TranskripLegalisir, self::Skpi, self::PermohonanPdm, self::PermohonanPjk => null,
         };
+    }
+
+    /** A letter the campus writes to PDDIKTI admin about a reported student. */
+    public function permohonanFeeder(): bool
+    {
+        return $this === self::PermohonanPdm || $this === self::PermohonanPjk;
     }
 
     /** The Blade view that renders this letter's PDF. */
     public function tampilan(): string
     {
-        return 'pdf.surat.'.str_replace('_', '-', $this->value);
+        // The two requests to PDDIKTI differ in title, not in shape.
+        return $this->permohonanFeeder()
+            ? 'pdf.surat.permohonan-feeder'
+            : 'pdf.surat.'.str_replace('_', '-', $this->value);
     }
 
     /** @return array<string, string> */
@@ -99,9 +118,17 @@ enum JenisSurat: string
         );
     }
 
-    /** Types a student may ask for themselves. SKPI is issued, never requested. */
+    /**
+     * Types a student may ask for themselves. SKPI is issued, never requested;
+     * so are the requests to PDDIKTI, which the campus files on its own record.
+     *
+     * @return array<int, self>
+     */
     public static function dapatDiajukan(): array
     {
-        return array_filter(self::cases(), fn (self $j): bool => $j !== self::Skpi);
+        return array_values(array_filter(
+            self::cases(),
+            fn (self $j): bool => $j !== self::Skpi && !$j->permohonanFeeder(),
+        ));
     }
 }

@@ -41,6 +41,19 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Tujuan Surat Permohonan PDM/PJK
+    |--------------------------------------------------------------------------
+    |
+    | Penerima surat permohonan Perubahan Data Mahasiswa dan Perubahan Jenis
+    | Keluar. Sebagian kampus mengajukannya langsung ke pengelola PDDIKTI,
+    | sebagian lewat LLDIKTI wilayahnya — sesuaikan dengan petunjuk setempat.
+    |
+    */
+
+    'tujuan_pddikti' => env('SURAT_TUJUAN_PDDIKTI', 'Pengelola Pangkalan Data Pendidikan Tinggi'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Syarat Penerbitan
     |--------------------------------------------------------------------------
     */
