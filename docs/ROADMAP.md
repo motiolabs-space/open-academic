@@ -463,7 +463,7 @@ yang tidak ada di sini.
 | ~~Klien SISTER~~ | **Dicabut 22 Oktober 2026.** SISTER kini terpusat dan menarik data pengajaran, pembimbingan, dan pengujian dari PDDIKTI; tidak ada endpoint per kampus untuk dituju. Yang tersisa untuk SISTER adalah ekspor berkas (sudah ada) dan pengiriman entitas yang kurang ke Feeder (#19–22) |
 | Endpoint pembayaran Easy Accounting | Belum ada di API v1 mereka. Bila lahir, yang berubah satu metode di `PenjurnalanService` |
 | ~~Federasi IdP eksternal~~ | **Selesai 24 Oktober 2026.** Keputusan pemetaannya diambil sempit (ADR-019): staf saja secara bawaan, subject menang atas surel, ambigu ditolak |
-| **PHP di server produksi ≥ 8.2.35** | Celah inti PHP 21 Oktober 2026 (CVE-2026-109618, CVE-2026-109619) memungkinkan eksekusi kode tanpa login dan **tidak** tertambal oleh pembaruan Composer. Setiap instalasi harus memperbarui interpreter PHP sendiri (8.2.35, 8.3.36, 8.4.27, atau 8.5.12); mitigasi sementara: `session.upload_progress.enabled = Off`. CI aman karena setup-php mengambil patch terbaru |
+| **PHP di server produksi ≥ 8.4.27 / 8.5.12** | Celah inti PHP 21 Oktober 2026 (CVE-2026-109618, CVE-2026-109619) memungkinkan eksekusi kode tanpa login dan **tidak** tertambal oleh pembaruan Composer. Produksi memakai PHP 8.4 atau 8.5, jadi setiap server harus berada di 8.4.27 / 8.5.12 atau lebih baru; mitigasi sementara: `session.upload_progress.enabled = Off`. CI aman karena setup-php mengambil patch terbaru, dan sejak 26 Oktober 2026 menguji 8.2, 8.4, dan 8.5 (ADR-023). XAMPP pengembang dinaikkan dari 8.2.12 ke 8.4.27 pada hari yang sama |
 | **Rilis publik v1.0** | Keputusan pemilik repo. Remote sudah ada: repo publik di GitHub sejak 22 Oktober 2026 |
 
 ---

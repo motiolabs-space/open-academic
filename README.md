@@ -104,7 +104,8 @@ dan rasio tanpa penyebut dibiarkan kosong alih-alih dipaksa menjadi 1,00.
 
 ## Instalasi
 
-Prasyarat: PHP 8.2+ (`pdo_mysql`, `mbstring`, `intl`, `gd`, `zip`, `bcmath`),
+Prasyarat: PHP 8.2+, disarankan 8.4 atau 8.5 seperti produksi — CI menguji ketiganya
+(`pdo_mysql`, `mbstring`, `intl`, `gd`, `zip`, `bcmath`),
 Composer, Node 20+, MySQL 8 atau MariaDB 10.11.
 
 > **Tata letak.** Aplikasinya ada di `app-core/`; root repo hanya berisi berkas
