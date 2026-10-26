@@ -136,7 +136,7 @@ Apa yang ada hari ini, dikelompokkan menurut siapa yang memakainya.
 | Modul | | Catatan |
 |---|---|---|
 | Neo Feeder PDDIKTI | ✅ | Idempoten, ledger, validator pra-kirim. Dua puluh lima entitas sejak 24 Okt 2026: + dosen pengajar kelas, + Lulus/DO, + komponen evaluasi, + nilai per komponen, + 7 entitas aktivitas (MBKM dan tugas akhir beserta anggota, pembimbing, penguji), + prestasi, transfer kredit, konversi MBKM, + kurikulum, mata kuliah, matkul kurikulum, + skala nilai prodi, periode perkuliahan; `Delete*` untuk yang sudah tiada di sini |
-| Campus Bridge | ✅ | 14 endpoint ber-scope, webhook HMAC, spec OpenAPI — spec tertinggal dua endpoint, lihat §Utang Teknis |
+| Campus Bridge | ✅ | 14 endpoint ber-scope, webhook HMAC, spec OpenAPI — sejak 26 Okt 2026 dipaku tes: setiap rute `bridge.*` beserta scope-nya harus ada di spec |
 | SSO OAuth2 (Passport) | ✅ | Kampus jadi penerbit identitas |
 | Notifikasi (G2) | ✅ | Kategori wajib tidak dapat dimatikan |
 | **Komparasi data SIAKAD ↔ Neo Feeder** | ✅ | FeederRekonsiliasi 21 Agu 2026: membaca Feeder kembali dan melaporkan hanya-lokal / hanya-Feeder / berbeda isinya. Entitas tanpa aksi pembacaan dinyatakan belum dapat dibandingkan, bukan cocok |
@@ -487,7 +487,7 @@ yang tidak ada di sini.
 | 8 tes gagal di `main` sejak Oktober 2026 | ✅ | Lunas 22 Okt 2026. Bukan regresi kode: fixture `KurikulumLanjutanTest` dan `KonversiKreditTest` membuka jendela KRS dengan menggeser `krs_mulai`/`krs_selesai` ke hari ini, tetapi `TahunAkademik::krsDibuka()` menutup jendela pada `krs_perubahan_selesai` — yang tetap 15 Sep 2026 dari factory. Hijau sampai tanggal itu lewat. Kini lewat state factory `krsDibuka()` yang menjangkarkan ketiga tanggal ke hari ini |
 | Font dari Google Fonts | ✅ | Di-host sendiri lewat `@fontsource` 19 Agu 2026; `style-src`/`font-src` pihak ketiga dicabut. Menyingkap bug terpendam: Vite menulis URL aset absolut dari akar domain, jadi setiap pemasangan subfolder kehilangan hurufnya — `base: './'` |
 | Paket rentan Oktober 2026 | ✅ | Lunas 26 Okt 2026. `laravel/framework` 12.65.0 → 12.70.1 menutup CVE-2026-114509 (bypass TokenGuard; tidak terjangkau di sini karena tak ada guard ber-driver `token`), CVE-2026-114508 (inklusi relasi JSON:API; Bridge memakai `JsonResource` biasa), dan CVE-2026-102279 (XSS halaman debug, hanya bila `APP_DEBUG=true`). Ikut diperbarui: `symfony/http-foundation` (ReDoS lewat `Cache-Control`, terjangkau anonim), `league/commonmark`, `phpseclib/phpseclib`, `league/flysystem`, `symfony/yaml`, dan rantai npm dev. `composer audit` dan `npm audit` bersih |
-| **Spec OpenAPI Bridge tertinggal** | ⬜ | `routes/api.php` melayani 14 endpoint; `docs/openapi/bridge.yaml` mendokumentasikan 12. `GET /classes/{uuid}` dan `GET /iku-data` tidak ada di spec — padahal Bridge dinyatakan *spec-first* (CLAUDE.md §7). Ditemukan 23 Okt 2026 |
+| ~~**Spec OpenAPI Bridge tertinggal**~~ | ✅ | Lunas 26 Okt 2026. `GET /classes/{uuid}` dan `GET /iku-data` masuk spec dengan skema, scope, dan contoh dari respons sebenarnya; skema `CourseClass` yang ikut tertinggal (mode, status nilai, jadwal, NIDN dan instansi pengajar) dilengkapi. Yang tersingkap: berkasnya **tidak pernah sah sebagai YAML** (koma di deskripsi sebaris) — tak satu alat pun pernah membacanya. `SpecOpenApiTest` kini mem-parse-nya dan memaku tiga hal: setiap rute `bridge.*` punya path, metode, dan scope persis seperti middleware-nya (scope di `security` per operasi); tidak ada path yang sudah tidak dilayani; medan respons kedua endpoint tadi sama dengan skemanya |
 
 ---
 

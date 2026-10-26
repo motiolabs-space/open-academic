@@ -73,6 +73,28 @@ sendiri. Keputusan: ADR-026.
 
 **12 tes** (`SuratPermohonanFeederTest`).
 
+### Spec OpenAPI Bridge — dari dua endpoint tertinggal ke tes yang membacanya
+
+`GET /classes/{uuid}` dan `GET /iku-data` masuk `bridge.yaml` dengan skema,
+scope, dan contoh yang diambil dari respons sebenarnya. `/iku-data` tidak
+berhalaman; cacahan per kode dikirim sebagai `[]` bila kosong dan `{}` bila
+berisi — dinyatakan di spec (`CacahPerKode`), tidak diubah. Skema `CourseClass`
+yang ikut tertinggal (mode, status nilai, jadwal, NIDN dan instansi pengajar;
+`prodi` tanpa jenjang) disamakan dengan `ClassResource`, dan `/classes` kini
+menyebut `links`/`meta` paginasinya.
+
+**Yang tersingkap:** berkas itu tidak pernah sah sebagai YAML — koma di dalam
+deskripsi sebaris `/lecturer-workload`. Tidak satu alat pun pernah membacanya.
+`SpecOpenApiTest` kini mem-parse-nya (`symfony/yaml` dideklarasikan di
+`require-dev`) dan memaku: setiap rute `bridge.*` punya path dan metode di spec;
+**scope di spec sama persis dengan middleware rutenya** — dinyatakan per operasi
+pada `security` (daftar peran skema bearer, sah di OpenAPI 3.1), sehingga
+scope yang ditambah di `routes/api.php` tanpa spec ikut gagal; tidak ada path
+yang sudah tidak dilayani; dan medan respons kedua endpoint tadi, beserta
+contohnya, sama dengan skemanya.
+
+**6 tes** (`SpecOpenApiTest`). Total sesi ini **26 tes baru**.
+
 ## Sesi 52 — 2026-10-26 · P5 tuntas: wisuda didaftar sendiri, dan lulusan kesehatan menunggu ukom dengan nama
 
 Pekerjaan P5 #30 dan #31. Branch `feature/wisuda-mandiri-ukom`, dari `main`
