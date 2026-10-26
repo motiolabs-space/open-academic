@@ -4,7 +4,7 @@
 
 ---
 
-## Sesi 45 — 2026-10-26 · P5 tuntas: wisuda didaftar sendiri, dan lulusan kesehatan menunggu ukom dengan nama
+## Sesi 48 — 2026-10-26 · P5 tuntas: wisuda didaftar sendiri, dan lulusan kesehatan menunggu ukom dengan nama
 
 Pekerjaan P5 #30 dan #31. Branch `feature/wisuda-mandiri-ukom`, dari `main`
 sesudah PR #14; dua commit, satu per butir. Berjalan paralel dengan sesi #44 dan
@@ -59,7 +59,7 @@ semesternya. Penutupan semester kini menulisnya: beku, status `U`, SKS dan IPS
 nol, IPK dibawa dari semester terakhir — itu yang dikirim sebagai AKM. Evaluasi
 studi melewati mereka dan tidak menghitung semester `U` sebagai semester tempuh.
 Validator Lulus/DO menolak Lulus pada prodi wajib ukom tanpa hasil yang lulus;
-DO tidak disyaratkan ukom. Keputusan: ADR-020.
+DO tidak disyaratkan ukom. Keputusan: ADR-022.
 
 ### Demo
 
