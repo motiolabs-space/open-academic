@@ -9,6 +9,9 @@ use App\Models\Akademik\KelasKuliah;
 use App\Models\Akademik\TahunAkademik;
 use App\Models\Bridge\BridgeConsumer;
 use App\Models\Kemahasiswaan\Mahasiswa;
+use App\Models\Pmb\PmbAkun;
+use App\Models\Pmb\PmbGelombang;
+use App\Models\Pmb\PmbPendaftar;
 use App\Models\Sdm\Dosen;
 use App\Models\Sdm\Staff;
 use App\Models\TugasAkhir\TugasAkhir;
@@ -276,7 +279,27 @@ it('membuka halaman publik tanpa menyentuh basis data berlebihan', function (str
     // Halaman publik yang paling mungkin dijangkau bot: satu kueri pun terasa
     // bila seseorang memindai rentang UUID.
     ['/verifikasi', 5],
+    ['/pmb', 4],
+    ['/pmb/masuk', 1],
 ]);
+
+/*
+ * PMB daring (#32) pada gelombang demo: layar gelombang dan antrean kasir di
+ * sisi staf, portal pendaftar di sisi calon. Daftar pendaftar dan berkasnya
+ * tumbuh per orang, jadi yang dijaga di sini adalah bahwa jumlahnya tidak.
+ */
+it('membuka layar PMB daring demo dalam anggaran kueri', function () {
+    $staff = Staff::where('email', 'admin@demo.test')->firstOrFail();
+    $gelombang = PmbGelombang::query()->terbukaDaring()->firstOrFail();
+    $pendaftar = PmbPendaftar::where('email', 'calon.verifikasi@demo.test')->firstOrFail();
+    $calon = PmbAkun::where('email', 'calon.seleksi@demo.test')->firstOrFail();
+
+    dalamAnggaranKueri(fn () => $this->actingAs($staff, 'staff')->get('/admin/pmb/gelombang/'.$gelombang->uuid)->assertOk(), 17);
+    dalamAnggaranKueri(fn () => $this->actingAs($staff, 'staff')->get('/admin/pmb/pendaftar/'.$pendaftar->uuid)->assertOk(), 11);
+    dalamAnggaranKueri(fn () => $this->actingAs($staff, 'staff')->get('/admin/pmb/formulir')->assertOk(), 9);
+    dalamAnggaranKueri(fn () => $this->actingAs($calon, 'pendaftar')->get('/pmb/portal')->assertOk(), 8);
+    dalamAnggaranKueri(fn () => $this->actingAs($calon, 'pendaftar')->get('/pmb/portal/'.$calon->pendaftaran()->value('uuid'))->assertOk(), 10);
+});
 
 it('membuka layar kelola tugas akhir dalam anggaran kueri', function () {
     // Layar terberat modul ini: satu karya beserta pembimbing, seluruh log

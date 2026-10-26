@@ -89,6 +89,7 @@ tetap sampai lewat kategori wajib.
 | Judul tugas akhir diputus | Mahasiswa |
 | Pembimbing ditetapkan | Mahasiswa **dan** dosen |
 | Ujian dijadwalkan | Mahasiswa **dan** seluruh penguji |
+| Pembayaran formulir PMB dicatat, berkas dikembalikan, masuk seleksi, hasil diumumkan, NIM terbit | Calon mahasiswa (akun pendaftar) — lihat [PMB.md](PMB.md) |
 
 Empat baris terakhir menutup celah yang modul tugas akhir munculkan tetapi tidak
 dapat perbaiki sendiri.

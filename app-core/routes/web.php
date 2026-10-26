@@ -692,3 +692,9 @@ Route::middleware(['auth:staff', 'term.active'])->prefix('admin')->name('admin.'
     Route::post('/bridge/pengiriman/{pengiriman}/kirim-ulang', [Admin\BridgeController::class, 'kirimUlang'])
         ->name('bridge.kirim-ulang');
 });
+
+/*
+| PMB daring: portal calon mahasiswa dan layar seleksi staf. Berkas sendiri
+| agar portal kelima tidak tercecer di antara rute tiga portal kampus.
+*/
+require __DIR__.'/pmb.php';

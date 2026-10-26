@@ -4,6 +4,83 @@
 
 ---
 
+## Sesi 56 — 2026-10-26 · PMB daring: calon mendaftar sendiri, portal keempat
+
+Roadmap #32, branch `feature/pmb-daring`. Berjalan paralel dengan sesi #34
+(jadwal ujian) dan paket kecil #45/#27b/OpenAPI; konflik teks di berkas ini,
+`ROADMAP.md`, dan `DECISIONS.md` wajar. Keputusan: ADR-024. Dokumen:
+`docs/PMB.md`.
+
+### Akun yang bukan identitas kampus
+
+Guard kelima `pendaftar` di atas tabel `pmb_akun` — bukan kolom kata sandi di
+`pmb_pendaftar`. Halaman masuk sendiri (`/pmb/masuk`), verifikasi surel wajib
+sebelum portal terbuka, lupa sandi lewat broker dengan tabel token sendiri,
+batas laju per IP untuk daftar dan kirim surel, per surel + IP untuk masuk.
+Tidak dikenal SSO dan API; `UserRole` tetap tiga. `/masuk` utama tidak mencoba
+guard ini, dan masuk di satu sisi mengeluarkan sesi sisi lain. Sesi pendaftar
+tetap tidak dapat membuka `/mahasiswa` bahkan sesudah NIM terbit — itu akun
+lain, kata sandinya dari bagian akademik. Tamu `/pmb/*` diarahkan ke halaman
+masuk PMB.
+
+### Alur
+
+`draf` (status baru, di luar setiap hitungan pendaftar) → ajukan → bayar
+formulir → verifikasi berkas → seleksi → kartu ujian → pengumuman. Gelombang
+baru terbuka daring bila staf menyalakan `is_daring`; prodi yang ditawarkan,
+daya tampung, biaya formulir, ambang, dan berkas tambahan diatur per prodi di
+layar gelombang. Biodata divalidasi seperti `FeederValidator` (nama ibu dan
+agama yang di sana peringatan, di sini wajib) dan `daftarUlang()` kini
+menyalin seluruhnya, termasuk agama, orang tua, dan alamat lengkap — mahasiswa
+hasil PMB daring lolos pemeriksaan biodata Feeder tanpa satu isu pun.
+
+### Biaya formulir bukan `tagihan`
+
+Penyimpangan dari rancangan yang diminta, dicatat di ADR-024: setiap invarian
+`tagihan` menganggap pemiliknya mahasiswa (unik per mahasiswa per semester,
+denda, pengingat, gerbang KRS, kontak akuntansi). Buku besar `pmb_pembayaran`
+dengan aturan `PembayaranService`, dicatat kasir di layar baru KEUANGAN →
+Biaya Formulir PMB. Bagian keuangan hanya dapat membuka bukti bayar calon.
+
+### Seleksi dan pengumuman
+
+Jadwal seleksi per gelombang, tercetak di kartu. Nilai diimpor dari CSV CBT mana
+pun (`nomor_pendaftaran`, `nilai`; koma atau titik koma, BOM, koma desimal),
+seluruh baris diperiksa dulu dan satu baris salah membatalkan semuanya.
+Kelulusan otomatis per ambang prodi (`PMB_KELULUSAN_OTOMATIS`, bawaan mati).
+Keputusan tidak terlihat calon sampai gelombang diumumkan; tiap hasil dikirim
+sekali per calon, koreksi dikirim ulang. Pendaftar daring baru dapat diputuskan
+sesudah masuk seleksi; pendaftar yang diinput panitia tetap seperti dulu.
+Pindahan/RPL diteruskan ke intake #33, yang kini terisi PT/prodi asal dari
+calon. Penanda calon penerima KIP dengan filter di daftar staf.
+
+### Yang tersingkap
+
+- `jalur` gelombang adalah string bebas tanpa enum — kini `JalurPmb`.
+- `PmbService::daftarUlang()` tidak menyalin agama, nama orang tua, dan alamat
+  rinci; mahasiswa hasil PMB selalu berangkat dengan peringatan Feeder.
+- Verifikasi berkas di layar PMB hanya membalik bendera; kini lewat service yang
+  sekaligus memeriksa kesiapan seleksi.
+
+### Demo
+
+`PmbSeeder` menambah gelombang daring terbuka hari ini (tiga prodi, dua jadwal
+seleksi) dengan enam akun `calon.{draf,bayar,verifikasi,seleksi,lulus,tidaklulus}@demo.test`
+(kata sandi `password`), belum diumumkan — menekan "Umumkan Hasil" adalah
+demonya. Berkas contoh berupa PDF kosong di disk privat (tidak ditulis saat tes).
+
+**Tes baru:** AkunPendaftarTest 24, PendaftaranDaringTest 56, SeleksiPmbTest 31,
+DemoPmbDaringTest 1, SmokeLayarTest 3 (anggaran kueri layar PMB daring dan dua
+halaman publik).
+
+### Belum
+
+Biaya formulir belum dijurnalkan; calon belum dapat mengganti surel akunnya;
+panitia belum punya layar menonaktifkan akun pendaftar; `jalur_masuk` mahasiswa
+belum diisi dari jalur gelombang.
+
+---
+
 ## Sesi 55 — 2026-10-26 · Jadwal UTS/UAS: entitas sendiri, bentrok mahasiswa, kartu dari jadwal ujian
 
 Pekerjaan P6 #34. Branch `feature/jadwal-ujian`, dari `main` sesudah PR #17.
@@ -158,6 +235,7 @@ yang sudah tidak dilayani; dan medan respons kedua endpoint tadi, beserta
 contohnya, sama dengan skemanya.
 
 **6 tes** (`SpecOpenApiTest`). Total sesi ini **26 tes baru**.
+
 ---
 
 ## Sesi 53 — 2026-10-26 · NIM tidak lagi dirakit dari id_sms

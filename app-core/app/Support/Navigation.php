@@ -182,6 +182,7 @@ final class Navigation
                     self::item('Matriks Tarif', '⊞', 'admin.tarif'),
                     self::item('Tagihan & Rekonsiliasi', '◈', 'admin.keuangan'),
                     self::item('Beasiswa & Keringanan', '◍', 'admin.beasiswa'),
+                    self::item('Biaya Formulir PMB', '◇', 'admin.pmb.formulir'),
 
                     /*
                      * Hanya muncul bila integrasinya dinyalakan.

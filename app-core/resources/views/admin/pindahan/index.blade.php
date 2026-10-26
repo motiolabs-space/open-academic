@@ -45,7 +45,7 @@
                                 </td>
                                 <td class="px-5 py-3">
                                     {{ $p->gelombang->nama }}
-                                    <div class="text-[11.5px] text-ink-faint">{{ ucfirst($p->gelombang->jalur) }}</div>
+                                    <div class="text-[11.5px] text-ink-faint">{{ $p->gelombang->jalur?->label() }}</div>
                                 </td>
                                 <td class="px-5 py-3">{{ $p->prodiDiterima?->nama ?? '—' }}</td>
                                 <td class="px-5 py-3 text-right">

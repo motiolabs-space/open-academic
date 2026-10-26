@@ -67,6 +67,11 @@ return [
         'kk' => 'Kartu Keluarga',
         'ktp' => 'KTP / KIA',
         'foto' => 'Pas Foto',
+
+        // Uploaded by the applicant; the cashier reads it to match a transfer.
+        // The one PMB document the finance office may open (BerkasController).
+        'bukti_bayar' => 'Bukti Pembayaran',
+
         'lainnya' => 'Lainnya',
     ],
 

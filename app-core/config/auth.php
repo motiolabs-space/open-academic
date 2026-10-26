@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Models\Kemahasiswaan\Mahasiswa;
+use App\Models\Pmb\PmbAkun;
 use App\Models\Sdm\Dosen;
 use App\Models\Sdm\Staff;
 
@@ -51,6 +52,17 @@ return [
         ],
 
         /*
+        | Prospective students applying online (docs/PMB.md). A fifth portal,
+        | not a fourth role: it has its own sign-in page, is unknown to the
+        | "sso" and "api" guards below, and its accounts live in a table no
+        | other guard reads. Becoming a student creates a separate account.
+        */
+        'pendaftar' => [
+            'driver' => 'session',
+            'provider' => 'pendaftar',
+        ],
+
+        /*
         | The guard Passport uses to decide who is authorising an OAuth client.
         | It owns no session of its own — it reads whichever of the three above
         | is signed in, so nobody is asked to log in twice.
@@ -93,6 +105,11 @@ return [
             'model' => Mahasiswa::class,
         ],
 
+        'pendaftar' => [
+            'driver' => 'eloquent',
+            'model' => PmbAkun::class,
+        ],
+
         /*
         | Resolves an OAuth subject (a UUID) across all three identity tables.
         | Deliberately has no single `model`: the whole point is that a subject
@@ -131,6 +148,14 @@ return [
         'mahasiswa' => [
             'provider' => 'mahasiswa',
             'table' => 'password_reset_tokens',
+            'expire' => 60,
+            'throttle' => 60,
+        ],
+
+        // Its own table: an applicant's address may also be a student's.
+        'pendaftar' => [
+            'provider' => 'pendaftar',
+            'table' => 'pmb_password_reset_tokens',
             'expire' => 60,
             'throttle' => 60,
         ],

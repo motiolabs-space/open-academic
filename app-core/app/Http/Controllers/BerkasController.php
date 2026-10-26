@@ -29,11 +29,18 @@ class BerkasController extends Controller
 {
     public function __construct(private readonly BerkasService $berkas) {}
 
-    /** An applicant's supporting document — admissions staff only. */
+    /**
+     * An applicant's supporting document — admissions staff only, with one
+     * exception: the finance office may open a transfer receipt, which it
+     * needs to match the payment, and nothing else the applicant uploaded.
+     */
     public function pmb(PmbBerkas $berkas): StreamedResponse
     {
+        $aktor = Portal::user();
+
         abort_unless(
-            Portal::user()?->hasPermissionTo('pmb.view', 'staff') ?? false,
+            ($aktor?->hasPermissionTo('pmb.view', 'staff') ?? false)
+                || ($berkas->jenis === 'bukti_bayar' && ($aktor?->hasPermissionTo('keuangan.view', 'staff') ?? false)),
             403,
         );
 

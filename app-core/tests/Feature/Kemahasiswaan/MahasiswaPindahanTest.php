@@ -562,7 +562,7 @@ describe('formulir intake', function () {
     it('memeriksa baris transkrip sebelum service menyentuhnya', function () {
         $m = pindahanBaru();
         $mk = mkPindahan();
-        $lain = MataKuliah::factory()->create(['prodi_id' => Prodi::factory()->create()->id]);
+        $lain = MataKuliah::factory()->create(['prodi_id' => Prodi::factory()->create(['kode' => '61201'])->id]);
 
         $this->actingAs($this->staf, 'staff')
             ->post(route('admin.pindahan.transkrip', $m), ['baris' => [

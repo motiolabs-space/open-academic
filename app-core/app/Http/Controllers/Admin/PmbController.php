@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Admin;
 
 use App\Enums\ApplicantStatus;
+use App\Enums\JalurPmb;
 use App\Http\Controllers\Controller;
 use App\Models\Akademik\Prodi;
 use App\Models\Akademik\TahunAkademik;
@@ -12,6 +13,7 @@ use App\Models\Pmb\PmbBerkas;
 use App\Models\Pmb\PmbGelombang;
 use App\Models\Pmb\PmbPendaftar;
 use App\Services\Berkas\BerkasService;
+use App\Services\Pmb\PendaftaranPmbService;
 use App\Services\Pmb\PmbService;
 use App\Support\Portal;
 use Illuminate\Http\RedirectResponse;
@@ -32,6 +34,7 @@ class PmbController extends Controller
     public function __construct(
         private readonly PmbService $pmb,
         private readonly BerkasService $berkas,
+        private readonly PendaftaranPmbService $pendaftaran,
     ) {}
 
     /** Attaches a supporting document to an applicant. */
@@ -77,7 +80,9 @@ class PmbController extends Controller
     {
         $this->izin('pmb.manage');
 
-        $berkas->update(['is_verified' => !$berkas->is_verified]);
+        // Through the service: accepting the last missing document may be what
+        // lets an online applicant into selection.
+        $berkas = $this->pendaftaran->verifikasiBerkas($berkas);
 
         return back()->with('sukses', $berkas->is_verified
             ? 'Berkas ditandai terverifikasi.'
@@ -101,7 +106,14 @@ class PmbController extends Controller
             // di produksi ia tidak melempar, hanya menambah satu kueri per baris.
             ->with(['gelombang', 'prodiPilihan1', 'prodiPilihan2', 'prodiDiterima', 'mahasiswa', 'berkas'])
             ->when($request->filled('gelombang'), fn ($q) => $q->where('pmb_gelombang_id', $request->integer('gelombang')))
-            ->when($request->filled('status'), fn ($q) => $q->where('status', $request->string('status')))
+            // Drafts are accounts somebody opened and has not submitted from.
+            // Listed only when asked for, or they bury the actual applicants.
+            ->when(
+                $request->filled('status'),
+                fn ($q) => $q->where('status', $request->string('status')),
+                fn ($q) => $q->where('status', '!=', ApplicantStatus::Draf->value),
+            )
+            ->when($request->boolean('kip'), fn ($q) => $q->where('is_calon_kip', true))
             ->cari($request->string('cari'), ['nama', 'nomor_pendaftaran', 'email'])
             ->orderByDesc('id')
             ->paginate(25)
@@ -118,7 +130,8 @@ class PmbController extends Controller
             'statusPilihan' => ApplicantStatus::cases(),
             'jenisBerkas' => (array) config('berkas.pmb'),
             'termAktif' => Portal::term(),
-            'filter' => $request->only(['gelombang', 'status', 'cari']),
+            'filter' => $request->only(['gelombang', 'status', 'cari', 'kip']),
+            'jalurPilihan' => JalurPmb::options(),
 
             // Counted per wave so the wave list shows how far selection has got.
             'rekap' => PmbPendaftar::query()
@@ -137,7 +150,7 @@ class PmbController extends Controller
             'tahun_akademik_id' => ['required', 'integer', Rule::exists('tahun_akademik', 'id')],
             'kode' => ['required', 'string', 'max:32', Rule::unique('pmb_gelombang', 'kode')->whereNull('deleted_at')],
             'nama' => ['required', 'string', 'max:255'],
-            'jalur' => ['required', Rule::in(['reguler', 'prestasi', 'rpl', 'transfer'])],
+            'jalur' => ['required', Rule::enum(JalurPmb::class)],
             'tanggal_mulai' => ['required', 'date'],
             'tanggal_selesai' => ['required', 'date', 'after_or_equal:tanggal_mulai'],
             'biaya_pendaftaran' => ['required', 'integer', 'min:0'],
