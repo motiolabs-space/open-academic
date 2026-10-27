@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Console\Commands;
 
+use App\Services\Auth\PencabutanTokenSso;
 use Illuminate\Console\Command;
 use Laravel\Passport\ClientRepository;
 use Laravel\Passport\Passport;
@@ -151,10 +152,7 @@ class SsoClientCommand extends Command
 
     private function cabutToken(string $clientId): int
     {
-        $jumlah = Passport::tokenModel()::query()
-            ->where('client_id', $clientId)
-            ->where('revoked', false)
-            ->update(['revoked' => true]);
+        $jumlah = app(PencabutanTokenSso::class)->cabut($clientId);
 
         $this->components->info("{$jumlah} token dicabut untuk client {$clientId}.");
         $this->line('  Pengguna akan diminta menyetujui ulang saat berikutnya memakai aplikasi tersebut.');
