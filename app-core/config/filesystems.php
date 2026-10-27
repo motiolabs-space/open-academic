@@ -35,7 +35,9 @@ return [
         'local' => [
             'driver' => 'local',
             'root' => storage_path('app/private'),
-            'serve' => true,
+            // Off: every download goes through a controller and its policy.
+            // Serving would register a signed /storage route nobody uses.
+            'serve' => false,
             'throw' => false,
             'report' => false,
         ],

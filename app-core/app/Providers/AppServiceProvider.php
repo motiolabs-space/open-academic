@@ -108,6 +108,7 @@ class AppServiceProvider extends ServiceProvider
         $this->hardenModels();
         $this->hardenPasswords();
         $this->hardenUrls();
+        $this->hardenPdf();
         $this->kanalNotifikasi();
         $this->batasVerifikasi();
         $this->batasPmb();
@@ -227,6 +228,25 @@ class AppServiceProvider extends ServiceProvider
         Password::defaults(fn () => $this->app->isProduction()
             ? Password::min(10)->letters()->numbers()->uncompromised()
             : Password::min(8));
+    }
+
+    /**
+     * Pinned, not inherited. The package defaults are safe today, but PDFs
+     * here render names and text typed by users: a changed default in a later
+     * release must not quietly enable fetching remote URLs (SSRF, local file
+     * reads through file://) or inline PHP.
+     *
+     * Set here rather than in config/dompdf.php: the package merges its config
+     * one level deep, so an `options` key there would replace the package's
+     * whole options array — fonts, chroot and all.
+     */
+    private function hardenPdf(): void
+    {
+        config([
+            'dompdf.options.enable_remote' => false,
+            'dompdf.options.enable_php' => false,
+            'dompdf.options.enable_javascript' => false,
+        ]);
     }
 
     private function hardenUrls(): void
