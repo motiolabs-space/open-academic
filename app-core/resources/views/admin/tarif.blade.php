@@ -3,9 +3,11 @@
 @section('title', 'Matriks Tarif')
 
 @php
-    $rp = fn ($n) => 'Rp'.number_format((float) $n, 0, ',', '.');
+    $rp = fn ($n) => \App\Support\Format::rupiah($n);
+    $nominal = fn ($t) => $rp($t->nominal).($t->komponen === \App\Enums\KomponenTarif::PerSks ? ' '.__('keuangan.tarif.per_sks_satuan') : '');
     $dimensi = function ($t) {
         $bagian = [];
+        if ($t->mataKuliah) $bagian[] = $t->mataKuliah->kode.' '.$t->mataKuliah->nama;
         if ($t->prodi) $bagian[] = $t->prodi->nama;
         if ($t->angkatan) $bagian[] = 'angkatan '.$t->angkatan;
         if ($t->jalur_masuk) $bagian[] = 'jalur '.$t->jalur_masuk;
@@ -31,6 +33,7 @@
             komponen, baris yang paling spesifik menang — sehingga satu tarif umum dan
             satu penimpa per prodi dapat hidup berdampingan. Dimensi yang dikosongkan
             berarti “berlaku untuk semua”.
+            <span class="mt-1.5 block">{{ __('keuangan.tarif.dari_krs') }}</span>
         </x-alert>
     </div>
 
@@ -80,12 +83,15 @@
                             <div class="flex flex-wrap items-baseline justify-between gap-2">
                                 <div>
                                     <span class="text-[11px] font-bold uppercase tracking-[0.08em] text-ink-muted">
-                                        {{ $komponenPilihan[$baris['terpilih']->komponen] ?? $baris['terpilih']->komponen }}
+                                        {{ $baris['terpilih']->komponen->label() }}
                                     </span>
                                     <div class="text-[13px]">{{ $baris['terpilih']->nama }}</div>
                                     <div class="text-[11.5px] text-ink-faint">{{ $dimensi($baris['terpilih']) }}</div>
+                                    @if ($baris['terpilih']->komponen->dariKrs())
+                                        <div class="text-[11.5px] text-ink-muted">{{ __('keuangan.tarif.simulasi_dari_krs') }}</div>
+                                    @endif
                                 </div>
-                                <div class="tabular text-[15px] font-semibold">{{ $rp($baris['terpilih']->nominal) }}</div>
+                                <div class="tabular text-[15px] font-semibold">{{ $nominal($baris['terpilih']) }}</div>
                             </div>
 
                             @if ($baris['dikalahkan']->isNotEmpty())
@@ -112,7 +118,7 @@
 
                     @if ($simulasi['rincian']->isNotEmpty())
                         <div class="mt-3.5 flex items-baseline justify-between border-t-2 border-navy pt-3">
-                            <span class="text-[13px] font-semibold">Total</span>
+                            <span class="text-[13px] font-semibold">{{ __('keuangan.tarif.total_tetap') }}</span>
                             <span class="tabular font-serif text-[22px] font-semibold">{{ $rp($simulasi['total']) }}</span>
                         </div>
                     @endif
@@ -168,7 +174,7 @@
                                                 <span class="text-ink-faint">tanpa batas</span>
                                             @endif
                                         </td>
-                                        <td class="tabular px-5 py-3 text-right font-semibold">{{ $rp($t->nominal) }}</td>
+                                        <td class="tabular px-5 py-3 text-right font-semibold">{{ $nominal($t) }}</td>
                                         <td class="px-5 py-3 text-right">
                                             <form method="POST" action="{{ route('admin.tarif.hapus', $t) }}"
                                                 onsubmit="return confirm('Nonaktifkan baris tarif ini? Tagihan yang sudah terbit tidak berubah.');">
@@ -197,6 +203,10 @@
                 <x-field label="Komponen" name="komponen" required :options="$komponenPilihan" />
                 <x-field label="Nama" name="nama" required placeholder="UKT Semester Ganjil" />
                 <x-field label="Nominal (Rp)" name="nominal" type="number" required :value="0" />
+                <p class="-mt-2 text-[11.5px] text-ink-faint">{{ __('keuangan.tarif.nominal_per_sks') }}</p>
+                <x-field :label="__('keuangan.tarif.mata_kuliah')" name="mata_kuliah_id"
+                    :options="$daftarMataKuliah->mapWithKeys(fn ($mk) => [$mk->id => $mk->kode.' — '.$mk->nama.($mk->prodi ? ' ('.$mk->prodi->nama.')' : '')])" />
+                <p class="-mt-2 text-[11.5px] text-ink-faint">{{ __('keuangan.tarif.mata_kuliah_bantuan') }}</p>
 
                 <div class="mt-1 border-t border-line pt-3">
                     <p class="mb-2.5 text-[11px] font-semibold uppercase tracking-[0.08em] text-ink-muted">

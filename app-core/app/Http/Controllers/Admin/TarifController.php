@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Admin;
 
+use App\Enums\KomponenTarif;
 use App\Http\Controllers\Controller;
+use App\Models\Akademik\MataKuliah;
 use App\Models\Akademik\Prodi;
 use App\Models\Akademik\TahunAkademik;
 use App\Models\Kemahasiswaan\Mahasiswa;
@@ -33,15 +35,6 @@ class TarifController extends Controller
     /** UKT bands as Indonesian campuses number them. */
     public const GOLONGAN = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII'];
 
-    private const KOMPONEN = [
-        'ukt' => 'UKT',
-        'spp' => 'SPP',
-        'praktikum' => 'Praktikum',
-        'registrasi' => 'Registrasi',
-        'wisuda' => 'Wisuda',
-        'lainnya' => 'Lainnya',
-    ];
-
     public function __construct(private readonly TarifResolver $resolver) {}
 
     public function index(Request $request): View
@@ -49,7 +42,7 @@ class TarifController extends Controller
         $this->izin('keuangan.view');
 
         $daftar = Tarif::query()
-            ->with('prodi')
+            ->with(['prodi', 'mataKuliah'])
             ->when($request->filled('komponen'), fn ($q) => $q->where('komponen', $request->string('komponen')))
             ->when($request->filled('prodi'), fn ($q) => $q->where('prodi_id', $request->integer('prodi')))
             ->orderBy('komponen')
@@ -62,10 +55,15 @@ class TarifController extends Controller
             'judul' => 'Matriks Tarif',
             'konteks' => $daftar->count().' baris tarif',
             'breadcrumb' => ['Dasbor' => route('admin.dashboard'), 'Matriks Tarif'],
-            'daftar' => $daftar->groupBy('komponen'),
+            'daftar' => $daftar->groupBy(fn (Tarif $t): string => $t->komponen->value),
             'daftarProdi' => Prodi::orderBy('nama')->get(['id', 'nama', 'jenjang']),
             'daftarTerm' => TahunAkademik::terbaru()->get(['id', 'kode', 'nama']),
-            'komponenPilihan' => self::KOMPONEN,
+            'komponenPilihan' => KomponenTarif::options(),
+            'daftarMataKuliah' => MataKuliah::query()
+                ->with('prodi:id,nama')
+                ->where('is_active', true)
+                ->orderBy('kode')
+                ->get(['id', 'kode', 'nama', 'prodi_id']),
             'golonganPilihan' => array_combine(self::GOLONGAN, self::GOLONGAN),
             'filter' => $request->only(['komponen', 'prodi']),
             'simulasi' => $this->simulasi($request),
@@ -138,7 +136,7 @@ class TarifController extends Controller
     private function validasi(Request $request): array
     {
         return $request->validate([
-            'komponen' => ['required', Rule::in(array_keys(self::KOMPONEN))],
+            'komponen' => ['required', Rule::enum(KomponenTarif::class)],
             'nama' => ['required', 'string', 'max:255'],
 
             // Rupiah as an integer. No float ever touches money — a rounding
@@ -151,12 +149,23 @@ class TarifController extends Controller
             'jalur_masuk' => ['nullable', 'string', 'max:48'],
             'golongan_ukt' => ['nullable', Rule::in(self::GOLONGAN)],
 
+            // What a per-course row prices — and only a per-course row.
+            'mata_kuliah_id' => [
+                Rule::requiredIf(fn (): bool => $request->input('komponen') === KomponenTarif::MataKuliah->value),
+                Rule::prohibitedIf(fn (): bool => $request->input('komponen') !== KomponenTarif::MataKuliah->value),
+                'nullable',
+                'integer',
+                Rule::exists('mata_kuliah', 'id'),
+            ],
+
             'term_berlaku_dari' => ['nullable', 'string', 'size:5'],
             'term_berlaku_sampai' => ['nullable', 'string', 'size:5', 'gte:term_berlaku_dari'],
             'is_active' => ['sometimes', 'boolean'],
         ], [
             'term_berlaku_sampai.gte' => 'Masa berlaku tidak boleh berakhir sebelum dimulai.',
             'golongan_ukt.in' => 'Golongan UKT ditulis dengan angka Romawi I sampai VIII.',
+            'mata_kuliah_id.required' => __('keuangan.tarif.mata_kuliah_wajib'),
+            'mata_kuliah_id.prohibited' => __('keuangan.tarif.mata_kuliah_dilarang'),
         ]);
     }
 

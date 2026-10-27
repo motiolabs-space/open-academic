@@ -57,6 +57,7 @@ class Tagihan extends Model
         return [
             'status' => InvoiceStatus::class,
             'total' => 'integer',
+            'nominal_krs' => 'integer',
             'terbayar' => 'integer',
             'denda' => 'integer',
             'jatuh_tempo' => 'date',
@@ -143,6 +144,48 @@ class Tagihan extends Model
         return $pokok > 0 ? round(min((int) $this->terbayar, $pokok) / $pokok * 100, 2) : 100.0;
     }
 
+    /**
+     * The part of the principal the KRS gate measures: what is owed for being
+     * enrolled, not for what the plan contains.
+     *
+     * Per-credit and per-course charges are billed when the plan is approved,
+     * so counting them here would be circular — a student could not submit the
+     * plan until they had paid for it, and could not be billed for it until it
+     * was submitted. That bites in the revision window, when a plan already
+     * billed is reopened and has to pass the gate again. See ADR-030.
+     *
+     * Reductions are shared pro rata between the fixed and the KRS-derived
+     * charges, because a scholarship line does not say which charge it paid
+     * for. Zero `nominal_krs` — every campus that does not bill by credit —
+     * returns the principal without a query.
+     */
+    public function pokokGerbangKrs(): int
+    {
+        $pokok = $this->pokok();
+        $dariKrs = (int) $this->nominal_krs;
+
+        if ($dariKrs <= 0) {
+            return $pokok;
+        }
+
+        $kotor = $this->totalKotor();
+        $tetap = max(0, $kotor - $dariKrs);
+
+        if ($kotor <= 0 || $tetap === 0) {
+            return 0;
+        }
+
+        return intdiv($pokok * $tetap, $kotor);
+    }
+
+    /** Payment progress against pokokGerbangKrs(); what the KRS gate reads. */
+    public function persenTerbayarGerbangKrs(): float
+    {
+        $dasar = $this->pokokGerbangKrs();
+
+        return $dasar > 0 ? round(min((int) $this->terbayar, $dasar) / $dasar * 100, 2) : 100.0;
+    }
+
     public function dendaDibebaskan(): bool
     {
         return $this->denda_dibebaskan_at !== null;
@@ -193,7 +236,8 @@ class Tagihan extends Model
      *
      * A live dispensation lifts the gate regardless of the balance. A late fee
      * never tightens it: the threshold is measured against the principal, so
-     * the gate answers exactly as it did before any fee was charged.
+     * the gate answers exactly as it did before any fee was charged. Nor does a
+     * charge billed from the approved plan — see pokokGerbangKrs().
      */
     public function memenuhiSyaratKrs(): bool
     {
@@ -205,7 +249,7 @@ class Tagihan extends Model
             return true;
         }
 
-        return $this->persenTerbayarPokok() >= (float) config('academic.krs.min_payment_percent');
+        return $this->persenTerbayarGerbangKrs() >= (float) config('academic.krs.min_payment_percent');
     }
 
     /** @param Builder<self> $query */
