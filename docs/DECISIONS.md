@@ -816,3 +816,48 @@
   berubah — tidak ada kartu, tidak ada gerbang. Tahap ini tidak menggantikan
   seminar proposal; yang menyeminarkan proposal tetap menjadwalkannya sesudah
   pembimbing ditetapkan. Dokumen proposal bukan entitas Feeder.
+
+## ADR-031 — Pemakaian ruang: laporan baca dari dua jadwal, ditelusuri per tanggal, penyebutnya jam operasional kampus (2026-10-27)
+
+- **Konteks.** Roadmap #42. Bentrok ruang sudah dicegah oleh `JadwalService`
+  (kuliah) dan `JadwalUjianService` (ujian, #34), dan libur akademik sudah
+  terbit dari kalender (#35). Yang tidak terlihat: seberapa terpakai tiap ruang,
+  ruang mana yang selalu sesak, dan ruang mana yang kosong ketika staf mencari
+  tempat untuk satu kelas atau satu sesi ujian. Pemanfaatan adalah rasio, dan
+  penyebutnya — kapan ruang *bisa* dipakai — tidak tercatat di mana pun.
+- **Keputusan.** (1) **Laporan, bukan pemesanan.** `PemanfaatanRuangService`
+  tidak menulis apa pun; ruang "dipegang" oleh jadwal yang memakainya, dan
+  gerbang bentrok kedua jadwal itulah yang menahan. Pencarian ruang kosong juga
+  hanya membaca. (2) **Penyebut dari config kampus**: `config/ruang.php` —
+  hari operasional (ISO), jam buka–tutup, ambang "jarang dipakai" (bawaan 25 %),
+  lebar kolom peta panas. Pemakaian di luar jendela itu (kelas malam, Sabtu
+  yang tutup, ujian pada hari libur) dilaporkan sebagai kolom tersendiri, tidak
+  ditambahkan ke persentase — angka di atas 100 % tidak menjawab pertanyaan
+  apa pun. (3) **Ditelusuri per tanggal** dari `tanggal_mulai` sampai
+  `tanggal_selesai` semester, tidak dikalikan dari satu pekan: libur kampus
+  (`KalenderPeristiwa::tanggalLibur()`, terbit, bukan sasaran staf) mengeluarkan
+  hari itu dari tersedia *dan* terpakai; libur satu prodi hanya meniadakan kuliah
+  prodi itu; ujian hanya ada pada tanggalnya. Hari yang tidak berbeda dihitung
+  sekali per hari-pekan dan dipakai ulang. Angka ditampilkan sebagai jam per
+  pekan rata-rata semester. (4) **Terpakai = gabungan rentang**: kuliah dan ujian
+  yang menumpuk (atau dua kelas yang lolos ganda) dihitung sekali; jam
+  bersentuhan bukan tumpang tindih; waktu dibaca sebagai menit, bukan dibanding
+  sebagai string (`10:00` vs `10:00:00`). (5) **Okupansi kursi** = Σ(peserta ×
+  menit) / Σ(kapasitas × menit) atas setiap pemakaian, tanpa digabung. Peserta
+  kuliah = mahasiswa ber-KRS **disetujui** (tafsiran yang sama dengan jadwal
+  ujian); peserta ujian per ruang = kursi diisi berurutan per `urutan`, seperti
+  kartu ujian — sesi 50 orang di 40 + 40 kursi menaruh 40 dan 10, bukan 25 dan
+  25. Kapasitas 0 berarti belum diisi: tanpa okupansi, tidak pernah "kelebihan".
+  (6) **Ujian hanya yang terbit**, kuliah dari semua slot kelas semester itu.
+  (7) Izin baca baru `ruang.view` untuk BAAK, pimpinan, dan peran staf baru
+  `sarpras` (bersama `master.view` dan helpdesk) — bukan `kelas.view`, supaya
+  sarana-prasarana melihat ruang tanpa diberi layar penyusunan jadwal. Policy di
+  model `Ruang` (`viewUtilization`).
+- **Konsekuensi.** Enam kueri per laporan berapa pun jumlah ruang, slot, dan
+  sesi (dipaku tes). Ruang nonaktif tetap tampil selama masih dipakai jadwal —
+  itulah baris yang perlu dilihat — tetapi tidak pernah "jarang dipakai". Ujian
+  di luar rentang tanggal semester tidak terhitung, dan kuliah diasumsikan
+  berjalan setiap pekan semester termasuk pekan ujian (model jadwal tidak
+  mengenal pekan tanpa kuliah); tumpukan ujian di atas kuliah tidak menggelembung
+  karena (4). Instalasi yang sudah berjalan perlu menjalankan ulang
+  `RolePermissionSeeder` agar izin dan peran baru ada.
