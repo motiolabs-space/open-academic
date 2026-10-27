@@ -279,6 +279,15 @@ Route::middleware(['auth:dosen', 'term.active'])->prefix('dosen')->name('dosen.'
     Route::post('/portofolio/sertifikasi', [Dosen\PortofolioController::class, 'simpanSertifikasi'])->name('portofolio.sertifikasi');
     Route::post('/portofolio/kegiatan', [Dosen\PortofolioController::class, 'simpanKegiatan'])->name('portofolio.kegiatan');
 
+    // Riwayat kepegawaian: {jenis} memilih tabel, {riwayat} adalah UUID baris
+    // di tabel itu — diikat di AppServiceProvider, dicek pemiliknya oleh policy.
+    Route::get('/kepegawaian', [Dosen\KepegawaianController::class, 'index'])->name('kepegawaian');
+    Route::post('/kepegawaian/{jenis}', [Dosen\KepegawaianController::class, 'store'])->name('kepegawaian.store');
+    Route::put('/kepegawaian/{jenis}/{riwayat}', [Dosen\KepegawaianController::class, 'update'])->name('kepegawaian.update');
+    Route::delete('/kepegawaian/{jenis}/{riwayat}', [Dosen\KepegawaianController::class, 'destroy'])->name('kepegawaian.destroy');
+
+    Route::get('/angka-kredit', Dosen\AngkaKreditController::class)->name('angka-kredit');
+
     Route::get('/tugas-akhir', [Dosen\TugasAkhirController::class, 'index'])->name('tugas-akhir');
     Route::get('/tugas-akhir/{tugasAkhir}', [Dosen\TugasAkhirController::class, 'show'])->name('tugas-akhir.show');
     Route::post('/tugas-akhir/bimbingan/{bimbingan}/setujui', [Dosen\TugasAkhirController::class, 'setujuiBimbingan'])->name('tugas-akhir.bimbingan.setujui');
@@ -336,6 +345,13 @@ Route::middleware('auth:staff,mahasiswa')->prefix('berkas')->name('berkas.')->gr
     Route::get('/pmb/{berkas}', [BerkasController::class, 'pmb'])->name('pmb');
     Route::get('/cuti/{cuti}', [BerkasController::class, 'cuti'])->name('cuti');
 });
+
+// Dokumen riwayat kepegawaian: dosen pemiliknya dan staf kepegawaian.
+// RiwayatKepegawaianPolicy::view yang memutuskan, bukan guard-nya.
+Route::middleware('auth:staff,dosen')->prefix('berkas/kepegawaian')->name('berkas.')
+    ->group(function (): void {
+        Route::get('/{jenis}/{riwayat}', [BerkasController::class, 'riwayatKepegawaian'])->name('kepegawaian');
+    });
 
 // Lampiran helpdesk dapat diunggah dosen juga, maka ketiga guard. Siapa yang
 // boleh membukanya diputuskan HelpdeskTiketPolicy, bukan oleh guard.
@@ -461,6 +477,25 @@ Route::middleware(['auth:staff', 'term.active'])->prefix('admin')->name('admin.'
     Route::post('/dosen/{dosen}/nonaktifkan', [Admin\DosenController::class, 'nonaktifkan'])->name('dosen.nonaktifkan');
     Route::post('/dosen/{dosen}/aktifkan', [Admin\DosenController::class, 'aktifkan'])->name('dosen.aktifkan');
     Route::post('/dosen/{dosen}/reset-sandi', [Admin\DosenController::class, 'resetKataSandi'])->name('dosen.reset-sandi');
+
+    Route::get('/kepegawaian/validasi', [Admin\RiwayatKepegawaianController::class, 'antrean'])->name('kepegawaian.antrean');
+    Route::get('/dosen/{dosen}/kepegawaian', [Admin\RiwayatKepegawaianController::class, 'show'])->name('dosen.kepegawaian');
+    Route::post('/dosen/{dosen}/kepegawaian/{jenis}', [Admin\RiwayatKepegawaianController::class, 'store'])->name('dosen.kepegawaian.store');
+    Route::put('/kepegawaian/{jenis}/{riwayat}', [Admin\RiwayatKepegawaianController::class, 'update'])->name('kepegawaian.update');
+    Route::delete('/kepegawaian/{jenis}/{riwayat}', [Admin\RiwayatKepegawaianController::class, 'destroy'])->name('kepegawaian.destroy');
+    Route::post('/kepegawaian/{jenis}/{riwayat}/setujui', [Admin\RiwayatKepegawaianController::class, 'setujui'])->name('kepegawaian.setujui');
+    Route::post('/kepegawaian/{jenis}/{riwayat}/tolak', [Admin\RiwayatKepegawaianController::class, 'tolak'])->name('kepegawaian.tolak');
+
+    // Buku besar angka kredit. Rute statis didahulukan supaya "ekspor" tidak
+    // terbaca sebagai UUID dosen.
+    Route::get('/angka-kredit', [Admin\AngkaKreditController::class, 'index'])->name('angka-kredit.index');
+    Route::get('/angka-kredit/ekspor', [Admin\AngkaKreditController::class, 'ekspor'])->name('angka-kredit.ekspor');
+    Route::post('/angka-kredit/susun', [Admin\AngkaKreditController::class, 'susunSemua'])->name('angka-kredit.susun-semua');
+    Route::delete('/angka-kredit/baris/{baris}', [Admin\AngkaKreditController::class, 'destroy'])->name('angka-kredit.destroy');
+    Route::get('/angka-kredit/{dosen}', [Admin\AngkaKreditController::class, 'show'])->name('angka-kredit.show');
+    Route::post('/angka-kredit/{dosen}/susun', [Admin\AngkaKreditController::class, 'susun'])->name('angka-kredit.susun');
+    Route::post('/angka-kredit/{dosen}/manual', [Admin\AngkaKreditController::class, 'store'])->name('angka-kredit.store');
+    Route::put('/angka-kredit/{dosen}/nuptk', [Admin\AngkaKreditController::class, 'nuptk'])->name('angka-kredit.nuptk');
 
     Route::get('/staf', [Admin\StaffController::class, 'index'])->name('staff');
     Route::post('/staf', [Admin\StaffController::class, 'store'])->name('staff.store');

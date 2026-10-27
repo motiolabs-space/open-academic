@@ -56,7 +56,7 @@ Akun demo: `mahasiswa1@demo.test` · kata sandi `password`
 | Profil Akademik | `/mahasiswa/profil` | Data diri, status, cuti |
 | Aplikasi Terhubung | `/aplikasi-terhubung` | Klien OAuth2 yang diberi izin |
 
-## Portal Dosen — 14 modul
+## Portal Dosen — 16 modul
 
 Akun demo: `dosen1@demo.test` · kata sandi `password`
 
@@ -76,8 +76,10 @@ Akun demo: `dosen1@demo.test` · kata sandi `password`
 | **KEPEGAWAIAN** | Beban Kerja (BKD) | `/dosen/bkd` |
 | | Penilaian BKD | `/dosen/bkd/penilaian` |
 | | Portofolio | `/dosen/portofolio` |
+| | Riwayat Kepegawaian | `/dosen/kepegawaian` — 14 riwayat, diajukan untuk divalidasi |
+| | Angka Kredit | `/dosen/angka-kredit` — buku besar Kum A–E sendiri |
 
-## Portal Staf — 35 modul
+## Portal Staf — 37 modul
 
 Akun demo: `admin@demo.test` · kata sandi `password`
 
@@ -99,10 +101,12 @@ Akun demo: `admin@demo.test` · kata sandi `password`
 | | Yudisium | `/admin/yudisium` |
 | | Wisuda | `/admin/wisuda` |
 | | Surat & Dokumen | `/admin/surat` |
-| **SDM** | Kepegawaian Dosen | `/admin/dosen` |
+| **SDM** | Kepegawaian Dosen | `/admin/dosen` — berkas per dosen di `/admin/dosen/{uuid}/kepegawaian` |
+| | Validasi Riwayat | `/admin/kepegawaian/validasi` |
 | | Akun Staf | `/admin/staf` |
 | | Unit Kerja | `/admin/unit-kerja` |
 | | Beban Kerja Dosen | `/admin/bkd` |
+| | Angka Kredit | `/admin/angka-kredit` — rekap per dosen/jenjang, lembar penyetaraan .xlsx |
 | | Evaluasi Dosen | `/admin/edom` |
 | **KEUANGAN** | Matriks Tarif | `/admin/tarif` |
 | | Tagihan & Rekonsiliasi | `/admin/keuangan` |
@@ -167,7 +171,7 @@ menunggu payment gateway. **Bawaan nonaktif**; aturannya kebijakan kampus di
 | ~~Denda keterlambatan~~ | **Selesai 24 Okt 2026** — lihat §Denda keterlambatan di Bagian I |
 | Monitoring pemakaian ruang | Bentrok jadwal sudah terdeteksi; pemanfaatan ruangnya belum terlihat |
 | Career center | Lowongan, forum & agenda alumni. Tabel `alumni` sudah ada sebagai dasar — tapi instrumennya milik Open Campus |
-| **Enam formulir SISTER** | Penghargaan & sanksi, bahasa, organisasi profesi, keluarga (keempatnya tanpa apa pun), serta pangkat dan mutasi (servisnya ada, pemanggilnya tidak). Tabel dan relasinya ada; layar pengisiannya tidak. Adaptor SISTER yang mulus di atas tabel kosong tetap mengirim kosong |
+| ~~**Enam formulir SISTER**~~ | **Selesai 27 Okt 2026 (#39)** — keenamnya plus delapan riwayat baru diisi dosen di `/dosen/kepegawaian` dan divalidasi di `/admin/kepegawaian/validasi`. Lihat [`KEPEGAWAIAN.md`](KEPEGAWAIAN.md) |
 | ~~Helpdesk~~ | **Selesai 24 Okt 2026** — `/mahasiswa/helpdesk`, `/dosen/helpdesk`, `/admin/helpdesk`, FAQ publik `/bantuan`. Lihat [`HELPDESK.md`](HELPDESK.md) |
 
 Aplikasi mobile native **tidak direncanakan untuk v1** — web-nya responsif, dan

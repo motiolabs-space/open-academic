@@ -177,6 +177,18 @@ class KepegawaianService
             ->doesntExist();
     }
 
+    /**
+     * Records a lecturer's NUPTK, the identifier the penyetaraan upload
+     * matches by. Empty clears it rather than storing an empty string, so
+     * "has no NUPTK" is one question with one answer.
+     */
+    public function tetapkanNuptk(Dosen $dosen, ?string $nuptk): Dosen
+    {
+        $dosen->update(['nuptk' => filled($nuptk) ? trim($nuptk) : null]);
+
+        return $dosen;
+    }
+
     /** Issues a new one-time password and returns it for hand-over. */
     public function resetKataSandi(Dosen|Staff $orang): string
     {

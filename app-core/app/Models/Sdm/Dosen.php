@@ -8,6 +8,7 @@ use App\Enums\EducationLevel;
 use App\Enums\Gender;
 use App\Models\Akademik\KelasKuliah;
 use App\Models\Akademik\Prodi;
+use App\Models\Akademik\TahunAkademik;
 use App\Models\Kemahasiswaan\Mahasiswa;
 use App\Models\TugasAkhir\Pembimbing;
 use App\Models\TugasAkhir\Penguji;
@@ -143,6 +144,12 @@ class Dosen extends Authenticatable implements OAuthenticatable
         return $this->hasMany(BkdLaporan::class);
     }
 
+    /** The credit ledger, Kum A–E — see AngkaKreditService. */
+    public function angkaKredit(): HasMany
+    {
+        return $this->hasMany(AngkaKreditDosen::class);
+    }
+
     /*
      |---------------------------------------------------------------------
      | Kepegawaian mendalam
@@ -195,15 +202,73 @@ class Dosen extends Authenticatable implements OAuthenticatable
         return $this->hasMany(OrganisasiDosen::class);
     }
 
+    public function diklat(): HasMany
+    {
+        return $this->hasMany(DiklatDosen::class);
+    }
+
+    public function pengalamanKerja(): HasMany
+    {
+        return $this->hasMany(PengalamanKerjaDosen::class);
+    }
+
+    public function tugasBelajar(): HasMany
+    {
+        return $this->hasMany(TugasBelajarDosen::class);
+    }
+
+    public function tugasDinas(): HasMany
+    {
+        return $this->hasMany(TugasDinasDosen::class);
+    }
+
+    public function jabatanStruktural(): HasMany
+    {
+        return $this->hasMany(JabatanStrukturalDosen::class);
+    }
+
+    public function inpassing(): HasMany
+    {
+        return $this->hasMany(InpassingDosen::class);
+    }
+
+    public function kontrak(): HasMany
+    {
+        return $this->hasMany(KontrakDosen::class);
+    }
+
+    public function pensiun(): HasMany
+    {
+        return $this->hasMany(PensiunDosen::class);
+    }
+
     /**
      * Whether this lecturer is obliged to report BKD at all.
      *
      * The allowance is the reason the report exists, so a campus that demands
      * one from every lecturer is imposing paperwork the regulation does not.
+     *
+     * Approved study leave overlapping the term (today, without one) releases
+     * the obligation — the same rule BkdService::wajibMelapor() applies to the
+     * whole campus.
      */
-    public function wajibBkd(): bool
+    public function wajibBkd(?TahunAkademik $term = null): bool
     {
+        if ($this->sedangTugasBelajar($term)) {
+            return false;
+        }
+
         return $this->sertifikasi()->serdos()->exists();
+    }
+
+    /** Whether approved study leave overlaps the term, or today without one. */
+    public function sedangTugasBelajar(?TahunAkademik $term = null): bool
+    {
+        [$mulai, $selesai] = $term === null
+            ? [now()->toDateString(), now()->toDateString()]
+            : [$term->tanggal_mulai->toDateString(), $term->tanggal_selesai->toDateString()];
+
+        return $this->tugasBelajar()->membebaskanBkdPada($mulai, $selesai)->exists();
     }
 
     public function namaLengkap(): string

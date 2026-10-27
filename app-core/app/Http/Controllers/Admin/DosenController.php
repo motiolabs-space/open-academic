@@ -121,6 +121,10 @@ class DosenController extends Controller
                 Rule::unique('dosen', 'nidn')->ignore($dosen?->id)->whereNull('deleted_at'),
             ],
             'nip' => ['nullable', 'string', 'max:32'],
+            'nuptk' => [
+                'nullable', 'string', 'regex:/^\d{16}$/',
+                Rule::unique('dosen', 'nuptk')->ignore($dosen?->id)->whereNull('deleted_at'),
+            ],
             'nama' => ['required', 'string', 'max:255'],
             'gelar_depan' => ['nullable', 'string', 'max:32'],
             'gelar_belakang' => ['nullable', 'string', 'max:64'],
@@ -142,6 +146,7 @@ class DosenController extends Controller
         ], [
             'praktisi_instansi.required_if' => 'Instansi asal wajib diisi untuk dosen praktisi — '
                 .'itulah bukti yang dihitung pada IKU 4.',
+            'nuptk.regex' => 'NUPTK terdiri dari 16 digit angka.',
         ]);
     }
 

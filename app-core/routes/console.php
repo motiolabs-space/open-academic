@@ -91,3 +91,17 @@ Schedule::command('openacademic:helpdesk-sla')
     ->hourly()
     ->onOneServer()
     ->withoutOverlapping();
+
+/*
+ * Akun dosen pensiun.
+ *
+ * Pensiun biasanya dicatat jauh sebelum TMT-nya, jadi persetujuan saja tidak
+ * dapat menutup akun. Sekali sehari menutup yang sudah jatuh tempo — kecuali
+ * yang masih mengampu kelas semester berjalan atau menjadi dosen wali, yang
+ * dilaporkan dan dicoba lagi esok hari. Lihat docs/KEPEGAWAIAN.md.
+ */
+Schedule::command('openacademic:tutup-akun-pensiun')
+    ->dailyAt('00:30')
+    ->timezone(config('app.timezone'))
+    ->onOneServer()
+    ->withoutOverlapping();

@@ -66,6 +66,35 @@ enum JabatanFungsional: string
     }
 
     /**
+     * The abbreviation the ministry's upload templates expect — AA, L, LK.
+     *
+     * Null for Tenaga Pengajar, which is not a rank and has no abbreviation to
+     * put in a column that means one.
+     */
+    public function singkatan(): ?string
+    {
+        return match ($this) {
+            self::TenagaPengajar => null,
+            self::AsistenAhli => 'AA',
+            self::Lektor => 'L',
+            self::LektorKepala => 'LK',
+            self::GuruBesar => 'GB',
+        };
+    }
+
+    /** The next rung up, or null at the top of the ladder. */
+    public function berikutnya(): ?self
+    {
+        foreach (self::cases() as $case) {
+            if ($case->tingkat() === $this->tingkat() + 1) {
+                return $case;
+            }
+        }
+
+        return null;
+    }
+
+    /**
      * Whether this rank may supervise a doctoral candidate on its own.
      *
      * Recorded here because it is the question most often asked of a rank, and

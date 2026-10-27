@@ -4,6 +4,92 @@
 
 ---
 
+## Sesi 58 — 2026-10-27 · Riwayat kepegawaian lengkap dan buku besar angka kredit
+
+Roadmap #39 dan #40, branch `feature/sdm-riwayat-angka-kredit`, dua commit
+(#39 lebih dulu karena #40 membacanya). Berjalan paralel dengan Sesi 57
+(kalender #35) dan Sesi 59 (KKN/PKL #37, proposal TA #38); konflik teks di
+berkas ini, `ROADMAP.md`, `MODUL.md`, dan `DECISIONS.md` wajar. Keputusan:
+ADR-028. Dokumen: `docs/KEPEGAWAIAN.md`.
+
+### #39 — empat belas riwayat, satu alur validasi
+
+Delapan tabel baru (diklat, pengalaman kerja, studi lanjut / tugas belajar,
+tugas dinas, jabatan struktural, inpassing, kontrak, pensiun) dan layar untuk
+enam yang tabelnya sudah ada. Kelimanya membawa kolom validasi yang sama;
+bawaannya *diajukan*, dan enam tabel lama di-backfill *disetujui*. Dosen
+mengajukan di `/dosen/kepegawaian` (tab per riwayat, dokumen lewat
+`BerkasService`), staf menyetujui atau menolak dengan alasan di
+`/admin/kepegawaian/validasi` atau dari berkas per dosen
+`/admin/dosen/{uuid}/kepegawaian`; isian staf langsung disetujui. Mutasi,
+kontrak, dan pensiun diisi staf saja. Satu `JenisRiwayat`, satu
+`FormulirRiwayat`, satu policy, satu FormRequest untuk keempat belasnya.
+
+Aturan hanya di empat tempat: pangkat berlaku = disetujui ber-TMT terakhir;
+mutasi tidak disunting/dihapus (koreksinya mutasi baru); tugas belajar
+disetujui membebaskan BKD selama beririsan dengan semester (`wajibMelapor()`
+dan `wajibBkd()`; izin belajar tidak); pensiun disetujui menutup akun pada
+TMT-nya lewat `halanganNonaktifDosen()` — yang masih mengampu atau mewalikan
+dibiarkan aktif dan dilaporkan, dicoba lagi tiap hari oleh
+`openacademic:tutup-akun-pensiun`. Ekspor SISTER membuka penghargaan & sanksi,
+bahasa, organisasi, diklat, inpassing, jabatan struktural, studi lanjut,
+pengalaman kerja — hanya baris disetujui; catatan "belum ada layar" pada
+pangkat dan mutasi dilepas.
+
+### #40 — buku besar Kum A–E, bukan penilaian
+
+`angka_kredit_dosen` per butir per unsur dalam perseratus, tanpa total
+tersimpan. Kum B–E dari BKD **disahkan** (dikreditkan di transaksi
+pengesahan), Kum A dari ijazah S2/S3 portofolio, ditambah konversi semester
+lama dan penyesuaian beralasan oleh staf. Kinerja yang mulai sebelum 2026:
+SKS × 4; sesudahnya faktor kampus bertanda *perkiraan*. DUPAK = baris sesudah
+TMT jabatan berlaku; batas D/E 10 % pada rekap sebagai titik tetap terhadap
+total sesudah pembatasan. Rekap per dosen dan per jenjang, kesiapan usulan
+(selisih AK dan bagian Kum C, syarat di `config/angka_kredit.php`), lembar
+penyetaraan .xlsx dari `LembarKerjaXlsx` (ext-zip, tanpa pustaka spreadsheet;
+NUPTK dan TMT sebagai sel teks). `dosen.nuptk` baru, dapat diisi di form dosen
+dan di layar buku besar. Layar `/admin/angka-kredit`, `/admin/angka-kredit/{uuid}`,
+`/dosen/angka-kredit`; `openacademic:susun-angka-kredit`. Tanpa alur tim
+penilai, plotting, atau TTE.
+
+### Yang tersingkap
+
+- `Dosen::wajibBkd()` hanya memeriksa Serdos dan mengabaikan `BKD_WAJIB=semua`,
+  sementara `BkdService::wajibMelapor()` menghormatinya — layar BKD dosen dan
+  daftar kampus dapat berbeda pendapat. Tidak diubah di sini selain menambahkan
+  aturan tugas belajar ke keduanya.
+- Dokumen portofolio G7 (ijazah, SK jabatan, sertifikat) tersimpan tetapi tidak
+  punya rute unduh sama sekali; rute berkas umum hanya `auth:staff,mahasiswa`.
+  Dokumen riwayat #39 punya rutenya sendiri (`/berkas/kepegawaian/...`).
+- Tiga riwayat G7 belum melewati alur validasi, jadi ijazah yang diketik dosen
+  langsung menjadi Kum A dan langsung terbaca di ekspor SISTER.
+
+### Demo
+
+`RiwayatKepegawaianSeeder` (sesudah `MutuSeeder`): dosen pertama mendapat
+seluruh riwayat kecuali pensiun — dua pangkat, inpassing, jabatan struktural di
+LPM, tugas belajar S3 2015–2019, dua diklat, pengalaman kerja, tugas dinas,
+penghargaan, organisasi, bahasa, keluarga, kontrak, dua mutasi. Pensiun pada
+dosen terakhir, TMT bulan depan. Antrean berisi tiga ajuan dan satu yang ditolak
+beralasan. `AngkaKreditSeeder`: NUPTK untuk semua dosen demo, sembilan baris
+konversi dari empat semester sebelum 2026 dan satu penyesuaian negatif untuk
+dosen pertama (Kum D 72,00 terpangkas menjadi 34,66; Kum C kurang untuk Guru
+Besar), lalu menyusun buku besar seluruh dosen — enam dosen masuk lembar
+penyetaraan. `migrate:fresh --seed` dicoba di MariaDB 10.4 lokal. SmokeLayarTest
+memaku anggaran kueri enam layar baru (berkas kepegawaian 25/29, antrean 28,
+buku besar 12/10/6; lembar penyetaraan memakai rekap layar, tidak menghitung ulang).
+
+**Tes baru:** RiwayatKepegawaianTest 47, AngkaKreditTest 40; EksporSisterTest
+diperbarui untuk katalog baru.
+
+### Belum
+
+Tiga riwayat G7 di bawah alur validasi; notifikasi ke dosen saat ajuan
+diputuskan; riwayat tenaga kependidikan; rute unduh dokumen portofolio G7;
+pengali predikat kinerja tahunan pasca-2026 (faktor "sesudah" masih perkiraan).
+
+---
+
 ## Sesi 57 — 2026-10-27 · Kalender akademik: satu lapisan baca, libur yang tidak punya pemilik, feed iCalendar
 
 Roadmap #35, branch `feature/kalender-peristiwa`, dari `main` sesudah #32/#34.

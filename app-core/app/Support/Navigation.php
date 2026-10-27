@@ -90,6 +90,8 @@ final class Navigation
                     self::item('Beban Kerja (BKD)', '⊞', 'dosen.bkd'),
                     self::item('Penilaian BKD', '✓', 'dosen.bkd.penilaian'),
                     self::item('Portofolio', '◈', 'dosen.portofolio'),
+                    self::item('Riwayat Kepegawaian', '◎', 'dosen.kepegawaian'),
+                    self::item('Angka Kredit', '∑', 'dosen.angka-kredit'),
                 ],
             ],
             [
@@ -173,9 +175,11 @@ final class Navigation
                 'title' => 'SDM',
                 'items' => [
                     self::item('Kepegawaian Dosen', '◎', 'admin.dosen'),
+                    self::item('Validasi Riwayat', '✓', 'admin.kepegawaian.antrean'),
                     self::item('Akun Staf', '◉', 'admin.staff'),
                     self::item('Unit Kerja', '⌗', 'admin.unit-kerja'),
                     self::item('Beban Kerja Dosen', '⊞', 'admin.bkd.index'),
+                    self::item('Angka Kredit', '∑', 'admin.angka-kredit.index'),
                     self::item('Evaluasi Dosen', '☆', 'admin.edom.index'),
                 ],
             ],

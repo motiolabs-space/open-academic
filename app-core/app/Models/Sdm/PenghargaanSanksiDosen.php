@@ -6,9 +6,9 @@ namespace App\Models\Sdm;
 
 use App\Traits\HasLogAktivitas;
 use App\Traits\HasUuid;
+use App\Traits\HasValidasiRiwayat;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 /** One row of a lecturer's penghargaan_sanksi_dosen history. */
@@ -17,6 +17,7 @@ class PenghargaanSanksiDosen extends Model
     use HasFactory;
     use HasLogAktivitas;
     use HasUuid;
+    use HasValidasiRiwayat;
     use SoftDeletes;
 
     protected $table = 'penghargaan_sanksi_dosen';
@@ -26,10 +27,5 @@ class PenghargaanSanksiDosen extends Model
     protected function casts(): array
     {
         return ['tanggal' => 'date'];
-    }
-
-    public function dosen(): BelongsTo
-    {
-        return $this->belongsTo(Dosen::class);
     }
 }
