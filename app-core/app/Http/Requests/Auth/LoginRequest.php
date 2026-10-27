@@ -4,10 +4,9 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Auth;
 
+use App\Support\BatasMasuk;
 use Illuminate\Auth\Events\Lockout;
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Support\Facades\RateLimiter;
-use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 class LoginRequest extends FormRequest
@@ -40,18 +39,18 @@ class LoginRequest extends FormRequest
     }
 
     /**
-     * Throttled per identity + IP so one account under attack cannot lock out
-     * an entire campus behind a shared NAT.
+     * Throttled per identity + IP, per account and per address — see
+     * BatasMasuk for why one counter was not enough.
      */
     public function ensureIsNotRateLimited(): void
     {
-        if (!RateLimiter::tooManyAttempts($this->throttleKey(), 5)) {
+        $seconds = $this->batas()->sisaDetik();
+
+        if ($seconds === null) {
             return;
         }
 
         event(new Lockout($this));
-
-        $seconds = RateLimiter::availableIn($this->throttleKey());
 
         throw ValidationException::withMessages([
             'identitas' => trans('auth.throttle', [
@@ -63,16 +62,16 @@ class LoginRequest extends FormRequest
 
     public function hitRateLimiter(): void
     {
-        RateLimiter::hit($this->throttleKey());
+        $this->batas()->catatGagal();
     }
 
     public function clearRateLimiter(): void
     {
-        RateLimiter::clear($this->throttleKey());
+        $this->batas()->bersihkan();
     }
 
-    public function throttleKey(): string
+    private function batas(): BatasMasuk
     {
-        return Str::transliterate(Str::lower((string) $this->string('identitas')).'|'.$this->ip());
+        return new BatasMasuk('masuk', (string) $this->string('identitas'), (string) $this->ip());
     }
 }

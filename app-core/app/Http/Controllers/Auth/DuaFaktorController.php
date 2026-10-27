@@ -67,20 +67,29 @@ class DuaFaktorController extends Controller
          */
         $kunci = 'dua-faktor:'.$staff->id.'|'.$request->ip();
 
-        if (RateLimiter::tooManyAttempts($kunci, 5)) {
-            return back()->with('galat', sprintf(
-                'Terlalu banyak percobaan. Coba lagi dalam %d detik.',
-                RateLimiter::availableIn($kunci),
-            ));
+        // A second counter per account, across addresses. Whoever reaches
+        // this screen already holds the password; with only the per-address
+        // counter, rotating proxies bought five fresh guesses each time.
+        $kunciAkun = 'dua-faktor-akun:'.$staff->id;
+
+        foreach ([[$kunci, 5], [$kunciAkun, 10]] as [$k, $maks]) {
+            if (RateLimiter::tooManyAttempts($k, $maks)) {
+                return back()->with('galat', sprintf(
+                    'Terlalu banyak percobaan. Coba lagi dalam %d detik.',
+                    RateLimiter::availableIn($k),
+                ));
+            }
         }
 
         if (!$this->duaFaktor->lolos($staff, (string) $request->string('kode'))) {
             RateLimiter::hit($kunci, 300);
+            RateLimiter::hit($kunciAkun, 900);
 
             return back()->with('galat', 'Kode tidak cocok atau sudah terpakai.');
         }
 
         RateLimiter::clear($kunci);
+        RateLimiter::clear($kunciAkun);
 
         $ingat = (bool) ($request->session()->get('dua_faktor.ingat', false));
         $request->session()->forget('dua_faktor');
