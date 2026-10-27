@@ -16,6 +16,7 @@ use App\Models\Akademik\Prodi;
 use App\Models\Akademik\TahunAkademik;
 use App\Models\Feeder\FeederAdoption;
 use App\Models\Feeder\FeederChangeRequest;
+use App\Models\Feeder\FeederPastStudent;
 use App\Models\Keuangan\Tagihan;
 use App\Models\Sdm\Dosen;
 use App\Models\Surat\Surat;
@@ -204,6 +205,17 @@ class Mahasiswa extends Authenticatable implements OAuthenticatable
     public function adopsiFeeder(): HasMany
     {
         return $this->hasMany(FeederAdoption::class)->orderByDesc('id');
+    }
+
+    /**
+     * Past-student records at PDDIKTI read or claimed for this student.
+     *
+     * A claimed one means PDDIKTI holds them; until adoption links it, the
+     * biodata is not inserted.
+     */
+    public function klaimLampauFeeder(): HasMany
+    {
+        return $this->hasMany(FeederPastStudent::class)->orderByDesc('id');
     }
 
     /** Official letters requested by or issued to this student. */

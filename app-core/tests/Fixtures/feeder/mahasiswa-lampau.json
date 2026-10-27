@@ -1,0 +1,77 @@
+{
+    "_keterangan": "Mahasiswa lampau: tercatat di PDDIKTI untuk kampus ini tetapi belum terklaim Feeder-nya. Prodi uji 'prodi-ti-0001', periode masuk 20191. Setiap baris satu kasus; FeederKlaimLampauTest membuat mahasiswa lokal yang sepadan. Baris ber-_tolak selalu ditolak FakeFeederClient saat diklaim.",
+    "orang": [
+        {
+            "_kasus": "cocok: NIM dan NIK sama",
+            "id_mahasiswa": "mhs-hana", "id_registrasi_mahasiswa": "reg-hana",
+            "nim": "2019001", "nik": "3201010101020001", "nama_mahasiswa": "Hana Maharani",
+            "tanggal_lahir": "2001-01-11", "id_prodi": "prodi-ti-0001", "id_periode_masuk": "20191"
+        },
+        {
+            "_kasus": "cocok: NIK mengalahkan nama yang salah ketik",
+            "id_mahasiswa": "mhs-indra", "id_registrasi_mahasiswa": "reg-indra",
+            "nim": "2019002", "nik": "3201010101020002", "nama_mahasiswa": "Indra Gunawam",
+            "tanggal_lahir": "2001-02-12", "id_prodi": "prodi-ti-0001", "id_periode_masuk": "20191"
+        },
+        {
+            "_kasus": "ambigu: NIM sama, NIK berbeda",
+            "id_mahasiswa": "mhs-joko", "id_registrasi_mahasiswa": "reg-joko",
+            "nim": "2019003", "nik": "3201010101029993", "nama_mahasiswa": "Joko Susilo",
+            "tanggal_lahir": "2001-03-13", "id_prodi": "prodi-ti-0001", "id_periode_masuk": "20191"
+        },
+        {
+            "_kasus": "ambigu: dua catatan lampau dengan NIM yang sama (1/2)",
+            "id_mahasiswa": "mhs-kartika-a", "id_registrasi_mahasiswa": "reg-kartika-a",
+            "nim": "2019004", "nik": "3201010101020004", "nama_mahasiswa": "Kartika Sari",
+            "tanggal_lahir": "2001-04-14", "id_prodi": "prodi-ti-0001", "id_periode_masuk": "20191"
+        },
+        {
+            "_kasus": "ambigu: dua catatan lampau dengan NIM yang sama (2/2)",
+            "id_mahasiswa": "mhs-kartika-b", "id_registrasi_mahasiswa": "reg-kartika-b",
+            "nim": "2019004", "nik": "3201010101020004", "nama_mahasiswa": "Kartika Sari",
+            "tanggal_lahir": "2001-04-14", "id_prodi": "prodi-ti-0001", "id_periode_masuk": "20191"
+        },
+        {
+            "_kasus": "ambigu: NIK sama, tercatat dengan NIM lain",
+            "id_mahasiswa": "mhs-lukman", "id_registrasi_mahasiswa": "reg-lukman",
+            "nim": "2019905", "nik": "3201010101020005", "nama_mahasiswa": "Lukman Hakim",
+            "tanggal_lahir": "2001-05-15", "id_prodi": "prodi-ti-0001", "id_periode_masuk": "20191"
+        },
+        {
+            "_kasus": "tanpa mahasiswa lokal",
+            "id_mahasiswa": "mhs-maya", "id_registrasi_mahasiswa": "reg-maya",
+            "nim": "2019006", "nik": "3201010101020006", "nama_mahasiswa": "Maya Anggraini",
+            "tanggal_lahir": "2001-06-16", "id_prodi": "prodi-ti-0001", "id_periode_masuk": "20191"
+        },
+        {
+            "_kasus": "cocok, tetapi Feeder menolak klaimnya",
+            "id_mahasiswa": "mhs-nanda", "id_registrasi_mahasiswa": "reg-nanda",
+            "nim": "2019007", "nik": "3201010101020007", "nama_mahasiswa": "Nanda Pertiwi",
+            "tanggal_lahir": "2001-07-17", "id_prodi": "prodi-ti-0001", "id_periode_masuk": "20191",
+            "_tolak": "Mahasiswa sudah diklaim oleh perguruan tinggi lain"
+        },
+        {
+            "_kasus": "cocok lewat nama: NIK tidak ada di Feeder",
+            "id_mahasiswa": "mhs-oki", "id_registrasi_mahasiswa": "reg-oki",
+            "nim": "2019008", "nama_mahasiswa": "OKI SETIAWAN",
+            "tanggal_lahir": "2001-08-18", "id_prodi": "prodi-ti-0001", "id_periode_masuk": "20191"
+        },
+        {
+            "_kasus": "tidak lengkap: tanpa id registrasi, tidak dapat dibaca sebagai kandidat",
+            "id_mahasiswa": "mhs-putra", "nim": "2019011", "nik": "3201010101020011", "nama_mahasiswa": "Putra Wijaya",
+            "id_prodi": "prodi-ti-0001", "id_periode_masuk": "20191"
+        },
+        {
+            "_kasus": "prodi lain: tidak boleh terbaca",
+            "id_mahasiswa": "mhs-qori", "id_registrasi_mahasiswa": "reg-qori",
+            "nim": "2019009", "nik": "3201010101020009", "nama_mahasiswa": "Qori Ramadhan",
+            "id_prodi": "prodi-si-0002", "id_periode_masuk": "20191"
+        },
+        {
+            "_kasus": "periode lain: tidak boleh terbaca",
+            "id_mahasiswa": "mhs-rina", "id_registrasi_mahasiswa": "reg-rina",
+            "nim": "2019010", "nik": "3201010101020010", "nama_mahasiswa": "Rina Kusuma",
+            "id_prodi": "prodi-ti-0001", "id_periode_masuk": "20201"
+        }
+    ]
+}

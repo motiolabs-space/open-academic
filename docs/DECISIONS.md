@@ -921,3 +921,55 @@
   mengenal pekan tanpa kuliah); tumpukan ujian di atas kuliah tidak menggelembung
   karena (4). Instalasi yang sudah berjalan perlu menjalankan ulang
   `RolePermissionSeeder` agar izin dan peran baru ada.
+
+## ADR-032 — Klaim mahasiswa lampau: klaim bukan penautan; yang diklaim diadopsi lewat pencocok #44 (2026-10-27)
+
+- **Konteks.** Roadmap #44b. Mahasiswa yang dilaporkan bertahun-tahun lalu —
+  sebelum Neo Feeder, atau dari instalasi yang sudah diganti — dapat tercatat
+  di PDDIKTI untuk kampus ini tanpa muncul di dua daftar yang dibaca adopsi
+  (ADR-020). Adopsi melaporkan mereka *hanya di SIAKAD*, validator tidak
+  menahan apa pun, dan sinkronisasi pertama mendaftarkan mereka sebagai orang
+  baru. Feeder menyediakan daftar mahasiswa lampau dan aksi klaimnya; klaim
+  yang keliru membawa catatan orang lain ke Feeder kampus, dan penautan yang
+  keliru sama berbahayanya seperti pada adopsi.
+- **Keputusan.** (1) **Klaim hanya membawa catatan, tidak menautkan.**
+  `FeederKlaimLampau` membaca `GetListDaftarLampau` per prodi + periode masuk,
+  mengirim `KlaimMahasiswaLampau` untuk baris pilihan, lalu **langsung
+  menjalankan adopsi** untuk prodi dan periode itu. Siapa pemilik catatannya
+  diputuskan adopsi, dengan keputusan manual yang sama — tidak ada jalur kedua
+  yang mengisi `feeder_id`. (2) **Satu pencocok.** Aturan pencocokan ADR-020
+  dipindah tanpa perubahan ke `PencocokMahasiswaFeeder`, dipakai adopsi dan
+  klaim; di layar klaim hasilnya dibaca dari sisi baris Feeder: *cocok* (satu
+  mahasiswa lokal), *ambigu* (alasan yang sama dengan adopsi), *tidak ada di
+  SIAKAD*. Cocok-dengan-satu mengalahkan menjadi-salah-satu-kandidat bagi
+  mahasiswa lain. (3) **Yang boleh diklaim**: cocok; ambigu hanya dengan
+  alasan tertulis — klaimnya tidak memutuskan apa pun, adopsi sesudahnya
+  melaporkan baris itu ambigu dan validator menahan biodatanya sampai orang
+  menautkan atau memisahkan di layar adopsi; *tidak ada di SIAKAD* tidak
+  pernah — tidak ada yang akan melapor di bawah catatan itu. (4) **Validasi
+  pra-kirim membaca ulang PDDIKTI**, bukan laporan yang mungkin basi, dan
+  semua-atau-tidak: satu baris bermasalah (tanpa mahasiswa lokal, ambigu tanpa
+  alasan, kunci klaim tidak lengkap, tidak lagi terdaftar, registrasi dipegang
+  mahasiswa lain) menahan seluruh klaim dan semua masalah dilaporkan sekaligus.
+  Penolakan Feeder sesudahnya diperlakukan per baris. (5) **Buku besar**:
+  setiap panggilan satu baris `feeder_sync_logs` (`entity = mahasiswa_lampau`,
+  `direction = claim`, `feeder_id` = id registrasi, mahasiswa lokal sebagai
+  `local`). Registrasi dengan baris sukses tidak pernah dikirim lagi; yang
+  ditolak dicatat dengan pesan Feeder dan jumlah percobaannya, dan dapat
+  diklaim lagi. (6) **Laporan** `feeder_past_students` tanpa NIK, diganti
+  setiap pembacaan kecuali baris yang sudah diklaim — yang menyimpan pelaku,
+  waktu, dan alasan, dan tercatat di Log Aktivitas. (7) **Validator** menolak
+  biodata mahasiswa yang sudah diklaim tetapi belum ber-`feeder_id` dan tidak
+  dipisahkan (`klaim_lampau_belum_diadopsi`).
+- **Konsekuensi.** Klaim menjalankan adopsi penuh untuk prodi dan periode itu,
+  jadi kasus jelas lain di angkatan yang sama ikut teradopsi — hasil yang sama
+  dengan menjalankan adopsi sendiri. Rancangan bergantung pada catatan yang
+  diklaim muncul di daftar riwayat pendidikan dengan periode masuk yang sama;
+  bila tidak, hasil klaim menyebut NIM yang belum teradopsi dan validator
+  menahan biodatanya, bukan diam. Baris lampau tanpa `id_registrasi_mahasiswa`
+  dihitung tetapi tidak ditawarkan. Mahasiswa lama yang belum dimigrasi ke
+  SIAKAD tidak dapat diklaim dari sini; migrasikan dulu. Tidak ada perintah
+  artisan: klaim selalu butuh pilihan orang. Nama aksi, filter, dan kunci klaim
+  (`id_registrasi_mahasiswa`) ada di `config/feeder.php` → `adopt.lampau`,
+  mengikuti pemakaian komunitas, dan perlu diverifikasi terhadap dokumentasi
+  build Feeder kampus.

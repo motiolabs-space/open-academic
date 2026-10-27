@@ -4,6 +4,55 @@
 
 ---
 
+## Sesi 62 — 2026-10-27 · Klaim mahasiswa lampau
+
+Roadmap #44b, branch `feature/feeder-klaim-lampau`, satu PR. Berjalan paralel
+dengan tarif per SKS #41 (Sesi 60) dan monitoring ruang #42 (Sesi 61); konflik
+teks di berkas ini, `ROADMAP.md`, dan `DECISIONS.md` wajar. Keputusan: ADR-032.
+
+Mahasiswa lama dapat tercatat di PDDIKTI tanpa muncul di Feeder kampus, jadi
+adopsi #44 tidak menemukannya dan sinkronisasi pertama akan mendaftarkannya
+ulang. Kini ada langkah sebelum adopsi:
+
+- **Baca**: `FeederKlaimLampau::baca()` membaca `GetListDaftarLampau` per prodi
+  + periode masuk (paged, penolakan Feeder menghentikan proses seperti adopsi)
+  dan menyimpan laporan `feeder_past_students` tanpa NIK. Setiap baris dinilai
+  dengan **pencocok adopsi yang sama**, kini `PencocokMahasiswaFeeder` (dipindah
+  dari `FeederAdopsi` tanpa perubahan aturan): cocok, ambigu (alasan ADR-020),
+  atau tidak ada di SIAKAD.
+- **Pilih & periksa**: staf mencentang baris di `/admin/feeder/lampau`
+  (`feeder.sync`). Validasi pra-kirim membaca ulang PDDIKTI dan melaporkan
+  **semua** baris yang akan gagal sekaligus — tanpa mahasiswa lokal, ambigu
+  tanpa alasan, kunci klaim tidak lengkap, tidak lagi terdaftar, registrasi
+  dipegang mahasiswa lain — dan tidak mengirim apa pun bila ada satu saja.
+- **Klaim**: `KlaimMahasiswaLampau` per baris; setiap panggilan satu baris
+  buku besar (`entity = mahasiswa_lampau`, `direction = claim`). Yang sukses
+  tidak dikirim ulang (diklaim dua kali → *dilewati*), yang ditolak dicatat
+  dengan pesan dan jumlah percobaan, tampil di barisnya, dan dapat dicoba lagi.
+  Baris yang diklaim menyimpan pelaku, waktu, alasan (Log Aktivitas) dan
+  bertahan saat daftar dibaca ulang.
+- **Mengalir ke #44**: sesudah klaim, adopsi dijalankan untuk prodi dan
+  periode itu. Yang cocok teradopsi (`feeder_id`, `feeder_registrasi_id`, baris
+  buku besar `adopt`; dorongan berikutnya *Skipped*); yang ambigu menunggu
+  keputusan di layar adopsi. Klaim sendiri tidak pernah menautkan.
+- **Validator**: `klaim_lampau_belum_diadopsi` menahan biodata mahasiswa yang
+  sudah diklaim tetapi belum ber-`feeder_id` dan tidak dipisahkan.
+- **Fake**: `FakeFeederClient::mahasiswaLampau()` memindahkan baris yang
+  diklaim ke dua daftar adopsi seperti layanan sungguhan; `_tolak` pada fixture
+  dan `tolakKlaim()` untuk penolakan. Fixture `mahasiswa-lampau.json`.
+
+**Tes baru:** FeederKlaimLampauTest 35, PencocokMahasiswaFeederTest 4,
+SmokeLayarTest 1. FeederAdopsiTest tetap hijau tanpa perubahan.
+
+### Belum
+
+Nama aksi, filter, dan kunci klaim (`config/feeder.php` → `adopt.lampau`)
+belum diverifikasi terhadap build Feeder sungguhan. Mahasiswa lampau yang belum
+dimigrasi ke SIAKAD tidak dapat diklaim dari sini. Tidak ada perintah artisan
+(klaim butuh pilihan orang).
+
+---
+
 ## Sesi 61 — 2026-10-27 · Monitoring pemakaian ruang
 
 Roadmap #42, branch `feature/monitoring-ruang`, satu PR. Berjalan paralel

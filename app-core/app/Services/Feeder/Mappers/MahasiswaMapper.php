@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\Feeder\Mappers;
 
 use App\Enums\StatusAdopsiFeeder;
+use App\Enums\StatusLampauFeeder;
 use App\Models\Kemahasiswaan\Mahasiswa;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
@@ -34,7 +35,8 @@ class MahasiswaMapper extends FeederMapper
             ->with([
                 'prodi',
                 'perubahanFeeder' => fn ($q) => $q->terbuka(),
-                'adopsiFeeder' => fn ($q) => $q->status(StatusAdopsiFeeder::Ambigu),
+                'adopsiFeeder' => fn ($q) => $q->whereIn('status', [StatusAdopsiFeeder::Ambigu->value, StatusAdopsiFeeder::Dipisahkan->value]),
+                'klaimLampauFeeder' => fn ($q) => $q->status(StatusLampauFeeder::Diklaim),
             ])
             ->where(fn ($query) => $query->where('term_masuk', $termCode)->orWhereNull('feeder_id'))
             ->orderBy('nim');

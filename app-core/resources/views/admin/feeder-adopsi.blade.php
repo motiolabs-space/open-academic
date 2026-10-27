@@ -11,6 +11,11 @@
     <x-card class="mb-5">
         <p class="text-[13px] text-ink-muted">{{ __('feeder.adopsi.penjelasan') }}</p>
         <p class="mt-1 text-[11.5px] text-ink-faint">{{ __('feeder.adopsi.privasi') }}</p>
+        <p class="mt-1 text-[11.5px]">
+            <a href="{{ route('admin.feeder.lampau', array_filter(['prodi' => $prodi?->uuid, 'periode' => $periode])) }}" class="text-navy underline-offset-2 hover:underline">
+                {{ __('feeder.lampau.tautan_adopsi') }}
+            </a>
+        </p>
 
         <div class="mt-4 flex flex-wrap items-end gap-3">
             <form method="GET" action="{{ route('admin.feeder.adopsi') }}" class="flex flex-wrap items-end gap-3">

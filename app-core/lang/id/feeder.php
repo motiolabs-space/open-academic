@@ -138,4 +138,79 @@ return [
         ],
     ],
 
+    'lampau' => [
+        'judul' => 'Klaim Mahasiswa Lampau',
+        'konteks' => 'Mahasiswa lama yang tercatat di PDDIKTI tetapi belum terklaim Feeder kampus',
+        'tautan_konsol' => 'Mahasiswa Lampau',
+        'tautan_adopsi' => 'Tidak menemukan mahasiswa lama? Klaim dulu dari daftar mahasiswa lampau.',
+        'meta' => ':jumlah baris',
+        'penjelasan' => 'Mahasiswa yang dilaporkan bertahun-tahun lalu dapat tercatat di PDDIKTI tanpa muncul di Feeder kampus, '
+            .'sehingga adopsi tidak menemukannya. Baca daftar mahasiswa lampau per prodi dan periode masuk, pilih yang akan '
+            .'diklaim, lalu klaim. Klaim hanya membawa catatannya ke Feeder kampus; penautan ke mahasiswa di sini tetap '
+            .'dilakukan adopsi, yang langsung dijalankan sesudah klaim.',
+        'privasi' => 'NIK hanya dibandingkan, tidak disimpan dan tidak ditampilkan.',
+        'form' => [
+            'prodi' => 'Program studi',
+            'periode' => 'Periode masuk',
+            'periode_hint' => 'Kode PDDIKTI, mis. 20191 untuk 2019/2020 Ganjil.',
+            'tampilkan' => 'Tampilkan',
+            'baca' => 'Baca daftar dari Feeder',
+            'catatan' => 'Alasan klaim',
+            'catatan_hint' => 'Wajib bila ada baris ambigu yang dipilih; dicatat pada setiap baris yang diklaim.',
+            'catatan_placeholder' => 'Mis. dicocokkan dengan ijazah dan KTP pada arsip BAAK',
+            'klaim' => 'Klaim yang dipilih',
+            'pilih' => 'Pilih :nim untuk diklaim',
+        ],
+        'ringkasan' => [
+            'cocok' => 'Cocok',
+            'ambigu' => 'Ambigu',
+            'tanpa_lokal' => 'Tidak ada di SIAKAD',
+            'diklaim' => 'Sudah diklaim',
+        ],
+        'status' => [
+            'cocok' => 'Cocok',
+            'ambigu' => 'Ambigu',
+            'tanpa_lokal' => 'Tidak ada di SIAKAD',
+            'diklaim' => 'Diklaim',
+        ],
+        'masalah' => [
+            'tanpa_mahasiswa_lokal' => 'Tidak ada mahasiswa di SIAKAD untuk catatan ini; klaim tidak akan dipakai siapa pun.',
+            'ambigu_tanpa_alasan' => 'Pencocokan ambigu; isi alasan klaim bila catatan ini memang milik mahasiswa tersebut.',
+            'kunci_tidak_lengkap' => 'Baris dari Feeder tidak memuat kunci klaim yang diperlukan.',
+            'tidak_terdaftar_lagi' => 'Tidak lagi ada di daftar mahasiswa lampau PDDIKTI; baca ulang daftarnya.',
+            'registrasi_dipakai' => 'Registrasi ini sudah dipegang mahasiswa lain di SIAKAD.',
+        ],
+        'kandidat' => [
+            'nim' => 'NIM :nim',
+            'lahir' => 'lahir :tanggal',
+            'nik_cocok' => 'NIK sama',
+            'nik_beda' => 'NIK berbeda',
+            'nik_tidak_ada' => 'NIK tidak dapat dibandingkan',
+        ],
+        'percobaan' => 'Ditolak Feeder (percobaan ke-:ke): :pesan',
+        'diklaim_oleh' => 'Diklaim :nama pada :tanggal',
+        'diklaim_catatan' => 'Alasan: :catatan',
+        'tertaut' => 'Sudah tertaut di SIAKAD',
+        'belum_tertaut' => 'Belum tertaut — lihat layar Adopsi Mahasiswa',
+        'galat_judul' => 'Klaim tidak dikirim. Perbaiki atau batalkan pilihan baris berikut:',
+        'ditolak_judul' => 'Ditolak Feeder (dapat dicoba lagi):',
+        'kosong' => [
+            'judul' => 'Belum ada daftar mahasiswa lampau',
+            'deskripsi' => 'Pilih program studi dan periode masuk, lalu baca daftarnya dari Feeder.',
+        ],
+        'pesan' => [
+            'dibaca' => ':prodi :periode: :feeder mahasiswa lampau di Feeder — :cocok cocok, :ambigu ambigu, :tanpa tidak ada di SIAKAD.',
+            'tidak_dikirim' => 'Klaim tidak dikirim: :jumlah baris tidak dapat diklaim.',
+            'diklaim' => ':diklaim diklaim, :ditolak ditolak Feeder, :dilewati sudah diklaim sebelumnya.',
+            'diadopsi' => 'Adopsi dijalankan ulang: :jumlah mahasiswa diadopsi.',
+            'adopsi_gagal' => 'Adopsi sesudah klaim gagal (:pesan); jalankan adopsi dari layar Adopsi Mahasiswa.',
+            'menunggu_keputusan' => 'Menunggu keputusan di layar Adopsi Mahasiswa: :nim.',
+            'belum_teradopsi' => 'Belum ditemukan adopsi: :nim. Jalankan adopsi lagi sebelum sinkronisasi.',
+        ],
+        'validasi' => [
+            'belum_diadopsi' => 'Mahasiswa ini sudah diklaim dari daftar mahasiswa lampau PDDIKTI tetapi belum diadopsi. '
+                .'Jalankan adopsi untuk prodi dan periode masuknya sebelum mengirim biodata, supaya tidak terdaftar dua kali.',
+        ],
+    ],
+
 ];

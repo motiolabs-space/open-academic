@@ -55,6 +55,10 @@ use Illuminate\Support\Str;
  *
  *  4. **No NIK leaves the matcher.** It is compared in memory and recorded
  *     as matched or not, never stored in the report or shown on its screen.
+ *
+ * Rules 1 and 2 live in PencocokMahasiswaFeeder, which claiming past
+ * students (FeederKlaimLampau) shares: a claimed student reaches this
+ * report through the same matcher, not a second one.
  */
 class FeederAdopsi
 {
@@ -64,6 +68,7 @@ class FeederAdopsi
         private readonly FeederClientInterface $client,
         private readonly MahasiswaMapper $biodata,
         private readonly RiwayatPendidikanMapper $riwayat,
+        private readonly PencocokMahasiswaFeeder $pencocok,
     ) {}
 
     /**
@@ -105,7 +110,7 @@ class FeederAdopsi
         // PDDIKTI".
         $kandidat = array_diff_key($kandidat, array_flip($keputusan->pluck('feeder_registrasi_id')->filter()->all()));
 
-        $usulan = $this->cocokkan($lokal, $kandidat);
+        $usulan = $this->pencocok->cocokkan($lokal, $kandidat);
 
         $batch = (string) Str::uuid();
         $baris = [];
@@ -194,7 +199,7 @@ class FeederAdopsi
             throw FeederException::registrasiSudahDipakai($dipakai);
         }
 
-        if ($this->tertautLain($mahasiswa, $kandidat)) {
+        if ($this->pencocok->tertautLain($mahasiswa, $kandidat)) {
             throw FeederException::tertautLain($mahasiswa->nim);
         }
 
@@ -276,11 +281,11 @@ class FeederAdopsi
     {
         $hasil = [];
 
-        foreach ($this->bacaSemua('riwayat', $idProdi, $periode) as $baris) {
+        foreach ($this->bacaDaftar('riwayat', $idProdi, $periode) as $baris) {
             $this->gabung($hasil, $baris);
         }
 
-        $orang = collect($this->bacaSemua('biodata', $idProdi, $periode));
+        $orang = collect($this->bacaDaftar('biodata', $idProdi, $periode));
 
         foreach ($orang as $baris) {
             $this->gabung($hasil, $baris);
@@ -298,6 +303,37 @@ class FeederAdopsi
             }
         }
 
+        return $this->lengkap($hasil);
+    }
+
+    /**
+     * One list's rows as matcher candidates, keyed by id_registrasi_mahasiswa.
+     *
+     * For a list that carries the NIM, the name and — when the Feeder build
+     * has it — the NIK on one row, such as the past students a campus can
+     * claim. Rows sharing a registration are merged; a row without both
+     * identifiers is no candidate.
+     *
+     * @param array<int, array<string, mixed>> $rows
+     * @return array<string, array{id_registrasi_mahasiswa: string, id_mahasiswa: string, nim: string|null, nik: string|null, nama: string|null, tanggal_lahir: string|null}>
+     */
+    public function sebagaiKandidat(array $rows): array
+    {
+        $hasil = [];
+
+        foreach ($rows as $baris) {
+            $this->gabung($hasil, $baris);
+        }
+
+        return $this->lengkap($hasil);
+    }
+
+    /**
+     * @param array<string, array<string, mixed>> $hasil
+     * @return array<string, array<string, mixed>>
+     */
+    private function lengkap(array $hasil): array
+    {
         return array_filter(
             $hasil,
             fn (array $k): bool => filled($k['id_registrasi_mahasiswa']) && filled($k['id_mahasiswa']),
@@ -353,7 +389,7 @@ class FeederAdopsi
     }
 
     /**
-     * Every row of one list, page by page.
+     * Every row of one list under `feeder.adopt`, page by page.
      *
      * A Feeder error stops the run, as in reconciliation: an act name this
      * build does not know returns no rows, and no rows would read as "every
@@ -361,7 +397,7 @@ class FeederAdopsi
      *
      * @return array<int, array<string, mixed>>
      */
-    private function bacaSemua(string $daftar, string $idProdi, string $periode): array
+    public function bacaDaftar(string $daftar, string $idProdi, string $periode): array
     {
         $setelan = (array) config("feeder.adopt.{$daftar}");
         $act = (string) ($setelan['get_action'] ?? '');
@@ -390,101 +426,6 @@ class FeederAdopsi
         }
 
         return $hasil;
-    }
-
-    /* ---------------------------------------------------------------------
-     | Matching
-     |-------------------------------------------------------------------- */
-
-    /**
-     * What each local student is, as far as the matcher can tell.
-     *
-     * @param Collection<int, Mahasiswa> $lokal
-     * @param array<string, array<string, mixed>> $kandidat
-     * @return array<int, array{mahasiswa: Mahasiswa, status: StatusAdopsiFeeder, alasan: AlasanAmbiguAdopsi|null, kandidat: array<int, array<string, mixed>>}>
-     */
-    private function cocokkan(Collection $lokal, array $kandidat): array
-    {
-        $perNim = collect($kandidat)->filter(fn (array $k): bool => filled($k['nim']))->groupBy(fn (array $k): string => $this->nim($k['nim']));
-        $perNik = collect($kandidat)->filter(fn (array $k): bool => filled($k['nik']))->groupBy(fn (array $k): string => $this->nik($k['nik']));
-
-        $usulan = [];
-
-        foreach ($lokal as $m) {
-            $calon = collect($perNim->get($this->nim($m->nim), []))
-                ->merge(filled($m->nik) ? $perNik->get($this->nik($m->nik), []) : [])
-                ->unique('id_registrasi_mahasiswa')
-                ->values()
-                ->all();
-
-            [$status, $alasan] = $this->putuskan($m, $calon);
-
-            $usulan[] = ['mahasiswa' => $m, 'status' => $status, 'alasan' => $alasan, 'kandidat' => $calon];
-        }
-
-        return $usulan;
-    }
-
-    /**
-     * @param array<int, array<string, mixed>> $calon
-     * @return array{0: StatusAdopsiFeeder, 1: AlasanAmbiguAdopsi|null}
-     */
-    private function putuskan(Mahasiswa $m, array $calon): array
-    {
-        if ($calon === []) {
-            return [StatusAdopsiFeeder::HanyaLokal, null];
-        }
-
-        if (count($calon) > 1) {
-            return [StatusAdopsiFeeder::Ambigu, AlasanAmbiguAdopsi::KandidatGanda];
-        }
-
-        $k = $calon[0];
-
-        if ($this->tertautLain($m, $k)) {
-            return [StatusAdopsiFeeder::Ambigu, AlasanAmbiguAdopsi::TertautLain];
-        }
-
-        // Found only through the NIK: the right person, under a NIM this
-        // campus does not use for them. Adopting it would leave PDDIKTI's
-        // NIM in place behind a ledger that says nothing needs sending.
-        if (filled($k['nim']) && $this->nim($k['nim']) !== $this->nim($m->nim)) {
-            return [StatusAdopsiFeeder::Ambigu, AlasanAmbiguAdopsi::NimBerbeda];
-        }
-
-        if (filled($m->nik) && filled($k['nik'])) {
-            return $this->nik($m->nik) === $this->nik($k['nik'])
-                ? [StatusAdopsiFeeder::Diadopsi, null]
-                : [StatusAdopsiFeeder::Ambigu, AlasanAmbiguAdopsi::NikBerbeda];
-        }
-
-        // No NIK on one side: the name stands in for it, and has to agree.
-        return $this->nama($m->nama) === $this->nama($k['nama'])
-            ? [StatusAdopsiFeeder::Diadopsi, null]
-            : [StatusAdopsiFeeder::Ambigu, AlasanAmbiguAdopsi::NamaBerbeda];
-    }
-
-    /** @param array<string, mixed> $kandidat */
-    private function tertautLain(Mahasiswa $m, array $kandidat): bool
-    {
-        return (filled($m->feeder_id) && $m->feeder_id !== $kandidat['id_mahasiswa'])
-            || (filled($m->feeder_registrasi_id) && $m->feeder_registrasi_id !== $kandidat['id_registrasi_mahasiswa']);
-    }
-
-    private function nim(mixed $nim): string
-    {
-        return strtoupper(trim((string) $nim));
-    }
-
-    private function nik(mixed $nik): string
-    {
-        return preg_replace('/\D/', '', (string) $nik) ?? '';
-    }
-
-    /** Letters only, lower case: "Ayu  Lestari, S." and "AYU LESTARI S" are one name. */
-    private function nama(mixed $nama): string
-    {
-        return preg_replace('/[^a-z]/', '', Str::lower(Str::ascii((string) $nama))) ?? '';
     }
 
     private function teks(mixed $nilai): ?string
@@ -586,7 +527,7 @@ class FeederAdopsi
             'nim' => $k['nim'],
             'nama' => $k['nama'],
             'tanggal_lahir' => $k['tanggal_lahir'],
-            'nik_cocok' => filled($nik) && filled($k['nik']) ? $this->nik($nik) === $this->nik($k['nik']) : null,
+            'nik_cocok' => $this->pencocok->nikSama($nik, $k['nik']),
         ], $kandidat);
 
         $tunggal = count($kandidat) === 1 ? $kandidat[0] : null;

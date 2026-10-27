@@ -333,6 +333,12 @@ return [
     | checked against the Feeder build's own documentation; a wrong act name
     | surfaces as a Feeder error rather than as "no students found".
     |
+    | "lampau" is the third list: past students PDDIKTI holds for this
+    | campus that its Feeder has not claimed, so neither list above shows
+    | them. Claiming sends `claim_action` with the fields named in
+    | `claim_key`, copied from the listed row; a claimed student then appears
+    | in the two lists above and is adopted like any other.
+    |
     */
 
     'adopt' => [
@@ -343,6 +349,12 @@ return [
         'biodata' => [
             'get_action' => 'GetListMahasiswa',
             'filter' => ['id_prodi' => ':prodi', 'id_periode' => ':periode'],
+        ],
+        'lampau' => [
+            'get_action' => 'GetListDaftarLampau',
+            'filter' => ['id_prodi' => ':prodi', 'id_periode_masuk' => ':periode'],
+            'claim_action' => 'KlaimMahasiswaLampau',
+            'claim_key' => ['id_registrasi_mahasiswa'],
         ],
     ],
 

@@ -780,6 +780,9 @@ Route::middleware(['auth:staff', 'term.active'])->prefix('admin')->name('admin.'
     Route::post('/feeder/adopsi', [Admin\FeederAdopsiController::class, 'jalankan'])->name('feeder.adopsi.jalankan');
     Route::post('/feeder/adopsi/{adopsi}/tautkan', [Admin\FeederAdopsiController::class, 'tautkan'])->name('feeder.adopsi.tautkan');
     Route::post('/feeder/adopsi/{adopsi}/pisahkan', [Admin\FeederAdopsiController::class, 'pisahkan'])->name('feeder.adopsi.pisahkan');
+    Route::get('/feeder/lampau', [Admin\FeederLampauController::class, 'index'])->name('feeder.lampau');
+    Route::post('/feeder/lampau', [Admin\FeederLampauController::class, 'baca'])->name('feeder.lampau.baca');
+    Route::post('/feeder/lampau/klaim', [Admin\FeederLampauController::class, 'klaim'])->name('feeder.lampau.klaim');
     Route::post('/feeder/{entity}/jalankan', [Admin\FeederController::class, 'jalankan'])->name('feeder.jalankan');
     Route::post('/feeder/{entity}/ulangi', [Admin\FeederController::class, 'ulangi'])->name('feeder.ulangi');
     Route::post('/feeder/{entity}/bandingkan', [Admin\FeederController::class, 'bandingkan'])->name('feeder.bandingkan');
