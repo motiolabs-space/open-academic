@@ -28,6 +28,9 @@ class FakeFeederClient implements FeederClientInterface
     /** @var array<string, array<int, array<string, mixed>>> act => rows a Get answers, filtered */
     private array $isi = [];
 
+    /** @var array<string, array{0: int, 1: string}> registration => refusal armed for its next claim */
+    private array $tolakKlaim = [];
+
     private bool $tersedia = true;
 
     public function __construct(private readonly string $fixturePath = '') {}
@@ -82,23 +85,43 @@ class FakeFeederClient implements FeederClientInterface
      */
     public function mahasiswaTerdaftar(array $orang): self
     {
-        $this->isi((string) config('feeder.adopt.riwayat.get_action'), array_map(fn (array $o): array => [
-            'id_registrasi_mahasiswa' => $o['id_registrasi_mahasiswa'],
-            'id_mahasiswa' => $o['id_mahasiswa'],
-            'nim' => $o['nim'],
-            'nama_mahasiswa' => $o['nama_mahasiswa'],
-            'id_prodi' => $o['id_prodi'],
-            'id_periode_masuk' => $o['id_periode_masuk'],
-        ], $orang));
+        $this->isi((string) config('feeder.adopt.riwayat.get_action'), array_map($this->barisRiwayat(...), $orang));
 
-        return $this->isi((string) config('feeder.adopt.biodata.get_action'), array_map(fn (array $o): array => [
-            'id_mahasiswa' => $o['id_mahasiswa'],
-            'nama_mahasiswa' => $o['nama_mahasiswa'],
+        return $this->isi((string) config('feeder.adopt.biodata.get_action'), array_map($this->barisBiodata(...), $orang));
+    }
+
+    /**
+     * Past students PDDIKTI holds for the campus, unclaimed by its Feeder.
+     *
+     * Same shape as mahasiswaTerdaftar(), on one list. Claiming one through
+     * the claim act moves it from this list to the two adoption reads, as
+     * the live service does, so a test can follow a claim into adoption.
+     * A row carrying `_tolak` is always refused, with that text as Feeder's
+     * message — a record another campus has already claimed, say.
+     *
+     * @param array<int, array<string, mixed>> $orang
+     */
+    public function mahasiswaLampau(array $orang): self
+    {
+        return $this->isi((string) config('feeder.adopt.lampau.get_action'), array_map(fn (array $o): array => array_filter([
+            'id_registrasi_mahasiswa' => $o['id_registrasi_mahasiswa'] ?? null,
+            'id_mahasiswa' => $o['id_mahasiswa'] ?? null,
+            'nim' => $o['nim'] ?? null,
             'nik' => $o['nik'] ?? null,
+            'nama_mahasiswa' => $o['nama_mahasiswa'] ?? null,
             'tanggal_lahir' => $o['tanggal_lahir'] ?? null,
             'id_prodi' => $o['id_prodi'],
-            'id_periode' => $o['id_periode_masuk'],
-        ], $orang));
+            'id_periode_masuk' => $o['id_periode_masuk'],
+            '_tolak' => $o['_tolak'] ?? null,
+        ], fn ($nilai): bool => $nilai !== null), $orang));
+    }
+
+    /** Makes the next claim of this registration fail; the one after succeeds. */
+    public function tolakKlaim(string $idRegistrasi, int $kode = 100, string $desc = 'Gagal mengklaim mahasiswa lampau'): self
+    {
+        $this->tolakKlaim[$idRegistrasi] = [$kode, $desc];
+
+        return $this;
     }
 
     public function matikan(): self
@@ -133,6 +156,10 @@ class FakeFeederClient implements FeederClientInterface
 
         if (isset($this->balasan[$act])) {
             return $this->balasan[$act];
+        }
+
+        if ($act === config('feeder.adopt.lampau.claim_action')) {
+            return $this->klaimLampau((array) ($payload['key'] ?? []));
         }
 
         if (isset($this->isi[$act])) {
@@ -207,6 +234,74 @@ class FakeFeederClient implements FeederClientInterface
     public function tersedia(): bool
     {
         return $this->tersedia;
+    }
+
+    /**
+     * Claims one past student: off the past list, onto the adoption lists.
+     *
+     * @param array<string, mixed> $key
+     */
+    private function klaimLampau(array $key): FeederResponse
+    {
+        $reg = (string) ($key['id_registrasi_mahasiswa'] ?? '');
+
+        if (isset($this->tolakKlaim[$reg])) {
+            [$kode, $desc] = $this->tolakKlaim[$reg];
+            unset($this->tolakKlaim[$reg]);
+
+            return new FeederResponse($kode, $desc, null);
+        }
+
+        $daftar = (string) config('feeder.adopt.lampau.get_action');
+        $posisi = collect($this->isi[$daftar] ?? [])->search(fn (array $b): bool => ($b['id_registrasi_mahasiswa'] ?? null) === $reg);
+
+        if ($posisi === false) {
+            return new FeederResponse(404, 'Data mahasiswa lampau tidak ditemukan', null);
+        }
+
+        $orang = $this->isi[$daftar][$posisi];
+
+        if (filled($orang['_tolak'] ?? null)) {
+            return new FeederResponse(1301, (string) $orang['_tolak'], null);
+        }
+
+        array_splice($this->isi[$daftar], $posisi, 1);
+        $this->isi[(string) config('feeder.adopt.riwayat.get_action')][] = $this->barisRiwayat($orang);
+        $this->isi[(string) config('feeder.adopt.biodata.get_action')][] = $this->barisBiodata($orang);
+
+        return new FeederResponse(0, '', [['id_registrasi_mahasiswa' => $reg]]);
+    }
+
+    /**
+     * @param array<string, mixed> $o
+     * @return array<string, mixed>
+     */
+    private function barisRiwayat(array $o): array
+    {
+        return [
+            'id_registrasi_mahasiswa' => $o['id_registrasi_mahasiswa'],
+            'id_mahasiswa' => $o['id_mahasiswa'],
+            'nim' => $o['nim'],
+            'nama_mahasiswa' => $o['nama_mahasiswa'],
+            'id_prodi' => $o['id_prodi'],
+            'id_periode_masuk' => $o['id_periode_masuk'],
+        ];
+    }
+
+    /**
+     * @param array<string, mixed> $o
+     * @return array<string, mixed>
+     */
+    private function barisBiodata(array $o): array
+    {
+        return [
+            'id_mahasiswa' => $o['id_mahasiswa'],
+            'nama_mahasiswa' => $o['nama_mahasiswa'],
+            'nik' => $o['nik'] ?? null,
+            'tanggal_lahir' => $o['tanggal_lahir'] ?? null,
+            'id_prodi' => $o['id_prodi'],
+            'id_periode' => $o['id_periode_masuk'],
+        ];
     }
 
     /**

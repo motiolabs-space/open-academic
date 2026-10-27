@@ -17,6 +17,7 @@
         </form>
 
         <x-button variant="outline" href="{{ route('admin.feeder.adopsi') }}">{{ __('feeder.adopsi.tautan_konsol') }}</x-button>
+        <x-button variant="outline" href="{{ route('admin.feeder.lampau') }}">{{ __('feeder.lampau.tautan_konsol') }}</x-button>
     </div>
 @endsection
 

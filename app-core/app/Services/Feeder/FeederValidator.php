@@ -9,6 +9,7 @@ use App\Enums\JenisDaftar;
 use App\Enums\JenisEvaluasi;
 use App\Enums\JenisPerubahanFeeder;
 use App\Enums\StatusAdopsiFeeder;
+use App\Enums\StatusLampauFeeder;
 use App\Enums\StudentStatus;
 use App\Models\Akademik\KelasDosen;
 use App\Models\Akademik\KelasKuliah;
@@ -171,6 +172,10 @@ class FeederValidator
         // and either way the decision belongs to a person, not to a sync.
         if (blank($m->feeder_id) && $this->kandidatBelumDiputuskan($m)) {
             $isu->push($this->error('kandidat_feeder_belum_diadopsi', __('feeder.adopsi.validasi.belum_diputuskan')));
+        } elseif (blank($m->feeder_id) && $this->klaimBelumDiadopsi($m)) {
+            // Claimed from PDDIKTI's past students, so PDDIKTI holds them,
+            // but adoption has not given them the record's identifiers yet.
+            $isu->push($this->error('klaim_lampau_belum_diadopsi', __('feeder.lampau.validasi.belum_diadopsi')));
         }
 
         // Identity columns PDDIKTI froze when this biodata was first accepted
@@ -196,6 +201,25 @@ class FeederValidator
         return $m->relationLoaded('adopsiFeeder')
             ? $m->adopsiFeeder->contains(fn ($a): bool => $a->status === StatusAdopsiFeeder::Ambigu)
             : $m->adopsiFeeder()->status(StatusAdopsiFeeder::Ambigu)->exists();
+    }
+
+    /**
+     * Whether a past-student record was claimed for this student and nobody
+     * has since declared them to be someone else.
+     */
+    private function klaimBelumDiadopsi(Mahasiswa $m): bool
+    {
+        $diklaim = $m->relationLoaded('klaimLampauFeeder')
+            ? $m->klaimLampauFeeder->contains(fn ($k): bool => $k->status === StatusLampauFeeder::Diklaim)
+            : $m->klaimLampauFeeder()->status(StatusLampauFeeder::Diklaim)->exists();
+
+        if (!$diklaim) {
+            return false;
+        }
+
+        return $m->relationLoaded('adopsiFeeder')
+            ? !$m->adopsiFeeder->contains(fn ($a): bool => $a->status === StatusAdopsiFeeder::Dipisahkan)
+            : !$m->adopsiFeeder()->status(StatusAdopsiFeeder::Dipisahkan)->exists();
     }
 
     /**

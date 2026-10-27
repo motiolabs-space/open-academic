@@ -217,6 +217,7 @@ it('membuka layar admin dalam anggaran kueri', function (string $url, int $angga
     ['/admin/tugas-akhir', 25],
     ['/admin/data-iku', 25],
     ['/admin/feeder', 30],
+    ['/admin/feeder/lampau', 12],
     ['/admin/bridge', 25],
     ['/admin/surat', 25],
     ['/admin/helpdesk', 20],
@@ -284,7 +285,9 @@ it('membuka profil pindahan demo dalam anggaran kueri', function () {
 
     dalamAnggaranKueri(
         fn () => $this->actingAs($staff, 'staff')->get('/admin/pindahan/'.$pindahan->uuid)->assertOk(),
-        18,
+        // 19 sejak #44b: validator biodata juga menanyakan klaim mahasiswa
+        // lampau bagi mahasiswa yang belum ber-id Feeder.
+        19,
     );
 });
 
