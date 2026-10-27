@@ -155,7 +155,7 @@ describe('penautan akun', function () {
     });
 
     it('membuat akun staf tanpa peran hanya bila provisioning dinyalakan', function () {
-        config(['idp.provision' => true]);
+        config(['idp.provision' => true, 'idp.provision_domains' => ['kampus.test']]);
 
         kembaliDariIdp(klaimStaf('baru@kampus.test', 'sub-baru'))->assertRedirect(route('admin.dashboard'));
 
@@ -166,6 +166,36 @@ describe('penautan akun', function () {
             ->and($staf->roles)->toBeEmpty();
 
         $this->assertAuthenticatedAs($staf, 'staff');
+    });
+
+    it('tidak membuat akun untuk domain di luar daftar provisioning', function () {
+        // A public issuer passes iss/aud for every account it has.
+        config(['idp.provision' => true, 'idp.provision_domains' => ['kampus.test']]);
+
+        kembaliDariIdp(klaimStaf('siapa.saja@gmail.com', 'sub-gmail'))
+            ->assertRedirect(route('login'))
+            ->assertSessionHasErrors('identitas');
+
+        config(['idp.provision_domains' => []]);
+
+        kembaliDariIdp(klaimStaf('baru@kampus.test', 'sub-tanpa-daftar'))
+            ->assertRedirect(route('login'));
+
+        expect(Staff::whereIn('email', ['siapa.saja@gmail.com', 'baru@kampus.test'])->exists())->toBeFalse();
+        $this->assertGuest('staff');
+    });
+
+    it('tidak membuat akun dari surel yang belum diverifikasi meski penautan dilonggarkan', function () {
+        config([
+            'idp.provision' => true,
+            'idp.provision_domains' => ['kampus.test'],
+            'idp.require_verified_email' => false,
+        ]);
+
+        kembaliDariIdp([...klaimStaf('baru@kampus.test', 'sub-belum'), 'email_verified' => false])
+            ->assertRedirect(route('login'));
+
+        expect(Staff::where('email', 'baru@kampus.test')->exists())->toBeFalse();
     });
 
     it('menolak akun yang dinonaktifkan', function () {

@@ -93,6 +93,20 @@ return [
     'provision' => (bool) env('IDP_PROVISION', false),
 
     /*
+    | Domain surel yang boleh dibuatkan akun, dipisah koma (kampus.ac.id).
+    | Kosong berarti TIDAK ADA yang dibuatkan, meski IDP_PROVISION=true.
+    |
+    | Penerbit memastikan tanda tangan dan audiens, bukan keanggotaan kampus:
+    | dengan IDP_ISSUER=https://accounts.google.com, setiap pemilik akun Gmail
+    | lolos `iss`/`aud`. Tanpa daftar ini mereka semua menjadi staf tanpa peran.
+    */
+
+    'provision_domains' => array_values(array_filter(array_map(
+        fn (string $d): string => strtolower(trim($d)),
+        explode(',', (string) env('IDP_PROVISION_DOMAINS', '')),
+    ))),
+
+    /*
     | Hanya surel yang dinyatakan terverifikasi oleh IdP (`email_verified`)
     | yang dipakai untuk menautkan akun. Entra ID tidak mengirim klaim itu
     | untuk akun anggota tenant; setel false di sana secara sadar.
