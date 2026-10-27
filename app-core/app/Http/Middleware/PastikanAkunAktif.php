@@ -82,7 +82,13 @@ class PastikanAkunAktif
 
         $tersimpan = $request->session()->get($this->kunci($guard));
 
-        return $tersimpan === null || hash_equals($tersimpan, $this->sidik($user));
+        // Bound to the account it was taken from: a session that changed hands
+        // through a fresh sign-in is not a password change.
+        if (!is_array($tersimpan) || ($tersimpan['id'] ?? null) !== $user->getAuthIdentifier()) {
+            return true;
+        }
+
+        return hash_equals((string) $tersimpan['sidik'], $this->sidik($user)['sidik']);
     }
 
     private function kunci(string $guard): string
@@ -90,9 +96,16 @@ class PastikanAkunAktif
         return "sidik_sandi_{$guard}";
     }
 
-    /** A digest of the stored hash: the session never holds the hash itself. */
-    private function sidik(Authenticatable $user): string
+    /**
+     * A digest of the stored hash: the session never holds the hash itself.
+     *
+     * @return array{id: mixed, sidik: string}
+     */
+    private function sidik(Authenticatable $user): array
     {
-        return hash_hmac('sha256', (string) $user->getAuthPassword(), (string) config('app.key'));
+        return [
+            'id' => $user->getAuthIdentifier(),
+            'sidik' => hash_hmac('sha256', (string) $user->getAuthPassword(), (string) config('app.key')),
+        ];
     }
 }
