@@ -6,6 +6,7 @@ use App\Exceptions\AturanAkademikException;
 use App\Exceptions\FeederException;
 use App\Http\Middleware\EnsureBridgeScope;
 use App\Http\Middleware\EnsureTermIsActive;
+use App\Http\Middleware\PastikanAkunAktif;
 use App\Http\Middleware\PastikanDuaFaktor;
 use App\Http\Middleware\SecurityHeaders;
 use Illuminate\Foundation\Application;
@@ -50,7 +51,10 @@ $app = Application::configure(basePath: dirname(__DIR__))
          * Tetap se-grup dan bukan per-rute admin, supaya tidak ada rute staf
          * yang terlewat begitu rute baru ditambahkan.
          */
-        $middleware->web(append: [PastikanDuaFaktor::class]);
+        // A sign-in lasts only as long as the account and its password: a
+        // deactivated account or a changed password ends every other session
+        // on the next request (PastikanAkunAktif).
+        $middleware->web(append: [PastikanAkunAktif::class, PastikanDuaFaktor::class]);
 
         // Guests land on the single sign-in page whichever portal they aimed
         // at — except prospective students, whose portal has its own page.
