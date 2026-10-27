@@ -56,7 +56,7 @@
                                     <div class="flex justify-end gap-2">
                                         <x-button href="{{ route('admin.kalender.peristiwa.edit', $p) }}" variant="outline" size="sm">{{ __('kalender.aksi.ubah') }}</x-button>
                                         <form method="POST" action="{{ route('admin.kalender.peristiwa.destroy', $p) }}"
-                                            onsubmit="return confirm(@js(__('kalender.keterangan.konfirmasi_hapus')))">
+                                            data-confirm="{{ __('kalender.keterangan.konfirmasi_hapus') }}">
                                             @csrf
                                             @method('DELETE')
                                             <x-button type="submit" variant="danger" size="sm">{{ __('kalender.aksi.hapus') }}</x-button>

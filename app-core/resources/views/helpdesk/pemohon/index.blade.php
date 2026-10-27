@@ -77,7 +77,7 @@
         <div class="space-y-5">
             <x-card :title="__('helpdesk.form.buat_judul')">
                 <form method="POST" action="{{ route($prefix.'.helpdesk.store') }}" enctype="multipart/form-data"
-                    class="space-y-3" x-data="{ kategori: '{{ old('helpdesk_kategori_id') }}' }">
+                    class="space-y-3" x-data="{ kategori: @js((string) old('helpdesk_kategori_id', '')) }">
                     @csrf
 
                     {{-- Written out rather than through x-field: the Alpine binding

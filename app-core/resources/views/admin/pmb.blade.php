@@ -190,7 +190,7 @@
                                                     <span class="text-success" title="Terverifikasi" aria-hidden="true">✓</span>
                                                 @endif
                                                 <form method="POST" action="{{ route('admin.pmb.berkas.hapus', $b) }}"
-                                                    onsubmit="return confirm('Hapus berkas ini?');">
+                                                    data-confirm="Hapus berkas ini?">
                                                     @csrf @method('DELETE')
                                                     <button type="submit" class="text-danger" title="Hapus">×</button>
                                                 </form>
@@ -227,7 +227,7 @@
                                     @elseif (in_array($p->status->value, ['lulus', 'daftar_ulang'], true))
                                         <form method="POST" action="{{ route('admin.pmb.daftar-ulang', $p) }}"
                                             class="flex items-center gap-1.5"
-                                            onsubmit="return confirm('Daftarkan {{ $p->nama }} sebagai mahasiswa? NIM akan diterbitkan dan tidak dapat ditarik kembali.');">
+                                            data-confirm="Daftarkan {{ $p->nama }} sebagai mahasiswa? NIM akan diterbitkan dan tidak dapat ditarik kembali.">
                                             @csrf
                                             <select name="tahun_akademik_id"
                                                 class="rounded-control border border-line-input bg-surface px-2 py-1.5 text-[12px]">

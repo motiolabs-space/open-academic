@@ -177,7 +177,7 @@
                                         <td class="tabular px-5 py-3 text-right font-semibold">{{ $nominal($t) }}</td>
                                         <td class="px-5 py-3 text-right">
                                             <form method="POST" action="{{ route('admin.tarif.hapus', $t) }}"
-                                                onsubmit="return confirm('Nonaktifkan baris tarif ini? Tagihan yang sudah terbit tidak berubah.');">
+                                                data-confirm="Nonaktifkan baris tarif ini? Tagihan yang sudah terbit tidak berubah.">
                                                 @csrf @method('DELETE')
                                                 <x-button type="submit" variant="danger" size="sm">Hapus</x-button>
                                             </form>

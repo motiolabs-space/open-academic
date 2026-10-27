@@ -77,7 +77,7 @@
                                         <div class="flex flex-col items-end gap-1.5">
                                             @if ($c->status->value === 'diajukan')
                                                 <form method="POST" action="{{ route('admin.cuti.setujui', $c) }}"
-                                                    onsubmit="return confirm('Setujui cuti {{ $c->mahasiswa->nama }}? Statusnya berubah menjadi Cuti dan itulah yang dilaporkan ke PDDIKTI.');">
+                                                    data-confirm="Setujui cuti {{ $c->mahasiswa->nama }}? Statusnya berubah menjadi Cuti dan itulah yang dilaporkan ke PDDIKTI.">
                                                     @csrf
                                                     <x-button type="submit" size="sm">Setujui</x-button>
                                                 </form>
@@ -91,7 +91,7 @@
                                                 </form>
                                             @elseif ($c->status->value === 'disetujui')
                                                 <form method="POST" action="{{ route('admin.cuti.aktifkan', $c) }}"
-                                                    onsubmit="return confirm('Akhiri cuti dan aktifkan kembali {{ $c->mahasiswa->nama }}?');">
+                                                    data-confirm="Akhiri cuti dan aktifkan kembali {{ $c->mahasiswa->nama }}?">
                                                     @csrf
                                                     <x-button type="submit" variant="outline" size="sm">Aktifkan Kembali</x-button>
                                                 </form>

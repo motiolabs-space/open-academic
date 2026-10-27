@@ -32,7 +32,7 @@
                                 <td class="tabular px-5 py-3 text-center">{{ $f->prodi_count }}</td>
                                 <td class="px-5 py-3 text-right">
                                     <form method="POST" action="{{ route('admin.master.fakultas.destroy', $f) }}"
-                                        onsubmit="return confirm('Hapus fakultas {{ $f->nama }}?');">
+                                        data-confirm="Hapus fakultas {{ $f->nama }}?">
                                         @csrf @method('DELETE')
                                         <x-button type="submit" variant="danger" size="sm">Hapus</x-button>
                                     </form>

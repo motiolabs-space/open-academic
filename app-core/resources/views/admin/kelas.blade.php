@@ -198,7 +198,7 @@
 
                                         @if ($k->terdaftar === 0)
                                             <form method="POST" action="{{ route('admin.kelas.tutup', $k) }}"
-                                                onsubmit="return confirm('Hapus kelas {{ $k->mataKuliah->kode }} {{ $k->kode }}?');">
+                                                data-confirm="Hapus kelas {{ $k->mataKuliah->kode }} {{ $k->kode }}?">
                                                 @csrf @method('DELETE')
                                                 <x-button type="submit" variant="danger" size="sm">Hapus</x-button>
                                             </form>

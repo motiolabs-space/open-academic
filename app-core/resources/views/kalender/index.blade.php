@@ -211,7 +211,7 @@
                     </form>
                     @if ($langganan)
                         <form method="POST" action="{{ route($prefix.'.kalender.langganan.cabut') }}"
-                            onsubmit="return confirm(@js(__('kalender.keterangan.konfirmasi_cabut')))">
+                            data-confirm="{{ __('kalender.keterangan.konfirmasi_cabut') }}">
                             @csrf
                             @method('DELETE')
                             <x-button type="submit" size="sm" variant="danger">{{ __('kalender.aksi.cabut') }}</x-button>

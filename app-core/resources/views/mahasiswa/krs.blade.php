@@ -342,7 +342,7 @@
                 @elseif ($krs->status->isLocked() && $term->krsDibuka())
                     <div class="border-t border-line px-5 py-4">
                         <form method="POST" action="{{ route('mahasiswa.krs.revisi') }}"
-                            onsubmit="return confirm(@js(__('krs.revisi_konfirmasi')));">
+                            data-confirm="{{ __('krs.revisi_konfirmasi') }}">
                             @csrf
                             <x-button type="submit" variant="outline" class="w-full">{{ __('krs.revisi_tombol') }}</x-button>
                         </form>

@@ -81,7 +81,7 @@
                                 <td class="px-5 py-3">
                                     <form method="POST" action="{{ route('admin.koreksi-nilai.simpan', $n) }}"
                                         class="flex flex-wrap items-start gap-2"
-                                        onsubmit="return confirm('Ubah nilai {{ $n->mahasiswa->nama }}? IPK-nya ikut berubah dan perubahan ini tercatat permanen.');">
+                                        data-confirm="Ubah nilai {{ $n->mahasiswa->nama }}? IPK-nya ikut berubah dan perubahan ini tercatat permanen.">
                                         @csrf
                                         <input type="number" name="nilai_angka" step="0.01" min="0" max="100" required
                                             value="{{ $n->nilai_angka }}"

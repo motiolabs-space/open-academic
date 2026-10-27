@@ -76,8 +76,8 @@
                              Leaving the unit blank lets it follow the officer. --}}
                         <form method="POST" action="{{ route('admin.helpdesk.disposisi', $tiket) }}" class="space-y-3"
                             x-data="{
-                                unit: '{{ old('unit_kerja_id', $tiket->unit_kerja_id) }}',
-                                petugas: '{{ old('petugas_staff_id', $tiket->petugas_staff_id) }}',
+                                unit: @js((string) old('unit_kerja_id', $tiket->unit_kerja_id)),
+                                petugas: @js((string) old('petugas_staff_id', $tiket->petugas_staff_id)),
                                 perUnit: @js($petugasPerUnit),
                                 daftar() {
                                     if (this.unit === '') {

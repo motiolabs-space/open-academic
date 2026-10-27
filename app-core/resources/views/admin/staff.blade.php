@@ -74,7 +74,7 @@
                                     <td class="px-5 py-3">
                                         <div class="flex justify-end gap-1.5">
                                             <form method="POST" action="{{ route('admin.staff.reset-sandi', $s) }}"
-                                                onsubmit="return confirm('Terbitkan kata sandi baru untuk {{ $s->nama }}?');">
+                                                data-confirm="Terbitkan kata sandi baru untuk {{ $s->nama }}?">
                                                 @csrf
                                                 <x-button type="submit" variant="outline" size="sm">Reset Sandi</x-button>
                                             </form>

@@ -86,7 +86,7 @@
                                 </td>
                                 <td class="px-5 py-3 text-right">
                                     <form method="POST" action="{{ route('admin.master.mata-kuliah.destroy', $mk) }}"
-                                        onsubmit="return confirm('Hapus {{ $mk->kode }}?');">
+                                        data-confirm="Hapus {{ $mk->kode }}?">
                                         @csrf @method('DELETE')
                                         <x-button type="submit" variant="danger" size="sm">Hapus</x-button>
                                     </form>

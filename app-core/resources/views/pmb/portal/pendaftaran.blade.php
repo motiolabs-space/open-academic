@@ -213,7 +213,7 @@
             @if ($draf)
                 <div class="flex flex-wrap gap-2">
                     <form method="POST" action="{{ route('pmb.portal.ajukan', $pendaftar) }}"
-                        onsubmit="return confirm(@js(__('pmb.formulir.ajukan_konfirmasi')));">
+                        data-confirm="{{ __('pmb.formulir.ajukan_konfirmasi') }}">
                         @csrf
                         <x-button type="submit" variant="gold">{{ __('pmb.formulir.ajukan') }}</x-button>
                     </form>
@@ -281,7 +281,7 @@
 
             @if ($bisaBatal)
                 <form method="POST" action="{{ route('pmb.portal.batal', $pendaftar) }}"
-                    onsubmit="return confirm(@js(__('pmb.formulir.batal_konfirmasi')));">
+                    data-confirm="{{ __('pmb.formulir.batal_konfirmasi') }}">
                     @csrf
                     <x-button type="submit" variant="ghost" size="sm">{{ __('pmb.formulir.batal') }}</x-button>
                 </form>
