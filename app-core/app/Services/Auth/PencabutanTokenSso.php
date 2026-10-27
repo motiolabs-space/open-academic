@@ -19,7 +19,7 @@ use Laravel\Passport\Passport;
 class PencabutanTokenSso
 {
     /**
-     * @param  string|null  $userId  the OAuth subject, or null for every user of the client
+     * @param string|null $userId the OAuth subject, or null for every user of the client
      * @return int the number of access tokens revoked
      */
     public function cabut(string $clientId, ?string $userId = null): int

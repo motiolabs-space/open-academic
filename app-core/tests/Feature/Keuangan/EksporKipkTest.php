@@ -172,8 +172,7 @@ describe('injeksi rumus', function () {
         penerimaKipk(atributMahasiswa: ['nama' => $rumus]);
         penerimaKipk(atributMahasiswa: ['nama' => $pecah]);
 
-        $baris = collect(explode("
-", ltrim(isiUnduhan($this->kipk->csv($this->term)), "ï»¿")))
+        $baris = collect(explode("\n", ltrim(isiUnduhan($this->kipk->csv($this->term)), "\xEF\xBB\xBF")))
             ->filter()
             ->map(fn (string $b) => str_getcsv($b, (string) config('bkd.ekspor.pemisah_csv'), '"', ''));
 

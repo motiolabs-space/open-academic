@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+use App\Models\Akademik\TahunAkademik;
+use App\Models\Kemahasiswaan\Mahasiswa;
 use App\Models\Pmb\PmbAkun;
 use App\Models\Sdm\Dosen;
 use App\Models\Sdm\Staff;
@@ -101,7 +103,7 @@ it('mengakhiri sesi pendaftar lain saat kata sandinya diatur ulang', function ()
 });
 
 it('tetap memasukkan pengguna yang mengganti kata sandinya sendiri', function () {
-    $mahasiswa = \App\Models\Kemahasiswaan\Mahasiswa::factory()->create([
+    $mahasiswa = Mahasiswa::factory()->create([
         'nim' => '2255201001',
         'password' => 'rahasia-lama',
     ]);
@@ -109,7 +111,7 @@ it('tetap memasukkan pengguna yang mengganti kata sandinya sendiri', function ()
     $this->post('/masuk', ['identitas' => '2255201001', 'password' => 'rahasia-lama']);
     $this->get('/notifikasi')->assertOk();
 
-    \App\Models\Akademik\TahunAkademik::factory()->berjalan()->create(['is_active' => true]);
+    TahunAkademik::factory()->berjalan()->create(['is_active' => true]);
     $this->post(route('mahasiswa.profil.kata-sandi'), [
         'kata_sandi_lama' => 'rahasia-lama',
         'kata_sandi' => 'rahasia-baru-123',
