@@ -4,6 +4,89 @@
 
 ---
 
+## Sesi 59 — 2026-10-27 · KKN/PKL terkelola dan tahap proposal tugas akhir
+
+Roadmap #37 dan #38, branch `feature/kkn-proposal-ta`, satu PR dengan satu
+commit per butir. Berjalan paralel dengan kalender peristiwa #35 dan SDM
+#39/#40; konflik teks di berkas ini, `ROADMAP.md`, dan `DECISIONS.md` wajar.
+Keputusan: ADR-029.
+
+### #37 — KKN / PKL sebagai kegiatan terkelola
+
+Peserta KKN/PKL adalah baris `aktivitas_mahasiswa` biasa — jenis baru `kkn`
+dan `pkl`, atau `membangun_desa`/`magang` bila kampus menjalankannya sebagai
+MBKM — sehingga mapper aktivitas, anggota, bimbing, dan konversi #22/#23
+mengirimnya tanpa entitas Feeder baru. Empat tabel baru hanya untuk yang tak
+punya tempat di baris aktivitas: periode (`kegiatan_lapangan`, aturan kelompok
+dan bobot nilai disalin dari `config/kegiatan_lapangan.php`), lokasi desa/
+instansi dengan kuota kelompok, kelompok dengan DPL dan pembimbing mitra, dan
+logbook (FK ke aktivitas). `KegiatanLapanganService` menulis ulang judul,
+mitra, wilayah, tanggal, dan DPL ke setiap baris aktivitas tiap kali periode,
+lokasi, atau kelompok berubah.
+
+- **Kelompok**: manual, atau otomatis lewat `PembentukKelompok` — urut prodi →
+  jenis kelamin → NIM lalu dibagikan bergiliran, ukuran diratakan; aturan
+  campur yang dimatikan memartisi lebih dulu. Lokasi diisi sesuai kuota, sisa
+  kelompok tanpa lokasi.
+- **Nilai**: DPL dan mitra (mitra bukan akun; nilainya diisi DPL atau staf),
+  akhir hanya bila semua nilai berbobot ada.
+- **Konversi per kelas**: kelas mata kuliah KKN/PKL memilih peserta prodinya,
+  menulis atau menempelkan baris KRS bertanda aktivitas dengan nilai final,
+  memverifikasi aktivitas, mengisi `sks_konversi`, menghitung ulang IPS/IPK.
+  Sesudahnya nilai kegiatan terkunci.
+- **Yang tersingkap**: belum ada satu pun kode yang menulis baris KRS
+  bertanda aktivitas sejak #23 — konversi MBKM hanya bisa dikirim, tidak bisa
+  dibuat. Dan baris seperti itu, bila ada di kelas yang juga dinilai dosen,
+  akan menghalangi finalisasi sebagai baris kosong lalu ditimpa dari komponen
+  nol. `PenilaianService` kini mengeluarkannya dari lembar nilai.
+- **Layar**: KEMAHASISWAAN → KKN / PKL (staf, `mahasiswa.view`/`.manage`),
+  Bimbingan KKN / PKL (dosen, per kelompok yang dibimbing), KKN / PKL
+  (mahasiswa: daftar mandiri bila dibuka, kelompok, logbook). Lampiran logbook
+  di `/berkas/kegiatan-lapangan/{logbook}` di balik policy.
+- **Demo**: `KegiatanLapanganSeeder` — satu periode KKN di semester aktif,
+  tiga desa, 18 peserta dalam tiga kelompok campuran, dosen1 membimbing
+  Kelompok 01 (dengan tiga logbook), mahasiswa1 ikut. Belum dinilai: mengisi
+  nilai dan mengonversinya adalah demonya.
+
+### #38 — Tahap dokumen proposal tugas akhir
+
+Saklar per prodi `wajib_proposal_ta` (bawaan mati, di layar master prodi),
+**dikunci pada tugas akhir saat judul diajukan** (`tugas_akhir.wajib_proposal`)
+— tugas akhir yang sudah berjalan tetap sah di bawah aturan lamanya, dan
+kampus yang tidak menyalakannya tidak melihat apa pun berubah.
+
+- **Alur**: mahasiswa mengunggah dokumen (PDF lewat `BerkasService`) dengan
+  calon pembimbing → calon pembimbing (portal dosen) atau staf tugas akhir
+  menelaah: revisi (catatan wajib) → versi berikutnya, diterima → judul dapat
+  disetujui lalu pembimbing dan seminar proposal seperti dulu, ditolak →
+  tugas akhir ditutup dan slot mahasiswa bebas.
+- **Riwayat**: `tugas_akhir_proposal` dan `tugas_akhir_proposal_telaah` hanya
+  bertambah; judul tersimpan per versi; berkas lama tidak dihapus.
+- **Gerbang**: `TugasAkhirService::setujuiJudul()` menolak judul
+  ber-`wajib_proposal` tanpa versi diterima.
+- **Layar**: kartu proposal di tugas akhir mahasiswa dan rincian staf, antrean
+  "Proposal menunggu telaah Anda" dan halaman telaah di portal dosen, berkas di
+  `/berkas/proposal-ta/{proposal}` di balik `ProposalPolicy`. Notifikasi ke
+  calon pembimbing saat diunggah, ke mahasiswa saat ditelaah.
+- **Demo**: `ProposalTugasAkhirSeeder` — prodi dengan mahasiswa bebas
+  terbanyak mewajibkan proposal; satu mahasiswa di versi 2 menunggu telaah
+  dosen1 (versi 1 diminta revisi), satu diterima dan menunggu persetujuan judul.
+
+**Tes baru:** KegiatanLapanganTest 37, ProposalTugasAkhirTest 16, SmokeLayarTest 2
+(anggaran kueri lima layar KKN/PKL dan empat layar proposal).
+
+### Belum
+
+Lokasi belum dapat disunting dari layar (service-nya sudah); peserta belum
+dapat membatalkan pendaftaran mandirinya sendiri; ketua kelompok belum dikirim
+sebagai peran *ketua* ke PDDIKTI karena setiap peserta adalah aktivitas
+tersendiri. Proposal: calon pembimbing tidak dapat diganti di tengah telaah
+(hanya pada versi berikutnya), dan belum ada batas waktu telaah.
+Tindak lanjut: periode KKN/PKL belum tampil di kalender peristiwa (#35,
+`KalenderService`); layak menjadi sumber periode berikutnya di sana.
+
+---
+
 ## Sesi 58 — 2026-10-27 · Riwayat kepegawaian lengkap dan buku besar angka kredit
 
 Roadmap #39 dan #40, branch `feature/sdm-riwayat-angka-kredit`, dua commit

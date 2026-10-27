@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\TugasAkhir;
 
 use App\Enums\PeranPembimbing;
+use App\Enums\StatusProposal;
 use App\Enums\StudentStatus;
 use App\Enums\TugasAkhirStatus;
 use App\Exceptions\AturanAkademikException;
@@ -68,8 +69,12 @@ class TugasAkhirService
 
         $bulan = (int) config('academic.tugas_akhir.batas_bulan');
 
+        // Fixed now, so a programme switching the proposal stage on later
+        // never reaches back into a project proposed under the old rule (#38).
+        $wajibProposal = (bool) $mahasiswa->loadMissing('prodi')->prodi?->wajib_proposal_ta;
+
         try {
-            return DB::transaction(function () use ($mahasiswa, $term, $judul, $abstrak, $bidangKajian, $bulan): TugasAkhir {
+            return DB::transaction(function () use ($mahasiswa, $term, $judul, $abstrak, $bidangKajian, $bulan, $wajibProposal): TugasAkhir {
                 // Locked so the check below and the insert cannot be
                 // interleaved by a second request. The unique index on
                 // mahasiswa_aktif_id is the real guarantee — this exists so the
@@ -97,6 +102,7 @@ class TugasAkhirService
                     'abstrak' => $abstrak,
                     'bidang_kajian' => $bidangKajian,
                     'status' => TugasAkhirStatus::Diajukan,
+                    'wajib_proposal' => $wajibProposal,
                     'tanggal_pengajuan' => now()->toDateString(),
                     'batas_selesai' => $bulan > 0 ? now()->addMonths($bulan)->toDateString() : null,
                 ]);
@@ -124,7 +130,12 @@ class TugasAkhirService
         }
     }
 
-    /** Approves the proposed title. Supervisors are assigned separately. */
+    /**
+     * Approves the proposed title. Supervisors are assigned separately.
+     *
+     * Where the project was proposed under the proposal stage (#38), an
+     * accepted proposal document is the gate; elsewhere nothing changed.
+     */
     public function setujuiJudul(TugasAkhir $ta, Staff $staff): TugasAkhir
     {
         if ($ta->status !== TugasAkhirStatus::Diajukan) {
@@ -132,6 +143,12 @@ class TugasAkhirService
                 'Hanya judul berstatus diajukan yang dapat disetujui. Status saat ini: '
                     .$ta->status->label().'.',
             );
+        }
+
+        if ($ta->wajib_proposal
+            && !$ta->proposal()->where('status', StatusProposal::Diterima->value)->exists()
+        ) {
+            throw new AturanAkademikException(__('tugas_akhir_proposal.galat.judul_tanpa_proposal'));
         }
 
         $ta->update([

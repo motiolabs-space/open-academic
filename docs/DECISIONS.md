@@ -737,3 +737,82 @@
   tafsir, bukan kutipan regulasi, dan dapat diubah lewat env. Kolom lembar
   penyetaraan mengikuti panduan operator; templat yang berubah cukup diubah di
   `AngkaKreditService::KOLOM_PENYETARAAN`.
+
+## ADR-029 — KKN/PKL mendarat sebagai `aktivitas_mahasiswa` per peserta; tahap proposal tugas akhir dikunci saat pengajuan (2026-10-27)
+
+### Bagian 1 — KKN / PKL sebagai kegiatan terkelola (#37)
+
+- **Konteks.** PDDIKTI mencatat KKN dan PKL sebagai *aktivitas mahasiswa* —
+  rantai yang sama dengan magang MBKM: aktivitas, anggota, pembimbing, lalu
+  konversi nilai ke mata kuliah. Rantai itu sudah ada sejak #22 dan #23, tetapi
+  tidak ada yang menulis baris konversinya, dan tidak ada tempat untuk periode,
+  lokasi, kelompok, pembimbing mitra, atau logbook. Tabel kegiatan tersendiri
+  akan membuka jalur Feeder kedua untuk data yang sama.
+- **Keputusan.** (1) **Satu peserta = satu baris `aktivitas_mahasiswa`**, sama
+  persis dengan peserta MBKM, sehingga KKN/PKL dikirim oleh mapper aktivitas,
+  anggota, bimbing, dan konversi yang sudah ada tanpa entitas Feeder baru. PDDIKTI
+  mengizinkan satu aktivitas beranggota banyak; di sini tetap satu aktivitas per
+  mahasiswa (peran *personal*) karena begitulah baris lokalnya, dan memecah
+  baris itu menjadi aktivitas-berkelompok berarti menulis ulang empat mapper
+  untuk keuntungan yang tidak dibaca siapa pun. (2) Tabel tambahan hanya untuk
+  yang tidak punya tempat di baris aktivitas: `kegiatan_lapangan` (periode,
+  dengan aturan kelompok dan bobot nilai yang disalin dari
+  `config/kegiatan_lapangan.php`), `kegiatan_lapangan_lokasi`,
+  `kegiatan_lapangan_kelompok` (DPL dan pembimbing mitra), dan
+  `kegiatan_lapangan_logbook` (FK ke aktivitas). Baris aktivitas mendapat FK ke
+  periode dan kelompok, penanda ketua, dan dua nilai. (3) Setiap perubahan
+  periode, lokasi, atau kelompok **ditulis ulang ke baris aktivitas** (judul,
+  mitra, lokasi wilayah, tanggal, DPL) — yang dibaca PDDIKTI selalu yang tampak
+  di layar. (4) Dua jenis baru `StudentActivityType::Kkn` dan `::Pkl`; hanya
+  jenis MBKM yang dikirim dengan `untuk_kampus_merdeka = 1`, dan nomor/tanggal
+  SK periode ikut sebagai `sk_tugas`/`tanggal_sk_tugas` (payload MBKM lama tidak
+  berubah karena keduanya kosong). (5) Pembentukan kelompok otomatis: peserta
+  diurutkan prodi → jenis kelamin → NIM lalu dibagikan bergiliran, ukuran
+  diratakan (23 dengan target 10 menjadi 8/8/7); aturan campur yang dimatikan
+  memartisi peserta lebih dulu. Hasilnya dapat diulang. (6) Nilai akhir =
+  bobot DPL × nilai DPL + bobot mitra × nilai mitra, terbentuk hanya bila semua
+  nilai berbobot ada. (7) **Konversi per kelas**: kelas mata kuliah KKN/PKL
+  memilih peserta dari prodinya (kurikulum tiap prodi punya kode sendiri),
+  menulis atau menempelkan baris KRS yang menandai aktivitas, dengan nilai
+  final, memverifikasi aktivitas, dan mengisi `sks_konversi`. Sesudahnya nilai
+  kegiatan terkunci; koreksi lewat jalur koreksi nilai. (8) Baris KRS bertanda
+  aktivitas **dikeluarkan dari lembar nilai dosen** (`PenilaianService`), supaya
+  finalisasi kelas tidak menghitung ulangnya dari komponen yang tidak pernah
+  diisi.
+- **Konsekuensi.** Izin memakai `mahasiswa.view`/`mahasiswa.manage` (yang sama
+  dengan verifikasi aktivitas MBKM di layar IKU) — tanpa izin baru, tanpa
+  migrasi peran. Jangkauan dosen ditentukan per kelompok oleh
+  `dosen_pembimbing_id`, bukan oleh peran. Aktivitas KKN baru terverifikasi
+  saat dikonversi, jadi baru terkirim ke Feeder sesudah dinilai; kampus yang
+  ingin melaporkannya lebih awal tetap dapat memverifikasinya di layar IKU.
+  Kelas yang hanya berisi baris konversi tetap berstatus nilai *belum*.
+
+### Bagian 2 — Tahap dokumen proposal tugas akhir (#38)
+
+- **Konteks.** Tugas akhir dimulai dari pengajuan judul; seminar proposal
+  (`JenisUjian::Proposal`) sudah ada tetapi baru dapat dijadwalkan saat karya
+  dibimbing. Sebagian prodi menelaah dokumen proposal *sebelum* judul disetujui,
+  sebagian tidak sama sekali. Menambah tahap wajib untuk semua kampus mengubah
+  alur yang sudah berjalan; menyalakannya per prodi tanpa batas waktu akan
+  menahan tugas akhir yang diajukan sebelum saklar dinyalakan.
+- **Keputusan.** (1) Saklar per prodi `prodi.wajib_proposal_ta`, bawaan mati,
+  di layar master prodi. (2) **Dikunci saat pengajuan**: `TugasAkhirService::
+  ajukan()` menyalin saklar ke `tugas_akhir.wajib_proposal`; menyalakan atau
+  mematikannya kemudian tidak menjangkau tugas akhir yang sudah diajukan.
+  (3) Versi proposal (`tugas_akhir_proposal`) dan telaah
+  (`tugas_akhir_proposal_telaah`) hanya bertambah: revisi adalah versi baru,
+  keputusan adalah baris telaah baru, dan status versi berpindah sekali dari
+  *menunggu*. Berkas lewat `BerkasService` di disk privat, judul per versi
+  tersimpan di versinya (judul tugas akhir mengikuti versi terakhir).
+  (4) Penelaah: dosen yang disebut sebagai calon pembimbing pada versi itu
+  (dengan `tugas_akhir.bimbing`), atau staf dengan `tugas_akhir.manage` —
+  koordinator prodi bertindak sebagai staf; tidak ada peran baru. Revisi dan
+  penolakan wajib bercatatan. (5) **Diterima** membuka gerbang yang sudah ada:
+  `setujuiJudul()` menolak judul ber-`wajib_proposal` tanpa versi diterima;
+  sesudah judul disetujui, pembimbing dan seminar proposal berjalan seperti
+  dulu. **Ditolak** menutup tugas akhir seperti judul yang ditolak dan
+  membebaskan slot mahasiswa.
+- **Konsekuensi.** Kampus yang tidak menyalakan saklar tidak melihat apa pun
+  berubah — tidak ada kartu, tidak ada gerbang. Tahap ini tidak menggantikan
+  seminar proposal; yang menyeminarkan proposal tetap menjadwalkannya sesudah
+  pembimbing ditetapkan. Dokumen proposal bukan entitas Feeder.

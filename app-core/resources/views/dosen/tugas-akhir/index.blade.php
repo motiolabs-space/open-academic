@@ -8,6 +8,23 @@
     @endif
 
     <div class="space-y-5">
+        @if ($menungguTelaah->isNotEmpty())
+            <x-card :title="__('tugas_akhir_proposal.kartu.menunggu_telaah')" :meta="$menungguTelaah->count()">
+                @foreach ($menungguTelaah as $p)
+                    <div class="flex flex-wrap items-start justify-between gap-3 border-b border-line/50 py-3 last:border-b-0">
+                        <div class="min-w-0">
+                            <p class="font-medium">{{ $p->tugasAkhir->mahasiswa->nama }}
+                                <span class="tabular ml-1 text-[11.5px] text-ink-faint">{{ $p->tugasAkhir->mahasiswa->nim }} · {{ $p->tugasAkhir->mahasiswa->prodi->nama }}</span>
+                            </p>
+                            <p class="mt-0.5 max-w-lg text-[12px] text-ink-muted">{{ $p->judul }}</p>
+                            <p class="mt-1 text-[11.5px] text-ink-faint">{{ __('tugas_akhir_proposal.keterangan.versi', ['versi' => $p->versi]) }}</p>
+                        </div>
+                        <x-button href="{{ route('dosen.tugas-akhir.proposal', $p) }}" size="sm" variant="outline">{{ __('tugas_akhir_proposal.aksi.buka') }}</x-button>
+                    </div>
+                @endforeach
+            </x-card>
+        @endif
+
         <x-card title="Bimbingan Berjalan" :meta="$dibimbing->count().' mahasiswa'">
             @forelse ($dibimbing as $ta)
                 <div class="flex flex-wrap items-start justify-between gap-3 border-b border-line/50 py-3 last:border-b-0">

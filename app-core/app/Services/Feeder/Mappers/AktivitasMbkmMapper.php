@@ -20,6 +20,10 @@ use Illuminate\Database\Eloquent\Model;
  * filled from the GetJenisAktivitasMahasiswa reference pull. It is not
  * seeded: PDDIKTI's list changes with each MBKM cycle, and a guessed code
  * reports a student's internship as something else.
+ *
+ * Managed KKN and PKL participants (#37) travel the same route. Their
+ * programme's decree goes along as `sk_tugas`, and a regular KKN or PKL is
+ * sent with `untuk_kampus_merdeka` 0 — only the MBKM kinds are flagged.
  */
 class AktivitasMbkmMapper extends FeederMapper
 {
@@ -32,7 +36,7 @@ class AktivitasMbkmMapper extends FeederMapper
     protected function query(string $termCode): Builder
     {
         return AktivitasMahasiswa::query()
-            ->with(['mahasiswa.prodi', 'tahunAkademik', 'pembimbing'])
+            ->with(['mahasiswa.prodi', 'tahunAkademik', 'pembimbing', 'kegiatanLapangan'])
             ->terverifikasi()
             ->whereHas('tahunAkademik', fn (Builder $q) => $q->where('kode', $termCode))
             ->orderBy('id');
@@ -48,8 +52,9 @@ class AktivitasMbkmMapper extends FeederMapper
             'judul' => $model->judul,
             'keterangan' => $model->keterangan,
             'lokasi' => $model->lokasi ?? $model->mitra_nama,
-            'tanggal_sk_tugas' => $this->tanggal($model->tanggal_mulai),
-            'untuk_kampus_merdeka' => 1,
+            'sk_tugas' => $model->kegiatanLapangan?->nomor_sk,
+            'tanggal_sk_tugas' => $this->tanggal($model->kegiatanLapangan?->tanggal_sk ?? $model->tanggal_mulai),
+            'untuk_kampus_merdeka' => $model->jenis->kampusMerdeka() ? 1 : 0,
         ], fn (mixed $nilai): bool => $nilai !== null && $nilai !== '');
     }
 

@@ -11,12 +11,14 @@ use App\Models\Akademik\KalenderPeristiwa;
 use App\Models\Akademik\KelasKuliah;
 use App\Models\Akademik\TahunAkademik;
 use App\Models\Bridge\BridgeConsumer;
+use App\Models\Kemahasiswaan\KegiatanLapangan;
 use App\Models\Kemahasiswaan\Mahasiswa;
 use App\Models\Pmb\PmbAkun;
 use App\Models\Pmb\PmbGelombang;
 use App\Models\Pmb\PmbPendaftar;
 use App\Models\Sdm\Dosen;
 use App\Models\Sdm\Staff;
+use App\Models\TugasAkhir\Proposal;
 use App\Models\TugasAkhir\TugasAkhir;
 use App\Services\Akademik\JadwalUjianService;
 use App\Support\Portal;
@@ -457,4 +459,48 @@ it('membuka detail jadwal ujian dan mencetak kartu dari jadwal ujian dalam angga
         fn () => $this->actingAs($mahasiswa, 'mahasiswa')->get('/mahasiswa/kartu-ujian')->assertOk(),
         30,
     );
+});
+
+/*
+ * KKN/PKL (#37): daftar dan rincian di tiga portal. Rincian merender seluruh
+ * anggota dengan prodi, nilai, dan logbooknya — tempat paling wajar bagi
+ * kueri per anggota untuk menyelinap masuk.
+ */
+it('membuka layar KKN/PKL di tiga portal dalam anggaran kueri', function () {
+    $staff = Staff::where('email', 'admin@demo.test')->firstOrFail();
+    $kegiatan = KegiatanLapangan::query()->firstOrFail();
+    $kelompok = $kegiatan->kelompok()->whereNotNull('dosen_pembimbing_id')->orderBy('nomor')->firstOrFail();
+    $mahasiswa = $kelompok->anggota()->firstOrFail()->mahasiswa;
+
+    foreach ([
+        [$staff, 'staff', '/admin/kegiatan-lapangan', 12],
+        [$staff, 'staff', '/admin/kegiatan-lapangan/'.$kegiatan->uuid, 16],
+        [$kelompok->pembimbing, 'dosen', '/dosen/kegiatan-lapangan', 7],
+        [$kelompok->pembimbing, 'dosen', '/dosen/kegiatan-lapangan/'.$kelompok->uuid, 10],
+        [$mahasiswa, 'mahasiswa', '/mahasiswa/kegiatan-lapangan', 15],
+    ] as [$aktor, $guard, $url, $anggaran]) {
+        auth()->forgetGuards();
+
+        dalamAnggaranKueri(fn () => $this->actingAs($aktor, $guard)->get($url)->assertOk(), $anggaran);
+    }
+});
+
+/*
+ * Tahap proposal tugas akhir (#38): rincian tugas akhir staf dengan riwayat
+ * versi dan telaah, dan halaman telaah calon pembimbing.
+ */
+it('membuka layar proposal tugas akhir dalam anggaran kueri', function () {
+    $staff = Staff::where('email', 'admin@demo.test')->firstOrFail();
+    $proposal = Proposal::query()->where('status', 'menunggu')->firstOrFail();
+
+    foreach ([
+        [$staff, 'staff', '/admin/tugas-akhir/'.$proposal->tugasAkhir->uuid, 22],
+        [$proposal->calonPembimbing, 'dosen', '/dosen/tugas-akhir', 12],
+        [$proposal->calonPembimbing, 'dosen', '/dosen/tugas-akhir/proposal/'.$proposal->uuid, 11],
+        [$proposal->tugasAkhir->mahasiswa, 'mahasiswa', '/mahasiswa/tugas-akhir', 12],
+    ] as [$aktor, $guard, $url, $anggaran]) {
+        auth()->forgetGuards();
+
+        dalamAnggaranKueri(fn () => $this->actingAs($aktor, $guard)->get($url)->assertOk(), $anggaran);
+    }
 });

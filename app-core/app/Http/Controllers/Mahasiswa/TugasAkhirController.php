@@ -4,11 +4,16 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Mahasiswa;
 
+use App\DTOs\TugasAkhir\ProposalData;
+use App\Enums\TugasAkhirStatus;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\TugasAkhir\ProposalRequest;
 use App\Models\Kemahasiswaan\Mahasiswa;
 use App\Models\Sdm\Dosen;
 use App\Models\TugasAkhir\Bimbingan;
+use App\Models\TugasAkhir\Proposal;
 use App\Services\TugasAkhir\BimbinganService;
+use App\Services\TugasAkhir\ProposalService;
 use App\Services\TugasAkhir\TugasAkhirService;
 use App\Support\Portal;
 use Illuminate\Http\RedirectResponse;
@@ -30,6 +35,7 @@ class TugasAkhirController extends Controller
     public function __construct(
         private readonly TugasAkhirService $tugasAkhir,
         private readonly BimbinganService $bimbingan,
+        private readonly ProposalService $proposal,
     ) {}
 
     public function index(): View
@@ -37,7 +43,10 @@ class TugasAkhirController extends Controller
         $mahasiswa = $this->mahasiswa();
 
         $ta = $mahasiswa->tugasAkhir()
-            ->with(['pembimbing.dosen', 'bimbingan.dosen', 'ujian.penguji.dosen', 'ujian.ruang'])
+            ->with([
+                'pembimbing.dosen', 'bimbingan.dosen', 'ujian.penguji.dosen', 'ujian.ruang',
+                'proposal.calonPembimbing', 'proposal.telaah.dosen', 'proposal.telaah.staff',
+            ])
             ->first();
 
         $minSks = (int) config('academic.tugas_akhir.min_sks_pengajuan');
@@ -54,6 +63,13 @@ class TugasAkhirController extends Controller
 
             // Only the supervisors actually assigned can be logged against.
             'pilihanPembimbing' => $ta?->pembimbing->pluck('dosen') ?? collect(),
+
+            // Prospective supervisors, offered only while a proposal can be
+            // submitted (#38).
+            'pilihanCalon' => $ta !== null && $ta->wajib_proposal && $ta->status === TugasAkhirStatus::Diajukan
+                ? Dosen::query()->aktif()->orderBy('nama')->get(['id', 'nama', 'gelar_depan', 'gelar_belakang'])
+                    ->mapWithKeys(fn (Dosen $d): array => [$d->id => $d->namaLengkap()])
+                : collect(),
         ]);
     }
 
@@ -80,6 +96,20 @@ class TugasAkhirController extends Controller
         );
 
         return back()->with('sukses', 'Judul diajukan dan menunggu keputusan program studi.');
+    }
+
+    /** Uploads the next proposal version for the student's own running project (#38). */
+    public function unggahProposal(ProposalRequest $request): RedirectResponse
+    {
+        $ta = $this->mahasiswa()->tugasAkhirAktif;
+
+        abort_if($ta === null, 404, 'Tidak ada tugas akhir yang sedang berjalan.');
+
+        $this->authorize('create', [Proposal::class, $ta]);
+
+        $proposal = $this->proposal->unggah($ta, ProposalData::fromRequest($request));
+
+        return back()->with('sukses', __('tugas_akhir_proposal.sukses.unggah', ['versi' => $proposal->versi]));
     }
 
     public function catatBimbingan(Request $request): RedirectResponse

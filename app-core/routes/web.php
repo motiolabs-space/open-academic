@@ -187,9 +187,16 @@ Route::middleware(['auth:mahasiswa', 'term.active'])->prefix('mahasiswa')->name(
     Route::get('/tugas-akhir', [Mahasiswa\TugasAkhirController::class, 'index'])->name('tugas-akhir');
     Route::post('/tugas-akhir', [Mahasiswa\TugasAkhirController::class, 'ajukan'])->name('tugas-akhir.ajukan');
     Route::post('/tugas-akhir/bimbingan', [Mahasiswa\TugasAkhirController::class, 'catatBimbingan'])->name('tugas-akhir.bimbingan');
+    Route::post('/tugas-akhir/proposal', [Mahasiswa\TugasAkhirController::class, 'unggahProposal'])->name('tugas-akhir.proposal');
     Route::delete('/tugas-akhir/bimbingan/{bimbingan}', [Mahasiswa\TugasAkhirController::class, 'hapusBimbingan'])->name('tugas-akhir.bimbingan.hapus');
 
     Route::get('/capaian', Mahasiswa\PenguasaanController::class)->name('capaian');
+
+    // KKN/PKL (#37). Pemilik partisipasi dan logbook selalu yang sedang masuk.
+    Route::get('/kegiatan-lapangan', [Mahasiswa\KegiatanLapanganController::class, 'index'])->name('kegiatan-lapangan');
+    Route::post('/kegiatan-lapangan/{kegiatan}/daftar', [Mahasiswa\KegiatanLapanganController::class, 'daftar'])->name('kegiatan-lapangan.daftar');
+    Route::post('/kegiatan-lapangan/logbook/{aktivitas}', [Mahasiswa\KegiatanLapanganController::class, 'catatLogbook'])->name('kegiatan-lapangan.logbook');
+    Route::delete('/kegiatan-lapangan/logbook/{logbook}', [Mahasiswa\KegiatanLapanganController::class, 'hapusLogbook'])->name('kegiatan-lapangan.logbook.hapus');
 
     // Berparameter periode, bukan orang: pemilik pendaftarannya selalu yang
     // sedang masuk.
@@ -279,6 +286,11 @@ Route::middleware(['auth:dosen', 'term.active'])->prefix('dosen')->name('dosen.'
     Route::post('/portofolio/sertifikasi', [Dosen\PortofolioController::class, 'simpanSertifikasi'])->name('portofolio.sertifikasi');
     Route::post('/portofolio/kegiatan', [Dosen\PortofolioController::class, 'simpanKegiatan'])->name('portofolio.kegiatan');
 
+    Route::get('/kegiatan-lapangan', [Dosen\KegiatanLapanganController::class, 'index'])->name('kegiatan-lapangan');
+    Route::get('/kegiatan-lapangan/{kelompok}', [Dosen\KegiatanLapanganController::class, 'show'])->name('kegiatan-lapangan.show');
+    Route::post('/kegiatan-lapangan/{kelompok}/nilai', [Dosen\KegiatanLapanganController::class, 'nilai'])->name('kegiatan-lapangan.nilai');
+    Route::post('/kegiatan-lapangan/logbook/{logbook}/periksa', [Dosen\KegiatanLapanganController::class, 'periksa'])->name('kegiatan-lapangan.periksa');
+
     // Riwayat kepegawaian: {jenis} memilih tabel, {riwayat} adalah UUID baris
     // di tabel itu — diikat di AppServiceProvider, dicek pemiliknya oleh policy.
     Route::get('/kepegawaian', [Dosen\KepegawaianController::class, 'index'])->name('kepegawaian');
@@ -290,6 +302,8 @@ Route::middleware(['auth:dosen', 'term.active'])->prefix('dosen')->name('dosen.'
 
     Route::get('/tugas-akhir', [Dosen\TugasAkhirController::class, 'index'])->name('tugas-akhir');
     Route::get('/tugas-akhir/{tugasAkhir}', [Dosen\TugasAkhirController::class, 'show'])->name('tugas-akhir.show');
+    Route::get('/tugas-akhir/proposal/{proposal}', [Dosen\TugasAkhirController::class, 'proposal'])->name('tugas-akhir.proposal');
+    Route::post('/tugas-akhir/proposal/{proposal}/telaah', [Dosen\TugasAkhirController::class, 'telaahProposal'])->name('tugas-akhir.proposal.telaah');
     Route::post('/tugas-akhir/bimbingan/{bimbingan}/setujui', [Dosen\TugasAkhirController::class, 'setujuiBimbingan'])->name('tugas-akhir.bimbingan.setujui');
     Route::post('/tugas-akhir/bimbingan/{bimbingan}/cabut', [Dosen\TugasAkhirController::class, 'batalkanPersetujuan'])->name('tugas-akhir.bimbingan.cabut');
     Route::post('/tugas-akhir/penguji/{penguji}/nilai', [Dosen\TugasAkhirController::class, 'nilaiUjian'])->name('tugas-akhir.penguji.nilai');
@@ -360,6 +374,16 @@ Route::middleware('auth:staff,dosen,mahasiswa')->prefix('berkas/helpdesk')->name
         Route::get('/tiket/{tiket}', [BerkasController::class, 'helpdeskTiket'])->name('tiket');
         Route::get('/balasan/{balasan}', [BerkasController::class, 'helpdeskBalasan'])->name('balasan');
     });
+
+// Lampiran logbook KKN/PKL: penulisnya, dosen pembimbing lapangan kelompoknya,
+// dan staf — diputuskan KegiatanLapanganLogbookPolicy.
+Route::middleware('auth:staff,dosen,mahasiswa')->prefix('berkas')->name('berkas.')->group(function (): void {
+    Route::get('/kegiatan-lapangan/{logbook}', [BerkasController::class, 'logbookKegiatan'])->name('logbook-kegiatan');
+
+    // Proposal tugas akhir (#38): pemiliknya, calon/pembimbingnya, dan staf
+    // tugas akhir — diputuskan ProposalPolicy.
+    Route::get('/proposal-ta/{proposal}', [BerkasController::class, 'proposalTugasAkhir'])->name('proposal-ta');
+});
 
 /*
 |--------------------------------------------------------------------------
@@ -530,6 +554,7 @@ Route::middleware(['auth:staff', 'term.active'])->prefix('admin')->name('admin.'
     Route::get('/tugas-akhir/{tugasAkhir}', [Admin\TugasAkhirController::class, 'show'])->name('tugas-akhir.show');
     Route::post('/tugas-akhir/{tugasAkhir}/setujui', [Admin\TugasAkhirController::class, 'setujui'])->name('tugas-akhir.setujui');
     Route::post('/tugas-akhir/{tugasAkhir}/tolak', [Admin\TugasAkhirController::class, 'tolak'])->name('tugas-akhir.tolak');
+    Route::post('/tugas-akhir/proposal/{proposal}/telaah', [Admin\TugasAkhirController::class, 'telaahProposal'])->name('tugas-akhir.proposal.telaah');
     Route::post('/tugas-akhir/{tugasAkhir}/pembimbing', [Admin\TugasAkhirController::class, 'tetapkanPembimbing'])->name('tugas-akhir.pembimbing');
     Route::delete('/tugas-akhir/pembimbing/{pembimbing}', [Admin\TugasAkhirController::class, 'lepasPembimbing'])->name('tugas-akhir.pembimbing.lepas');
     Route::post('/tugas-akhir/{tugasAkhir}/ujian', [Admin\TugasAkhirController::class, 'jadwalkanUjian'])->name('tugas-akhir.ujian');
@@ -537,6 +562,29 @@ Route::middleware(['auth:staff', 'term.active'])->prefix('admin')->name('admin.'
     Route::post('/tugas-akhir/ujian/{ujian}/batal', [Admin\TugasAkhirController::class, 'batalkanUjian'])->name('tugas-akhir.ujian.batal');
     Route::post('/tugas-akhir/{tugasAkhir}/selesai', [Admin\TugasAkhirController::class, 'selesaikan'])->name('tugas-akhir.selesai');
     Route::post('/tugas-akhir/{tugasAkhir}/batal', [Admin\TugasAkhirController::class, 'batalkan'])->name('tugas-akhir.batal');
+
+    /*
+    | KKN/PKL (#37). Satu parameter per rute, seperti tugas akhir di atas:
+    | rute kelompok, lokasi, dan peserta mencari kegiatannya dari rekaman itu
+    | sendiri. `baru` didaftarkan sebelum `{kegiatan}`.
+    */
+    Route::get('/kegiatan-lapangan', [Admin\KegiatanLapanganController::class, 'index'])->name('kegiatan-lapangan.index');
+    Route::get('/kegiatan-lapangan/baru', [Admin\KegiatanLapanganController::class, 'create'])->name('kegiatan-lapangan.create');
+    Route::post('/kegiatan-lapangan', [Admin\KegiatanLapanganController::class, 'store'])->name('kegiatan-lapangan.store');
+    Route::get('/kegiatan-lapangan/{kegiatan}', [Admin\KegiatanLapanganController::class, 'show'])->name('kegiatan-lapangan.show');
+    Route::get('/kegiatan-lapangan/{kegiatan}/ubah', [Admin\KegiatanLapanganController::class, 'edit'])->name('kegiatan-lapangan.edit');
+    Route::put('/kegiatan-lapangan/{kegiatan}', [Admin\KegiatanLapanganController::class, 'update'])->name('kegiatan-lapangan.update');
+    Route::post('/kegiatan-lapangan/{kegiatan}/lokasi', [Admin\KegiatanLapanganController::class, 'simpanLokasi'])->name('kegiatan-lapangan.lokasi');
+    Route::delete('/kegiatan-lapangan/lokasi/{lokasi}', [Admin\KegiatanLapanganController::class, 'hapusLokasi'])->name('kegiatan-lapangan.lokasi.hapus');
+    Route::post('/kegiatan-lapangan/{kegiatan}/peserta', [Admin\KegiatanLapanganController::class, 'tambahPeserta'])->name('kegiatan-lapangan.peserta');
+    Route::delete('/kegiatan-lapangan/peserta/{aktivitas}', [Admin\KegiatanLapanganController::class, 'keluarkanPeserta'])->name('kegiatan-lapangan.peserta.keluar');
+    Route::post('/kegiatan-lapangan/peserta/{aktivitas}/pindah', [Admin\KegiatanLapanganController::class, 'pindahkan'])->name('kegiatan-lapangan.peserta.pindah');
+    Route::post('/kegiatan-lapangan/{kegiatan}/bentuk-kelompok', [Admin\KegiatanLapanganController::class, 'bentukOtomatis'])->name('kegiatan-lapangan.bentuk');
+    Route::post('/kegiatan-lapangan/{kegiatan}/kelompok', [Admin\KegiatanLapanganController::class, 'buatKelompok'])->name('kegiatan-lapangan.kelompok');
+    Route::put('/kegiatan-lapangan/kelompok/{kelompok}', [Admin\KegiatanLapanganController::class, 'aturKelompok'])->name('kegiatan-lapangan.kelompok.atur');
+    Route::delete('/kegiatan-lapangan/kelompok/{kelompok}', [Admin\KegiatanLapanganController::class, 'hapusKelompok'])->name('kegiatan-lapangan.kelompok.hapus');
+    Route::post('/kegiatan-lapangan/kelompok/{kelompok}/nilai', [Admin\KegiatanLapanganController::class, 'nilai'])->name('kegiatan-lapangan.kelompok.nilai');
+    Route::post('/kegiatan-lapangan/{kegiatan}/konversi', [Admin\KegiatanLapanganController::class, 'konversi'])->name('kegiatan-lapangan.konversi');
 
     // Intake pindahan/RPL (#33). `referensi` dan `baru` didaftarkan sebelum
     // `{mahasiswa}` agar tidak ditangkap sebagai UUID.

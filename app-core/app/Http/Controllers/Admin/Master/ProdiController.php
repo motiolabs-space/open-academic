@@ -97,6 +97,10 @@ class ProdiController extends MasterController
             // Health programmes: graduates wait at "Menunggu Uji Kompetensi"
             // after yudisium until a passing result is recorded.
             'wajib_ukom' => ['sometimes', 'boolean'],
+
+            // The final-project proposal stage (#38). Applies to titles
+            // proposed after it is switched on, never to those under way.
+            'wajib_proposal_ta' => ['sometimes', 'boolean'],
             'kaprodi_dosen_id' => ['nullable', 'integer', Rule::exists('dosen', 'id')],
             'is_active' => ['sometimes', 'boolean'],
         ]);

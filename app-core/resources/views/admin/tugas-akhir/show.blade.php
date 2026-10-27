@@ -72,6 +72,27 @@
                 @endif
             </x-card>
 
+            {{-- Dokumen proposal (#38): hanya untuk tugas akhir yang diajukan di bawah tahap ini. --}}
+            @if ($ta->wajib_proposal)
+                <x-card :title="__('tugas_akhir_proposal.kartu.riwayat')">
+                    @php $terakhir = $ta->proposal->first(); @endphp
+                    @if ($ta->status === \App\Enums\TugasAkhirStatus::Diajukan && $terakhir?->status !== \App\Enums\StatusProposal::Diterima)
+                        <div class="mb-4"><x-alert tone="info">{{ __('tugas_akhir_proposal.keterangan.judul_tertahan') }}</x-alert></div>
+                    @endif
+
+                    @include('tugas-akhir._proposal-riwayat', ['daftarProposal' => $ta->proposal])
+
+                    @if ($terakhir !== null)
+                        @can('telaah', $terakhir)
+                            <div class="mt-4 border-t border-line pt-4">
+                                <h3 class="mb-3 text-[13px] font-semibold">{{ __('tugas_akhir_proposal.kartu.telaah') }}</h3>
+                                @include('tugas-akhir._proposal-telaah', ['aksi' => route('admin.tugas-akhir.proposal.telaah', $terakhir)])
+                            </div>
+                        @endcan
+                    @endif
+                </x-card>
+            @endif
+
             {{-- Log bimbingan --}}
             <x-card title="Log Bimbingan"
                 meta="{{ $ta->jumlahBimbinganDisetujui() }} disetujui dari {{ $ta->bimbingan->count() }} tercatat">

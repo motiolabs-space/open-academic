@@ -14,6 +14,7 @@ use Database\Seeders\Demo\HelpdeskSeeder;
 use Database\Seeders\Demo\IntegrasiSeeder;
 use Database\Seeders\Demo\JadwalUjianSeeder;
 use Database\Seeders\Demo\KalenderSeeder;
+use Database\Seeders\Demo\KegiatanLapanganSeeder;
 use Database\Seeders\Demo\KelulusanSeeder;
 use Database\Seeders\Demo\KemahasiswaanSeeder;
 use Database\Seeders\Demo\KepegawaianSeeder;
@@ -25,6 +26,7 @@ use Database\Seeders\Demo\MutuSeeder;
 use Database\Seeders\Demo\NotifikasiSeeder;
 use Database\Seeders\Demo\PerkuliahanSeeder;
 use Database\Seeders\Demo\PmbSeeder;
+use Database\Seeders\Demo\ProposalTugasAkhirSeeder;
 use Database\Seeders\Demo\RiwayatAkademikSeeder;
 use Database\Seeders\Demo\RiwayatKepegawaianSeeder;
 use Database\Seeders\Demo\RpsSeeder;
@@ -113,7 +115,15 @@ class DemoCampusSeeder extends Seeder
             // tertelusur ke mana pun.
             TugasAkhirSeeder::class,
 
+            // Sesudah TugasAkhirSeeder: prodi yang mewajibkan proposal dipilih
+            // dari mahasiswa yang belum punya tugas akhir.
+            ProposalTugasAkhirSeeder::class,
+
             KelulusanSeeder::class,
+
+            // Sesudah KelulusanSeeder: peserta KKN dipilih dari mahasiswa yang
+            // masih aktif, bukan yang baru saja diluluskan.
+            KegiatanLapanganSeeder::class,
 
             // Sesudah KelulusanSeeder, sebelum IntegrasiSeeder: satu prodi
             // kesehatan dengan lulusan yang menunggu uji kompetensi. Prodinya

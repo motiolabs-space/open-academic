@@ -8,8 +8,10 @@ use App\Enums\JenisRiwayat;
 use App\Models\Helpdesk\HelpdeskBalasan;
 use App\Models\Helpdesk\HelpdeskTiket;
 use App\Models\Kemahasiswaan\CutiMahasiswa;
+use App\Models\Kemahasiswaan\KegiatanLapanganLogbook;
 use App\Models\Kemahasiswaan\Mahasiswa;
 use App\Models\Pmb\PmbBerkas;
+use App\Models\TugasAkhir\Proposal;
 use App\Services\Berkas\BerkasService;
 use App\Support\Portal;
 use Illuminate\Database\Eloquent\Model;
@@ -98,6 +100,28 @@ class BerkasController extends Controller
         $this->authorize($balasan->is_internal ? 'handle' : 'view', $tiket);
 
         return $this->alirkan($balasan->lampiran_path, $balasan->lampiran_nama ?? 'lampiran');
+    }
+
+    /**
+     * The attachment on a KKN/PKL log entry: its author, the group's field
+     * supervisor, and staff — KegiatanLapanganLogbookPolicy.
+     */
+    public function logbookKegiatan(KegiatanLapanganLogbook $logbook): StreamedResponse
+    {
+        $this->authorize('view', $logbook);
+
+        return $this->alirkan($logbook->berkas_path, $logbook->berkas_nama ?? 'lampiran');
+    }
+
+    /**
+     * A final-project proposal version: the student, the prospective or
+     * assigned supervisor, and final-project staff — ProposalPolicy.
+     */
+    public function proposalTugasAkhir(Proposal $proposal): StreamedResponse
+    {
+        $this->authorize('view', $proposal);
+
+        return $this->alirkan($proposal->berkas_path, $proposal->berkas_nama ?? 'proposal.pdf');
     }
 
     /**
