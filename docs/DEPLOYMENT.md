@@ -16,7 +16,7 @@ dulu. Panduan ini mengasumsikan daftar itu sudah dipenuhi.
 | CPU / RAM | 2 vCPU · 4 GB | 4 vCPU · 8 GB untuk >3.000 mahasiswa |
 | PHP | 8.2+ | ekstensi `pdo_mysql`, `mbstring`, `intl`, `gd`, `zip`, `bcmath` |
 | MySQL / MariaDB | 8.0 / 10.11 | `utf8mb4_unicode_ci` |
-| Web server | Nginx atau Apache | document root **wajib** `public/` |
+| Web server | Nginx atau Apache | document root = direktori repo (berisi `index.php`); `app-core/` **wajib** ditolak — §4, [`TATA-LETAK.md`](TATA-LETAK.md) |
 | Node | 20+ | hanya saat build aset |
 | Supervisor | — | menjaga worker antrean tetap hidup |
 
@@ -26,10 +26,10 @@ dulu. Panduan ini mengasumsikan daftar itu sudah dipenuhi.
 
 ```bash
 git clone https://github.com/motiolabs-space/open-academic.git /var/www/open-academic
-cd /var/www/open-academic
+cd /var/www/open-academic/app-core
 
 composer install --no-dev --optimize-autoloader
-npm ci && npm run build
+npm ci && npm run build      # menulis ../build/, di root repo
 
 cp .env.example .env
 php artisan key:generate
@@ -73,8 +73,8 @@ akademik aktif, seluruh portal mengembalikan 503 secara sengaja.
 ```bash
 chown -R www-data:www-data /var/www/open-academic
 chmod -R 755 /var/www/open-academic
-chmod -R 775 /var/www/open-academic/storage /var/www/open-academic/bootstrap/cache
-chmod 640 /var/www/open-academic/.env
+chmod -R 775 /var/www/open-academic/app-core/storage /var/www/open-academic/app-core/bootstrap/cache
+chmod 640 /var/www/open-academic/app-core/.env
 ```
 
 ---
@@ -86,15 +86,22 @@ server {
     listen 443 ssl http2;
     server_name akademik.kampus.ac.id;
 
-    # Hanya public/ yang boleh terekspos. Mengarahkan root ke direktori
-    # proyek membuat .env dapat diunduh siapa pun.
-    root /var/www/open-academic/public;
+    # Root adalah direktori repo; aplikasinya di app-core/, DI DALAM root
+    # (TATA-LETAK.md). Apache menolaknya lewat .htaccess, tetapi Nginx tidak
+    # membaca .htaccess — tanpa tiga blok di bawah, kunci OAuth
+    # (app-core/storage/oauth-private.key), log, dan berkas unggahan privat
+    # dapat diunduh siapa pun. Letakkan sebelum blok \.php$.
+    root /var/www/open-academic;
     index index.php;
+
+    location ^~ /app-core/ { return 404; }
+    location ~ ^/(docs|tests)/ { return 404; }
+    location ~ ^/(composer\.(json|lock)|package(-lock)?\.json|phpunit\.xml|pint\.json|.*\.md)$ { return 404; }
 
     ssl_certificate     /etc/letsencrypt/live/akademik.kampus.ac.id/fullchain.pem;
     ssl_certificate_key /etc/letsencrypt/live/akademik.kampus.ac.id/privkey.pem;
 
-    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+    # Strict-Transport-Security dikirim aplikasi sendiri pada permintaan HTTPS.
 
     # Transkrip PDF dan unggahan bukti bisa besar.
     client_max_body_size 12M;
@@ -135,7 +142,7 @@ bukan sekadar fitur yang mati.
 ```ini
 [program:open-academic-worker]
 process_name=%(program_name)s_%(process_num)02d
-command=php /var/www/open-academic/artisan queue:work --queue=bridge,default --sleep=3 --tries=3 --max-time=3600
+command=php /var/www/open-academic/app-core/artisan queue:work --queue=bridge,default --sleep=3 --tries=3 --max-time=3600
 autostart=true
 autorestart=true
 user=www-data
@@ -157,7 +164,7 @@ tulisan audit saat sinkronisasi Feeder berjalan.
 ## 6. Penjadwal
 
 ```cron
-* * * * * cd /var/www/open-academic && php artisan schedule:run >> /dev/null 2>&1
+* * * * * cd /var/www/open-academic/app-core && php artisan schedule:run >> /dev/null 2>&1
 ```
 
 ---
@@ -194,7 +201,7 @@ mysqldump --single-transaction --quick --routines \
     -u "$DB_USER" -p"$DB_PASS" open_academic \
     | gzip > "$TUJUAN/db-$TANGGAL.sql.gz"
 
-tar czf "$TUJUAN/storage-$TANGGAL.tar.gz" -C /var/www/open-academic storage/app
+tar czf "$TUJUAN/storage-$TANGGAL.tar.gz" -C /var/www/open-academic/app-core storage/app
 
 find "$TUJUAN" -name '*.gz' -mtime +30 -delete
 ```
@@ -207,7 +214,7 @@ sekali. Cadangan yang belum pernah dipulihkan belum diketahui berfungsi.
 ## 9. Pembaruan
 
 ```bash
-cd /var/www/open-academic
+cd /var/www/open-academic/app-core
 php artisan down --render="errors::503"
 
 git pull origin main
@@ -233,6 +240,7 @@ yang datanya masih dipakai. Tetap ambil cadangan sebelum memperbarui.
 | Aplikasi hidup | `curl -I https://…/up` | `200` |
 | Debug mati | buka URL yang tidak ada | halaman galat polos, bukan jejak Laravel |
 | `.env` tertutup | `curl https://…/.env` | `403`/`404` |
+| `app-core/` tertutup | `curl -I https://…/app-core/storage/logs/laravel.log` dan `…/app-core/.env` | `403`/`404` |
 | Header keamanan | `curl -I https://…/masuk` | ada `Content-Security-Policy`, `X-Frame-Options` |
 | Cookie aman | periksa `Set-Cookie` | ada atribut `Secure` dan `HttpOnly` |
 | Worker jalan | `supervisorctl status` | `RUNNING` |
