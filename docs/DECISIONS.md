@@ -817,6 +817,66 @@
   seminar proposal; yang menyeminarkan proposal tetap menjadwalkannya sesudah
   pembimbing ditetapkan. Dokumen proposal bukan entitas Feeder.
 
+## ADR-030 — Tarif per SKS dan per mata kuliah ditagih dari KRS yang disetujui, ke tagihan semester yang sama; gerbang KRS hanya mengukur komponen tetap (2026-10-27)
+
+- **Konteks.** Matriks tarif hanya mengenal komponen tetap (UKT, SPP, …) yang
+  diterbitkan massal di awal semester. Kampus yang menagih per SKS tidak
+  terlayani: jumlahnya baru diketahui setelah KRS ada. Tiga kendala membentuk
+  rancangannya. (1) Satu tagihan per mahasiswa per semester adalah invarian
+  (indeks unik) yang dibaca gerbang KRS, daftar tunggakan, bebas tanggungan,
+  pengingat, dan jurnal. (2) Gerbang KRS mensyaratkan pembayaran minimum
+  *sebelum* KRS diajukan — bila tagihan per SKS ikut diukur, KRS butuh bayar
+  dan tagihan butuh KRS. (3) KRS yang disetujui ternyata **tidak dapat
+  direvisi** sama sekali (`Disetujui → []`); `krs_perubahan_selesai` hanya
+  memperpanjang masa isi draf.
+- **Keputusan.**
+  1. Komponen menjadi enum `KomponenTarif`; `per_sks` dan `mata_kuliah`
+     ditandai `dariKrs()`. `TarifResolver::untuk()` (penerbitan massal) hanya
+     komponen tetap. Baris `mata_kuliah` membawa `mata_kuliah_id` dan bersaing
+     hanya dengan baris untuk mata kuliah yang sama; komponen per MK
+     **menambah** biaya per SKS, tidak menggantikannya.
+  2. **Ditagih saat persetujuan, ke tagihan yang sama.** `TagihanKrsService::
+     sinkronkan()` dipanggil `KrsService::putuskan()` setiap kali KRS
+     disetujui. Bila tagihan semester belum ada, dibuat beserta komponen
+     tetapnya (lewat `PenerbitanTagihanService::buatTagihan()` yang sama
+     dengan penerbitan massal). Tidak ada tagihan kedua per semester.
+  3. **Selisih, bukan timpa.** Baris KRS dicocokkan per (komponen, mata
+     kuliah): yang belum ditagih ditambah; yang tertagih tetapi tidak lagi di
+     KRS dijawab **baris koreksi** yang menunjuk baris aslinya
+     (`koreksi_atas_item_id`), berjenis tagihan, bernama sama (supaya beasiswa
+     yang mencakupnya lewat nama ikut menyusut). Koreksi bernilai negatif bila
+     kelas dikeluarkan (`krs_detail.deleted_at`) sampai batas
+     `payment.krs.batas_pengurangan` (`krs_selesai` bawaan,
+     `krs_perubahan_selesai`, `tidak_pernah`), Rp0 beralasan bila sesudahnya.
+     Baris yang dikoreksi Rp0 tetap dianggap terbayar: mengambil mata kuliahnya
+     lagi tidak menagih dua kali. Tarif yang berubah sesudah ditagih tidak
+     menagih ulang.
+  4. **Revisi**: transisi baru `Disetujui → Draft` lewat `KrsService::
+     bukaRevisi()`, hanya selama `krsDibuka()`. Diajukan dan disetujui ulang
+     seperti biasa; tagihan tetap seperti persetujuan terakhir sampai itu.
+  5. **Gerbang**: `memenuhiSyaratKrs()` mengukur pembayaran terhadap
+     `pokokGerbangKrs()` = pokok × (kotor − `nominal_krs`) / kotor, bulat ke
+     bawah. Potongan dibagi proporsional karena baris potongan tidak menyebut
+     baris mana yang dibayarnya. `tagihan.nominal_krs` (neto baris KRS) disimpan
+     supaya tagihan tanpa baris KRS dijawab tanpa kueri, persis seperti dulu.
+  6. **Jatuh tempo**: hari persetujuan + `payment.krs.jatuh_tempo_hari`, hanya
+     bila lebih lambat dari jatuh tempo tagihan yang ada.
+  7. **Akuntansi**: tagihan yang dibuat saat persetujuan → invoice biasa;
+     baris pada tagihan yang sudah terbit → jurnal per baris (`oa-krs-{id}`,
+     Dr Piutang/Cr Pendapatan, sebaliknya untuk koreksi).
+- **Konsekuensi.** Tidak ada lingkaran: kampus tetap+per SKS mengunci KRS pada
+  komponen tetap; kampus per SKS murni tidak pernah terkunci oleh tagihannya
+  sendiri (tidak ada tagihan sebelum persetujuan; sesudahnya porsi tetapnya
+  nol). Memundurkan jatuh tempo untuk baris baru juga memundurkan jam denda
+  porsi tetap yang sudah lewat — diterima, karena mahasiswa itu sudah lolos
+  gerbang dan denda adalah dorongan, bukan pendapatan. Selama revisi KRS
+  berstatus draf dan mahasiswa tidak tampil di daftar kelas/presensi; itu
+  harga revisi dan alasan jendelanya ditutup bersama masa perubahan.
+  Perubahan potongan beasiswa akibat penyesuaian tidak dijurnalkan (celah yang
+  sama dengan penetapan beasiswa sesudah terbit). Baris KRS yang ditulis
+  konversi KKN/MBKM tidak memicu penagihan; ikut tertagih pada persetujuan
+  berikutnya.
+
 ## ADR-031 — Pemakaian ruang: laporan baca dari dua jadwal, ditelusuri per tanggal, penyebutnya jam operasional kampus (2026-10-27)
 
 - **Konteks.** Roadmap #42. Bentrok ruang sudah dicegah oleh `JadwalService`

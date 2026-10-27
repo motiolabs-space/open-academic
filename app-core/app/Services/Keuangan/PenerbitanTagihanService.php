@@ -106,28 +106,7 @@ class PenerbitanTagihanService
             // Per student, not one transaction for the cohort: a single bad row
             // must not roll back four thousand correct invoices.
             DB::transaction(function () use ($mahasiswa, $term, $tarif, &$hasil): void {
-                $total = (int) $tarif->sum('nominal');
-
-                $tagihan = Tagihan::create([
-                    'nomor' => 'INV-'.$term->kode.'-'.Str::upper(Str::random(8)),
-                    'mahasiswa_id' => $mahasiswa->id,
-                    'tahun_akademik_id' => $term->id,
-                    'keterangan' => 'Biaya kuliah '.$term->nama,
-                    'total' => $total,
-                    'terbayar' => 0,
-                    'status' => InvoiceStatus::BelumBayar,
-                    'jatuh_tempo' => now()->addDays((int) config('payment.invoice.due_days', 30)),
-                ]);
-
-                foreach ($tarif as $baris) {
-                    TagihanItem::create([
-                        'tagihan_id' => $tagihan->id,
-                        'tarif_id' => $baris->id,
-                        'jenis' => JenisItemTagihan::Tagihan,
-                        'nama' => $baris->nama,
-                        'nominal' => $baris->nominal,
-                    ]);
-                }
+                $tagihan = $this->buatTagihan($mahasiswa, $term, $tarif);
 
                 /*
                  * Reductions are applied before the invoice is announced.
@@ -170,6 +149,42 @@ class PenerbitanTagihanService
         }
 
         return $hasil;
+    }
+
+    /**
+     * Creates the term invoice with its fixed lines — nothing else.
+     *
+     * Shared with `TagihanKrsService`, which opens the invoice itself when a
+     * plan is approved before any cohort run reached the student. Reductions,
+     * the announcement and the ledger are left to the caller, which knows
+     * whether more lines are about to follow.
+     *
+     * @param Collection<int, Tarif> $tarif
+     */
+    public function buatTagihan(Mahasiswa $mahasiswa, TahunAkademik $term, Collection $tarif): Tagihan
+    {
+        $tagihan = Tagihan::create([
+            'nomor' => 'INV-'.$term->kode.'-'.Str::upper(Str::random(8)),
+            'mahasiswa_id' => $mahasiswa->id,
+            'tahun_akademik_id' => $term->id,
+            'keterangan' => 'Biaya kuliah '.$term->nama,
+            'total' => (int) $tarif->sum('nominal'),
+            'terbayar' => 0,
+            'status' => InvoiceStatus::BelumBayar,
+            'jatuh_tempo' => now()->addDays((int) config('payment.invoice.due_days', 30)),
+        ]);
+
+        foreach ($tarif as $baris) {
+            TagihanItem::create([
+                'tagihan_id' => $tagihan->id,
+                'tarif_id' => $baris->id,
+                'jenis' => JenisItemTagihan::Tagihan,
+                'nama' => $baris->nama,
+                'nominal' => $baris->nominal,
+            ]);
+        }
+
+        return $tagihan;
     }
 
     /** @return Collection<int, Mahasiswa> */

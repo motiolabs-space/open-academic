@@ -7,9 +7,13 @@ namespace Database\Seeders\Demo;
 use App\DTOs\Keuangan\AturanDenda;
 use App\Enums\BentukDenda;
 use App\Enums\InvoiceStatus;
+use App\Enums\KomponenTarif;
+use App\Enums\KrsStatus;
 use App\Enums\PaymentStatus;
 use App\Enums\PeriodeDenda;
 use App\Enums\StudentStatus;
+use App\Models\Akademik\Krs;
+use App\Models\Akademik\MataKuliah;
 use App\Models\Akademik\Prodi;
 use App\Models\Akademik\TahunAkademik;
 use App\Models\Kemahasiswaan\Mahasiswa;
@@ -19,6 +23,8 @@ use App\Models\Keuangan\TagihanItem;
 use App\Models\Keuangan\Tarif;
 use App\Models\Sdm\Staff;
 use App\Services\Keuangan\DendaService;
+use App\Services\Keuangan\PembayaranService;
+use App\Services\Keuangan\TagihanKrsService;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Collection;
 
@@ -27,9 +33,17 @@ use Illuminate\Support\Collection;
  *
  * The demo cohort spans all three settlement states on purpose: the KRS lock
  * only means something if some students are actually blocked by it.
+ *
+ * Sistem Informasi bills by credit (#41, ADR-030): a fixed SPP issued up front,
+ * then a rate per SKS and two paid labs charged when the advisor approves the
+ * KRS. Its students with an approved plan carry those lines already; approving
+ * one of the plans still waiting shows the invoice grow.
  */
 class KeuanganSeeder extends Seeder
 {
+    /** Sistem Informasi: the programme that bills by credit. */
+    private const PRODI_PER_SKS = '57201';
+
     public function run(): void
     {
         $this->seedTarif();
@@ -44,6 +58,8 @@ class KeuanganSeeder extends Seeder
 
             $this->buatPembayaran($tagihan, $index);
         }
+
+        $this->seedTagihanKrs($term);
 
         $this->seedDenda();
     }
@@ -85,9 +101,63 @@ class KeuanganSeeder extends Seeder
         }
     }
 
+    /**
+     * Per-credit charges for the plans already approved, through the same
+     * service an advisor's approval calls — so the lines, the extended due date
+     * and the recomputed status are exactly what the live path produces.
+     */
+    private function seedTagihanKrs(TahunAkademik $term): void
+    {
+        $prodi = Prodi::where('kode', self::PRODI_PER_SKS)->first();
+
+        if ($prodi === null) {
+            return;
+        }
+
+        /** @var TagihanKrsService $layanan */
+        $layanan = app(TagihanKrsService::class);
+
+        Krs::query()
+            ->where('tahun_akademik_id', $term->id)
+            ->where('status', KrsStatus::Disetujui->value)
+            ->whereHas('mahasiswa', fn ($q) => $q->where('prodi_id', $prodi->id))
+            ->get()
+            ->each(function (Krs $krs) use ($layanan): void {
+                $lunas = Tagihan::where('mahasiswa_id', $krs->mahasiswa_id)
+                    ->where('tahun_akademik_id', $krs->tahun_akademik_id)
+                    ->first()?->status === InvoiceStatus::Lunas;
+
+                $tagihan = $layanan->sinkronkan($krs);
+
+                // The settled share of the cohort stays settled: these students
+                // paid the per-credit lines too. Without it the demo login —
+                // a student of this programme — would be withheld an exam card.
+                if ($lunas && $tagihan !== null && $tagihan->sisa() > 0) {
+                    Pembayaran::create([
+                        'tagihan_id' => $tagihan->id,
+                        'mahasiswa_id' => $tagihan->mahasiswa_id,
+                        'nomor_transaksi' => 'TRX-KRS-'.$tagihan->id,
+                        'gateway' => 'manual',
+                        'channel' => 'bca_va',
+                        'nominal' => $tagihan->sisa(),
+                        'status' => PaymentStatus::Settlement,
+                        'paid_at' => now()->subDay(),
+                    ]);
+
+                    app(PembayaranService::class)->hitungUlang($tagihan);
+                }
+            });
+    }
+
     private function seedTarif(): void
     {
-        foreach (Prodi::all() as $prodi) {
+        $perSks = Prodi::where('kode', self::PRODI_PER_SKS)->first();
+
+        if ($perSks !== null) {
+            $this->seedTarifPerSks($perSks);
+        }
+
+        foreach (Prodi::where('id', '!=', $perSks?->id ?? 0)->get() as $prodi) {
             // UKT bands: the same programme charges different amounts by the
             // household income band assigned at admission.
             $ukt = [
@@ -119,11 +189,50 @@ class KeuanganSeeder extends Seeder
         }
 
         Tarif::create([
-            'komponen' => 'registrasi',
+            'komponen' => KomponenTarif::Registrasi,
             'nama' => 'Registrasi Ulang',
             'nominal' => 150_000,
             'is_active' => true,
         ]);
+    }
+
+    private function seedTarifPerSks(Prodi $prodi): void
+    {
+        Tarif::create([
+            'prodi_id' => $prodi->id,
+            'komponen' => KomponenTarif::Spp,
+            'nama' => 'SPP Tetap',
+            'nominal' => 1_250_000,
+            'is_active' => true,
+        ]);
+
+        Tarif::create([
+            'prodi_id' => $prodi->id,
+            'komponen' => KomponenTarif::PerSks,
+            'nama' => 'Biaya per SKS',
+            'nominal' => 175_000,
+            'is_active' => true,
+        ]);
+
+        $praktikum = [
+            'SI1202' => 'Praktikum Sistem Basis Data',
+            'SI2102' => 'Praktikum Pemrograman Berbasis Web',
+        ];
+
+        foreach ($praktikum as $kode => $nama) {
+            $mk = MataKuliah::where('prodi_id', $prodi->id)->where('kode', $kode)->first();
+
+            if ($mk !== null) {
+                Tarif::create([
+                    'prodi_id' => $prodi->id,
+                    'komponen' => KomponenTarif::MataKuliah,
+                    'mata_kuliah_id' => $mk->id,
+                    'nama' => $nama,
+                    'nominal' => 300_000,
+                    'is_active' => true,
+                ]);
+            }
+        }
     }
 
     /** @param Collection<int, Tarif> $tarif */
@@ -132,6 +241,8 @@ class KeuanganSeeder extends Seeder
         $golongan = ['I', 'II', 'III', 'IV', 'V'][$index % 5];
 
         $komponen = $tarif
+            // Charges that follow from the plan are billed on approval, not here.
+            ->reject(fn (Tarif $t): bool => $t->komponen->dariKrs())
             ->filter(fn (Tarif $t): bool => $t->prodi_id === null || $t->prodi_id === $student->prodi_id)
             ->filter(fn (Tarif $t): bool => $t->golongan_ukt === null || $t->golongan_ukt === $golongan);
 

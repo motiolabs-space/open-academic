@@ -169,6 +169,7 @@ Route::middleware(['auth:mahasiswa', 'term.active'])->prefix('mahasiswa')->name(
     Route::get('/ktm', [Mahasiswa\CetakController::class, 'ktm'])->name('ktm');
     Route::get('/kartu-ujian', [Mahasiswa\CetakController::class, 'kartuUjian'])->name('kartu-ujian');
     Route::post('/krs/ajukan', [Mahasiswa\KrsController::class, 'ajukan'])->name('krs.ajukan');
+    Route::post('/krs/revisi', [Mahasiswa\KrsController::class, 'revisi'])->name('krs.revisi');
 
     Route::get('/jadwal', Mahasiswa\JadwalController::class)->name('jadwal');
     Route::get('/jadwal-ujian', Mahasiswa\JadwalUjianController::class)->name('jadwal-ujian');

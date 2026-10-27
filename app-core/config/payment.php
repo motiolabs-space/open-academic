@@ -69,6 +69,33 @@ return [
     |
     */
 
+    /*
+    |--------------------------------------------------------------------------
+    | Tagihan dari KRS (tarif per SKS dan per mata kuliah)
+    |--------------------------------------------------------------------------
+    |
+    | Komponen `per_sks` dan `mata_kuliah` di matriks tarif tidak ikut terbit
+    | massal: ditagih ketika Dosen Wali menyetujui KRS, ke tagihan semester yang
+    | sama. Lihat ADR-030.
+    |
+    | `jatuh_tempo_hari` — hari sesudah persetujuan KRS. Bila tagihan semester
+    | jatuh tempo lebih lambat, tanggal itu yang dipakai; tidak pernah dimajukan.
+    |
+    | `batas_pengurangan` — sampai kapan kelas yang dibatalkan saat revisi KRS
+    | masih mengurangi tagihan:
+    |   krs_selesai           : sampai penutupan pengisian KRS reguler (bawaan);
+    |   krs_perubahan_selesai : sampai penutupan masa perubahan KRS;
+    |   tidak_pernah          : pembatalan tidak pernah mengurangi tagihan.
+    | Pembatalan sesudah batas tetap dicatat sebagai baris Rp0 di tagihan,
+    | supaya mahasiswa melihat kenapa angkanya tidak turun.
+    |
+    */
+
+    'krs' => [
+        'jatuh_tempo_hari' => (int) env('PAYMENT_KRS_JATUH_TEMPO_HARI', 14),
+        'batas_pengurangan' => env('PAYMENT_KRS_BATAS_PENGURANGAN', 'krs_selesai'),
+    ],
+
     'denda' => [
         'aktif' => (bool) env('PAYMENT_DENDA_AKTIF', false),
         'bentuk' => env('PAYMENT_DENDA_BENTUK', 'nominal'),

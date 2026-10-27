@@ -21,6 +21,7 @@ use App\Models\Sdm\Dosen;
 use App\Notifications\Akademik\KrsDiputus;
 use App\Services\Bridge\BridgeEventPublisher;
 use App\Services\Edom\EdomService;
+use App\Services\Keuangan\TagihanKrsService;
 use App\Services\Notifikasi\Notifier;
 use Illuminate\Support\Facades\DB;
 
@@ -45,6 +46,7 @@ class KrsService
         private readonly BridgeEventPublisher $bridge,
         private readonly Notifier $notifier,
         private readonly EdomService $edom,
+        private readonly TagihanKrsService $tagihanKrs,
     ) {}
 
     /**
@@ -252,6 +254,14 @@ class KrsService
         if ($keputusan->disetujui) {
             $this->catatStatusSemester($krs);
 
+            /*
+             * Per-credit and per-course charges, billed now that the plan is
+             * a purchase — and re-billed on every re-approval after a
+             * revision, which writes only the difference. A campus without
+             * such tariffs gets nothing here. See ADR-030.
+             */
+            $this->tagihanKrs->sinkronkan($krs->refresh());
+
             // Open Campus keeps enrolment-derived features fresh from this
             // rather than polling the registry.
             $this->bridge->publish('krs.approved', [
@@ -280,6 +290,34 @@ class KrsService
          * happened.
          */
         $this->notifier->kirim($krs->mahasiswa, new KrsDiputus($krs->refresh(), $keputusan->catatan));
+
+        return $krs->refresh();
+    }
+
+    /**
+     * Reopens an approved plan for revision, while the KRS window is open.
+     *
+     * The plan goes back to draft and must be submitted and approved again,
+     * like any other change to it: an advisor who approved eighteen credits has
+     * not approved twenty-one. Its charges stay as they were until that
+     * re-approval, which bills the difference — a class added costs more, a
+     * class dropped before `payment.krs.batas_pengurangan` costs less.
+     *
+     * Until then the plan is not approved, with everything that follows from
+     * it: class rosters read approved plans only. That is the price of a
+     * revision, and the reason it closes with the change window.
+     */
+    public function bukaRevisi(Krs $krs): Krs
+    {
+        $this->pastikanTransisi($krs, KrsStatus::Draft);
+        $this->pastikanJendelaKrsTerbuka($krs->tahunAkademik);
+        $this->pastikanMahasiswaBolehMengisi($krs->mahasiswa);
+
+        $krs->update([
+            'status' => KrsStatus::Draft,
+            'disetujui_at' => null,
+            'catatan_wali' => null,
+        ]);
 
         return $krs->refresh();
     }
