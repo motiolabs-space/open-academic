@@ -208,6 +208,13 @@ it('membuka layar admin dalam anggaran kueri', function (string $url, int $angga
     ['/admin/jadwal-ujian/susun', 12],
     ['/admin/kalender', 18],
     ['/admin/kalender/peristiwa', 12],
+    // Pemakaian ruang: ruang, gedung, slot kuliah, ruang ujian terbit, peserta,
+    // dan libur — satu kueri masing-masing, berapa pun banyaknya ruang.
+    ['/admin/pemanfaatan-ruang', 16],
+    ['/admin/pemanfaatan-ruang?urut=terkosong&ruang=00000000-0000-0000-0000-000000000000', 16],
+    ['/admin/pemanfaatan-ruang/ruang-kosong', 10],
+    ['/admin/pemanfaatan-ruang/ruang-kosong?hari=1&jam_mulai=08:00&jam_selesai=10:00&kapasitas_min=30', 13],
+    ['/admin/pemanfaatan-ruang/ruang-kosong?tanggal=2026-10-14&jam_mulai=08:00&jam_selesai=10:00', 15],
 
     // Ditambahkan 18 Agu 2026 sesudah layar ini ditemukan 500 di MySQL: view-nya
     // merender `prodiPilihan2` yang tidak ikut di-eager-load, dan penjaga N+1

@@ -88,6 +88,7 @@ Akun demo: `admin@demo.test` · kata sandi `password`
 | — | Dasbor | `/admin` |
 | **AKADEMIK** | Master Akademik | `/admin/master` |
 | | Jadwal & Kelas | `/admin/kelas` |
+| | Pemakaian Ruang | `/admin/pemanfaatan-ruang` — ekspor CSV, pencarian ruang kosong di `/admin/pemanfaatan-ruang/ruang-kosong` |
 | | Padanan & Paket | `/admin/kurikulum-lanjutan` |
 | | Koreksi Nilai | `/admin/koreksi-nilai` |
 | | Penutupan Semester | `/admin/tutup-semester` |
@@ -157,6 +158,26 @@ menunggu payment gateway. **Bawaan nonaktif**; aturannya kebijakan kampus di
 | Yang dilihat mahasiswa | Baris denda berlabel, lencana penjelasan aturan (bila aktif), denda berjalan, atau pembebasan beserta alasannya. Pengingat jatuh tempo menyebut aturan dan denda yang sudah berjalan |
 | Belum | Denda **tidak dijurnalkan** ke integrasi akuntansi — pendapatan denda perlu kode akun yang belum ada di bagan; menyusul bersama keputusan perlakuannya |
 
+## Tarif per SKS / per mata kuliah
+
+Bagian dari **Matriks Tarif** (`/admin/tarif`). Dua komponen baru di samping
+UKT/SPP/praktikum/registrasi/wisuda/lainnya — daftar komponennya kini enum
+`KomponenTarif`, bukan konstanta di controller. Keputusan: ADR-030.
+
+| Hal | Bagaimana |
+|---|---|
+| Komponen | `per_sks` — nominal adalah tarif **satu SKS**, per prodi/angkatan/jalur/golongan seperti baris lain (paling spesifik menang). `mata_kuliah` — nominal tetap untuk satu mata kuliah (`tarif.mata_kuliah_id`), mis. praktikum berbayar atau KKN; bersaing hanya dengan baris untuk mata kuliah yang sama. Keduanya **menambah**, tidak menggantikan satu sama lain |
+| Kapan ditagih | **Bukan** di penerbitan massal (`TarifResolver::untuk()` hanya komponen tetap). `TagihanKrsService::sinkronkan()` dipanggil `KrsService::putuskan()` setiap kali Dosen Wali menyetujui KRS, ke tagihan semester yang sama; bila belum ada tagihan, dibuat beserta komponen tetapnya. Kampus tanpa tarif per SKS/per MK tidak melihat tagihan apa pun muncul saat persetujuan |
+| Baris | Satu baris per mata kuliah per komponen: "Biaya per SKS — Basis Data (3 SKS × Rp175.000)". `tagihan_item` mencatat `komponen`, `mata_kuliah_id`, `krs_detail_id`. Dicocokkan per **mata kuliah**: pindah kelas A → B tidak menagih ulang. Tarif yang berubah sesudah ditagih tidak menagih ulang |
+| Revisi KRS | `KrsService::bukaRevisi()` (tombol *Revisi KRS* di portal mahasiswa) mengembalikan KRS disetujui ke draf selama `krsDibuka()`; harus diajukan dan disetujui ulang. Persetujuan ulang menulis selisihnya saja |
+| Pembatalan kelas | Baris **koreksi** (`koreksi_atas_item_id`) — tidak pernah menimpa. Sebelum batas: nominal negatif sebesar baris aslinya. Sesudah batas: Rp0 beralasan, supaya mahasiswa melihat kenapa angkanya tidak turun; mengambilnya lagi tidak menagih dua kali. Batas: `PAYMENT_KRS_BATAS_PENGURANGAN` = `krs_selesai` (bawaan) · `krs_perubahan_selesai` · `tidak_pernah`, dinilai pada tanggal kelas dikeluarkan (`krs_detail.deleted_at`) |
+| Jatuh tempo | Hari persetujuan + `PAYMENT_KRS_JATUH_TEMPO_HARI` (bawaan 14), tidak pernah memajukan jatuh tempo yang lebih lambat |
+| Gerbang KRS | Diukur terhadap **komponen tetap** saja: `pokokGerbangKrs()` = pokok × (kotor − `nominal_krs`) / kotor — potongan dibagi proporsional. Tanpa baris KRS sama persis dengan sebelumnya. Kampus yang hanya menagih per SKS tidak pernah terkunci oleh tagihannya sendiri |
+| Potongan, beasiswa, denda | `PotonganService::terapkan()` dijalankan ulang tiap penyesuaian — beasiswa persentase ikut mencakup baris baru (pola `komponen` beasiswa mencocokkan nama baris, mis. "SKS"). Total tak pernah negatif; koreksi sesudah pembayaran memunculkan `kelebihanBayar()`, pembayaran tidak disentuh. Denda berjalan atas sisa pokok yang kini memuat baris KRS |
+| Akuntansi | Tagihan baru: dokumen invoice seperti biasa. Tagihan yang sudah terbit: jurnal per baris `oa-krs-{id}` — Dr Piutang/Cr Pendapatan untuk tagihan, sebaliknya untuk koreksi; koreksi Rp0 tidak dijurnalkan |
+| Demo | Sistem Informasi: SPP Tetap Rp1.250.000 + Rp175.000/SKS + praktikum Sistem Basis Data dan Pemrograman Berbasis Web Rp300.000. KRS yang sudah disetujui sudah bertagihan; menyetujui yang masih menunggu menambah barisnya |
+| Belum | Perubahan potongan beasiswa akibat penyesuaian **tidak dijurnalkan** (celah yang sama dengan penetapan beasiswa sesudah terbit). Baris KRS hasil konversi KKN/MBKM (`KegiatanLapanganService`) tidak memicu penagihan sendiri — ikut tertagih pada persetujuan berikutnya |
+
 ---
 
 # BAGIAN II — BELUM DIBUAT
@@ -169,7 +190,7 @@ menunggu payment gateway. **Bawaan nonaktif**; aturannya kebijakan kampus di
 | **Adaptor payment gateway** | **Tertahan di luar repo** — kontraknya sudah ada, yang kurang kredensial merchant + endpoint notifikasi yang terverifikasi tanda tangannya. Tanpa verifikasi, siapa pun yang menjangkau endpoint itu bisa melunasi tagihan mana pun |
 | Federasi ke IdP eksternal | Google / Entra / Keycloak. Open Academic sudah jadi *penerbit* identitas; jadi *konsumen* belum |
 | ~~Denda keterlambatan~~ | **Selesai 24 Okt 2026** — lihat §Denda keterlambatan di Bagian I |
-| Monitoring pemakaian ruang | Bentrok jadwal sudah terdeteksi; pemanfaatan ruangnya belum terlihat |
+| ~~Monitoring pemakaian ruang~~ | **Selesai 27 Okt 2026 (#42)** — `/admin/pemanfaatan-ruang`. Lihat ADR-031 |
 | Career center | Lowongan, forum & agenda alumni. Tabel `alumni` sudah ada sebagai dasar — tapi instrumennya milik Open Campus |
 | ~~**Enam formulir SISTER**~~ | **Selesai 27 Okt 2026 (#39)** — keenamnya plus delapan riwayat baru diisi dosen di `/dosen/kepegawaian` dan divalidasi di `/admin/kepegawaian/validasi`. Lihat [`KEPEGAWAIAN.md`](KEPEGAWAIAN.md) |
 | ~~Helpdesk~~ | **Selesai 24 Okt 2026** — `/mahasiswa/helpdesk`, `/dosen/helpdesk`, `/admin/helpdesk`, FAQ publik `/bantuan`. Lihat [`HELPDESK.md`](HELPDESK.md) |

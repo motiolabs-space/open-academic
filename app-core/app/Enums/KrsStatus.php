@@ -9,8 +9,10 @@ namespace App\Enums;
  *
  * draft -> diajukan -> disetujui | ditolak
  *
- * A rejected KRS returns to draft so the student can revise it; every
- * transition is an event recorded in the activity log, never an overwrite.
+ * A rejected KRS returns to draft so the student can revise it, and an approved
+ * one may be reopened to draft while the KRS window is still open (see
+ * KrsService::bukaRevisi). Every transition is an event recorded in the
+ * activity log, never an overwrite.
  */
 enum KrsStatus: string
 {
@@ -58,7 +60,7 @@ enum KrsStatus: string
             self::Draft => [self::Diajukan],
             self::Diajukan => [self::Disetujui, self::Ditolak],
             self::Ditolak => [self::Diajukan],
-            self::Disetujui => [],
+            self::Disetujui => [self::Draft],
         };
     }
 

@@ -140,6 +140,7 @@ final class Navigation
                     self::item('Jadwal & Kelas', '◫', 'admin.kelas'),
                     self::item('Jadwal Ujian', '◪', 'admin.jadwal-ujian.index'),
                     self::item('Kalender Akademik', '▣', 'admin.kalender'),
+                    self::item('Pemakaian Ruang', '▦', 'admin.pemanfaatan-ruang.index'),
                     self::item('Padanan & Paket', '⇄', 'admin.kurikulum-lanjutan'),
                     self::item('Koreksi Nilai', '✎', 'admin.koreksi-nilai'),
                     self::item('Penutupan Semester', '⊟', 'admin.tutup-semester'),

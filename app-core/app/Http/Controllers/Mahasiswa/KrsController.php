@@ -128,6 +128,18 @@ class KrsController extends Controller
         return back()->with('krs_diajukan', true);
     }
 
+    /** Reopens the approved plan for revision; see KrsService::bukaRevisi(). */
+    public function revisi(): RedirectResponse
+    {
+        $krs = $this->krsService->bukaAtauAmbil(Portal::user(), Portal::term());
+
+        $this->authorize('revisi', $krs);
+
+        $this->krsService->bukaRevisi($krs);
+
+        return back()->with('sukses', __('krs.revisi_dibuka'));
+    }
+
     /**
      * Kelas yang boleh dipertimbangkan mahasiswa, masing-masing diberi catatan
      * kenapa ia dapat atau tidak dapat diambil.

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Models\Keuangan;
 
+use App\Enums\KomponenTarif;
+use App\Models\Akademik\MataKuliah;
 use App\Models\Akademik\Prodi;
 use App\Traits\HasLogAktivitas;
 use App\Traits\HasUuid;
@@ -20,6 +22,12 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * year, admission path, UKT band) either matches or is left null as a
  * wildcard. The most specific matching row wins, so a general fallback and a
  * programme-specific override can coexist.
+ *
+ * A `per_sks` row's nominal is a rate per credit; a `mata_kuliah` row prices
+ * the one course it names. Both are billed from the approved KRS rather than
+ * issued up front — see KomponenTarif and ADR-030.
+ *
+ * @property KomponenTarif $komponen
  */
 class Tarif extends Model
 {
@@ -35,6 +43,7 @@ class Tarif extends Model
     protected function casts(): array
     {
         return [
+            'komponen' => KomponenTarif::class,
             'nominal' => 'integer',
             'is_active' => 'boolean',
         ];
@@ -45,12 +54,23 @@ class Tarif extends Model
         return $this->belongsTo(Prodi::class);
     }
 
+    public function mataKuliah(): BelongsTo
+    {
+        return $this->belongsTo(MataKuliah::class);
+    }
+
     /** Number of declared (non-wildcard) dimensions — higher wins a tie. */
     public function spesifisitas(): int
     {
         return collect([$this->prodi_id, $this->angkatan, $this->jalur_masuk, $this->golongan_ukt])
             ->filter()
             ->count();
+    }
+
+    /** @param Builder<self> $query */
+    public function scopeTetap(Builder $query): Builder
+    {
+        return $query->whereNotIn('komponen', KomponenTarif::nilaiDariKrs());
     }
 
     /** @param Builder<self> $query */

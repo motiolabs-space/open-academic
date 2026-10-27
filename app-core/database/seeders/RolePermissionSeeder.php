@@ -32,6 +32,10 @@ class RolePermissionSeeder extends Seeder
             // calendar. Reading it needs no permission of its own.
             'kalender.manage',
 
+            // Reading the room-utilisation report (#42). Maintaining rooms is
+            // master.manage; this only reads how the timetables use them.
+            'ruang.view',
+
             'krs.view', 'krs.manage',
             'nilai.view', 'nilai.manage',
             'presensi.view',
@@ -118,7 +122,7 @@ class RolePermissionSeeder extends Seeder
             'super-admin' => '*',
             'baak' => [
                 'master.view', 'master.manage', 'mahasiswa.view', 'mahasiswa.manage',
-                'dosen.view', 'kelas.view', 'kelas.manage', 'kalender.manage', 'krs.view', 'krs.manage',
+                'dosen.view', 'kelas.view', 'kelas.manage', 'kalender.manage', 'ruang.view', 'krs.view', 'krs.manage',
                 'nilai.view', 'presensi.view', 'pmb.view', 'pmb.manage',
                 'tugas_akhir.view', 'tugas_akhir.manage',
                 'surat.view', 'surat.manage',
@@ -135,11 +139,17 @@ class RolePermissionSeeder extends Seeder
                 'helpdesk.view', 'helpdesk.tangani',
             ],
 
+            // Facilities: which rooms overflow and which sit empty, without
+            // the timetable's editing screens.
+            'sarpras' => [
+                'master.view', 'ruang.view', 'helpdesk.view', 'helpdesk.tangani',
+            ],
+
             // Leadership reads results but does not open, close, or reword a
             // period — an instrument whose questions can be edited by the person
             // being judged by them measures nothing.
             'pimpinan' => [
-                'master.view', 'mahasiswa.view', 'dosen.view', 'kelas.view',
+                'master.view', 'mahasiswa.view', 'dosen.view', 'kelas.view', 'ruang.view',
                 'keuangan.view', 'feeder.view', 'edom.view', 'helpdesk.view',
             ],
         ],

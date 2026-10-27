@@ -817,6 +817,111 @@
   seminar proposal; yang menyeminarkan proposal tetap menjadwalkannya sesudah
   pembimbing ditetapkan. Dokumen proposal bukan entitas Feeder.
 
+## ADR-030 — Tarif per SKS dan per mata kuliah ditagih dari KRS yang disetujui, ke tagihan semester yang sama; gerbang KRS hanya mengukur komponen tetap (2026-10-27)
+
+- **Konteks.** Matriks tarif hanya mengenal komponen tetap (UKT, SPP, …) yang
+  diterbitkan massal di awal semester. Kampus yang menagih per SKS tidak
+  terlayani: jumlahnya baru diketahui setelah KRS ada. Tiga kendala membentuk
+  rancangannya. (1) Satu tagihan per mahasiswa per semester adalah invarian
+  (indeks unik) yang dibaca gerbang KRS, daftar tunggakan, bebas tanggungan,
+  pengingat, dan jurnal. (2) Gerbang KRS mensyaratkan pembayaran minimum
+  *sebelum* KRS diajukan — bila tagihan per SKS ikut diukur, KRS butuh bayar
+  dan tagihan butuh KRS. (3) KRS yang disetujui ternyata **tidak dapat
+  direvisi** sama sekali (`Disetujui → []`); `krs_perubahan_selesai` hanya
+  memperpanjang masa isi draf.
+- **Keputusan.**
+  1. Komponen menjadi enum `KomponenTarif`; `per_sks` dan `mata_kuliah`
+     ditandai `dariKrs()`. `TarifResolver::untuk()` (penerbitan massal) hanya
+     komponen tetap. Baris `mata_kuliah` membawa `mata_kuliah_id` dan bersaing
+     hanya dengan baris untuk mata kuliah yang sama; komponen per MK
+     **menambah** biaya per SKS, tidak menggantikannya.
+  2. **Ditagih saat persetujuan, ke tagihan yang sama.** `TagihanKrsService::
+     sinkronkan()` dipanggil `KrsService::putuskan()` setiap kali KRS
+     disetujui. Bila tagihan semester belum ada, dibuat beserta komponen
+     tetapnya (lewat `PenerbitanTagihanService::buatTagihan()` yang sama
+     dengan penerbitan massal). Tidak ada tagihan kedua per semester.
+  3. **Selisih, bukan timpa.** Baris KRS dicocokkan per (komponen, mata
+     kuliah): yang belum ditagih ditambah; yang tertagih tetapi tidak lagi di
+     KRS dijawab **baris koreksi** yang menunjuk baris aslinya
+     (`koreksi_atas_item_id`), berjenis tagihan, bernama sama (supaya beasiswa
+     yang mencakupnya lewat nama ikut menyusut). Koreksi bernilai negatif bila
+     kelas dikeluarkan (`krs_detail.deleted_at`) sampai batas
+     `payment.krs.batas_pengurangan` (`krs_selesai` bawaan,
+     `krs_perubahan_selesai`, `tidak_pernah`), Rp0 beralasan bila sesudahnya.
+     Baris yang dikoreksi Rp0 tetap dianggap terbayar: mengambil mata kuliahnya
+     lagi tidak menagih dua kali. Tarif yang berubah sesudah ditagih tidak
+     menagih ulang.
+  4. **Revisi**: transisi baru `Disetujui → Draft` lewat `KrsService::
+     bukaRevisi()`, hanya selama `krsDibuka()`. Diajukan dan disetujui ulang
+     seperti biasa; tagihan tetap seperti persetujuan terakhir sampai itu.
+  5. **Gerbang**: `memenuhiSyaratKrs()` mengukur pembayaran terhadap
+     `pokokGerbangKrs()` = pokok × (kotor − `nominal_krs`) / kotor, bulat ke
+     bawah. Potongan dibagi proporsional karena baris potongan tidak menyebut
+     baris mana yang dibayarnya. `tagihan.nominal_krs` (neto baris KRS) disimpan
+     supaya tagihan tanpa baris KRS dijawab tanpa kueri, persis seperti dulu.
+  6. **Jatuh tempo**: hari persetujuan + `payment.krs.jatuh_tempo_hari`, hanya
+     bila lebih lambat dari jatuh tempo tagihan yang ada.
+  7. **Akuntansi**: tagihan yang dibuat saat persetujuan → invoice biasa;
+     baris pada tagihan yang sudah terbit → jurnal per baris (`oa-krs-{id}`,
+     Dr Piutang/Cr Pendapatan, sebaliknya untuk koreksi).
+- **Konsekuensi.** Tidak ada lingkaran: kampus tetap+per SKS mengunci KRS pada
+  komponen tetap; kampus per SKS murni tidak pernah terkunci oleh tagihannya
+  sendiri (tidak ada tagihan sebelum persetujuan; sesudahnya porsi tetapnya
+  nol). Memundurkan jatuh tempo untuk baris baru juga memundurkan jam denda
+  porsi tetap yang sudah lewat — diterima, karena mahasiswa itu sudah lolos
+  gerbang dan denda adalah dorongan, bukan pendapatan. Selama revisi KRS
+  berstatus draf dan mahasiswa tidak tampil di daftar kelas/presensi; itu
+  harga revisi dan alasan jendelanya ditutup bersama masa perubahan.
+  Perubahan potongan beasiswa akibat penyesuaian tidak dijurnalkan (celah yang
+  sama dengan penetapan beasiswa sesudah terbit). Baris KRS yang ditulis
+  konversi KKN/MBKM tidak memicu penagihan; ikut tertagih pada persetujuan
+  berikutnya.
+
+## ADR-031 — Pemakaian ruang: laporan baca dari dua jadwal, ditelusuri per tanggal, penyebutnya jam operasional kampus (2026-10-27)
+
+- **Konteks.** Roadmap #42. Bentrok ruang sudah dicegah oleh `JadwalService`
+  (kuliah) dan `JadwalUjianService` (ujian, #34), dan libur akademik sudah
+  terbit dari kalender (#35). Yang tidak terlihat: seberapa terpakai tiap ruang,
+  ruang mana yang selalu sesak, dan ruang mana yang kosong ketika staf mencari
+  tempat untuk satu kelas atau satu sesi ujian. Pemanfaatan adalah rasio, dan
+  penyebutnya — kapan ruang *bisa* dipakai — tidak tercatat di mana pun.
+- **Keputusan.** (1) **Laporan, bukan pemesanan.** `PemanfaatanRuangService`
+  tidak menulis apa pun; ruang "dipegang" oleh jadwal yang memakainya, dan
+  gerbang bentrok kedua jadwal itulah yang menahan. Pencarian ruang kosong juga
+  hanya membaca. (2) **Penyebut dari config kampus**: `config/ruang.php` —
+  hari operasional (ISO), jam buka–tutup, ambang "jarang dipakai" (bawaan 25 %),
+  lebar kolom peta panas. Pemakaian di luar jendela itu (kelas malam, Sabtu
+  yang tutup, ujian pada hari libur) dilaporkan sebagai kolom tersendiri, tidak
+  ditambahkan ke persentase — angka di atas 100 % tidak menjawab pertanyaan
+  apa pun. (3) **Ditelusuri per tanggal** dari `tanggal_mulai` sampai
+  `tanggal_selesai` semester, tidak dikalikan dari satu pekan: libur kampus
+  (`KalenderPeristiwa::tanggalLibur()`, terbit, bukan sasaran staf) mengeluarkan
+  hari itu dari tersedia *dan* terpakai; libur satu prodi hanya meniadakan kuliah
+  prodi itu; ujian hanya ada pada tanggalnya. Hari yang tidak berbeda dihitung
+  sekali per hari-pekan dan dipakai ulang. Angka ditampilkan sebagai jam per
+  pekan rata-rata semester. (4) **Terpakai = gabungan rentang**: kuliah dan ujian
+  yang menumpuk (atau dua kelas yang lolos ganda) dihitung sekali; jam
+  bersentuhan bukan tumpang tindih; waktu dibaca sebagai menit, bukan dibanding
+  sebagai string (`10:00` vs `10:00:00`). (5) **Okupansi kursi** = Σ(peserta ×
+  menit) / Σ(kapasitas × menit) atas setiap pemakaian, tanpa digabung. Peserta
+  kuliah = mahasiswa ber-KRS **disetujui** (tafsiran yang sama dengan jadwal
+  ujian); peserta ujian per ruang = kursi diisi berurutan per `urutan`, seperti
+  kartu ujian — sesi 50 orang di 40 + 40 kursi menaruh 40 dan 10, bukan 25 dan
+  25. Kapasitas 0 berarti belum diisi: tanpa okupansi, tidak pernah "kelebihan".
+  (6) **Ujian hanya yang terbit**, kuliah dari semua slot kelas semester itu.
+  (7) Izin baca baru `ruang.view` untuk BAAK, pimpinan, dan peran staf baru
+  `sarpras` (bersama `master.view` dan helpdesk) — bukan `kelas.view`, supaya
+  sarana-prasarana melihat ruang tanpa diberi layar penyusunan jadwal. Policy di
+  model `Ruang` (`viewUtilization`).
+- **Konsekuensi.** Enam kueri per laporan berapa pun jumlah ruang, slot, dan
+  sesi (dipaku tes). Ruang nonaktif tetap tampil selama masih dipakai jadwal —
+  itulah baris yang perlu dilihat — tetapi tidak pernah "jarang dipakai". Ujian
+  di luar rentang tanggal semester tidak terhitung, dan kuliah diasumsikan
+  berjalan setiap pekan semester termasuk pekan ujian (model jadwal tidak
+  mengenal pekan tanpa kuliah); tumpukan ujian di atas kuliah tidak menggelembung
+  karena (4). Instalasi yang sudah berjalan perlu menjalankan ulang
+  `RolePermissionSeeder` agar izin dan peran baru ada.
+
 ## ADR-032 — Klaim mahasiswa lampau: klaim bukan penautan; yang diklaim diadopsi lewat pencocok #44 (2026-10-27)
 
 - **Konteks.** Roadmap #44b. Mahasiswa yang dilaporkan bertahun-tahun lalu —

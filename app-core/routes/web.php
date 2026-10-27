@@ -169,6 +169,7 @@ Route::middleware(['auth:mahasiswa', 'term.active'])->prefix('mahasiswa')->name(
     Route::get('/ktm', [Mahasiswa\CetakController::class, 'ktm'])->name('ktm');
     Route::get('/kartu-ujian', [Mahasiswa\CetakController::class, 'kartuUjian'])->name('kartu-ujian');
     Route::post('/krs/ajukan', [Mahasiswa\KrsController::class, 'ajukan'])->name('krs.ajukan');
+    Route::post('/krs/revisi', [Mahasiswa\KrsController::class, 'revisi'])->name('krs.revisi');
 
     Route::get('/jadwal', Mahasiswa\JadwalController::class)->name('jadwal');
     Route::get('/jadwal-ujian', Mahasiswa\JadwalUjianController::class)->name('jadwal-ujian');
@@ -481,6 +482,11 @@ Route::middleware(['auth:staff', 'term.active'])->prefix('admin')->name('admin.'
     Route::get('/jadwal-ujian/{jadwal}/ubah', [Admin\JadwalUjianController::class, 'edit'])->name('jadwal-ujian.edit');
     Route::put('/jadwal-ujian/{jadwal}', [Admin\JadwalUjianController::class, 'update'])->name('jadwal-ujian.update');
     Route::delete('/jadwal-ujian/{jadwal}', [Admin\JadwalUjianController::class, 'destroy'])->name('jadwal-ujian.destroy');
+
+    // Pemanfaatan ruang: laporan baca-saja dari jadwal kuliah dan ujian terbit.
+    Route::get('/pemanfaatan-ruang', [Admin\PemanfaatanRuangController::class, 'index'])->name('pemanfaatan-ruang.index');
+    Route::get('/pemanfaatan-ruang/ekspor', [Admin\PemanfaatanRuangController::class, 'ekspor'])->name('pemanfaatan-ruang.ekspor');
+    Route::get('/pemanfaatan-ruang/ruang-kosong', [Admin\PemanfaatanRuangController::class, 'ruangKosong'])->name('pemanfaatan-ruang.kosong');
 
     // Kalender akademik: tampilan bersama ketiga portal, plus layar kelola
     // untuk peristiwa yang tidak dimiliki modul lain. "baru" sebelum

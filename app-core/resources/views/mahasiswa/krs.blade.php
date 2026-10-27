@@ -339,6 +339,15 @@
                             </p>
                         @endif
                     </div>
+                @elseif ($krs->status->isLocked() && $term->krsDibuka())
+                    <div class="border-t border-line px-5 py-4">
+                        <form method="POST" action="{{ route('mahasiswa.krs.revisi') }}"
+                            onsubmit="return confirm(@js(__('krs.revisi_konfirmasi')));">
+                            @csrf
+                            <x-button type="submit" variant="outline" class="w-full">{{ __('krs.revisi_tombol') }}</x-button>
+                        </form>
+                        <p class="mt-2 text-[11.5px] leading-relaxed text-ink-faint">{{ __('krs.revisi_keterangan') }}</p>
+                    </div>
                 @endif
             </x-card>
         </div>

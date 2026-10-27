@@ -54,6 +54,15 @@ class KrsPolicy
         return $this->update($actor, $krs);
     }
 
+    /** Only the owning student reopens their approved plan for revision. */
+    public function revisi(Authenticatable $actor, Krs $krs): bool
+    {
+        return $this->mahasiswa($actor)
+            && $actor->getKey() === $krs->mahasiswa_id
+            && $krs->status->isLocked()
+            && $this->izin($actor, 'krs.submit');
+    }
+
     /**
      * Approval belongs to the student's own academic advisor. A lecturer with
      * the permission but a different advisee list must still be refused —
