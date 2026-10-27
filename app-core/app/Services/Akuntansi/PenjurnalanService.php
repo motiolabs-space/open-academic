@@ -140,6 +140,52 @@ class PenjurnalanService
     }
 
     /**
+     * The approved study plan added a charge to an invoice already issued, or
+     * took one off.
+     *
+     * Dr Piutang, Cr Pendapatan for a charge; the mirror image for a
+     * correction. The invoice document was queued once, when it was issued, and
+     * is not re-sent with a new amount — the ledger learns of the difference
+     * line by line, keyed on the line, so a re-approval that writes nothing
+     * books nothing. A Rp0 correction (dropped after the deadline) moves no
+     * money and is skipped.
+     */
+    public function tagihanDisesuaikan(TagihanItem $item): void
+    {
+        $this->catat(function () use ($item): void {
+            $nominal = (int) $item->nominal;
+
+            if ($nominal === 0) {
+                return;
+            }
+
+            $akun = config('akuntansi.akun');
+            $tagihan = $item->tagihan;
+            $besaran = abs($nominal);
+
+            [$debit, $kredit] = $nominal > 0
+                ? [$akun['piutang'], $akun['pendapatan']]
+                : [$akun['pendapatan'], $akun['piutang']];
+
+            $this->antre(
+                JenisDokumenAkuntansi::Jurnal,
+                'oa-krs-'.$item->id,
+                $besaran,
+                [
+                    'transaction_date' => ($item->created_at ?? now())->toDateString(),
+                    'description' => trim($item->nama.' — '.$tagihan->nomor),
+                    'reference_number' => $tagihan->nomor,
+                    'entries' => [
+                        ['account_code' => $debit, 'debit' => $besaran, 'credit' => 0],
+                        ['account_code' => $kredit, 'debit' => 0, 'credit' => $besaran],
+                    ],
+                ],
+                $tagihan,
+            );
+        }, 'penyesuaian KRS item '.$item->id);
+    }
+
+    /**
      * A payment was received.
      *
      * Dr Kas/Bank, Cr Piutang, posted as a journal because easyERP's v1 API has

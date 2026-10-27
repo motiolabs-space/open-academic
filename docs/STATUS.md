@@ -4,6 +4,53 @@
 
 ---
 
+## Sesi 60 — 2026-10-27 · Tarif per SKS dan per mata kuliah
+
+Roadmap #41, branch `feature/keuangan-tarif-per-sks`, satu PR. Berjalan paralel
+dengan #42 dan #44b; konflik teks di berkas ini, `ROADMAP.md`, dan
+`DECISIONS.md` wajar. Keputusan: ADR-030. Rincian: `docs/MODUL.md` §Tarif per
+SKS / per mata kuliah.
+
+- **Komponen** pindah dari konstanta controller ke enum `KomponenTarif`, dengan
+  dua anggota baru yang ditagih dari KRS: `per_sks` (tarif satu SKS, matriks
+  seperti baris lain) dan `mata_kuliah` (`tarif.mata_kuliah_id`, nominal
+  tetap). `TarifResolver::untuk()` kini hanya komponen tetap, jadi penerbitan
+  massal tidak berubah; `perSks()` dan `perMataKuliah()` baru, `rincian()`
+  memuat keduanya untuk simulator.
+- **Penagihan**: `TagihanKrsService::sinkronkan()` dipanggil
+  `KrsService::putuskan()` pada setiap persetujuan. Membandingkan KRS dengan
+  baris KRS di tagihan semester dan menulis selisihnya saja; idempoten.
+  Kampus tanpa tarif per SKS/per MK: tidak ada tagihan yang muncul.
+- **Revisi KRS** — yang ternyata belum ada sama sekali: KRS disetujui bersifat
+  final (`Disetujui → []`), dan "masa perubahan KRS" hanya memperpanjang masa
+  isi untuk draf. Kini `bukaRevisi()` (tombol di portal mahasiswa) membuka
+  KRS disetujui ke draf selama `krsDibuka()`; persetujuan ulang menagih
+  selisihnya. Konsekuensinya diterima: selama revisi, mahasiswa tidak berada
+  di daftar kelas (yang membaca KRS disetujui).
+- **Pembatalan** dijawab baris koreksi (`koreksi_atas_item_id`): negatif
+  sebelum batas `PAYMENT_KRS_BATAS_PENGURANGAN`, Rp0 beralasan sesudahnya.
+  Dicocokkan per mata kuliah — pindah kelas tidak menagih ulang; dibatalkan
+  sesudah batas lalu diambil lagi tidak menagih dua kali.
+- **Gerbang KRS** diukur terhadap komponen tetap (`pokokGerbangKrs()`,
+  potongan dibagi proporsional; `tagihan.nominal_krs` baru supaya tagihan tanpa
+  baris KRS tidak memerlukan kueri tambahan).
+- **Akuntansi**: `PenjurnalanService::tagihanDisesuaikan()` — jurnal per baris.
+  Notifikasi `TagihanDisesuaikan` ke mahasiswa.
+- **Demo**: Sistem Informasi menagih SPP Tetap + Rp175.000/SKS + dua praktikum
+  Rp300.000; 15 tagihan demo sudah memuat baris KRS, 9 KRS masih menunggu wali.
+
+**Tes baru:** TarifPerSksTest 36 (resolusi, penerbitan dari KRS, revisi
+dalam/luar batas, batas pengurangan, gerbang, beasiswa/kelebihan bayar/denda,
+jurnal, layar tarif).
+
+### Belum
+
+Perubahan potongan beasiswa akibat penyesuaian tidak dijurnalkan (celah yang
+sama dengan `BeasiswaService` sesudah terbit). Baris KRS hasil konversi
+KKN/MBKM tidak memicu penagihan sendiri. Revisi tidak punya layar staf.
+
+---
+
 ## Sesi 59 — 2026-10-27 · KKN/PKL terkelola dan tahap proposal tugas akhir
 
 Roadmap #37 dan #38, branch `feature/kkn-proposal-ta`, satu PR dengan satu
