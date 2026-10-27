@@ -151,7 +151,8 @@ Apa yang ada hari ini, dikelompokkan menurut siapa yang memakainya.
 | Log aktivitas | ✅ | Tanpa rute ubah/hapus |
 | Unggah berkas privat | ✅ | Disk publik ditolak service |
 | Portabilitas basis data | ✅ | MySQL/PostgreSQL — [`BASIS-DATA.md`](BASIS-DATA.md) |
-| Header keamanan, aksesibilitas | ✅ | [`SECURITY.md`](../SECURITY.md) |
+| Header keamanan, aksesibilitas | ✅ | [`SECURITY.md`](../SECURITY.md); CSP tanpa `'unsafe-inline'` untuk skrip sejak 27 Okt 2026 |
+| Review keamanan v1.0 | ✅ | 27 Okt 2026 — 3 tinggi + 8 sedang diperbaiki, 16 rendah ditunda: [`KEAMANAN-AUDIT-2026-10.md`](KEAMANAN-AUDIT-2026-10.md) |
 | **CBT** | 🚫 | Platform ujian — di luar cakupan, lihat §Sengaja Bukan di Sini |
 | **LMS / forum kelas** | 🚫 | Platform belajar — idem |
 | **Helpdesk** | ✅ | Tiket administratif ke unit kerja, SLA ditandai bukan diputus, FAQ publik — [`HELPDESK.md`](HELPDESK.md). Forum dan chat tetap wilayah Open Campus |
@@ -483,7 +484,8 @@ yang tidak ada di sini.
 | Perintah pembangkit data skala | ✅ | Perintah openacademic:beban-katalog & beban-kuota; fixture 5.000 mahasiswa untuk [`KAPASITAS.md`](KAPASITAS.md) dibuat sekali pakai |
 | Katalog KRS pada ±1.000 kelas | ✅ | Diukur 19 Agu 2026: 1.000 baris = 1,92 s dan 2,2 MB HTML. **Sudah dipaginasi**: 105 KB, 0,79 s — lihat KAPASITAS.md |
 | Uji beban bersamaan | ✅ | Perebutan kuota diuji 19 Agu 2026: 19 proses, 1 kursi, tepat 1 pemenang. Beban HTTP penuh masih terbuka |
-| CSP masih `'unsafe-eval'` | 🟡 | Alpine mengevaluasi ekspresi `x-` lewat konstruktor `Function` |
+| CSP masih `'unsafe-eval'` | 🟡 | Alpine mengevaluasi ekspresi `x-` lewat konstruktor `Function`. `'unsafe-inline'` untuk skrip sudah dicabut 27 Okt 2026 (ADR-033) |
+| Temuan rendah audit keamanan Oktober 2026 | 🟡 | 16 butir ditunda, D-1 s.d. D-16 di [`KEAMANAN-AUDIT-2026-10.md`](KEAMANAN-AUDIT-2026-10.md). Yang perlu keputusan proses lebih dulu: pemisahan pengaju dan penyetuju konversi kredit dan poin kemahasiswaan (D-1), perubahan kelas sesudah semester dikunci (D-2), telaah pendidikan dan jabatan fungsional yang dientri dosen (D-7). Sisanya pekerjaan kecil |
 | **CI merah sejak 22 Agustus 2026** | ✅ | Lunas 22 Okt 2026. Bukan 8 tes: **170**. CI menjalankan Pest *sebelum* `npm run build`, dan sejak tata letak dipisah (`build/` di root, di-ignore) setiap layar membalas 500 "Vite manifest not found". Di mesin pengembang `build/` selalu ada, jadi suite terlihat hijau dua bulan. Ditambah 14 tes SSO yang hanya lolos bila `.env` menyetel `SSO_ENABLED=true` — rute SSO didaftarkan saat boot, jadi `config()` di dalam tes terlambat. Keduanya diperbaiki di suite, bukan di CI: `TestCase::setUp()` memanggil `withoutVite()`, dan `phpunit.xml` menyetel `SSO_ENABLED=true` |
 | 8 tes gagal di `main` sejak Oktober 2026 | ✅ | Lunas 22 Okt 2026. Bukan regresi kode: fixture `KurikulumLanjutanTest` dan `KonversiKreditTest` membuka jendela KRS dengan menggeser `krs_mulai`/`krs_selesai` ke hari ini, tetapi `TahunAkademik::krsDibuka()` menutup jendela pada `krs_perubahan_selesai` — yang tetap 15 Sep 2026 dari factory. Hijau sampai tanggal itu lewat. Kini lewat state factory `krsDibuka()` yang menjangkarkan ketiga tanggal ke hari ini |
 | Font dari Google Fonts | ✅ | Di-host sendiri lewat `@fontsource` 19 Agu 2026; `style-src`/`font-src` pihak ketiga dicabut. Menyingkap bug terpendam: Vite menulis URL aset absolut dari akar domain, jadi setiap pemasangan subfolder kehilangan hurufnya — `base: './'` |
@@ -574,3 +576,4 @@ Rinciannya — termasuk cacat yang ditemukan dan keputusan yang diambil — ada 
 | P4 tuntas: #24b skala & periode per prodi, #27 PDM/PJK | 24 Oktober 2026 |
 | P5 tuntas: #30 pendaftaran wisuda mandiri, #31 menunggu uji kompetensi | 26 Oktober 2026 |
 | #32 PMB daring: portal pendaftar, seleksi impor, pengumuman | 26 Oktober 2026 |
+| Review keamanan v1.0 (Fase 5) | 27 Oktober 2026 |
