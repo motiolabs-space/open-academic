@@ -192,6 +192,27 @@ describe('RPS: rencana yang mengunci artinya', function () {
             ->toThrow(AturanAkademikException::class, 'tidak dapat disunting');
     });
 
+    it('tidak mengubah deskripsi dan pustaka RPS berlaku lewat layar susun', function () {
+        // The text used to be written before the draft check further down the
+        // save, so the dosen saw an error and the frozen RPS changed anyway.
+        $this->dosen->assignRole('dosen');
+        $rps = $this->rpsService->terbitkan(rpsSiapTerbit(), $this->dosen);
+        $rps->update(['deskripsi' => 'Rumusan resmi', 'pustaka' => 'Pustaka resmi']);
+
+        $this->actingAs($this->dosen, 'dosen')
+            ->put(route('dosen.rps.simpan', $rps), [
+                'deskripsi' => 'Diubah diam-diam',
+                'pustaka' => 'Diubah diam-diam',
+                'cpl' => [$this->cplA->id],
+                'pertemuan' => pertemuanLengkap(),
+            ])
+            ->assertSessionHas('galat');
+
+        expect($rps->fresh())
+            ->deskripsi->toBe('Rumusan resmi')
+            ->pustaka->toBe('Pustaka resmi');
+    });
+
     it('menolak CPL milik program studi lain', function () {
         $lain = ProdiCpl::create([
             'prodi_id' => Prodi::factory()->create()->id,
