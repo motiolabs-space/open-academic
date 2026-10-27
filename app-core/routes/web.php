@@ -9,6 +9,8 @@ use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\BerkasController;
 use App\Http\Controllers\Dosen;
 use App\Http\Controllers\Helpdesk;
+use App\Http\Controllers\KalenderController;
+use App\Http\Controllers\KalenderIcsController;
 use App\Http\Controllers\Mahasiswa;
 use App\Http\Controllers\NotifikasiController;
 use App\Http\Controllers\Sso;
@@ -50,6 +52,22 @@ Route::prefix('verifikasi')->name('verifikasi.')->group(function (): void {
         ->middleware('throttle:verifikasi')
         ->name('surat');
 });
+
+/*
+|--------------------------------------------------------------------------
+| Langganan Kalender Akademik — publik, bertoken
+|--------------------------------------------------------------------------
+|
+| Google Calendar dan Outlook mengambil feed ini dari server mereka sendiri,
+| tanpa sesi siapa pun. Token di URL adalah satu-satunya pemeriksaan akses,
+| jadi isinya tidak memuat nama, NIM, atau surel — lihat
+| LanggananKalenderService.
+|
+*/
+Route::get('/kalender/{token}.ics', KalenderIcsController::class)
+    ->where('token', '[A-Za-z0-9]+')
+    ->middleware('throttle:60,1')
+    ->name('kalender.ics');
 
 /*
 |--------------------------------------------------------------------------
@@ -154,6 +172,11 @@ Route::middleware(['auth:mahasiswa', 'term.active'])->prefix('mahasiswa')->name(
 
     Route::get('/jadwal', Mahasiswa\JadwalController::class)->name('jadwal');
     Route::get('/jadwal-ujian', Mahasiswa\JadwalUjianController::class)->name('jadwal-ujian');
+
+    Route::get('/kalender', [KalenderController::class, 'index'])->name('kalender');
+    Route::post('/kalender/langganan', [KalenderController::class, 'langganan'])->name('kalender.langganan');
+    Route::delete('/kalender/langganan', [KalenderController::class, 'cabut'])->name('kalender.langganan.cabut');
+
     Route::get('/khs', Mahasiswa\KhsController::class)->name('khs');
     Route::get('/khs/transkrip', Mahasiswa\TranskripController::class)->name('transkrip');
     Route::get('/tagihan', Mahasiswa\TagihanController::class)->name('tagihan');
@@ -217,6 +240,10 @@ Route::middleware(['auth:dosen', 'term.active'])->prefix('dosen')->name('dosen.'
     Route::get('/kelas', Dosen\KelasController::class)->name('kelas');
     Route::get('/jadwal-ujian', Dosen\JadwalUjianController::class)->name('jadwal-ujian');
 
+    Route::get('/kalender', [KalenderController::class, 'index'])->name('kalender');
+    Route::post('/kalender/langganan', [KalenderController::class, 'langganan'])->name('kalender.langganan');
+    Route::delete('/kalender/langganan', [KalenderController::class, 'cabut'])->name('kalender.langganan.cabut');
+
     Route::get('/nilai', [Dosen\NilaiController::class, 'index'])->name('nilai');
     Route::get('/nilai/{kelas}', [Dosen\NilaiController::class, 'edit'])->name('nilai.kelas');
     Route::post('/nilai/{kelas}', [Dosen\NilaiController::class, 'simpan'])->name('nilai.simpan');
@@ -263,6 +290,15 @@ Route::middleware(['auth:dosen', 'term.active'])->prefix('dosen')->name('dosen.'
     Route::get('/kegiatan-lapangan/{kelompok}', [Dosen\KegiatanLapanganController::class, 'show'])->name('kegiatan-lapangan.show');
     Route::post('/kegiatan-lapangan/{kelompok}/nilai', [Dosen\KegiatanLapanganController::class, 'nilai'])->name('kegiatan-lapangan.nilai');
     Route::post('/kegiatan-lapangan/logbook/{logbook}/periksa', [Dosen\KegiatanLapanganController::class, 'periksa'])->name('kegiatan-lapangan.periksa');
+
+    // Riwayat kepegawaian: {jenis} memilih tabel, {riwayat} adalah UUID baris
+    // di tabel itu — diikat di AppServiceProvider, dicek pemiliknya oleh policy.
+    Route::get('/kepegawaian', [Dosen\KepegawaianController::class, 'index'])->name('kepegawaian');
+    Route::post('/kepegawaian/{jenis}', [Dosen\KepegawaianController::class, 'store'])->name('kepegawaian.store');
+    Route::put('/kepegawaian/{jenis}/{riwayat}', [Dosen\KepegawaianController::class, 'update'])->name('kepegawaian.update');
+    Route::delete('/kepegawaian/{jenis}/{riwayat}', [Dosen\KepegawaianController::class, 'destroy'])->name('kepegawaian.destroy');
+
+    Route::get('/angka-kredit', Dosen\AngkaKreditController::class)->name('angka-kredit');
 
     Route::get('/tugas-akhir', [Dosen\TugasAkhirController::class, 'index'])->name('tugas-akhir');
     Route::get('/tugas-akhir/{tugasAkhir}', [Dosen\TugasAkhirController::class, 'show'])->name('tugas-akhir.show');
@@ -323,6 +359,13 @@ Route::middleware('auth:staff,mahasiswa')->prefix('berkas')->name('berkas.')->gr
     Route::get('/pmb/{berkas}', [BerkasController::class, 'pmb'])->name('pmb');
     Route::get('/cuti/{cuti}', [BerkasController::class, 'cuti'])->name('cuti');
 });
+
+// Dokumen riwayat kepegawaian: dosen pemiliknya dan staf kepegawaian.
+// RiwayatKepegawaianPolicy::view yang memutuskan, bukan guard-nya.
+Route::middleware('auth:staff,dosen')->prefix('berkas/kepegawaian')->name('berkas.')
+    ->group(function (): void {
+        Route::get('/{jenis}/{riwayat}', [BerkasController::class, 'riwayatKepegawaian'])->name('kepegawaian');
+    });
 
 // Lampiran helpdesk dapat diunggah dosen juga, maka ketiga guard. Siapa yang
 // boleh membukanya diputuskan HelpdeskTiketPolicy, bukan oleh guard.
@@ -439,12 +482,44 @@ Route::middleware(['auth:staff', 'term.active'])->prefix('admin')->name('admin.'
     Route::put('/jadwal-ujian/{jadwal}', [Admin\JadwalUjianController::class, 'update'])->name('jadwal-ujian.update');
     Route::delete('/jadwal-ujian/{jadwal}', [Admin\JadwalUjianController::class, 'destroy'])->name('jadwal-ujian.destroy');
 
+    // Kalender akademik: tampilan bersama ketiga portal, plus layar kelola
+    // untuk peristiwa yang tidak dimiliki modul lain. "baru" sebelum
+    // {peristiwa}, agar tidak tertangkap sebagai UUID.
+    Route::get('/kalender', [KalenderController::class, 'index'])->name('kalender');
+    Route::post('/kalender/langganan', [KalenderController::class, 'langganan'])->name('kalender.langganan');
+    Route::delete('/kalender/langganan', [KalenderController::class, 'cabut'])->name('kalender.langganan.cabut');
+    Route::get('/kalender/peristiwa', [Admin\PeristiwaKalenderController::class, 'index'])->name('kalender.peristiwa.index');
+    Route::get('/kalender/peristiwa/baru', [Admin\PeristiwaKalenderController::class, 'create'])->name('kalender.peristiwa.create');
+    Route::post('/kalender/peristiwa', [Admin\PeristiwaKalenderController::class, 'store'])->name('kalender.peristiwa.store');
+    Route::get('/kalender/peristiwa/{peristiwa}/ubah', [Admin\PeristiwaKalenderController::class, 'edit'])->name('kalender.peristiwa.edit');
+    Route::put('/kalender/peristiwa/{peristiwa}', [Admin\PeristiwaKalenderController::class, 'update'])->name('kalender.peristiwa.update');
+    Route::delete('/kalender/peristiwa/{peristiwa}', [Admin\PeristiwaKalenderController::class, 'destroy'])->name('kalender.peristiwa.destroy');
+
     Route::get('/dosen', [Admin\DosenController::class, 'index'])->name('dosen');
     Route::post('/dosen', [Admin\DosenController::class, 'store'])->name('dosen.store');
     Route::put('/dosen/{dosen}', [Admin\DosenController::class, 'update'])->name('dosen.update');
     Route::post('/dosen/{dosen}/nonaktifkan', [Admin\DosenController::class, 'nonaktifkan'])->name('dosen.nonaktifkan');
     Route::post('/dosen/{dosen}/aktifkan', [Admin\DosenController::class, 'aktifkan'])->name('dosen.aktifkan');
     Route::post('/dosen/{dosen}/reset-sandi', [Admin\DosenController::class, 'resetKataSandi'])->name('dosen.reset-sandi');
+
+    Route::get('/kepegawaian/validasi', [Admin\RiwayatKepegawaianController::class, 'antrean'])->name('kepegawaian.antrean');
+    Route::get('/dosen/{dosen}/kepegawaian', [Admin\RiwayatKepegawaianController::class, 'show'])->name('dosen.kepegawaian');
+    Route::post('/dosen/{dosen}/kepegawaian/{jenis}', [Admin\RiwayatKepegawaianController::class, 'store'])->name('dosen.kepegawaian.store');
+    Route::put('/kepegawaian/{jenis}/{riwayat}', [Admin\RiwayatKepegawaianController::class, 'update'])->name('kepegawaian.update');
+    Route::delete('/kepegawaian/{jenis}/{riwayat}', [Admin\RiwayatKepegawaianController::class, 'destroy'])->name('kepegawaian.destroy');
+    Route::post('/kepegawaian/{jenis}/{riwayat}/setujui', [Admin\RiwayatKepegawaianController::class, 'setujui'])->name('kepegawaian.setujui');
+    Route::post('/kepegawaian/{jenis}/{riwayat}/tolak', [Admin\RiwayatKepegawaianController::class, 'tolak'])->name('kepegawaian.tolak');
+
+    // Buku besar angka kredit. Rute statis didahulukan supaya "ekspor" tidak
+    // terbaca sebagai UUID dosen.
+    Route::get('/angka-kredit', [Admin\AngkaKreditController::class, 'index'])->name('angka-kredit.index');
+    Route::get('/angka-kredit/ekspor', [Admin\AngkaKreditController::class, 'ekspor'])->name('angka-kredit.ekspor');
+    Route::post('/angka-kredit/susun', [Admin\AngkaKreditController::class, 'susunSemua'])->name('angka-kredit.susun-semua');
+    Route::delete('/angka-kredit/baris/{baris}', [Admin\AngkaKreditController::class, 'destroy'])->name('angka-kredit.destroy');
+    Route::get('/angka-kredit/{dosen}', [Admin\AngkaKreditController::class, 'show'])->name('angka-kredit.show');
+    Route::post('/angka-kredit/{dosen}/susun', [Admin\AngkaKreditController::class, 'susun'])->name('angka-kredit.susun');
+    Route::post('/angka-kredit/{dosen}/manual', [Admin\AngkaKreditController::class, 'store'])->name('angka-kredit.store');
+    Route::put('/angka-kredit/{dosen}/nuptk', [Admin\AngkaKreditController::class, 'nuptk'])->name('angka-kredit.nuptk');
 
     Route::get('/staf', [Admin\StaffController::class, 'index'])->name('staff');
     Route::post('/staf', [Admin\StaffController::class, 'store'])->name('staff.store');

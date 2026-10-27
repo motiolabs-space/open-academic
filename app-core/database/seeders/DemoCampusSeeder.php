@@ -7,11 +7,13 @@ namespace Database\Seeders;
 use App\Models\System\Setting;
 use App\Support\Demo;
 use Database\Seeders\Demo\AkuntansiSeeder;
+use Database\Seeders\Demo\AngkaKreditSeeder;
 use Database\Seeders\Demo\BeasiswaSeeder;
 use Database\Seeders\Demo\EdomSeeder;
 use Database\Seeders\Demo\HelpdeskSeeder;
 use Database\Seeders\Demo\IntegrasiSeeder;
 use Database\Seeders\Demo\JadwalUjianSeeder;
+use Database\Seeders\Demo\KalenderSeeder;
 use Database\Seeders\Demo\KegiatanLapanganSeeder;
 use Database\Seeders\Demo\KelulusanSeeder;
 use Database\Seeders\Demo\KemahasiswaanSeeder;
@@ -26,6 +28,7 @@ use Database\Seeders\Demo\PerkuliahanSeeder;
 use Database\Seeders\Demo\PmbSeeder;
 use Database\Seeders\Demo\ProposalTugasAkhirSeeder;
 use Database\Seeders\Demo\RiwayatAkademikSeeder;
+use Database\Seeders\Demo\RiwayatKepegawaianSeeder;
 use Database\Seeders\Demo\RpsSeeder;
 use Database\Seeders\Demo\SdmSeeder;
 use Database\Seeders\Demo\SuratSeeder;
@@ -91,6 +94,12 @@ class DemoCampusSeeder extends Seeder
             // sudah final sebelum jadwal UTS disusun dan diterbitkan.
             JadwalUjianSeeder::class,
 
+            // Sesudah JadwalUjianSeeder: penyusun jadwal ujian massal melewati
+            // hari libur yang sudah terbit. Liburnya sengaja di luar pekan UTS,
+            // jadi urutan ini hanya menjaga agar UTS demo tetap disusun dari
+            // kampus tanpa libur — bukan dari kalender yang ditata mengikutinya.
+            KalenderSeeder::class,
+
             // Sesudah KeuanganSeeder: beasiswa mendarat pada tagihan yang sudah
             // terbit, dan itu justru alur yang paling sering terjadi — seleksi
             // selesai berminggu-minggu setelah penagihan.
@@ -150,6 +159,15 @@ class DemoCampusSeeder extends Seeder
             // Menjalankannya lebih awal menghasilkan rencana yang realisasinya
             // nol — angka yang tidak menggambarkan apa pun.
             MutuSeeder::class,
+
+            // Sesudah MutuSeeder: mutasi dan jabatan struktural menunjuk unit
+            // kerja yang ditanam di sana. Sesudah KepegawaianSeeder: berkas
+            // lengkap ditempelkan pada dosen yang riwayat jabatannya sudah ada.
+            RiwayatKepegawaianSeeder::class,
+
+            // Sesudah KepegawaianSeeder (jabatan, ijazah, BKD disahkan): buku
+            // besar angka kredit menyusun barisnya dari ketiganya.
+            AngkaKreditSeeder::class,
 
             // Sesudah MutuSeeder: kategori helpdesk menunjuk unit kerja yang
             // ditanam di sana, dan tiket contoh didisposisi ke unit itu.

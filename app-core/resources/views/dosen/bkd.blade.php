@@ -19,7 +19,11 @@
         <div class="mb-5"><x-alert tone="danger">{{ $errors->first() }}</x-alert></div>
     @endif
 
-    @unless ($wajib)
+    @if ($tugasBelajar)
+        <div class="mb-5">
+            <x-alert tone="info">{{ __('kepegawaian.tugas_belajar_aktif') }}</x-alert>
+        </div>
+    @elseif (!$wajib)
         {{-- Dikatakan lebih dulu supaya tidak ada yang mengira dirinya terlambat.
              BKD adalah syarat tunjangan sertifikasi; yang belum bersertifikat
              pendidik tidak terikat kewajiban itu. --}}
@@ -30,7 +34,7 @@
                 memintanya.
             </x-alert>
         </div>
-    @endunless
+    @endif
 
     <div class="grid gap-5 xl:grid-cols-[minmax(0,1fr)_340px]">
         <div class="space-y-5">

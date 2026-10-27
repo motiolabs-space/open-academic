@@ -6,10 +6,10 @@ namespace App\Models\Sdm;
 
 use App\Traits\HasLogAktivitas;
 use App\Traits\HasUuid;
+use App\Traits\HasValidasiRiwayat;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
@@ -23,6 +23,7 @@ class PangkatDosen extends Model
     use HasFactory;
     use HasLogAktivitas;
     use HasUuid;
+    use HasValidasiRiwayat;
     use SoftDeletes;
 
     protected $table = 'pangkat_dosen';
@@ -32,11 +33,6 @@ class PangkatDosen extends Model
     protected function casts(): array
     {
         return ['tmt' => 'date', 'tanggal_sk' => 'date'];
-    }
-
-    public function dosen(): BelongsTo
-    {
-        return $this->belongsTo(Dosen::class);
     }
 
     /**

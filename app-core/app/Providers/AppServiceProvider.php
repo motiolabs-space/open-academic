@@ -4,12 +4,14 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
+use App\Enums\JenisRiwayat;
 use App\Models\Kemahasiswaan\EvaluasiStudi;
 use App\Models\Kemahasiswaan\Mahasiswa;
 use App\Models\Kemahasiswaan\WisudaPeserta;
 use App\Models\Kemahasiswaan\Yudisium;
 use App\Notifications\Channels\DatabaseKategoriChannel;
 use App\Observers\KunciFeederObserver;
+use App\Policies\Sdm\RiwayatKepegawaianPolicy;
 use App\Services\Akuntansi\AkuntansiPalsu;
 use App\Services\Akuntansi\Contracts\AkuntansiClientInterface;
 use App\Services\Akuntansi\EasyAccountingClient;
@@ -21,8 +23,11 @@ use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Illuminate\Notifications\ChannelManager;
+use Illuminate\Routing\Route as RouteInstance;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
@@ -107,6 +112,31 @@ class AppServiceProvider extends ServiceProvider
         $this->batasVerifikasi();
         $this->batasPmb();
         $this->kunciFeeder();
+        $this->riwayatKepegawaian();
+    }
+
+    /**
+     * Fourteen history models, one policy, and one way to find a row by URL.
+     *
+     * The {riwayat} parameter is a UUID whose table depends on the {jenis}
+     * before it, so it cannot be bound implicitly. Resolved here rather than in
+     * every controller action, so no action can forget to scope the lookup to
+     * the table its URL names.
+     */
+    private function riwayatKepegawaian(): void
+    {
+        foreach (JenisRiwayat::cases() as $jenis) {
+            Gate::policy($jenis->model(), RiwayatKepegawaianPolicy::class);
+        }
+
+        Route::bind('riwayat', function (string $uuid, RouteInstance $route): Model {
+            $jenis = $route->parameter('jenis');
+            $jenis = $jenis instanceof JenisRiwayat ? $jenis : JenisRiwayat::tryFrom((string) $jenis);
+
+            abort_if($jenis === null, 404);
+
+            return $jenis->model()::query()->where('uuid', $uuid)->firstOrFail();
+        });
     }
 
     /**

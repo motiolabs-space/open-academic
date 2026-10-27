@@ -593,6 +593,151 @@
   Penerima surat dapat diatur per kampus (`SURAT_TUJUAN_PDDIKTI`) karena
   sebagian mengajukan lewat LLDIKTI wilayahnya.
 
+## ADR-027 — Kalender akademik: lapisan baca atas pemilik tanggal, tabel hanya untuk yang yatim, feed iCalendar bertoken (2026-10-27)
+
+- **Konteks.** Roadmap #35. Tanggal-tanggal akademik sudah ada, tersebar di
+  pemiliknya: jendela KRS, perubahan KRS, dan nilai di `tahun_akademik` (dan
+  kolom itulah yang menggerbang `krsDibuka()`/`penilaianDibuka()`), sesi UTS/UAS
+  di `jadwal_ujian` (#34), periode EDOM, wisuda, yudisium, dan gelombang PMB di
+  tabelnya masing-masing. Yang tidak ada: satu tempat untuk melihat semuanya,
+  dan tempat untuk tanggal yang memang tidak dimiliki siapa pun — libur, kegiatan
+  kampus, batas administrasi lain.
+- **Keputusan.** (1) **Tidak menyalin.** `KalenderService` membaca setiap sumber
+  pada saat diminta dan menghasilkan `PeristiwaKalender` (DTO baca); kalender
+  yang menyimpan salinan benar pada hari diisi dan salah pada hari ujian digeser.
+  Turunannya: perkuliahan (awal dan akhir sebagai dua penanda, bukan bilah lima
+  bulan), KRS, perubahan KRS (sehari sesudah pengisian ditutup sampai
+  `krs_perubahan_selesai`, seperti `krsDibuka()`), nilai; masa UTS/UAS per
+  semester × jenis × prodi dari sesi **terbit** saja, satu kueri ber-`GROUP BY`,
+  rentangnya dari sesi pertama sampai terakhir kelompok — bukan dipotong batas
+  bulan; EDOM yang `is_active`; yudisium sebagai **jumlah** lulusan ditetapkan per
+  hari per prodi, tanpa nama; wisuda; gelombang PMB aktif (staf saja). (2) Tabel
+  `kalender_peristiwa` hanya untuk tiga jenis yang tidak punya pemilik: libur,
+  kegiatan, batas. Service dan FormRequest menolak jenis turunan — jendela KRS
+  yang diketik di sini akan menjadi jendela KRS kedua yang tidak menggerbang
+  apa pun. Sasaran tunggal (`semua`/`mahasiswa`/`dosen`/`staf`), prodi opsional,
+  draf → terbit, `HasLogAktivitas`, hapus lunak. Izin tulis baru `kalender.manage`
+  (BAAK), bukan `kelas.manage`: libur bukan atribut penawaran kelas. (3) **Satu
+  aturan pembaca** untuk ketiga portal dan feed: `SasaranPeristiwa::terlihatOleh()`
+  — staf semua; dosen semua/dosen/mahasiswa (wali paling sering ditanya batas
+  KRS); mahasiswa semua/mahasiswa, dan prodinya **dipaku** apa pun filternya.
+  Draf hanya untuk staf ber-`kalender.manage`. Mahasiswa dan dosen juga melihat
+  sesi ujian **miliknya** (berjam, berruang) lewat `untukMahasiswa()`/`untukDosen()`
+  milik `JadwalUjianService`, bukan aturan "sesi siapa ini" yang kedua.
+  (4) **Feed iCalendar per orang**, URL bertoken 48 karakter: hanya SHA-256-nya
+  yang disimpan (`calendar_feed_tokens`, tabel infrastruktur), URL tampil sekali
+  dari flash; satu tautan hidup per orang — membuat ulang mencabut yang lama,
+  mencabut tanpa mengganti tersedia; token mati bersama akun yang dinonaktifkan;
+  token tak dikenal dan yang dicabut sama-sama 404. Isinya tanpa nama, NIM, atau
+  surel: tautan yang bocor memberi tahu kapan suatu kelas UTS, bukan kalender
+  siapa itu. Draf tidak pernah ikut — kalender langganan ada di ponsel orang dan
+  tidak dapat ditarik kembali. Rentang 3 bulan ke belakang sampai 12 bulan ke
+  depan; tanggal seharian sebagai `VALUE=DATE` dengan akhir eksklusif, sesi berjam
+  dalam UTC sehingga tidak perlu `VTIMEZONE`; baris dilipat per 75 oktet tanpa
+  memotong karakter multibita. Rute publik dengan batas laju; `last_used_at`
+  ditulis paling sering sejam sekali, bukan per tarikan. (5) **Libur di tempat
+  yang murah.** Sesi ujian pada libur terbit (untuk semua prodi atau prodi
+  kelasnya, sasaran bukan staf) mendapat `BentrokJadwal::libur()` yang **tidak
+  menghalangi** — kampus kadang memang menguji di hari libur, yang tidak boleh
+  terjadi adalah tanpa disadari; penyusun massal melewati hari libur. Pencarian
+  libur adalah `KalenderPeristiwa::tanggalLibur()` di model, bukan di service,
+  karena kalender membaca jadwal ujian dan dependensi service dua arah akan
+  melingkar.
+- **Konsekuensi.** Gerbang yang sudah ada **sengaja tidak disentuh**: libur tidak
+  memperpanjang jendela KRS atau nilai, tidak menggeser 16 pertemuan, dan tidak
+  menyaring pengingat KRS. Tanggal-tanggal itu sudah ditetapkan BAAK dengan
+  liburnya dalam pikiran; memperpanjang otomatis diam-diam mengubah keputusan yang
+  sudah diumumkan. Yudisium tampil sebagai hari keputusan yang sudah lewat, karena
+  tidak ada tabel sidang yudisium terjadwal — bila kelak ada, sumber itu
+  ditambahkan di `KalenderService` tanpa menyentuh tabel kalender. Kunci
+  `PeristiwaKalender` stabil per baris sumber, jadi klien kalender melihat tanggal
+  yang diubah sebagai acara yang dipindah. Feed membaca ulang setiap sumber pada
+  setiap tarikan; bila kelak mahal, cache per pemilik dengan masa hidup pendek
+  cukup karena sumbernya tidak disalin.
+
+## ADR-028 — Riwayat kepegawaian: satu alur validasi di atas tabel bertipe; buku besar angka kredit, bukan penilaian (2026-10-27)
+
+- **Konteks.** #39: SISTER meminta "Profil Dosen" per kelompok, dan sebagian
+  besar kelompok itu tidak punya tempat di sini — delapan riwayat tanpa tabel,
+  enam dengan tabel tanpa layar. Tidak satu pun riwayat punya status: apa pun
+  yang masuk dianggap fakta, sehingga ekspor SISTER akan memuat klaim yang
+  belum pernah diperiksa begitu dosen dapat mengisinya sendiri.
+- **Keputusan (#39).** (1) Delapan tabel baru, tetap bertipe (alasan
+  KEPEGAWAIAN.md), dan **lima kolom validasi yang sama** pada keempat belasnya:
+  `status` (bawaan *diajukan*), `alasan_tolak`, `divalidasi_oleh`,
+  `divalidasi_at`, `dokumen_path`. Enam tabel lama di-backfill *disetujui*
+  karena seluruh barisnya ditulis staf atau seeder. (2) Dua jalur, satu keadaan:
+  dosen **mengajukan** (selalu *diajukan*), staf **mencatat** (langsung
+  *disetujui* atas namanya — staf adalah peninjaunya, dan langkah setuju
+  terpisah adalah orang yang menyetujui dirinya sendiri). (3) Kosakata tunggal
+  `JenisRiwayat` + satu definisi bidang `FormulirRiwayat` + satu policy
+  `RiwayatKepegawaianPolicy` yang didaftarkan untuk keempat belas model, dan
+  parameter rute `{riwayat}` yang diikat dari `{jenis}` di satu tempat —
+  alih-alih empat belas controller yang akan menyimpang. (4) Efek persetujuan
+  hanya di tempat yang memang beraturan: **pangkat berlaku** = disetujui
+  ber-TMT terakhir (bukan terakhir disetujui, supaya SK lama yang diajukan
+  belakangan tidak menurunkan siapa pun); **mutasi** tetap menulis penunjuk dan
+  riwayat bersama, dan tidak disunting/dihapus — koreksinya mutasi baru;
+  **tugas belajar** disetujui membebaskan BKD selama beririsan dengan semester,
+  dibaca di `wajibMelapor()`/`wajibBkd()`, bukan disalin; **pensiun** disetujui
+  menutup akun pada TMT-nya lewat `halanganNonaktifDosen()` yang sama dengan
+  tombol nonaktif, harian lewat `openacademic:tutup-akun-pensiun`. (5) Mutasi,
+  kontrak, dan pensiun **diisi staf saja**. (6) Ekspor SISTER hanya memuat baris
+  disetujui; kelompok yang kini dapat diisi dibuka di katalog, keluarga tetap
+  sengaja tidak diekspor.
+- **Yang dipilih untuk TIDAK ditegakkan (#39).** Jabatan struktural tidak
+  mengurangi beban BKD (sudah keputusan asesor di `config/bkd.php`); kontrak
+  yang berakhir tidak menutup akun (perpanjangan lazim terlambat diproses);
+  akun pensiunan yang masih memegang kelas/perwalian dibiarkan aktif dan
+  dilaporkan, bukan dipaksa tutup; tiga riwayat G7 (pendidikan, jabatan
+  fungsional, sertifikasi) belum dipindah ke alur validasi; riwayat tenaga
+  kependidikan (staf) tidak dicakup.
+- **Konsekuensi (#39).** Bawaan kolom *diajukan* berarti kode lama yang
+  menulis baris tanpa status menghasilkan ajuan, bukan fakta —
+  `naikPangkat()`/`catatMutasi()` kini menulis *disetujui* secara eksplisit.
+  Bahasa yang dihapus lalu ditambah ulang memulihkan baris lamanya, karena
+  indeks unik `(dosen_id, bahasa)` ikut menghitung baris terhapus. Riwayat
+  tidak membawa notifikasi; dosen melihat status dan alasannya di portal.
+- **Konteks (#40).** Angka kredit hanya ada sebagai satu angka pada jabatan
+  fungsional; tidak ada buku besar Kum A–E, sehingga kesiapan usulan dan lembar
+  AK penyetaraan dihitung di luar aplikasi dari BKD yang sudah tersimpan di
+  sini. Layanan PAK 2026 mengonversi kinerja sebelum 2026 dengan SKS BKD × 4 dan
+  membatasi Kum D dan E masing-masing 10 %; penilaiannya terjadi di platform
+  kementerian.
+- **Keputusan (#40).** (1) Buku besar `angka_kredit_dosen`, satu baris per
+  butir per unsur, dalam perseratus; **tidak ada total tersimpan** — rekap
+  selalu dihitung. (2) Lima unsur `UnsurAngkaKredit` terpisah dari `UnsurBkd`;
+  "pendidikan" BKD adalah Kum B. (3) Empat sumber: dua turunan (BKD **disahkan**,
+  ijazah S2/S3) yang disusun ulang di tempat dan dijaga indeks unik per sumber
+  per unsur, dua isian staf (konversi semester lama, penyesuaian beralasan).
+  (4) Konversi × 4 untuk semester yang **mulai** sebelum 1 Januari 2026; sesudahnya
+  faktor kampus yang ditandai *perkiraan*, karena klaimnya terjadi di platform.
+  Konversi manual ditolak untuk semester sejak 2026 dan untuk semester × unsur
+  yang sudah dikreditkan dari BKD. (5) DUPAK = baris sesudah TMT jabatan berlaku;
+  AK kumulatif = AK jabatan itu + DUPAK. Ijazah dibandingkan per tahun dan tahun
+  TMT tidak dihitung. (6) Batas D/E ditegakkan pada rekap sebagai **titik tetap**
+  terhadap total sesudah pembatasan — angka yang tertulis di lembar dan diperiksa
+  saat diunggah — bukan terhadap total mentah. (7) Syarat jenjang berikutnya di
+  `config/angka_kredit.php`: AK kumulatif (bawaan enum) dan bagian minimum Kum C
+  dari AK yang masih dibutuhkan; "siap" = keduanya terpenuhi. (8) Lembar
+  penyetaraan .xlsx ditulis `LembarKerjaXlsx` di atas ext-zip, bukan pustaka
+  spreadsheet; NUPTK dan TMT sebagai sel teks, AK sebagai angka; dosen tanpa
+  NUPTK dikeluarkan dan disebut di layar. `dosen.nuptk` ditambahkan. (9) Ekspor
+  dan isian manual memakai `dosen.manage`; membaca memakai `dosen.view`; dosen
+  membaca buku besarnya sendiri.
+- **Yang dipilih untuk TIDAK dibangun (#40).** Tim penilai, plotting, pejabat
+  pengesah, TTE, DUPAK PDF, nomor surat — semuanya di platform kementerian.
+  Pengali predikat kinerja tahunan pasca-2026 tidak dimodelkan; faktor
+  "sesudah" adalah perkiraan kampus. Syarat PTNBH/PTS untuk penyetaraan tidak
+  diperiksa per baris. Riwayat pendidikan (sumber Kum A) belum melewati alur
+  validasi #39 — ijazah yang diketik dosen langsung terhitung, seperti ia sudah
+  langsung terbaca di ekspor SISTER.
+- **Konsekuensi (#40).** BKD yang disahkan langsung mengkredit buku besar;
+  koreksi sesudahnya cukup "Susun ulang". Persentase penelitian bawaan adalah
+  tafsir, bukan kutipan regulasi, dan dapat diubah lewat env. Kolom lembar
+  penyetaraan mengikuti panduan operator; templat yang berubah cukup diubah di
+  `AngkaKreditService::KOLOM_PENYETARAAN`.
+
 ## ADR-029 — KKN/PKL mendarat sebagai `aktivitas_mahasiswa` per peserta; tahap proposal tugas akhir dikunci saat pengajuan (2026-10-27)
 
 ### Bagian 1 — KKN / PKL sebagai kegiatan terkelola (#37)
@@ -671,4 +816,3 @@
   berubah — tidak ada kartu, tidak ada gerbang. Tahap ini tidak menggantikan
   seminar proposal; yang menyeminarkan proposal tetap menjadwalkannya sesudah
   pembimbing ditetapkan. Dokumen proposal bukan entitas Feeder.
-

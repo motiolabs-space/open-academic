@@ -18,6 +18,7 @@ use App\Models\Sdm\PenugasanDosen;
 use App\Models\Sdm\RiwayatPendidikanDosen;
 use App\Models\Sdm\SertifikasiDosen;
 use App\Services\Berkas\BerkasService;
+use App\Services\Sdm\AngkaKreditService;
 use App\Services\Sdm\PortofolioService;
 use App\Support\Portal;
 use Illuminate\Http\RedirectResponse;
@@ -41,6 +42,7 @@ class PortofolioController extends Controller
     public function __construct(
         private readonly PortofolioService $portofolio,
         private readonly BerkasService $berkas,
+        private readonly AngkaKreditService $angkaKredit,
     ) {}
 
     public function index(): View
@@ -107,6 +109,9 @@ class PortofolioController extends Controller
                 ? $this->berkas->simpan($request->file('dokumen'), 'portofolio/'.$dosen->uuid)
                 : null,
         ]);
+
+        // A master's or doctorate is Kum A on the credit ledger.
+        $this->angkaKredit->catatPendidikan($dosen);
 
         return back()->with('sukses', 'Riwayat pendidikan tersimpan.');
     }

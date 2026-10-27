@@ -3,8 +3,11 @@
 declare(strict_types=1);
 
 use App\Enums\JenisDaftar;
+use App\Enums\JenisPeristiwa;
 use App\Enums\JenisUjianKelas;
+use App\Enums\StatusPeristiwa;
 use App\Models\Akademik\JadwalUjian;
+use App\Models\Akademik\KalenderPeristiwa;
 use App\Models\Akademik\KelasKuliah;
 use App\Models\Akademik\TahunAkademik;
 use App\Models\Bridge\BridgeConsumer;
@@ -132,6 +135,10 @@ it('membuka layar mahasiswa dalam anggaran kueri', function (string $url, int $a
     // Ruang duduk seluruh sesi dihitung dari satu kueri peserta, bukan dua per
     // sesi — tanpa itu layar ini tumbuh bersama jumlah mata kuliah.
     ['/mahasiswa/jadwal-ujian', 18],
+    // Tujuh sumber kalender satu kueri masing-masing, ditambah sesi ujian
+    // milik mahasiswa dan ruang duduknya — tidak tumbuh per peristiwa.
+    ['/mahasiswa/kalender', 25],
+    ['/mahasiswa/kalender?tampilan=daftar', 25],
     ['/mahasiswa/khs', 25],
     ['/mahasiswa/tagihan', 20],
     ['/mahasiswa/tugas-akhir', 25],
@@ -154,6 +161,7 @@ it('membuka layar dosen dalam anggaran kueri', function (string $url, int $angga
     ['/dosen', 25],
     ['/dosen/kelas', 25],
     ['/dosen/jadwal-ujian', 16],
+    ['/dosen/kalender', 26],
     ['/dosen/nilai', 25],
     ['/dosen/presensi', 25],
     ['/dosen/persetujuan-krs', 25],
@@ -175,6 +183,11 @@ it('membuka layar dosen dalam anggaran kueri', function (string $url, int $angga
     ['/dosen/bkd', 12],
     ['/dosen/bkd/penilaian', 13],
     ['/dosen/portofolio', 13],
+    // dosen1 memegang berkas kepegawaian lengkap demo. Empat belas relasi,
+    // satu kueri masing-masing, validator sekali untuk semuanya — anggaran
+    // ini tidak boleh tumbuh per baris riwayat.
+    ['/dosen/kepegawaian', 25],
+    ['/dosen/angka-kredit', 10],
     ['/dosen/helpdesk', 20],
     ['/notifikasi', 25],
 ]);
@@ -193,6 +206,8 @@ it('membuka layar admin dalam anggaran kueri', function (string $url, int $angga
     // dalam dua kueri, apa pun jumlah sesinya.
     ['/admin/jadwal-ujian', 28],
     ['/admin/jadwal-ujian/susun', 12],
+    ['/admin/kalender', 18],
+    ['/admin/kalender/peristiwa', 12],
 
     // Ditambahkan 18 Agu 2026 sesudah layar ini ditemukan 500 di MySQL: view-nya
     // merender `prodiPilihan2` yang tidak ikut di-eager-load, dan penjaga N+1
@@ -212,6 +227,11 @@ it('membuka layar admin dalam anggaran kueri', function (string $url, int $angga
     ['/admin/beasiswa', 25],
     ['/admin/edom', 24],
     ['/admin/bkd', 20],
+    // Antrean: satu kueri per riwayat, apa pun jumlah ajuannya.
+    ['/admin/kepegawaian/validasi', 28],
+    // Rekap kampus dan lembar penyetaraan dari tiga kueri, apa pun jumlah
+    // dosennya — lembar penyetaraan memakai rekap yang sama, bukan menghitung ulang.
+    ['/admin/angka-kredit', 12],
     ['/admin/akuntansi', 16],
     ['/admin/kurikulum-lanjutan', 18],
     ['/admin/unit-kerja', 12],
@@ -223,6 +243,28 @@ it('membuka layar admin dalam anggaran kueri', function (string $url, int $angga
     ['/admin/spmi', 21],
     ['/notifikasi', 25],
 ]);
+
+/*
+ * Berkas kepegawaian dan buku besar angka kredit satu dosen — dosen demo
+ * pertama, yang riwayatnya lengkap dan buku besarnya memuat konversi, BKD
+ * disahkan, ijazah, dan penyesuaian.
+ */
+it('membuka berkas kepegawaian dan buku besar angka kredit satu dosen dalam anggaran kueri', function () {
+    $staff = Staff::where('email', 'admin@demo.test')->firstOrFail();
+    $dosen = Dosen::whereNotNull('nidn')->orderBy('id')->firstOrFail();
+
+    dalamAnggaranKueri(
+        fn () => $this->actingAs($staff, 'staff')->get("/admin/dosen/{$dosen->uuid}/kepegawaian")
+            ->assertOk()->assertSee('Penata'),
+        29,
+    );
+
+    dalamAnggaranKueri(
+        fn () => $this->actingAs($staff, 'staff')->get("/admin/angka-kredit/{$dosen->uuid}")
+            ->assertOk()->assertSee('Konversi BKD lama'),
+        6,
+    );
+});
 
 /*
  * Profil pindahan demo: dibuat lewat intake sungguhan oleh KonversiSeeder,
@@ -386,6 +428,18 @@ it('menerbitkan UTS semester aktif yang bebas bentrok di kampus demo', function 
     expect(JadwalUjian::term($term->id)->terbit()->count())->toBeGreaterThan(0)
         ->and($layanan->jenisTerbit($term))->toBe(JenisUjianKelas::Uts)
         ->and(collect($layanan->laporanBentrok($term))->flatten()->where('menghalangi', true))->toBeEmpty();
+});
+
+it('menanam libur dan kegiatan terbit pada semester aktif, di luar UTS demo', function () {
+    $term = TahunAkademik::aktif();
+
+    $dalamSemester = KalenderPeristiwa::query()->terbit()->beririsan($term->tanggal_mulai, $term->tanggal_selesai);
+
+    expect((clone $dalamSemester)->where('jenis', JenisPeristiwa::Libur->value)->count())->toBeGreaterThanOrEqual(2)
+        ->and((clone $dalamSemester)->where('jenis', JenisPeristiwa::Kegiatan->value)->count())->toBeGreaterThanOrEqual(2)
+        ->and(KalenderPeristiwa::query()->where('status', StatusPeristiwa::Draf->value)->count())->toBeGreaterThanOrEqual(1)
+        // Libur demo tidak boleh membuat UTS demo membawa peringatan.
+        ->and(collect(app(JadwalUjianService::class)->laporanBentrok($term))->flatten()->where('jenis', 'libur'))->toBeEmpty();
 });
 
 it('membuka detail jadwal ujian dan mencetak kartu dari jadwal ujian dalam anggaran kueri', function () {

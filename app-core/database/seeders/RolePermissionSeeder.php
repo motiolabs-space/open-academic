@@ -27,6 +27,11 @@ class RolePermissionSeeder extends Seeder
             'mahasiswa.view', 'mahasiswa.manage',
             'dosen.view', 'dosen.manage',
             'kelas.view', 'kelas.manage',
+
+            // Writing holidays, activities and deadlines on the academic
+            // calendar. Reading it needs no permission of its own.
+            'kalender.manage',
+
             'krs.view', 'krs.manage',
             'nilai.view', 'nilai.manage',
             'presensi.view',
@@ -113,7 +118,7 @@ class RolePermissionSeeder extends Seeder
             'super-admin' => '*',
             'baak' => [
                 'master.view', 'master.manage', 'mahasiswa.view', 'mahasiswa.manage',
-                'dosen.view', 'kelas.view', 'kelas.manage', 'krs.view', 'krs.manage',
+                'dosen.view', 'kelas.view', 'kelas.manage', 'kalender.manage', 'krs.view', 'krs.manage',
                 'nilai.view', 'presensi.view', 'pmb.view', 'pmb.manage',
                 'tugas_akhir.view', 'tugas_akhir.manage',
                 'surat.view', 'surat.manage',

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
+use App\Enums\JenisRiwayat;
 use App\Models\Helpdesk\HelpdeskBalasan;
 use App\Models\Helpdesk\HelpdeskTiket;
 use App\Models\Kemahasiswaan\CutiMahasiswa;
@@ -13,6 +14,7 @@ use App\Models\Pmb\PmbBerkas;
 use App\Models\TugasAkhir\Proposal;
 use App\Services\Berkas\BerkasService;
 use App\Support\Portal;
+use Illuminate\Database\Eloquent\Model;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
@@ -120,6 +122,22 @@ class BerkasController extends Controller
         $this->authorize('view', $proposal);
 
         return $this->alirkan($proposal->berkas_path, $proposal->berkas_nama ?? 'proposal.pdf');
+    }
+
+    /**
+     * The decree or certificate behind a personnel-history row.
+     *
+     * Its owner and the personnel office — the same reach as the row itself,
+     * so the policy that guards the row guards the file.
+     */
+    public function riwayatKepegawaian(JenisRiwayat $jenis, Model $riwayat): StreamedResponse
+    {
+        $this->authorize('view', $riwayat);
+
+        return $this->alirkan(
+            $riwayat->dokumen_path,
+            $jenis->value.'-'.$riwayat->uuid.'.'.pathinfo((string) $riwayat->dokumen_path, PATHINFO_EXTENSION),
+        );
     }
 
     /**
