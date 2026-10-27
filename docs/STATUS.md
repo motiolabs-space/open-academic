@@ -4,6 +4,55 @@
 
 ---
 
+## Sesi 61 — 2026-10-27 · Monitoring pemakaian ruang
+
+Roadmap #42, branch `feature/monitoring-ruang`, satu PR. Berjalan paralel
+dengan #41 (Sesi 60) dan #44b (Sesi 62); konflik teks di berkas ini,
+`ROADMAP.md`, `MODUL.md`, dan `DECISIONS.md` wajar. Keputusan: ADR-031.
+Tanpa migrasi.
+
+- **Laporan, bukan pemesanan.** `PemanfaatanRuangService::laporan()` membaca
+  slot `jadwal_kuliah` semester terpilih dan ruang `jadwal_ujian` **terbit**,
+  lalu menelusuri semester per tanggal: libur kampus terbit dari kalender #35
+  keluar dari jam tersedia dan terpakai, libur satu prodi hanya meniadakan
+  kuliah prodi itu, ujian hanya pada tanggalnya. Hari biasa dihitung sekali per
+  hari-pekan. Enam kueri berapa pun jumlah ruang (dipaku tes).
+- **Angka per ruang** (jam per pekan, rata-rata semester): tersedia (jam
+  operasional `config/ruang.php`, bawaan Senin–Jumat 07.00–17.00), terpakai
+  (gabungan rentang — kuliah dan ujian yang menumpuk dihitung sekali), kosong,
+  di luar jam operasional (terpisah, tidak menggelembungkan persen), okupansi
+  kursi (peserta KRS disetujui × menit / kapasitas × menit; ujian mengisi kursi
+  berurutan per ruang seperti kartu ujian), jumlah slot dan sesi.
+- **Layar** AKADEMIK → Pemakaian Ruang (`/admin/pemanfaatan-ruang`): filter
+  semester, gedung, jenis, urutan (gedung, paling penuh, paling kosong); tabel
+  per ruang; peta panas hari × jam per ruang atau rerata semua ruang; daftar
+  kelebihan peserta (kuliah dan ujian) dan jarang dipakai (di bawah
+  `RUANG_AMBANG_JARANG`, bawaan 25 %); ekspor CSV. Pencarian ruang kosong
+  `/admin/pemanfaatan-ruang/ruang-kosong` per hari (jadwal mingguan) atau per
+  tanggal (ditambah ujian terbit dan libur), kapasitas minimum, terkecil yang
+  muat lebih dulu, dengan daftar ruang yang terpakai dan oleh apa — hanya baca.
+- **Izin**: `ruang.view` baru untuk BAAK dan pimpinan, plus peran staf baru
+  `sarpras` (`master.view`, `ruang.view`, helpdesk). Policy `RuangPolicy::
+  viewUtilization`. Instalasi berjalan: jalankan ulang `RolePermissionSeeder`.
+- `Format::daftarHari()` baru ("Senin–Jumat"); enam variabel `RUANG_*` di
+  `.env.example`.
+
+**Tes baru:** PemanfaatanRuangTest 20 (jam terpakai kuliah + ujian dan
+tumpukannya, okupansi dan pengisian kursi ujian, kelebihan peserta, di luar jam,
+libur kampus/prodi/draf/staf, peta panas, urutan dan ambang jarang, filter,
+jumlah kueri tetap, ruang kosong per hari dan per tanggal, CSV, layar tiga
+peran, validasi, policy); SmokeLayarTest 5 baris anggaran.
+
+### Belum
+
+Kuliah diasumsikan berjalan setiap pekan semester, termasuk pekan ujian —
+model jadwal belum mengenal pekan tanpa kuliah. Ujian di luar rentang tanggal
+semester tidak dihitung. Jam operasional satu untuk seluruh kampus, belum per
+gedung. Sidang tugas akhir (`tugas_akhir_ujian.ruang_id`) dan kegiatan kalender
+belum ikut sebagai pemakai ruang.
+
+---
+
 ## Sesi 60 — 2026-10-27 · Tarif per SKS dan per mata kuliah
 
 Roadmap #41, branch `feature/keuangan-tarif-per-sks`, satu PR. Berjalan paralel

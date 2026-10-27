@@ -88,6 +88,7 @@ Akun demo: `admin@demo.test` · kata sandi `password`
 | — | Dasbor | `/admin` |
 | **AKADEMIK** | Master Akademik | `/admin/master` |
 | | Jadwal & Kelas | `/admin/kelas` |
+| | Pemakaian Ruang | `/admin/pemanfaatan-ruang` — ekspor CSV, pencarian ruang kosong di `/admin/pemanfaatan-ruang/ruang-kosong` |
 | | Padanan & Paket | `/admin/kurikulum-lanjutan` |
 | | Koreksi Nilai | `/admin/koreksi-nilai` |
 | | Penutupan Semester | `/admin/tutup-semester` |
@@ -189,7 +190,7 @@ UKT/SPP/praktikum/registrasi/wisuda/lainnya — daftar komponennya kini enum
 | **Adaptor payment gateway** | **Tertahan di luar repo** — kontraknya sudah ada, yang kurang kredensial merchant + endpoint notifikasi yang terverifikasi tanda tangannya. Tanpa verifikasi, siapa pun yang menjangkau endpoint itu bisa melunasi tagihan mana pun |
 | Federasi ke IdP eksternal | Google / Entra / Keycloak. Open Academic sudah jadi *penerbit* identitas; jadi *konsumen* belum |
 | ~~Denda keterlambatan~~ | **Selesai 24 Okt 2026** — lihat §Denda keterlambatan di Bagian I |
-| Monitoring pemakaian ruang | Bentrok jadwal sudah terdeteksi; pemanfaatan ruangnya belum terlihat |
+| ~~Monitoring pemakaian ruang~~ | **Selesai 27 Okt 2026 (#42)** — `/admin/pemanfaatan-ruang`. Lihat ADR-031 |
 | Career center | Lowongan, forum & agenda alumni. Tabel `alumni` sudah ada sebagai dasar — tapi instrumennya milik Open Campus |
 | ~~**Enam formulir SISTER**~~ | **Selesai 27 Okt 2026 (#39)** — keenamnya plus delapan riwayat baru diisi dosen di `/dosen/kepegawaian` dan divalidasi di `/admin/kepegawaian/validasi`. Lihat [`KEPEGAWAIAN.md`](KEPEGAWAIAN.md) |
 | ~~Helpdesk~~ | **Selesai 24 Okt 2026** — `/mahasiswa/helpdesk`, `/dosen/helpdesk`, `/admin/helpdesk`, FAQ publik `/bantuan`. Lihat [`HELPDESK.md`](HELPDESK.md) |

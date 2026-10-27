@@ -483,6 +483,11 @@ Route::middleware(['auth:staff', 'term.active'])->prefix('admin')->name('admin.'
     Route::put('/jadwal-ujian/{jadwal}', [Admin\JadwalUjianController::class, 'update'])->name('jadwal-ujian.update');
     Route::delete('/jadwal-ujian/{jadwal}', [Admin\JadwalUjianController::class, 'destroy'])->name('jadwal-ujian.destroy');
 
+    // Pemanfaatan ruang: laporan baca-saja dari jadwal kuliah dan ujian terbit.
+    Route::get('/pemanfaatan-ruang', [Admin\PemanfaatanRuangController::class, 'index'])->name('pemanfaatan-ruang.index');
+    Route::get('/pemanfaatan-ruang/ekspor', [Admin\PemanfaatanRuangController::class, 'ekspor'])->name('pemanfaatan-ruang.ekspor');
+    Route::get('/pemanfaatan-ruang/ruang-kosong', [Admin\PemanfaatanRuangController::class, 'ruangKosong'])->name('pemanfaatan-ruang.kosong');
+
     // Kalender akademik: tampilan bersama ketiga portal, plus layar kelola
     // untuk peristiwa yang tidak dimiliki modul lain. "baru" sebelum
     // {peristiwa}, agar tidak tertangkap sebagai UUID.

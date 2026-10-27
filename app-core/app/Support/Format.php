@@ -132,6 +132,42 @@ final class Format
         return self::jam($mulai).' – '.self::jam($selesai).' WIB';
     }
 
+    /**
+     * "Senin–Jumat", "Senin, Rabu, Jumat" — ISO weekdays, runs of three or
+     * more collapsed into a range.
+     *
+     * @param array<int, int> $hari
+     */
+    public static function daftarHari(array $hari): string
+    {
+        $hari = array_values(array_unique(array_filter($hari, fn (int $h): bool => $h >= 1 && $h <= 7)));
+        sort($hari);
+
+        if ($hari === []) {
+            return '—';
+        }
+
+        $nama = fn (int $iso): string => self::HARI[$iso % 7];
+        $runs = [];
+
+        foreach ($hari as $h) {
+            $akhir = count($runs) - 1;
+
+            if ($akhir >= 0 && end($runs[$akhir]) === $h - 1) {
+                $runs[$akhir][] = $h;
+            } else {
+                $runs[] = [$h];
+            }
+        }
+
+        return implode(', ', array_map(
+            fn (array $run): string => count($run) >= 3
+                ? $nama($run[0]).'–'.$nama(end($run))
+                : implode(', ', array_map($nama, $run)),
+            $runs,
+        ));
+    }
+
     private static function carbon(Carbon|string|null $value): ?Carbon
     {
         if ($value === null) {
