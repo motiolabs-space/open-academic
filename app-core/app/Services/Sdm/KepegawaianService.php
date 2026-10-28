@@ -157,6 +157,34 @@ class KepegawaianService
         return $staff->refresh();
     }
 
+    /**
+     * Changes a staff account's single role, with the same last-administrator
+     * guard as deactivation: demoting the only active super-admin locks the
+     * installation just as surely as switching the account off.
+     */
+    public function ubahPeranStaff(Staff $staff, string $peran): Staff
+    {
+        if ($staff->hasRole($peran)) {
+            return $staff;
+        }
+
+        if ($this->satuSatunyaAdmin($staff)) {
+            throw new AturanAkademikException(
+                'Ini satu-satunya akun Super Admin yang masih aktif. Mengganti perannya akan '
+                    .'mengunci seluruh administrator dari sistem — angkat administrator lain lebih dulu.',
+            );
+        }
+
+        $lama = $staff->getRoleNames()->implode(', ');
+        $staff->syncRoles([$peran]);
+
+        // A permission change is exactly the kind of thing an auditor asks
+        // about six months later.
+        $staff->recordActivity('role_changed', "Peran diubah dari [{$lama}] menjadi [{$peran}].");
+
+        return $staff;
+    }
+
     public function aktifkanStaff(Staff $staff): Staff
     {
         $staff->update(['is_active' => true]);

@@ -250,7 +250,10 @@ ke tabel yang mana?** Jawabannya diambil sesempit mungkin (ADR-019):
 4. **Tidak ada provisioning bawaan.** Direktori kampus memuat jauh lebih banyak
    orang daripada yang boleh membuka BAAK. `IDP_PROVISION=true` membuat akun
    staf **tanpa peran**; admin tetap harus memberinya peran. Dosen tidak
-   pernah dibuat otomatis — ia butuh NIDN dan prodi.
+   pernah dibuat otomatis — ia butuh NIDN dan prodi. Akun hanya dibuat untuk
+   surel terverifikasi yang domainnya tercantum di `IDP_PROVISION_DOMAINS`
+   (kosong = tidak ada): penerbit publik seperti Google meloloskan `iss`/`aud`
+   untuk setiap pemilik akunnya, bukan hanya warga kampus.
 5. **Akun nonaktif tetap ditolak**, tertaut atau belum.
 6. Hanya surel yang `email_verified` oleh IdP yang dipakai menautkan. Entra ID
    tidak mengirim klaim itu untuk anggota tenant; setel

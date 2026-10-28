@@ -8,6 +8,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Akademik\Prodi;
 use App\Models\Akademik\TahunAkademik;
 use App\Services\Lkps\PerakitBorang;
+use App\Support\Csv;
 use App\Support\Portal;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -75,12 +76,12 @@ class LkpsController extends Controller
             $keluaran = fopen('php://output', 'wb');
             fwrite($keluaran, "\xEF\xBB\xBF");
 
-            fputcsv($keluaran, ['Prodi', $prodi->kode.' '.$prodi->nama], $pemisah, '"', '\\');
-            fputcsv($keluaran, ['Semester', $term->nama], $pemisah, '"', '\\');
-            fputcsv($keluaran, [], $pemisah, '"', '\\');
+            Csv::tulis($keluaran, ['Prodi', $prodi->kode.' '.$prodi->nama], $pemisah);
+            Csv::tulis($keluaran, ['Semester', $term->nama], $pemisah);
+            Csv::tulis($keluaran, [], $pemisah);
 
             foreach ($tabel as $satu) {
-                fputcsv($keluaran, array_filter([$satu['nomor'], $satu['judul']]), $pemisah, '"', '\\');
+                Csv::tulis($keluaran, array_filter([$satu['nomor'], $satu['judul']]), $pemisah);
 
                 /*
                  * A table this application cannot fill writes its reason into
@@ -91,23 +92,23 @@ class LkpsController extends Controller
                  * not asked for.
                  */
                 if (!$satu['terisi']) {
-                    fputcsv($keluaran, ['TIDAK DIISI', $satu['alasan']], $pemisah, '"', '\\');
-                    fputcsv($keluaran, [], $pemisah, '"', '\\');
+                    Csv::tulis($keluaran, ['TIDAK DIISI', $satu['alasan']], $pemisah);
+                    Csv::tulis($keluaran, [], $pemisah);
 
                     continue;
                 }
 
-                fputcsv($keluaran, $satu['kolom'], $pemisah, '"', '\\');
+                Csv::tulis($keluaran, $satu['kolom'], $pemisah);
 
                 foreach ($satu['baris'] as $baris) {
-                    fputcsv($keluaran, $baris, $pemisah, '"', '\\');
+                    Csv::tulis($keluaran, $baris, $pemisah);
                 }
 
                 if ($satu['catatan'] !== null) {
-                    fputcsv($keluaran, ['Catatan', $satu['catatan']], $pemisah, '"', '\\');
+                    Csv::tulis($keluaran, ['Catatan', $satu['catatan']], $pemisah);
                 }
 
-                fputcsv($keluaran, [], $pemisah, '"', '\\');
+                Csv::tulis($keluaran, [], $pemisah);
             }
 
             fclose($keluaran);

@@ -128,7 +128,7 @@
                                                 <span class="text-[11.5px] text-ink-faint">terkunci</span>
                                             @else
                                                 <form method="POST" action="{{ route('admin.wisuda.peserta.batal', $ps) }}"
-                                                    onsubmit="return confirm('Keluarkan {{ $ps->yudisium->mahasiswa->nama }} dari daftar peserta?');">
+                                                    data-confirm="Keluarkan {{ $ps->yudisium->mahasiswa->nama }} dari daftar peserta?">
                                                     @csrf @method('DELETE')
                                                     <x-button type="submit" variant="danger" size="sm">Keluarkan</x-button>
                                                 </form>
@@ -247,7 +247,7 @@
                 @if ($penomoranLokal)
                     <x-card title="Terbitkan Nomor Ijazah">
                         <form method="POST" action="{{ route('admin.wisuda.ijazah', $periode) }}"
-                            onsubmit="return confirm('Terbitkan nomor ijazah? Nomor yang sudah terbit tidak akan diubah.');">
+                            data-confirm="Terbitkan nomor ijazah? Nomor yang sudah terbit tidak akan diubah.">
                             @csrf
                             <x-field label="Pola Nomor" name="pola" required :value="$polaIjazah"
                                 hint="Penanda: {tahun}, {prodi}, {urut}." />

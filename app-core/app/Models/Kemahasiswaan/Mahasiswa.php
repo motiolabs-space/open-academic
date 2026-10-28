@@ -25,6 +25,7 @@ use App\Traits\AuthenticatesWithUuid;
 use App\Traits\DapatDicari;
 use App\Traits\HasLogAktivitas;
 use App\Traits\HasUuid;
+use App\Traits\PutarTokenIngat;
 use Database\Factories\MahasiswaFactory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -58,6 +59,7 @@ class Mahasiswa extends Authenticatable implements OAuthenticatable
     use HasRoles;
     use HasUuid;
     use Notifiable;
+    use PutarTokenIngat;
     use SoftDeletes;
 
     protected $table = 'mahasiswa';

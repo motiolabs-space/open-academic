@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Sso;
 
 use App\Http\Controllers\Controller;
+use App\Services\Auth\PencabutanTokenSso;
 use App\Support\Portal;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
@@ -52,18 +53,12 @@ class AplikasiTerhubungController extends Controller
         ]);
     }
 
-    public function cabut(string $client): RedirectResponse
+    public function cabut(string $client, PencabutanTokenSso $pencabutan): RedirectResponse
     {
-        $token = Passport::tokenModel();
-
-        // Scoped to the signed-in person's own tokens. Without the user_id
-        // clause this would revoke that client's access for everybody on
-        // campus, from a URL anyone could guess.
-        $token::query()
-            ->where('user_id', Portal::user()?->getAuthIdentifier())
-            ->where('client_id', $client)
-            ->where('revoked', false)
-            ->update(['revoked' => true]);
+        // Scoped to the signed-in person's own tokens. Without the user id
+        // this would revoke that client's access for everybody on campus,
+        // from a URL anyone could guess.
+        $pencabutan->cabut($client, (string) Portal::user()?->getAuthIdentifier());
 
         return back()->with('sukses', 'Akses aplikasi dicabut. Aplikasi tersebut tidak lagi dapat membaca data Anda.');
     }

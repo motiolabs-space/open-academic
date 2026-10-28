@@ -35,7 +35,7 @@
                                         <td class="tabular px-5 py-3 text-center">{{ $r->kapasitas }}</td>
                                         <td class="px-5 py-3 text-right">
                                             <form method="POST" action="{{ route('admin.master.ruang.destroy', $r) }}"
-                                                onsubmit="return confirm('Hapus ruang {{ $r->kode }}?');">
+                                                data-confirm="Hapus ruang {{ $r->kode }}?">
                                                 @csrf @method('DELETE')
                                                 <x-button type="submit" variant="danger" size="sm">Hapus</x-button>
                                             </form>
@@ -47,7 +47,7 @@
                                             Gedung ini belum memiliki ruang.
                                             <form method="POST" class="mt-3 inline-block"
                                                 action="{{ route('admin.master.gedung.destroy', $gedung) }}"
-                                                onsubmit="return confirm('Hapus gedung {{ $gedung->nama }}?');">
+                                                data-confirm="Hapus gedung {{ $gedung->nama }}?">
                                                 @csrf @method('DELETE')
                                                 <x-button type="submit" variant="danger" size="sm">Hapus Gedung</x-button>
                                             </form>

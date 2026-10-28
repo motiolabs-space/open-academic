@@ -50,7 +50,7 @@
                                     <span class="text-[11.5px] text-ink-faint">{{ __('wisuda.layar.ijazah_terkunci') }}</span>
                                 @else
                                     <form method="POST" action="{{ route('mahasiswa.wisuda.batal', $p) }}"
-                                        onsubmit="return confirm(@js(__('wisuda.layar.batal_konfirmasi', ['periode' => $p->nama])));">
+                                        data-confirm="{{ __('wisuda.layar.batal_konfirmasi', ['periode' => $p->nama]) }}">
                                         @csrf @method('DELETE')
                                         <x-button type="submit" variant="outline" size="sm">{{ __('wisuda.layar.batal') }}</x-button>
                                     </form>

@@ -8,6 +8,7 @@ use App\Models\Akademik\TahunAkademik;
 use App\Models\Kemahasiswaan\StatusMahasiswa;
 use App\Models\Keuangan\Beasiswa;
 use App\Models\Keuangan\BeasiswaPenerima;
+use App\Support\Csv;
 use Illuminate\Support\Collection;
 use RuntimeException;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -158,13 +159,13 @@ class EksporKipk
             $keluaran = fopen('php://output', 'wb');
             fwrite($keluaran, "\xEF\xBB\xBF");
 
-            fputcsv($keluaran, [
+            Csv::tulis($keluaran, [
                 'NIM', 'Nama', 'Prodi', 'Skema', 'Semester', 'Status', 'Semester Ke',
                 'SKS Semester', 'SKS Kumulatif', 'IPS', 'IPK', 'Keterangan',
-            ], $pemisah, '"', '\\');
+            ], $pemisah);
 
             foreach ($baris as $satu) {
-                fputcsv($keluaran, [
+                Csv::tulis($keluaran, [
                     $satu['nim'],
                     $satu['nama'],
                     $satu['prodi'],
@@ -177,7 +178,7 @@ class EksporKipk
                     $satu['ips'],
                     $satu['ipk'],
                     $this->keterangan($satu),
-                ], $pemisah, '"', '\\');
+                ], $pemisah);
             }
 
             fclose($keluaran);

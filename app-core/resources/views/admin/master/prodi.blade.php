@@ -48,7 +48,7 @@
                                 </td>
                                 <td class="px-5 py-3 text-right">
                                     <form method="POST" action="{{ route('admin.master.prodi.destroy', $p) }}"
-                                        onsubmit="return confirm('Hapus program studi {{ $p->nama }}?');">
+                                        data-confirm="Hapus program studi {{ $p->nama }}?">
                                         @csrf @method('DELETE')
                                         <x-button type="submit" variant="danger" size="sm">Hapus</x-button>
                                     </form>

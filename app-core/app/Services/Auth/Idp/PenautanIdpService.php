@@ -116,6 +116,17 @@ final class PenautanIdpService
             throw new IdpException('tidak_dikenal', 'No account carries this email.');
         }
 
+        // The issuer vouches for the signature, not for campus membership: a
+        // public issuer such as Google passes iss/aud for every account it
+        // has. Only listed domains are provisioned, and only from an address
+        // the provider itself verified — IDP_REQUIRE_VERIFIED_EMAIL=false is
+        // a concession for linking existing accounts, never for creating one.
+        $domain = strtolower(Str::afterLast((string) $identitas->email, '@'));
+
+        if (!$identitas->emailVerified || !in_array($domain, (array) config('idp.provision_domains'), true)) {
+            throw new IdpException('tidak_dikenal', 'Email domain is not allowed to provision an account.');
+        }
+
         $staff = new Staff;
         $staff->forceFill([
             'nama' => $identitas->name ?? Str::before($identitas->email ?? '', '@'),

@@ -100,7 +100,7 @@
                                         @if ($t->denda > 0)
                                             <form method="POST" action="{{ route('admin.keuangan.denda.bebaskan', $t) }}"
                                                 class="mb-1.5 flex flex-wrap items-center justify-end gap-1.5"
-                                                onsubmit="return confirm('Bebaskan denda {{ $rp($t->denda) }}? Denda pada tagihan ini tidak akan dihitung lagi.');">
+                                                data-confirm="Bebaskan denda {{ $rp($t->denda) }}? Denda pada tagihan ini tidak akan dihitung lagi.">
                                                 @csrf
                                                 <input type="text" name="alasan" required minlength="5" maxlength="500"
                                                     placeholder="Alasan pembebasan"
@@ -216,7 +216,7 @@
                     </ul>
 
                     <form method="POST" action="{{ route('admin.keuangan.terbitkan') }}" class="mt-3.5"
-                        onsubmit="return confirm('Terbitkan {{ $pratinjau['akan_terbit'] }} tagihan? Tindakan ini tidak dapat dibatalkan massal.');">
+                        data-confirm="Terbitkan {{ $pratinjau['akan_terbit'] }} tagihan? Tindakan ini tidak dapat dibatalkan massal.">
                         @csrf
                         <input type="hidden" name="tahun_akademik_id" value="{{ $pratinjau['tahun_akademik_id'] }}">
                         <input type="hidden" name="angkatan" value="{{ $pratinjau['angkatan'] ?? '' }}">

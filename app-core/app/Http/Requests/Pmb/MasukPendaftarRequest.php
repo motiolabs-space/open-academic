@@ -4,19 +4,17 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Pmb;
 
+use App\Support\BatasMasuk;
 use Illuminate\Auth\Events\Lockout;
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Support\Facades\RateLimiter;
-use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 /**
  * Signing in to the admission portal.
  *
- * Throttled per address + IP, the same shape as the campus sign-in: one
- * address under attack cannot lock out a whole school's computer lab behind
- * one NAT. The key carries its own prefix so a lockout here never blocks the
- * same address on the main page, or the reverse.
+ * Throttled the same way as the campus sign-in (BatasMasuk): per address + IP,
+ * per account and per IP. The keys carry their own prefix so a lockout here
+ * never blocks the same address on the main page, or the reverse.
  */
 class MasukPendaftarRequest extends FormRequest
 {
@@ -46,31 +44,36 @@ class MasukPendaftarRequest extends FormRequest
 
     public function pastikanTidakDibatasi(): void
     {
-        $maks = (int) config('pmb.batas.masuk_percobaan');
+        $detik = $this->batas()->sisaDetik();
 
-        if (!RateLimiter::tooManyAttempts($this->kunciBatas(), $maks)) {
+        if ($detik === null) {
             return;
         }
 
         event(new Lockout($this));
 
         throw ValidationException::withMessages([
-            'email' => __('pmb.akun.terlalu_sering', ['seconds' => RateLimiter::availableIn($this->kunciBatas())]),
+            'email' => __('pmb.akun.terlalu_sering', ['seconds' => $detik]),
         ]);
     }
 
     public function catatGagal(): void
     {
-        RateLimiter::hit($this->kunciBatas());
+        $this->batas()->catatGagal();
     }
 
     public function bersihkanBatas(): void
     {
-        RateLimiter::clear($this->kunciBatas());
+        $this->batas()->bersihkan();
     }
 
-    public function kunciBatas(): string
+    private function batas(): BatasMasuk
     {
-        return 'pmb-masuk|'.Str::transliterate(Str::lower((string) $this->string('email')).'|'.$this->ip());
+        return new BatasMasuk(
+            'pmb-masuk',
+            (string) $this->string('email'),
+            (string) $this->ip(),
+            (int) config('pmb.batas.masuk_percobaan'),
+        );
     }
 }

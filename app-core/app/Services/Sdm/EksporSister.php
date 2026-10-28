@@ -9,6 +9,7 @@ use App\Models\Sdm\Dosen;
 use App\Models\Sdm\JabatanFungsionalDosen;
 use App\Models\Sdm\RiwayatPendidikanDosen;
 use App\Models\Sdm\SertifikasiDosen;
+use App\Support\Csv;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
@@ -515,10 +516,10 @@ class EksporSister
                 fwrite($keluaran, "\xEF\xBB\xBF");
             }
 
-            fputcsv($keluaran, $header, $pemisah, '"', '\\');
+            Csv::tulis($keluaran, $header, $pemisah);
 
             foreach ($baris as $satu) {
-                fputcsv($keluaran, $satu, $pemisah, '"', '\\');
+                Csv::tulis($keluaran, $satu, $pemisah);
             }
 
             fclose($keluaran);

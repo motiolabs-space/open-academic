@@ -58,7 +58,7 @@
                                  adalah periode yang angkanya dapat direvisi
                                  sesudah dilaporkan. --}}
                             <form method="POST" action="{{ route('admin.kinerja.kunci', $periode) }}"
-                                onsubmit="return confirm('Kunci periode ini? Target dan realisasinya dibekukan permanen dan tidak dapat dibuka lagi.')">
+                                data-confirm="Kunci periode ini? Target dan realisasinya dibekukan permanen dan tidak dapat dibuka lagi.">
                                 @csrf
                                 <x-button type="submit" variant="outline" class="px-3 py-1.5 text-xs">
                                     Kunci periode

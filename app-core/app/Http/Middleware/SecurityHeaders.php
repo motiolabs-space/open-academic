@@ -29,6 +29,14 @@ class SecurityHeaders
         $response->headers->set('Referrer-Policy', 'strict-origin-when-cross-origin');
         $response->headers->set('Permissions-Policy', 'geolocation=(), microphone=(), payment=()');
 
+        // Only once the request already arrived over HTTPS: sent over plain
+        // HTTP the header is ignored, and a campus still testing on HTTP must
+        // not be locked out of it. No includeSubDomains — other campus hosts
+        // under the same domain are not ours to commit to HTTPS.
+        if ($request->isSecure()) {
+            $response->headers->set('Strict-Transport-Security', 'max-age=31536000');
+        }
+
         // Camera stays available: the student QR attendance scanner needs it.
         if (!$response->headers->has('Content-Security-Policy')) {
             $response->headers->set('Content-Security-Policy', $this->csp());
@@ -49,7 +57,12 @@ class SecurityHeaders
     {
         return implode('; ', [
             "default-src 'self'",
-            "script-src 'self' 'unsafe-eval' 'unsafe-inline'",
+
+            // No 'unsafe-inline': views carry no inline scripts or on*
+            // handlers (confirmation prompts are `data-confirm`, see app.js),
+            // so an injected <script> or onerror= does not run. A test scans
+            // the views to keep it that way.
+            "script-src 'self' 'unsafe-eval'",
 
             // Kedua huruf di-host sendiri lewat @fontsource sejak 19 Agustus
             // 2026, jadi pengecualian untuk fonts.googleapis.com dan
@@ -72,7 +85,8 @@ class SecurityHeaders
             "form-action 'self'",
             "frame-ancestors 'self'",
             "base-uri 'self'",
-            'object-src none',
+            // Quoted: unquoted, `none` is a host name, not the keyword.
+            "object-src 'none'",
         ]);
     }
 }

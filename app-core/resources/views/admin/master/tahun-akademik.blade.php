@@ -54,7 +54,7 @@
                                     <div class="flex justify-end gap-1.5">
                                         @unless ($term->is_active || $term->is_locked)
                                             <form method="POST" action="{{ route('admin.master.term.aktifkan', $term) }}"
-                                                onsubmit="return confirm('Jadikan {{ $term->nama }} semester berjalan? Semester aktif saat ini akan dinonaktifkan.');">
+                                                data-confirm="Jadikan {{ $term->nama }} semester berjalan? Semester aktif saat ini akan dinonaktifkan.">
                                                 @csrf
                                                 <x-button type="submit" size="sm">Aktifkan</x-button>
                                             </form>
@@ -70,7 +70,7 @@
                                             </form>
                                         @elseif (! $term->is_active)
                                             <form method="POST" action="{{ route('admin.master.term.kunci', $term) }}"
-                                                onsubmit="return confirm('Kunci {{ $term->nama }}? Tidak akan ada lagi perubahan yang diizinkan.');">
+                                                data-confirm="Kunci {{ $term->nama }}? Tidak akan ada lagi perubahan yang diizinkan.">
                                                 @csrf
                                                 <x-button type="submit" variant="outline" size="sm">Kunci</x-button>
                                             </form>

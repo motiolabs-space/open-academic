@@ -142,7 +142,7 @@
                     </p>
                 @else
                     <form method="POST" action="{{ route('admin.tutup-semester.tutup') }}"
-                        onsubmit="return confirm('Bekukan {{ $pratinjau['siap']->count() }} catatan semester? Setelah beku, KHS-nya resmi dan hanya dapat diubah lewat pembukaan kembali yang tercatat.');">
+                        data-confirm="Bekukan {{ $pratinjau['siap']->count() }} catatan semester? Setelah beku, KHS-nya resmi dan hanya dapat diubah lewat pembukaan kembali yang tercatat.">
                         @csrf
                         <input type="hidden" name="tahun_akademik_id" value="{{ $term->id }}">
 

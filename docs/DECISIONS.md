@@ -974,6 +974,53 @@
   mengikuti pemakaian komunitas, dan perlu diverifikasi terhadap dokumentasi
   build Feeder kampus.
 
+## ADR-033 — Pengerasan keamanan menjelang v1.0: konfirmasi sebagai data, sesi seumur akun dan kata sandinya, batas masuk tiga lapis (2026-10-27)
+
+- **Konteks.** Audit keamanan Fase 5 (`docs/KEAMANAN-AUDIT-2026-10.md`)
+  menemukan dua celah tinggi dan delapan sedang. Beberapa perbaikannya
+  memilih satu jalan di antara beberapa yang masuk akal, dan pilihan itu
+  menentukan bagaimana kode baru harus ditulis.
+- **Keputusan.** (1) **Konfirmasi adalah data, bukan skrip.** Tidak ada lagi
+  penangan `on*=` di view; konfirmasi memakai `data-confirm` (dan
+  `data-confirm-if="medan=nilai"` untuk yang bersyarat) yang ditangani satu
+  pendengar di `app.js`. Karena itu `script-src` tidak lagi memuat
+  `'unsafe-inline'`, dan tes memindai seluruh view supaya tetap begitu.
+  `'unsafe-eval'` tetap — itu utang Alpine yang terpisah. (2) **Sesi seumur
+  akun dan kata sandinya, diperiksa per guard.** `PastikanAkunAktif` di grup
+  web memeriksa keempat guard portal setiap permintaan, bukan memakai
+  `AuthenticateSession` bawaan Laravel: middleware itu hanya membaca guard
+  bawaan dan mengandaikan guard itu `SessionGuard`, sedangkan guard `sso`
+  bukan. Sidik kata sandi di sesi adalah HMAC atas hash-nya, terikat ke id
+  akun, dan diperbarui sesudah respons — perangkat yang mengganti kata
+  sandinya tetap masuk, perangkat lain tidak. Cookie "ingat saya" ditangani
+  terpisah: `PutarTokenIngat` memutar `remember_token` di model setiap kali
+  kata sandi berubah, sehingga layar kata sandi baru tidak dapat lupa
+  melakukannya. (3) **Batas masuk tiga lapis** (`BatasMasuk`): per identitas
+  + alamat (seperti sebelumnya), per akun dari alamat mana pun, per alamat ke
+  akun mana pun. Hanya kegagalan yang dihitung; masuk yang berhasil tidak
+  membersihkan penghitung per alamat. (4) **Peran tertinggi hanya diberikan
+  pemegangnya** (`StaffPolicy`), dan tidak seorang pun mengubah perannya
+  sendiri — tanpa memecah `pengaturan.manage` menjadi izin baru, supaya
+  instalasi berjalan tidak perlu menjalankan ulang seeder peran.
+  (5) **Provisioning IdP gagal tertutup**: tanpa `IDP_PROVISION_DOMAINS` tidak
+  ada akun yang dibuat, dan surel wajib terverifikasi meski penautan
+  dilonggarkan. (6) **Satu penulis CSV** (`App\Support\Csv`): apostrof di
+  depan sel teks pemicu rumus, angka tidak disentuh, kutipan RFC 4180 tanpa
+  karakter escape.
+- **Konsekuensi.** Kode baru menulis konfirmasi sebagai `data-confirm`;
+  penangan sebaris membuat tes gagal. Setiap permintaan web membaca hingga
+  empat guard — tanpa kueri tambahan bagi guard yang tidak ada di sesi.
+  Mengganti kata sandi atau menaikkan `BCRYPT_ROUNDS` (hash diperbarui saat
+  masuk berikutnya) mengeluarkan sesi lain akun itu dan mematikan cookie
+  "ingat saya" lamanya. Pengguna di balik satu NAT berbagi penghitung per
+  alamat; naikkan `AUTH_BATAS_PER_ALAMAT` bila salah ketik wajar satu kampus
+  melampauinya. Penyerang dapat menahan satu akun selama 15 menit dengan
+  sengaja gagal — harga yang lazim, jauh lebih murah daripada akunnya jatuh.
+  Instalasi yang sudah menyalakan `IDP_PROVISION=true` berhenti membuat akun
+  sampai `IDP_PROVISION_DOMAINS` diisi. Sel CSV teks yang memang diawali
+  tanda hubung (jarang) kini tampil dengan apostrof tersembunyi di lembar
+  kerja dan apostrof terlihat bila berkasnya dibaca mesin.
+
 ## ADR-034 — Anggaran kueri diukur pada kampus yang ditumbuhkan; indeks hanya bila rencana kuerinya menuntut (2026-10-27)
 
 - **Konteks.** Audit N+1 Fase 5 menjelang v1.0. `SmokeLayarTest` memaku

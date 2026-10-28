@@ -6,6 +6,7 @@ namespace App\Services\Akuntansi;
 
 use App\Enums\JenisDokumenAkuntansi;
 use App\Models\Akuntansi\DokumenAkuntansi;
+use App\Support\Csv;
 use DateTimeInterface;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -48,14 +49,14 @@ class EksporJurnal
                 fwrite($keluaran, "\xEF\xBB\xBF");
             }
 
-            fputcsv($keluaran, [
+            Csv::tulis($keluaran, [
                 'Tanggal', 'Nomor Referensi', 'Keterangan', 'Kode Akun',
                 'Debit', 'Kredit', 'Status Kirim', 'ID Easy Accounting',
-            ], ',', '"', '\\');
+            ], ',');
 
             foreach ($dokumen as $satu) {
                 foreach ($this->baris($satu) as $baris) {
-                    fputcsv($keluaran, $baris, ',', '"', '\\');
+                    Csv::tulis($keluaran, $baris, ',');
                 }
             }
 

@@ -52,8 +52,12 @@ DUA_FAKTOR_WAJIB=true    # sesudah staf didampingi memasang — lihat butir di b
 4. **Jangan pernah menjalankan `--seed` di produksi.** `DemoCampusSeeder`
    membuat akun dengan kata sandi `password` dan akan menolak berjalan bila
    `APP_ENV=production` — jangan mengakali penolakan itu.
-5. **Hanya `public/` yang boleh menjadi document root.** Bila root diarahkan ke
-   direktori proyek, `.env` dapat diunduh siapa pun.
+5. **`app-core/` tidak pernah terjangkau lewat HTTP.** Document root adalah
+   direktori repo, dan `app-core/` — berisi `.env`, kunci OAuth, log, dan
+   berkas unggahan privat — ada di dalamnya ([`TATA-LETAK.md`](docs/TATA-LETAK.md)).
+   Apache menolaknya lewat dua `.htaccess`; Nginx tidak membacanya, jadi pakai
+   blok `location` di [`DEPLOYMENT.md`](docs/DEPLOYMENT.md) §4. Periksa:
+   `curl -I https://…/app-core/.env` harus `403`/`404`.
 6. **Worker antrean menyala.** Jejak audit ter-antre; tanpa worker, perubahan
    nilai tidak pernah tercatat — dan jejak audit yang diam adalah masalah
    keamanan, bukan sekadar fitur yang mati. Sejak Sesi 18 notifikasi juga

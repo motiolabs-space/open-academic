@@ -87,11 +87,9 @@
 
             <p class="mt-5 text-center text-[11.5px] text-ink-faint">
                 Bukan Anda?
-                <a href="{{ route('logout') }}"
-                   class="font-semibold text-navy underline"
-                   onclick="event.preventDefault(); document.getElementById('keluar-sso').submit();">
+                <button type="submit" form="keluar-sso" class="font-semibold text-navy underline">
                     Keluar
-                </a>
+                </button>
             </p>
 
             <form id="keluar-sso" method="POST" action="{{ route('logout') }}" class="hidden">@csrf</form>
