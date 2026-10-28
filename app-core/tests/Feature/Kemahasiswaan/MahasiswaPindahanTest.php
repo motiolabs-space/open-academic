@@ -73,7 +73,7 @@ function identitasPindahan(array $atribut = []): IdentitasMahasiswaData
     return IdentitasMahasiswaData::fromArray([
         'nama' => 'Nadia Paramitha',
         'email' => fake()->unique()->safeEmail(),
-        'nik' => '3273015507040002',
+        'nik' => '9900000000000001',
         'tempat_lahir' => 'Bandung',
         'tanggal_lahir' => '2004-07-15',
         'jenis_kelamin' => 'P',
@@ -147,7 +147,7 @@ function pendaftarTransfer(array $atribut = []): PmbPendaftar
         'nomor_pendaftaran' => 'TR-'.fake()->unique()->numerify('######'),
         'nama' => 'Bagas Wicaksono',
         'email' => fake()->unique()->safeEmail(),
-        'nik' => '3374021203030004',
+        'nik' => '9900000000000002',
         'tempat_lahir' => 'Semarang',
         'tanggal_lahir' => '2003-03-12',
         'jenis_kelamin' => 'L',
@@ -214,7 +214,7 @@ describe('pintu PMB', function () {
         expect($m->jenis_daftar)->toBe(JenisDaftar::Pindahan)
             ->and($m->pt_asal)->toBe('Universitas Merdeka Nusantara')
             ->and($m->term_masuk)->toBe($this->term->kode)
-            ->and($m->nik)->toBe('3374021203030004')
+            ->and($m->nik)->toBe('9900000000000002')
             ->and($pendaftar->fresh()->status)->toBe(ApplicantStatus::Mahasiswa)
             ->and($pendaftar->fresh()->mahasiswa_id)->toBe($m->id);
     });
