@@ -93,23 +93,9 @@
             @endforelse
         </x-card>
 
-        <x-card title="Pengumuman" flush>
-            @forelse ($pengumuman as $item)
-                <div class="border-b border-line/60 px-5 py-3.5 last:border-b-0">
-                    <div class="text-[13px] font-semibold leading-snug">
-                        @if ($item->is_pinned)
-                            <span class="text-gold" aria-hidden="true">◆</span>
-                        @endif
-                        {{ $item->judul }}
-                    </div>
-                    <div class="tabular mt-1 text-[11.5px] text-ink-faint">
-                        {{ Format::tanggal($item->published_at) }}
-                    </div>
-                    <p class="mt-1.5 text-xs leading-relaxed text-ink-muted">{{ $item->ringkasan }}</p>
-                </div>
-            @empty
-                <div class="px-5 py-8 text-center text-[13px] text-ink-faint">Belum ada pengumuman.</div>
-            @endforelse
-        </x-card>
+        @include('partials.pengumuman-kartu', [
+            'ruteTampil' => 'mahasiswa.pengumuman.show',
+            'ruteDaftar' => 'mahasiswa.pengumuman.index',
+        ])
     </div>
 @endsection

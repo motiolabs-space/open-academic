@@ -19,7 +19,7 @@ class TagihanController extends Controller
         $mahasiswa = Portal::user();
 
         $tagihan = Tagihan::query()
-            ->with(['tahunAkademik', 'item', 'pembayaran', 'pembebasanDenda'])
+            ->with(['tahunAkademik', 'item', 'pembayaran', 'pembebasanDenda', 'dispensasi'])
             ->where('mahasiswa_id', $mahasiswa->id)
             ->join('tahun_akademik', 'tahun_akademik.id', '=', 'tagihan.tahun_akademik_id')
             ->orderByDesc('tahun_akademik.kode')

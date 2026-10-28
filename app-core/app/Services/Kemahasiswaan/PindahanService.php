@@ -25,6 +25,7 @@ use App\Models\Keuangan\Tagihan;
 use App\Models\Pmb\PmbPendaftar;
 use App\Services\Akademik\BatasSksCalculator;
 use App\Services\Akademik\KonversiService;
+use App\Services\Bridge\PenerbitPendaftaran;
 use App\Services\Feeder\FeederValidator;
 use App\Services\Pmb\NimGenerator;
 use App\Services\Pmb\PmbService;
@@ -56,6 +57,7 @@ class PindahanService
         private readonly KonversiService $konversi,
         private readonly BatasSksCalculator $batasSks,
         private readonly FeederValidator $validator,
+        private readonly PenerbitPendaftaran $pendaftaran,
     ) {}
 
     /**
@@ -144,6 +146,8 @@ class PindahanService
                 'tagihan' => $this->pmb->terbitkanTagihanAwal($mahasiswa, $term),
             ];
         });
+
+        $this->pendaftaran->umumkan($hasil['mahasiswa']);
 
         return [...$hasil, 'kata_sandi' => $kataSandi];
     }

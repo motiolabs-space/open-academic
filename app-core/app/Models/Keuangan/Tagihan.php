@@ -87,6 +87,12 @@ class Tagihan extends Model
         return $this->hasMany(Pembayaran::class)->latest();
     }
 
+    /** Every dispensation asked for or granted on this invoice, newest first. */
+    public function dispensasi(): HasMany
+    {
+        return $this->hasMany(DispensasiTagihan::class)->orderByDesc('id');
+    }
+
     /** The one late-fee line, once accrual has charged anything. */
     public function itemDenda(): HasOne
     {

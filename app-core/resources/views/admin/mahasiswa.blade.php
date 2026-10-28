@@ -71,7 +71,9 @@
 
                         <tr class="border-b border-line/50 last:border-b-0 odd:bg-zebra hover:bg-highlight">
                             <td class="tabular px-5 py-3">{{ $baris->nim }}</td>
-                            <td class="px-5 py-3 font-medium">{{ $baris->nama }}</td>
+                            <td class="px-5 py-3 font-medium">
+                                <a href="{{ route('admin.mahasiswa.show', $baris) }}" class="hover:underline">{{ $baris->nama }}</a>
+                            </td>
                             <td class="px-5 py-3 text-ink-muted">{{ $baris->prodi->namaLengkap() }}</td>
                             <td class="tabular px-5 py-3 text-center">{{ $baris->angkatan }}</td>
                             <td class="px-5 py-3 text-ink-muted">{{ $baris->dosenWali?->nama ?? '—' }}</td>

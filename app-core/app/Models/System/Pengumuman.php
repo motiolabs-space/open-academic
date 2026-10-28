@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models\System;
 
+use App\Enums\UserRole;
 use App\Traits\HasUuid;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -32,6 +33,7 @@ class Pengumuman extends Model
             'target_roles' => 'array',
             'is_pinned' => 'boolean',
             'published_at' => 'datetime',
+            'berakhir_at' => 'datetime',
         ];
     }
 
@@ -45,5 +47,35 @@ class Pengumuman extends Model
     public function scopeUntuk(Builder $query, string $role): Builder
     {
         return $query->whereJsonContains('target_roles', $role);
+    }
+
+    /**
+     * Not yet past its end, or without one.
+     *
+     * @param Builder<self> $query
+     */
+    public function scopeBelumBerakhir(Builder $query): Builder
+    {
+        return $query->where(fn (Builder $q) => $q->whereNull('berakhir_at')->orWhere('berakhir_at', '>', now()));
+    }
+
+    /**
+     * What one portal shows: published, not yet ended, aimed at that portal,
+     * pinned first and then newest.
+     *
+     * The one definition all three portals read — dashboards and the list
+     * pages alike — so "why does the lecturer portal show this and the student
+     * portal not" always has the same answer.
+     *
+     * @param Builder<self> $query
+     */
+    public function scopeTampilUntuk(Builder $query, UserRole $peran): Builder
+    {
+        return $query->terbit()
+            ->belumBerakhir()
+            ->untuk($peran->value)
+            ->orderByDesc('is_pinned')
+            ->orderByDesc('published_at')
+            ->orderByDesc('id');
     }
 }

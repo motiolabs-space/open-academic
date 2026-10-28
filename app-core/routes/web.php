@@ -13,6 +13,7 @@ use App\Http\Controllers\KalenderController;
 use App\Http\Controllers\KalenderIcsController;
 use App\Http\Controllers\Mahasiswa;
 use App\Http\Controllers\NotifikasiController;
+use App\Http\Controllers\PengumumanPortalController;
 use App\Http\Controllers\Sso;
 use App\Http\Controllers\VerifikasiSuratController;
 use Illuminate\Support\Facades\Route;
@@ -180,7 +181,11 @@ Route::middleware(['auth:mahasiswa', 'term.active'])->prefix('mahasiswa')->name(
 
     Route::get('/khs', Mahasiswa\KhsController::class)->name('khs');
     Route::get('/khs/transkrip', Mahasiswa\TranskripController::class)->name('transkrip');
+    Route::get('/khs/{term}/cetak', [Mahasiswa\KhsController::class, 'cetak'])->name('khs.cetak');
+    Route::get('/pengumuman', [PengumumanPortalController::class, 'index'])->name('pengumuman.index');
+    Route::get('/pengumuman/{pengumuman}', [PengumumanPortalController::class, 'show'])->name('pengumuman.show');
     Route::get('/tagihan', Mahasiswa\TagihanController::class)->name('tagihan');
+    Route::post('/tagihan/{tagihan}/dispensasi', Mahasiswa\DispensasiController::class)->name('tagihan.dispensasi');
 
     Route::get('/presensi', [Mahasiswa\PresensiMandiriController::class, 'form'])->name('presensi');
     Route::post('/presensi', [Mahasiswa\PresensiMandiriController::class, 'catat'])->name('presensi.catat');
@@ -237,6 +242,9 @@ Route::middleware(['auth:dosen', 'term.active'])->prefix('dosen')->name('dosen.'
     Route::post('/helpdesk', [Helpdesk\TiketPemohonController::class, 'store'])->name('helpdesk.store');
     Route::get('/helpdesk/{tiket}', [Helpdesk\TiketPemohonController::class, 'show'])->name('helpdesk.show');
     Route::post('/helpdesk/{tiket}/balas', [Helpdesk\TiketPemohonController::class, 'balas'])->name('helpdesk.balas');
+
+    Route::get('/pengumuman', [PengumumanPortalController::class, 'index'])->name('pengumuman.index');
+    Route::get('/pengumuman/{pengumuman}', [PengumumanPortalController::class, 'show'])->name('pengumuman.show');
 
     Route::get('/kelas', Dosen\KelasController::class)->name('kelas');
     Route::get('/jadwal-ujian', Dosen\JadwalUjianController::class)->name('jadwal-ujian');
@@ -460,6 +468,18 @@ Route::middleware(['auth:staff', 'term.active'])->prefix('admin')->name('admin.'
     Route::get('/', Admin\DashboardController::class)->name('dashboard');
     Route::get('/mahasiswa', Admin\MahasiswaController::class)->name('mahasiswa');
 
+    // Dosen wali: penetapan per prodi (massal atau merata) dan per mahasiswa.
+    Route::get('/dosen-wali', [Admin\DosenWaliController::class, 'index'])->name('dosen-wali');
+    Route::post('/dosen-wali/massal', [Admin\DosenWaliController::class, 'massal'])->name('dosen-wali.massal');
+    Route::post('/dosen-wali/merata', [Admin\DosenWaliController::class, 'merata'])->name('dosen-wali.merata');
+    Route::post('/mahasiswa/{mahasiswa}/dosen-wali', [Admin\DosenWaliController::class, 'tetapkan'])->name('dosen-wali.tetapkan');
+
+    // Detail satu mahasiswa: baca saja, plus cetak KHS/transkrip dari service
+    // yang sama dengan portal mahasiswa.
+    Route::get('/mahasiswa/{mahasiswa}', [Admin\MahasiswaDetailController::class, 'show'])->name('mahasiswa.show');
+    Route::get('/mahasiswa/{mahasiswa}/khs/{term}', [Admin\MahasiswaDetailController::class, 'khs'])->name('mahasiswa.khs');
+    Route::get('/mahasiswa/{mahasiswa}/transkrip', [Admin\MahasiswaDetailController::class, 'transkrip'])->name('mahasiswa.transkrip');
+
     Route::get('/kelas', [Admin\KelasController::class, 'index'])->name('kelas');
     Route::post('/kelas', [Admin\KelasController::class, 'buka'])->name('kelas.buka');
     Route::put('/kelas/{kelas}', [Admin\KelasController::class, 'perbarui'])->name('kelas.perbarui');
@@ -541,6 +561,11 @@ Route::middleware(['auth:staff', 'term.active'])->prefix('admin')->name('admin.'
     Route::get('/koreksi-nilai', [Admin\KoreksiNilaiController::class, 'index'])->name('koreksi-nilai');
     Route::post('/koreksi-nilai/{nilai}', [Admin\KoreksiNilaiController::class, 'koreksi'])->name('koreksi-nilai.simpan');
 
+    // Papan baca untuk setiap staf, terpisah dari layar kelola di bawahnya
+    // yang menuntut izin pengaturan. Didaftarkan lebih dulu agar "papan"
+    // tidak pernah dibaca sebagai UUID.
+    Route::get('/pengumuman/papan', [PengumumanPortalController::class, 'index'])->name('papan-pengumuman.index');
+    Route::get('/pengumuman/papan/{pengumuman}', [PengumumanPortalController::class, 'show'])->name('papan-pengumuman.show');
     Route::get('/pengumuman', [Admin\PengumumanController::class, 'index'])->name('pengumuman');
     Route::post('/pengumuman', [Admin\PengumumanController::class, 'store'])->name('pengumuman.store');
     Route::put('/pengumuman/{pengumuman}', [Admin\PengumumanController::class, 'perbarui'])->name('pengumuman.perbarui');
@@ -748,6 +773,12 @@ Route::middleware(['auth:staff', 'term.active'])->prefix('admin')->name('admin.'
     Route::post('/keuangan/tagihan/{tagihan}/keringanan', [Admin\KeuanganController::class, 'keringanan'])->name('keuangan.keringanan');
     Route::post('/keuangan/potongan/{item}/hapus', [Admin\KeuanganController::class, 'hapusPotongan'])->name('keuangan.potongan.hapus');
     Route::post('/keuangan/tagihan/{tagihan}/bebaskan-denda', [Admin\KeuanganController::class, 'bebaskanDenda'])->name('keuangan.denda.bebaskan');
+
+    // Dispensasi pembayaran KRS: beri langsung, putuskan permohonan, cabut.
+    Route::get('/keuangan/dispensasi', [Admin\DispensasiController::class, 'index'])->name('keuangan.dispensasi');
+    Route::post('/keuangan/dispensasi', [Admin\DispensasiController::class, 'beri'])->name('keuangan.dispensasi.beri');
+    Route::post('/keuangan/dispensasi/{dispensasi}/putuskan', [Admin\DispensasiController::class, 'putuskan'])->name('keuangan.dispensasi.putuskan');
+    Route::post('/keuangan/dispensasi/{dispensasi}/cabut', [Admin\DispensasiController::class, 'cabut'])->name('keuangan.dispensasi.cabut');
 
     Route::get('/beasiswa', [Admin\BeasiswaController::class, 'index'])->name('beasiswa');
     Route::post('/beasiswa', [Admin\BeasiswaController::class, 'simpanSkema'])->name('beasiswa.skema');

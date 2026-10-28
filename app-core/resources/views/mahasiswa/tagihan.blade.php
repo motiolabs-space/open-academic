@@ -18,6 +18,8 @@
             </x-stat-card>
         </div>
 
+        @php $dispensasiTerakhir = $aktif->dispensasi->first(); @endphp
+
         @if (! $aktif->memenuhiSyaratKrs())
             <x-alert tone="warning" class="mb-5">
                 Pengisian KRS terkunci hingga pembayaran mencapai
@@ -26,10 +28,45 @@
                 Hubungi Bagian Keuangan bila memerlukan dispensasi.
             </x-alert>
         @elseif ($aktif->dispensasiAktif())
-            <x-alert tone="info" class="mb-5">
-                Dispensasi aktif hingga {{ Format::tanggal($aktif->dispensasi_sampai) }} —
-                pengisian KRS tetap terbuka meski tagihan belum lunas.
+            <x-alert tone="info" class="mb-5" data-dispensasi="berlaku">
+                {{ __('keuangan.dispensasi.mahasiswa.aktif', ['tanggal' => Format::tanggal($aktif->dispensasi_sampai)]) }}
+                @if ($aktif->dispensasi_catatan)
+                    {{ __('keuangan.dispensasi.mahasiswa.aktif_alasan', ['alasan' => $aktif->dispensasi_catatan]) }}
+                @endif
             </x-alert>
+        @endif
+
+        @if ($dispensasiTerakhir?->status === \App\Enums\StatusDispensasi::Diajukan)
+            <x-alert tone="info" class="mb-5" data-dispensasi="menunggu">
+                {{ __('keuangan.dispensasi.mahasiswa.menunggu', ['tanggal' => Format::tanggal($dispensasiTerakhir->sampai)]) }}
+            </x-alert>
+        @elseif ($dispensasiTerakhir?->status === \App\Enums\StatusDispensasi::Ditolak)
+            <x-alert tone="warning" class="mb-5" data-dispensasi="ditolak">
+                {{ __('keuangan.dispensasi.mahasiswa.ditolak', [
+                    'tanggal' => Format::tanggal($dispensasiTerakhir->diputus_at),
+                    'catatan' => $dispensasiTerakhir->catatan_keputusan,
+                ]) }}
+            </x-alert>
+        @elseif ($dispensasiTerakhir?->status === \App\Enums\StatusDispensasi::Dicabut && ! $aktif->dispensasiAktif())
+            <x-alert tone="warning" class="mb-5" data-dispensasi="dicabut">
+                {{ __('keuangan.dispensasi.mahasiswa.dicabut', [
+                    'tanggal' => Format::tanggal($dispensasiTerakhir->dicabut_at),
+                    'alasan' => $dispensasiTerakhir->alasan_cabut,
+                ]) }}
+            </x-alert>
+        @endif
+
+        @if ($aktif->sisa() > 0 && ! $aktif->dispensasiAktif() && $dispensasiTerakhir?->status !== \App\Enums\StatusDispensasi::Diajukan)
+            <x-card :title="__('keuangan.dispensasi.mahasiswa.ajukan_judul')" class="mb-5">
+                <p class="mb-4 text-[12.5px] leading-relaxed text-ink-muted">{{ __('keuangan.dispensasi.mahasiswa.ajukan_penjelasan') }}</p>
+                <form method="POST" action="{{ route('mahasiswa.tagihan.dispensasi', $aktif) }}"
+                    class="grid gap-3 sm:grid-cols-[180px_1fr_auto] sm:items-end">
+                    @csrf
+                    <x-field :label="__('keuangan.dispensasi.mahasiswa.ajukan_sampai')" name="sampai" type="date" required />
+                    <x-field :label="__('keuangan.dispensasi.mahasiswa.ajukan_alasan')" name="alasan" required />
+                    <x-button type="submit">{{ __('keuangan.dispensasi.mahasiswa.ajukan_tombol') }}</x-button>
+                </form>
+            </x-card>
         @endif
 
         @if ($aktif->dendaDibebaskan())

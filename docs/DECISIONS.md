@@ -1065,3 +1065,145 @@
   waktu tidak. Anggaran harus disesuaikan ketika sebuah layar sah menambah
   kueri — penyesuaiannya ditulis di komentar baris anggaran, seperti di
   `SmokeLayarTest`.
+
+## ADR-035 — Lima celah P0: jalur tulis untuk data yang sudah dibaca kode (2026-10-28)
+
+Inventaris modul 28 Oktober menemukan lima alur yang dibaca kode atau
+dijanjikan dokumen tetapi tidak punya jalur tulis atau tampilan. Satu ADR,
+satu bagian per celah.
+
+### 1. Dosen wali: dosen aktif ber-homebase prodi yang sama; KRS mengikuti kolom
+
+- **Konteks.** `mahasiswa.dosen_wali_id` memutuskan siapa yang boleh
+  menyetujui KRS (`KrsService::putuskan()`, `KrsPolicy::approve`), tetapi
+  hanya seeder demo yang menulisnya. Kampus nyata tidak dapat menjalankan
+  persetujuan KRS sama sekali.
+- **Keputusan.** `DosenWaliService` satu-satunya penulis kolom itu: per
+  mahasiswa, per baris (massal), dan bagi merata per prodi/angkatan. (1)
+  **Aturan ketat**: dosen wali harus dosen aktif yang homebase-nya prodi
+  mahasiswa; mahasiswa lulus/DO/keluar/ganti prodi tidak diberi wali baru.
+  Kampus yang mewalikan lintas prodi harus mengubah aturan ini di kode, bukan
+  menembusnya dari layar. (2) **KRS mengikuti kolom, tidak ditulis ulang.**
+  KRS tidak menyimpan dosen tujuannya; keputusan diperiksa terhadap wali
+  *saat keputusan dibuat*. Maka KRS yang sudah diajukan otomatis pindah ke
+  antrean wali baru begitu kolom berubah; jumlahnya dicatat di riwayat dan
+  wali baru diberi tahu. (3) **Riwayat sebagai peristiwa**: tabel
+  `riwayat_dosen_wali` (lama, baru, cara, alasan, KRS dialihkan, penetap),
+  ditambah Log Aktivitas pada baris mahasiswa. (4) **Peran mengikuti tugas**:
+  dosen yang diberi mahasiswa wali mendapat peran `dosen-wali` (pemegang
+  `krs.approve`) bila belum. Tanpa itu antreannya tampil tetapi setiap
+  keputusan ditolak. (5) **Bagi merata stabil**: kuota tiap dosen berselisih
+  paling banyak satu; mahasiswa yang sudah dibimbing salah satu dosen terpilih
+  dipertahankan selama kuotanya cukup, jadi menjalankan ulang tidak mengubah
+  apa pun. (6) **Tanpa cakupan prodi untuk staf**: kode belum punya konsep
+  staf per prodi (staf hanya ber-unit kerja), jadi izinnya `mahasiswa.manage`
+  seperti layar mahasiswa lain. `MahasiswaPolicy::assignAdvisor` adalah
+  tempat cakupan itu kelak.
+- **Konsekuensi.** Penetapan massal semua-atau-tidak: satu baris tidak sah
+  menolak seluruh kiriman dengan semua alasannya sekaligus. Mencabut wali
+  tanpa pengganti tidak tersedia — mahasiswa terdaftar tanpa wali tidak dapat
+  diputus KRS-nya, dan itu bukan keadaan yang perlu dibuat dengan sengaja.
+
+### 2. Dispensasi pembayaran: berbatas tanggal, berakhir sendiri, dicabut per kemarin
+
+- **Konteks.** `Tagihan::memenuhiSyaratKrs()` dan `DendaService` membaca
+  `tagihan.dispensasi_sampai`, ROADMAP menjanjikan "ambang + dispensasi
+  berbatas waktu", tetapi tidak ada kode yang menulis kolom itu.
+- **Keputusan.** (1) `DispensasiService` satu-satunya penulis kolom itu;
+  setiap pemberian, permohonan, penolakan, dan pencabutan adalah baris
+  `dispensasi_tagihan` dengan pelaku dan alasan, ditambah Log Aktivitas pada
+  tagihan. Kolom pada `tagihan` tetap satu-satunya yang dibaca gerbang dan
+  denda, jadi keduanya tidak berubah. (2) **Tanggal wajib di masa depan,
+  alasan wajib.** Dispensasi tanpa tanggal adalah pembebasan gerbang
+  selamanya. (3) **Berakhir sendiri**: tidak ada tugas tengah malam; gerbang
+  membandingkan tanggal dengan hari ini. (4) **Dicabut = berakhir kemarin**,
+  bukan dikosongkan. Gerbang tertutup hari itu juga, dan jam denda mulai dari
+  pencabutan. Mengosongkan kolom akan membuat `jatuhTempoEfektif()` kembali
+  ke jatuh tempo asli dan menagih hari-hari yang tadinya dijanjikan bebas.
+  (5) **Perpanjangan menggantikan**: memberi dispensasi saat masih ada yang
+  berlaku menutup yang lama sebagai dicabut ("digantikan"), jadi paling
+  banyak satu yang berlaku per tagihan. (6) Mahasiswa dapat **memohon** dari
+  layar tagihan; keuangan menyetujui (boleh dengan tanggal lain) atau menolak
+  dengan catatan wajib. Satu permohonan menunggu per tagihan; tagihan lunas
+  tidak menerima dispensasi.
+- **Konsekuensi.** Izin memakai `keuangan.manage` (policy
+  `grantDispensation` yang sudah ada sejak Fase 1). Pengingat jatuh tempo
+  belum memperhitungkan dispensasi: mahasiswa berdispensasi masih menerima
+  pengingat berdasar jatuh tempo asli.
+
+### 3. Pengumuman: satu scope untuk tiga portal, plus waktu berakhir
+
+- **Konteks.** Pengumuman punya `target_roles`, tetapi hanya dasbor
+  mahasiswa yang merendernya — dengan kuerinya sendiri. Pengumuman untuk
+  dosen atau staf tidak pernah terlihat siapa pun, dan tidak ada halaman
+  daftar di portal mana pun.
+- **Keputusan.** (1) `Pengumuman::scopeTampilUntuk(UserRole)` satu-satunya
+  definisi "yang tampil": terbit, belum berakhir, sesuai sasaran, sematan
+  di atas lalu terbaru. Dasbor ketiga portal dan halaman daftar/detail
+  membaca scope yang sama, lewat satu `PengumumanPortalController` (pola
+  kalender) dan satu partial kartu. (2) **Kolom `berakhir_at`** (nullable):
+  "belum kedaluwarsa" tidak dapat dinyatakan tanpa kolom itu, dan null
+  mempertahankan perilaku lama (tampil sampai ditarik), jadi pengumuman lama
+  tidak berubah. (3) **Papan staf terpisah dari layar kelola**: membaca
+  untuk semua staf (`/admin/pengumuman/papan`), mengelola tetap menuntut
+  `pengaturan.*`. (4) Pengumuman yang bukan sasaran portal pembaca, belum
+  terbit, atau sudah berakhir dibalas 404, bukan 403 — bagi pembaca itu,
+  pengumumannya tidak ada.
+- **Konsekuensi.** Satu kueri tambahan di dasbor dosen dan staf; anggaran
+  kueri `AnggaranKueriSkalaTest` tidak berubah. Isi pengumuman tetap teks
+  polos (baris baru dipertahankan), bukan HTML — tidak ada CMS di sini.
+
+### 4. `student.enrolled`: terbit saat mahasiswa lahir, sekali, sesudah commit
+
+- **Konteks.** Event terdaftar di `config/bridge.php` dan `bridge.yaml`
+  tetapi tidak pernah diterbitkan; enam event lain sudah. Mahasiswa baru
+  terbentuk di dua tempat: daftar ulang PMB (`PmbService::daftarUlang`,
+  yang juga dilalui pindahan lewat PMB) dan intake pindahan/RPL langsung
+  (`PindahanService::daftarkanLangsung`). Adopsi dan klaim PDDIKTI (#44,
+  #44b) hanya menautkan mahasiswa yang sudah ada.
+- **Keputusan.** (1) `PenerbitPendaftaran::umumkan()` dipanggil di kedua
+  titik lahir itu dan menerbitkan lewat `BridgeEventPublisher` yang sama
+  dengan event lain (antre, HMAC). (2) **Sesudah commit**
+  (`DB::afterCommit`), muatan dibangun dari baris saat itu. Pindahan lewat
+  PMB mengoreksi `jenis_daftar` sesudah daftar ulang di dalam satu
+  transaksi; event yang dibangun lebih awal akan mengumumkan pindahan
+  sebagai mahasiswa baru, dan event untuk pendaftaran yang dibatalkan akan
+  mengumumkan orang yang tidak ada. (3) **Sekali per mahasiswa**: kolom
+  `mahasiswa.bridge_enrolled_at` diklaim dengan update bersyarat sebelum
+  apa pun diantre, jadi panggilan kedua, percobaan ulang, atau dua
+  permintaan yang berpacu tidak menerbitkan lagi. Kolom tetap diisi saat
+  Bridge dimatikan — keputusan "sudah diumumkan" tidak menunggu Bridge
+  dinyalakan. (4) **Adopsi dan klaim data lama tidak menerbitkan**: tidak
+  ada yang mendaftar di sana. Mahasiswa yang sudah ada sebelum rilis ini
+  tidak pernah menerima event; konsumen membacanya lewat `GET /students`.
+  (5) Muatan sempit seperti `StudentResource` (identitas, prodi, angkatan,
+  semester masuk, jenis daftar, status) dan kini didokumentasikan di
+  `bridge.yaml` → `x-webhooks.payloads`; tes memaku kuncinya sama dengan
+  spesifikasi.
+- **Konsekuensi.** Konsumen yang ingin populasi lengkap tetap harus
+  menarik `GET /students` sekali di awal; event hanya untuk mahasiswa baru
+  sejak sekarang. Seeder demo memanggil intake pindahan sebelum konsumen
+  demo dibuat, jadi demo segar tidak menghasilkan kiriman.
+
+### 5. Detail mahasiswa staf: baca saja, bagian per izin, PDF dari service yang sama
+
+- **Konteks.** `Admin\MahasiswaController` hanya daftar. Tidak ada halaman
+  per mahasiswa di sisi staf, dan KHS/transkrip hanya dapat dibuka mahasiswa
+  sendiri.
+- **Keputusan.** (1) `/admin/mahasiswa/{uuid}` **hanya baca**: identitas
+  (NIK tersamar), akademik, riwayat status dan cuti, dosen wali (dengan
+  form ganti dari §1 dan riwayatnya), KRS dan KHS per semester, tagihan
+  ringkas, kesiapan PDDIKTI (aturan `FeederValidator` yang sama dengan
+  sinkronisasi) dan perubahan terkunci yang terbuka. Identitas yang dikunci
+  PDDIKTI diubah lewat jalur PDM/PJK (ADR-017) — halaman ini menautkan ke
+  konsol Feeder, tidak memberi tombol ubah. (2) **Bagian per izin**: nilai
+  (KHS, transkrip, cetak) menuntut `nilai.view`, tagihan `keuangan.view`;
+  staf keuangan melihat tagihan tanpa nilai, BAAK sebaliknya. (3)
+  **`KhsService`** baru untuk layar dan PDF KHS satu semester, dipakai portal
+  mahasiswa (yang kini juga dapat mencetak KHS) dan staf; transkrip memakai
+  `TranskripService` yang sudah ada. KHS hanya dicetak untuk semester yang
+  sudah ditutup. (4) Tanpa cakupan prodi: kode belum punya staf per prodi
+  (lihat §1).
+- **Konsekuensi.** Penyuntingan data mahasiswa oleh staf tetap tersebar di
+  layar asalnya (pindahan, cuti, dosen wali, Feeder). Halaman detail
+  mengumpulkan, tidak menggantikan.

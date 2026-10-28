@@ -50,6 +50,7 @@ final class Navigation
                     self::item('Surat & Dokumen', '✉', 'mahasiswa.surat'),
                     self::item('Evaluasi Dosen', '☆', 'mahasiswa.edom'),
                     self::item('Tagihan & Pembayaran', '◈', 'mahasiswa.tagihan'),
+                    self::item(__('pengumuman.judul'), '✉', 'mahasiswa.pengumuman.index'),
                     self::item('Bantuan & Helpdesk', '?', 'mahasiswa.helpdesk'),
                     self::item('Profil Akademik', '○', 'mahasiswa.profil'),
                     self::item('Aplikasi Terhubung', '⌘', 'sso.aplikasi'),
@@ -101,6 +102,7 @@ final class Navigation
                 // yang dibimbingnya, bukan tentang kepegawaiannya.
                 'title' => 'LAYANAN',
                 'items' => [
+                    self::item(__('pengumuman.judul'), '✉', 'dosen.pengumuman.index'),
                     self::item('Bantuan & Helpdesk', '?', 'dosen.helpdesk'),
                 ],
             ],
@@ -115,6 +117,7 @@ final class Navigation
                 'title' => null,
                 'items' => [
                     self::item('Dasbor', '▦', 'admin.dashboard'),
+                    self::item(__('pengumuman.nav_staf'), '✉', 'admin.papan-pengumuman.index'),
                 ],
             ],
 
@@ -159,6 +162,7 @@ final class Navigation
                 'title' => 'MAHASISWA',
                 'items' => [
                     self::item('Data Mahasiswa', '○', 'admin.mahasiswa'),
+                    self::item(__('dosen_wali.nav'), '⚑', 'admin.dosen-wali'),
                     self::item('PMB', '◇', 'admin.pmb'),
                     self::item('Pindahan & RPL', '↪', 'admin.pindahan'),
                     self::item('Cuti Mahasiswa', '◐', 'admin.cuti'),
@@ -192,6 +196,7 @@ final class Navigation
                 'items' => [
                     self::item('Matriks Tarif', '⊞', 'admin.tarif'),
                     self::item('Tagihan & Rekonsiliasi', '◈', 'admin.keuangan'),
+                    self::item(__('keuangan.dispensasi.nav'), '⧗', 'admin.keuangan.dispensasi'),
                     self::item('Beasiswa & Keringanan', '◍', 'admin.beasiswa'),
                     self::item('Biaya Formulir PMB', '◇', 'admin.pmb.formulir'),
 

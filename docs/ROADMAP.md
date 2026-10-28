@@ -73,10 +73,10 @@ Apa yang ada hari ini, dikelompokkan menurut siapa yang memakainya.
 |---|---|---|
 | Master akademik (fakultas, prodi, kurikulum, MK, ruang, semester) | ✅ | Prasyarat berlingkar ditolak; penghapusan berelasi dijaga |
 | Jadwal & kelas | ✅ | Bentrok ruang/dosen menghalangi; bentrok sekohor hanya memperingatkan |
-| KRS & persetujuan dosen wali | ✅ | Batas SKS dari IPS semester terakhir yang final |
+| KRS & persetujuan dosen wali | ✅ | Batas SKS dari IPS semester terakhir yang final. Penetapan dosen wali per mahasiswa, per baris, dan bagi merata per prodi/angkatan baru ada 28 Okt 2026 — sebelumnya hanya seeder yang menulis wali (ADR-035 §1) |
 | Penilaian & finalisasi | ✅ | Komponen berbobot 100; koreksi pasca-final ter-audit |
 | Presensi + sesi QR | ✅ | 16 pertemuan; ambang kelayakan UAS |
-| KHS, transkrip, PDF | ✅ | Konversi kredit ditandai terpisah |
+| KHS, transkrip, PDF | ✅ | Konversi kredit ditandai terpisah. KHS per semester kini juga PDF, dan staf mencetak keduanya dari halaman detail mahasiswa (28 Okt 2026, ADR-035 §5) |
 | Penutupan semester | ✅ | Pembekuan catatan yang menyalakan tangga batas SKS |
 | RPS & SAP | ✅ | Peta MK→CPL yang membuat penguasaan materi terukur — [`RPS-ANALITIK.md`](RPS-ANALITIK.md) |
 | Jurnal perkuliahan (BAP) | ✅ | Terlaksana dan berjurnal dilaporkan terpisah; jaraknya adalah temuannya |
@@ -93,7 +93,7 @@ Apa yang ada hari ini, dikelompokkan menurut siapa yang memakainya.
 
 | Modul | | Catatan |
 |---|---|---|
-| Data & profil mahasiswa | ✅ | Kelengkapan PDDIKTI ditandai per baris |
+| Data & profil mahasiswa | ✅ | Kelengkapan PDDIKTI ditandai per baris. Halaman detail per mahasiswa untuk staf sejak 28 Okt 2026 — sebelumnya hanya daftar (ADR-035 §5) |
 | Cuti | ✅ | Status berpindah otomatis, dan kembali saat cuti berakhir |
 | Tugas akhir (G1) | ✅ | Satu TA aktif dijaga indeks; panel sidang wajib berisi non-pembimbing |
 | Aktivitas & MBKM | ✅ | Terverifikasi staf, jadi bukan klaim tak diperiksa |
@@ -113,7 +113,7 @@ Apa yang ada hari ini, dikelompokkan menurut siapa yang memakainya.
 | Penerbitan tagihan massal | ✅ | Idempoten dan dapat dipratinjau |
 | Pembayaran & rekonsiliasi | ✅ | Total diturunkan dari baris, tidak pernah ditambahkan |
 | Beasiswa, keringanan, potongan (G4) | ✅ | Tak pernah negatif, tak pernah menelan pembayaran |
-| Gerbang pembayaran KRS | ✅ | Ambang + dispensasi berbatas waktu |
+| Gerbang pembayaran KRS | ✅ | Ambang + dispensasi berbatas waktu. **Koreksi 28 Okt 2026**: dispensasi dibaca gerbang dan denda sejak Fase 1 tetapi tidak ada yang dapat memberikannya; kini meja dispensasi keuangan dan permohonan dari layar tagihan mahasiswa (ADR-035 §2) |
 | Integrasi akuntansi (Easy Accounting) | ✅ | Opsional; bawaan `nonaktif` |
 | Payment gateway | 🟡 | **Opsional sejak 24 Oktober 2026** (ADR-014). Transfer manual yang dicatat kasir adalah jalur utama; kontrak adaptor ada, implementasinya dibangun hanya bila ada kampus yang membawa kredensial merchant — lihat §Menunggu di Luar Repo |
 | Denda keterlambatan | ✅ | Baris tagihan tersendiri, akrual harian idempoten, pembebasan beralasan; tidak memperketat gerbang KRS. Bawaan nonaktif — [`MODUL.md`](MODUL.md) §Denda keterlambatan |
@@ -136,7 +136,7 @@ Apa yang ada hari ini, dikelompokkan menurut siapa yang memakainya.
 | Modul | | Catatan |
 |---|---|---|
 | Neo Feeder PDDIKTI | ✅ | Idempoten, ledger, validator pra-kirim. Dua puluh lima entitas sejak 24 Okt 2026: + dosen pengajar kelas, + Lulus/DO, + komponen evaluasi, + nilai per komponen, + 7 entitas aktivitas (MBKM dan tugas akhir beserta anggota, pembimbing, penguji), + prestasi, transfer kredit, konversi MBKM, + kurikulum, mata kuliah, matkul kurikulum, + skala nilai prodi, periode perkuliahan; `Delete*` untuk yang sudah tiada di sini |
-| Campus Bridge | ✅ | 14 endpoint ber-scope, webhook HMAC, spec OpenAPI — sejak 26 Okt 2026 dipaku tes: setiap rute `bridge.*` beserta scope-nya harus ada di spec |
+| Campus Bridge | ✅ | 14 endpoint ber-scope, webhook HMAC, spec OpenAPI — sejak 26 Okt 2026 dipaku tes: setiap rute `bridge.*` beserta scope-nya harus ada di spec. Ketujuh event kini benar-benar terbit: `student.enrolled` baru diterbitkan 28 Okt 2026, sekali per mahasiswa (ADR-035 §4) |
 | SSO OAuth2 (Passport) | ✅ | Kampus jadi penerbit identitas |
 | Notifikasi (G2) | ✅ | Kategori wajib tidak dapat dimatikan |
 | **Komparasi data SIAKAD ↔ Neo Feeder** | ✅ | FeederRekonsiliasi 21 Agu 2026: membaca Feeder kembali dan melaporkan hanya-lokal / hanya-Feeder / berbeda isinya. Entitas tanpa aksi pembacaan dinyatakan belum dapat dibandingkan, bukan cocok |
@@ -159,6 +159,7 @@ Apa yang ada hari ini, dikelompokkan menurut siapa yang memakainya.
 | Kuesioner umum | ✅ | Dua tabel jawaban; anonimitas jadi properti skema — [`KUESIONER.md`](KUESIONER.md) |
 | **Aplikasi mobile native** | ⬜ | Web responsif saja |
 | 2FA staf | ✅ | TOTP + kode pemulihan, 22 Agu 2026 — `/admin/dua-langkah`, ditantang di `/masuk/dua-langkah` |
+| Pengumuman | ✅ | Terbit, berakhir, sasaran per portal, sematan. Sejak 28 Okt 2026 tampil di dasbor dan halaman daftar **ketiga** portal — sebelumnya hanya dasbor mahasiswa, jadi pengumuman untuk dosen dan staf tidak pernah terlihat (ADR-035 §3) |
 
 ---
 
@@ -485,6 +486,7 @@ yang tidak ada di sini.
 | Katalog KRS pada ±1.000 kelas | ✅ | Diukur 19 Agu 2026: 1.000 baris = 1,92 s dan 2,2 MB HTML. **Sudah dipaginasi**: 105 KB, 0,79 s — lihat KAPASITAS.md |
 | Uji beban bersamaan | ✅ | Perebutan kuota diuji 19 Agu 2026: 19 proses, 1 kursi, tepat 1 pemenang. Beban HTTP penuh masih terbuka |
 | Audit N+1 menjelang v1.0 | ✅ | Lunas 27 Okt 2026 (ADR-034). Setiap layar GET berportal dan endpoint Bridge dihitung kuerinya di demo lalu pada kampus yang ditumbuhkan (kelas ×2, mahasiswa ×3, antrean lain ×3–4). Tujuh layar tumbuh bersama data — terberat pratinjau penutupan semester, 61 → 212 kueri — kini datar dan dipaku `AnggaranKueriSkalaTest` (38 layar). Dua daftar yang memuat semua baris dipaginasi; tidak ada indeks baru yang diperlukan. Rincian di [`KAPASITAS.md`](KAPASITAS.md) §Audit N+1 |
+| ~~Lima alur setengah jadi (inventaris 28 Okt 2026)~~ | ✅ | Lunas 28 Okt 2026 (Sesi 65, ADR-035). Dibaca kode atau dijanjikan dokumen, tetapi tanpa jalur tulis atau tampilan: penetapan dosen wali (KRS tidak dapat disetujui di kampus nyata), dispensasi pembayaran, pengumuman untuk dosen/staf, event `student.enrolled`, dan detail mahasiswa + KHS/transkrip di sisi staf |
 | CSP masih `'unsafe-eval'` | 🟡 | Alpine mengevaluasi ekspresi `x-` lewat konstruktor `Function`. `'unsafe-inline'` untuk skrip sudah dicabut 27 Okt 2026 (ADR-033) |
 | Temuan rendah audit keamanan Oktober 2026 | 🟡 | 16 butir ditunda, D-1 s.d. D-16 di [`KEAMANAN-AUDIT-2026-10.md`](KEAMANAN-AUDIT-2026-10.md). Yang perlu keputusan proses lebih dulu: pemisahan pengaju dan penyetuju konversi kredit dan poin kemahasiswaan (D-1), perubahan kelas sesudah semester dikunci (D-2), telaah pendidikan dan jabatan fungsional yang dientri dosen (D-7). Sisanya pekerjaan kecil |
 | **CI merah sejak 22 Agustus 2026** | ✅ | Lunas 22 Okt 2026. Bukan 8 tes: **170**. CI menjalankan Pest *sebelum* `npm run build`, dan sejak tata letak dipisah (`build/` di root, di-ignore) setiap layar membalas 500 "Vite manifest not found". Di mesin pengembang `build/` selalu ada, jadi suite terlihat hijau dua bulan. Ditambah 14 tes SSO yang hanya lolos bila `.env` menyetel `SSO_ENABLED=true` — rute SSO didaftarkan saat boot, jadi `config()` di dalam tes terlambat. Keduanya diperbaiki di suite, bukan di CI: `TestCase::setUp()` memanggil `withoutVite()`, dan `phpunit.xml` menyetel `SSO_ENABLED=true` |
@@ -578,3 +580,4 @@ Rinciannya — termasuk cacat yang ditemukan dan keputusan yang diambil — ada 
 | P5 tuntas: #30 pendaftaran wisuda mandiri, #31 menunggu uji kompetensi | 26 Oktober 2026 |
 | #32 PMB daring: portal pendaftar, seleksi impor, pengumuman | 26 Oktober 2026 |
 | Review keamanan v1.0 (Fase 5) | 27 Oktober 2026 |
+| Lima celah P0: dosen wali, dispensasi, pengumuman tiga portal, `student.enrolled`, detail mahasiswa staf | 28 Oktober 2026 |

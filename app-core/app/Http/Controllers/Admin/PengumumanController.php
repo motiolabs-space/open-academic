@@ -143,9 +143,14 @@ class PengumumanController extends Controller
 
             // Null keeps it a draft; a future time schedules it.
             'published_at' => ['nullable', 'date'],
+
+            // Null shows it until withdrawn. An end before the start would
+            // publish something nobody can ever see.
+            'berakhir_at' => ['nullable', 'date', Rule::when($request->filled('published_at'), 'after:published_at')],
         ], [
             'target_roles.required' => 'Pilih setidaknya satu portal — pengumuman tanpa sasaran '
                 .'tidak akan pernah terlihat siapa pun.',
+            'berakhir_at.after' => __('pengumuman.berakhir_sebelum_terbit'),
         ]);
     }
 

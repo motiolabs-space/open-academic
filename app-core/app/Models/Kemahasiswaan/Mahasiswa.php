@@ -118,6 +118,12 @@ class Mahasiswa extends Authenticatable implements OAuthenticatable
         return $this->belongsTo(Dosen::class, 'dosen_wali_id');
     }
 
+    /** Every advisor change, newest first. */
+    public function riwayatDosenWali(): HasMany
+    {
+        return $this->hasMany(RiwayatDosenWali::class)->orderByDesc('id');
+    }
+
     /** Per-term enrolment history — also the KHS header per term. */
     public function statusPerSemester(): HasMany
     {

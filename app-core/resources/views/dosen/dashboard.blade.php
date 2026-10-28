@@ -117,6 +117,11 @@
                     <div class="px-5 py-8 text-center text-[13px] text-ink-faint">Tidak ada jadwal mengajar hari ini.</div>
                 @endforelse
             </x-card>
+
+            @include('partials.pengumuman-kartu', [
+                'ruteTampil' => 'dosen.pengumuman.show',
+                'ruteDaftar' => 'dosen.pengumuman.index',
+            ])
         </div>
     </div>
 @endsection

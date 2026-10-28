@@ -6,29 +6,28 @@ namespace App\Http\Controllers\Mahasiswa;
 
 use App\Http\Controllers\Controller;
 use App\Models\Akademik\Nilai;
+use App\Models\Akademik\TahunAkademik;
+use App\Services\Akademik\KhsService;
 use App\Support\Portal;
-use Illuminate\Support\Collection;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\Response;
 
 /**
  * Kartu Hasil Studi and the cumulative transcript.
  *
- * The KHS is not a table of its own: it is the finalised grades of a term read
- * against the enrolment record that froze that term's IPS/IPK. Keeping it
- * derived means a grade correction can never leave a stale KHS behind.
+ * Read through KhsService, which the staff student page uses as well, so the
+ * student's copy of a term and the registrar's copy cannot disagree.
  */
 class KhsController extends Controller
 {
+    public function __construct(private readonly KhsService $khs) {}
+
     public function __invoke(): View
     {
         $this->authorize('viewAny', Nilai::class);
 
         $mahasiswa = Portal::user();
-
-        $riwayat = $mahasiswa->statusPerSemester()
-            ->with('tahunAkademik')
-            ->orderBy('tahun_akademik_id')
-            ->get();
+        $riwayat = $this->khs->riwayat($mahasiswa);
 
         return view('mahasiswa.khs', [
             'judul' => 'KHS & Transkrip',
@@ -36,23 +35,21 @@ class KhsController extends Controller
             'breadcrumb' => ['Portal Mahasiswa' => route('mahasiswa.dashboard'), 'KHS & Transkrip'],
             'mahasiswa' => $mahasiswa,
             'riwayat' => $riwayat,
-            'nilaiPerTerm' => $this->nilaiPerTerm($mahasiswa->id),
+            'nilaiPerTerm' => $this->khs->nilaiPerTerm($mahasiswa),
             'terakhir' => $riwayat->where('is_final', true)->last(),
         ]);
     }
 
     /**
-     * Finalised grades grouped by term id.
-     *
-     * @return Collection<int, Collection<int, Nilai>>
+     * One term's KHS as PDF. The owner is whoever is signed in — the route
+     * takes a term, never a student.
      */
-    private function nilaiPerTerm(int $mahasiswaId): Collection
+    public function cetak(TahunAkademik $term): Response
     {
-        return Nilai::query()
-            ->with(['kelasKuliah.mataKuliah', 'krsDetail.krs'])
-            ->where('mahasiswa_id', $mahasiswaId)
-            ->final()
-            ->get()
-            ->groupBy(fn (Nilai $nilai): int => $nilai->krsDetail->krs->tahun_akademik_id);
+        $this->authorize('viewAny', Nilai::class);
+
+        $mahasiswa = Portal::user();
+
+        return $this->khs->pdf($mahasiswa, $term)->download($this->khs->namaBerkas($mahasiswa, $term));
     }
 }

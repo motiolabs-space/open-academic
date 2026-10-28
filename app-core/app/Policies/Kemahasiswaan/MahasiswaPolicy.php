@@ -68,6 +68,18 @@ class MahasiswaPolicy
         return $this->stafDenganIzin($actor, 'mahasiswa.manage');
     }
 
+    /**
+     * Assigning or changing academic advisors.
+     *
+     * The registrar's decision, so it sits with mahasiswa.manage. Staff are
+     * not scoped to a programme anywhere in this codebase yet; when they are,
+     * this is where the scope belongs. See ADR-035.
+     */
+    public function assignAdvisor(Authenticatable $actor, ?Mahasiswa $mahasiswa = null): bool
+    {
+        return $this->stafDenganIzin($actor, 'mahasiswa.manage');
+    }
+
     public function delete(Authenticatable $actor, Mahasiswa $mahasiswa): bool
     {
         return $this->stafDenganIzin($actor, 'mahasiswa.manage');
