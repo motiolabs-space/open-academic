@@ -973,3 +973,48 @@
   (`id_registrasi_mahasiswa`) ada di `config/feeder.php` → `adopt.lampau`,
   mengikuti pemakaian komunitas, dan perlu diverifikasi terhadap dokumentasi
   build Feeder kampus.
+
+## ADR-034 — Anggaran kueri diukur pada kampus yang ditumbuhkan; indeks hanya bila rencana kuerinya menuntut (2026-10-27)
+
+- **Konteks.** Audit N+1 Fase 5 menjelang v1.0. `SmokeLayarTest` memaku
+  anggaran kueri setiap layar pada kampus demo 50 mahasiswa, dan justru
+  karena itu tidak melihat N+1 yang paling mahal: pratinjau penutupan
+  semester menjalankan 61 kueri di demo — di dalam anggaran mana pun yang
+  ditulis untuknya — dan 212 kueri pada tiga kali jumlah mahasiswa. Anggaran
+  yang diukur pada data kecil tidak dapat membedakan "dua puluh kueri" dari
+  "dua puluh kueri karena ada dua puluh baris". Menumbuhkan data per layar
+  dengan tangan tidak terjangkau untuk ratusan layar.
+- **Keputusan.** (1) **Pertumbuhan sebagai alat ukur.** `Tests\Support\
+  PenggandaBaris` menggandakan baris satu tabel beserta semua baris yang
+  menggantung padanya lewat kunci asing (mahasiswa → KRS → baris KRS → nilai,
+  presensi, tagihan …), memetakan ulang setiap FK ke salinannya, dan membuat
+  kolom unik di luar FK berbeda. `AnggaranKueriSkalaTest` menghitung tiap
+  layar ramai di demo, menumbuhkan kampus (kelas ×2, mahasiswa ×3, antrean
+  lain ×3–4), menghitung lagi, dan menuntut angkanya tetap di bawah anggaran
+  **dan** tidak melebihi hitungan demo lebih dari satu langkah eager load.
+  Dijalankan pada kode sebelum perbaikan, tes ini gagal di tujuh layar —
+  persis layar yang kuerinya tumbuh bersama data. (2) **Perbaikan dengan satu kueri per daftar**, bukan cache:
+  agregat atau kueri berkelompok yang mengembalikan peta per baris, dengan
+  metode per-baris lama tetap ada dan tes yang memaku keduanya memberi jawaban
+  yang sama. Aturan akademik tidak berubah. (3) **Paginasi tampilan, bukan
+  data**, bila layar butuh seluruh baris untuk laporan: jadwal ujian BAAK tetap
+  menyusun seluruh sesi semester untuk laporan bentrok, hanya tabelnya yang
+  dipaginasi. (4) **Indeks hanya bila rencana kueri menuntut.** Setiap SELECT
+  selama audit dijalankan ulang dengan `EXPLAIN QUERY PLAN` pada kampus yang
+  ditumbuhkan. Pemindaian penuh pada tabel besar hanya terjadi pada kolom FK
+  — yang di SQLite tidak berindeks, tetapi di InnoDB selalu berindeks karena
+  kendala FK mewajibkannya — sehingga tidak ada indeks baru. Satu-satunya
+  predikat tak-terindeks pada tabel yang tumbuh tanpa batas (`whereDate` pada
+  `log_aktivitas.created_at`) ditulis ulang menjadi rentang setengah terbuka.
+  `whereDate` pada sumber kalender sengaja dibiarkan: tabelnya kecil, dan
+  `UjianService` mencatat kenapa perbandingan tanggal polos tidak portabel.
+- **Konsekuensi.** Tiga tes yang masing-masing menanam demo lalu
+  menumbuhkannya — beberapa detik lebih lama per proses paralel. Data hasil
+  penggandaan tidak realistis dan tidak dimaksudkan realistis: penghitung
+  terdenormalisasi (`kelas_kuliah.terisi`) tidak ikut, salinan berbagi jadwal
+  dengan aslinya sehingga laporan bentrok ujian membengkak, dan baris yang
+  kunci uniknya hanya berisi FK yang tidak disalin (satu tagihan per mahasiswa
+  per semester) dilewati. Untuk menghitung kueri itu cukup; untuk mengukur
+  waktu tidak. Anggaran harus disesuaikan ketika sebuah layar sah menambah
+  kueri — penyesuaiannya ditulis di komentar baris anggaran, seperti di
+  `SmokeLayarTest`.

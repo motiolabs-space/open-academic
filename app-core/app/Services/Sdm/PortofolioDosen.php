@@ -12,6 +12,7 @@ use App\Models\Sdm\JabatanFungsionalDosen;
 use App\Models\Sdm\PenugasanDosen;
 use App\Models\Sdm\RiwayatPendidikanDosen;
 use App\Models\Sdm\SertifikasiDosen;
+use Illuminate\Support\Collection;
 
 /**
  * One lecturer's record, assembled in the shape ministry systems ask for.
@@ -144,11 +145,39 @@ class PortofolioDosen
      */
     public function kegiatan(Dosen $dosen, TahunAkademik $term): array
     {
-        return PenugasanDosen::query()
+        return $this->barisKegiatan(PenugasanDosen::query()
             ->where('dosen_id', $dosen->id)
             ->where('tahun_akademik_id', $term->id)
             ->orderBy('tanggal_mulai')
+            ->get());
+    }
+
+    /**
+     * Every listed lecturer's activities for the term, keyed by lecturer id —
+     * one query for the campus-wide export instead of one per lecturer.
+     *
+     * @param array<int, int> $dosenIds
+     * @return array<int, array<int, array<string, mixed>>>
+     */
+    public function kegiatanPerDosen(array $dosenIds, TahunAkademik $term): array
+    {
+        return PenugasanDosen::query()
+            ->whereIn('dosen_id', $dosenIds)
+            ->where('tahun_akademik_id', $term->id)
+            ->orderBy('tanggal_mulai')
             ->get()
+            ->groupBy('dosen_id')
+            ->map(fn (Collection $baris): array => $this->barisKegiatan($baris))
+            ->all();
+    }
+
+    /**
+     * @param Collection<int, PenugasanDosen> $penugasan
+     * @return array<int, array<string, mixed>>
+     */
+    private function barisKegiatan(Collection $penugasan): array
+    {
+        return $penugasan
             ->map(fn (PenugasanDosen $p): array => [
                 'uuid' => $p->uuid,
                 'jenis' => $p->jenis->value,

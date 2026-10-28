@@ -55,9 +55,11 @@ class AnalitikService
 
         $peserta = $this->presensi->pesertaKelas($kelas);
 
+        // Read from the class recap rather than asked per student: same
+        // arithmetic, one pass instead of two queries per participant.
         $persen = $peserta->map(fn (Mahasiswa $m): array => [
             'mahasiswa' => $m,
-            'persen' => $this->presensi->persenKehadiran($m, $kelas),
+            'persen' => $rekap[$m->id] ?? null,
         ])->filter(fn (array $b): bool => $b['persen'] !== null);
 
         return [
@@ -288,9 +290,11 @@ class AnalitikService
             ->get()
             ->keyBy('mahasiswa_id');
 
+        $rekapHadir = $this->presensi->rekapKelas($kelas);
+
         return $this->presensi->pesertaKelas($kelas)
-            ->map(function (Mahasiswa $m) use ($kelas, $nilaiPerMahasiswa, $minimumHadir, $minimumNilai): ?array {
-                $persen = $this->presensi->persenKehadiran($m, $kelas);
+            ->map(function (Mahasiswa $m) use ($rekapHadir, $nilaiPerMahasiswa, $minimumHadir, $minimumNilai): ?array {
+                $persen = $rekapHadir[$m->id] ?? null;
                 $nilai = $nilaiPerMahasiswa->get($m->id);
 
                 $alasan = [];

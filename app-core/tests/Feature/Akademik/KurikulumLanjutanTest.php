@@ -127,6 +127,35 @@ function kelasKurikulumUji(MataKuliah $mk): KelasKuliah
     ]);
 }
 
+it('membaca prasyarat dari relasi yang sudah dimuat sama persis dengan dari kueri', function () {
+    /*
+     * The KRS catalogue eager-loads `prasyarat` for a whole page and the
+     * checker reads it from there. "Bersamaan" (co-requisite) rows sit in the
+     * same pivot and must stay out of the answer on both paths.
+     */
+    $syarat = mkUji('IF101');
+    $bersamaan = mkUji('IF102');
+    $lulus = mkUji('IF103');
+    $mk = mkUji('IF201');
+
+    $mk->prasyarat()->attach([
+        $syarat->id => ['jenis' => 'prasyarat'],
+        $bersamaan->id => ['jenis' => 'bersamaan'],
+        $lulus->id => ['jenis' => 'prasyarat'],
+    ]);
+
+    $mahasiswa = mahasiswaUji();
+    lulusUji($mahasiswa, $lulus);
+
+    $checker = app(PrasyaratChecker::class);
+
+    $dariKueri = $checker->belumTerpenuhi($mahasiswa, MataKuliah::findOrFail($mk->id));
+    $dariRelasi = $checker->belumTerpenuhi($mahasiswa, MataKuliah::with('prasyarat')->findOrFail($mk->id));
+
+    expect($dariKueri)->toBe([$syarat->nama])
+        ->and($dariRelasi)->toBe($dariKueri);
+});
+
 describe('padanan mata kuliah', function () {
     it('mengakui mata kuliah lama sebagai penggantinya', function () {
         /*

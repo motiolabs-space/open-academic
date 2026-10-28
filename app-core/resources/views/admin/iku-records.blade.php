@@ -111,6 +111,9 @@
                 </tbody>
             </table>
         </div>
+        @if ($aktivitas->hasPages())
+            <div class="border-t border-line px-5 py-3">{{ $aktivitas->links() }}</div>
+        @endif
     </x-card>
 
     {{-- ============ PENUGASAN DOSEN (IKU 3 & 4) ============ --}}
@@ -194,5 +197,8 @@
                 </tbody>
             </table>
         </div>
+        @if ($penugasan->hasPages())
+            <div class="border-t border-line px-5 py-3">{{ $penugasan->links() }}</div>
+        @endif
     </x-card>
 @endsection

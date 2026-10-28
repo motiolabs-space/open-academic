@@ -79,6 +79,16 @@ function dalamAnggaranKueri(Closure $panggil, int $anggaran): void
         DB::flushQueryLog();
     }
 
+    // The first fill of a guarded model in a process reads that table's
+    // columns once (Model::isGuardableColumn) and caches them for the rest of
+    // the process. Whether this screen pays for it depends on which test ran
+    // before it in the same worker, not on the screen — the BKD worksheet
+    // read 18 or 22 queries by test order alone. Not a cost of the page.
+    $kueri = array_values(array_filter(
+        $kueri,
+        fn (array $q): bool => preg_match('/sqlite_master|pragma_table_xinfo/', $q['raw_query']) !== 1,
+    ));
+
     expect(count($kueri))->toBeLessThanOrEqual(
         $anggaran,
         sprintf(
@@ -130,7 +140,11 @@ it('membuka layar mahasiswa dalam anggaran kueri', function (string $url, int $a
     // 36 → 37: kueri hitung milik paginasi. Satu kueri tambahan yang dibayar
     // sekali, ditukar dengan katalog yang berhenti merender seluruh isinya —
     // pada 1.000 kelas layarnya dulu 1,92 detik dan 2,2 MB HTML.
-    ['/mahasiswa/krs', 37],
+    //
+    // 37 → 27 (audit N+1, Okt 2026): prasyarat dibaca dari relasi yang sudah
+    // di-eager-load, bukan satu kueri per baris katalog. Sepuluh kueri itu
+    // tumbuh sampai 25 pada halaman penuh — lihat AnggaranKueriSkalaTest.
+    ['/mahasiswa/krs', 27],
     ['/mahasiswa/jadwal', 20],
     // Ruang duduk seluruh sesi dihitung dari satu kueri peserta, bukan dua per
     // sesi — tanpa itu layar ini tumbuh bersama jumlah mata kuliah.
@@ -372,10 +386,13 @@ it('membuka layar kelola tugas akhir dalam anggaran kueri', function () {
 it('menyusun analitik satu kelas dalam anggaran kueri', function () {
     /*
      * Kandidat N+1 paling jelas di seluruh repo: tiga lensa atas satu kelas,
-     * masing-masing menggoda untuk berjalan per mahasiswa. Kehadiran memang
-     * memanggil PresensiService per peserta — itu harga dari satu perhitungan
-     * bersama alih-alih dua yang berselisih — sehingga anggarannya naik seiring
-     * jumlah peserta, dan itu yang diawasi angka ini.
+     * masing-masing menggoda untuk berjalan per mahasiswa.
+     *
+     * 60 → 23 (audit N+1, Okt 2026). Kehadiran dulu memanggil PresensiService
+     * per peserta, dua kueri masing-masing, dan anggaran ini sengaja dibiarkan
+     * naik bersama jumlah peserta. Sekarang persentasenya dibaca dari rekap
+     * kelas — perhitungan yang sama di PresensiService, satu lintasan — jadi
+     * angkanya tidak lagi bergantung pada besarnya kelas.
      */
     $dosen = Dosen::where('email', 'dosen1@demo.test')->firstOrFail();
 
@@ -387,7 +404,7 @@ it('menyusun analitik satu kelas dalam anggaran kueri', function () {
 
     dalamAnggaranKueri(
         fn () => $this->actingAs($dosen, 'dosen')->get('/dosen/analitik/'.$kelas->uuid)->assertOk(),
-        60,
+        23,
     );
 });
 

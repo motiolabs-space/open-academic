@@ -43,14 +43,20 @@ class IkuRecordController extends Controller
             ->where('tahun_akademik_id', $term->id)
             ->when($belumSaja, fn ($q) => $q->where('is_verified', false))
             ->orderByDesc('tanggal_mulai')
-            ->get();
+            ->orderByDesc('id')
+            // Paginated: one KKN term alone puts hundreds of activities in
+            // this list, each row carrying its own forms.
+            ->paginate(25, ['*'], 'halaman_aktivitas')
+            ->withQueryString();
 
         $penugasan = PenugasanDosen::query()
             ->with(['dosen', 'verifikator'])
             ->where('tahun_akademik_id', $term->id)
             ->when($belumSaja, fn ($q) => $q->where('is_verified', false))
             ->orderByDesc('tanggal_mulai')
-            ->get();
+            ->orderByDesc('id')
+            ->paginate(25, ['*'], 'halaman_penugasan')
+            ->withQueryString();
 
         return view('admin.iku-records', [
             'judul' => 'Verifikasi Data IKU',

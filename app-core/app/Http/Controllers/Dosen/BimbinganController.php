@@ -26,11 +26,16 @@ class BimbinganController extends Controller
         $this->authorize('viewAny', Mahasiswa::class);
 
         $mahasiswa = Mahasiswa::query()
-            ->with(['prodi', 'statusPerSemester.tahunAkademik'])
+            ->with([
+                'prodi',
+                'statusPerSemester.tahunAkademik',
+                // This term's plan for every advisee in one query, not one each.
+                'krs' => fn ($query) => $query->where('tahun_akademik_id', $term->id),
+            ])
             ->where('dosen_wali_id', $dosen->id)
             ->orderBy('nim')
             ->get()
-            ->map(function (Mahasiswa $m) use ($term): array {
+            ->map(function (Mahasiswa $m): array {
                 $riwayat = $m->statusPerSemester
                     ->where('is_final', true)
                     ->sortBy(fn ($s): string => $s->tahunAkademik->kode)
@@ -47,7 +52,7 @@ class BimbinganController extends Controller
                     'tren' => $terakhir && $sebelumnya
                         ? round((float) $terakhir->ips - (float) $sebelumnya->ips, 2)
                         : null,
-                    'krs' => $m->krs()->where('tahun_akademik_id', $term->id)->first(),
+                    'krs' => $m->krs->first(),
                     'peringatan' => $this->peringatan($terakhir?->ipk, $terakhir?->ips),
                 ];
             })

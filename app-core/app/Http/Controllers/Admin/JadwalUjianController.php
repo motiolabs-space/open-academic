@@ -21,6 +21,8 @@ use App\Services\Akademik\JadwalUjianService;
 use App\Support\Portal;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Collection;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
@@ -57,6 +59,17 @@ class JadwalUjianController extends Controller
             'jenis' => $jenis,
             'prodiId' => $prodiId,
             'daftar' => $daftar,
+
+            // The clash report needs every session of the term, so the list is
+            // built whole; only its rendering is paged. Unpaged, a term's UTS
+            // and UAS on a thousand-class campus is two thousand table rows.
+            'halaman' => new LengthAwarePaginator(
+                $daftar->forPage($nomor = Paginator::resolveCurrentPage(), 50)->values(),
+                $daftar->count(),
+                50,
+                $nomor,
+                ['path' => $request->url(), 'query' => $request->query()],
+            ),
             'bentrok' => $bentrok,
             'jumlahPenghalang' => $penghalang->count(),
             'jumlahDraf' => $daftar->reject->sudahTerbit()->count(),

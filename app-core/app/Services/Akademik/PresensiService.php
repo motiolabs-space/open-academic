@@ -39,12 +39,13 @@ class PresensiService
         $jadwal = $kelas->jadwal()->first();
         $mulai = $kelas->tahunAkademik->tanggal_mulai->copy()->startOfWeek()
             ->addDays(($jadwal?->hari ?? 1) - 1);
+        $pengampu = $kelas->dosenPengampu()->first()?->id;
 
         for ($ke = 1; $ke <= $jumlah; $ke++) {
             PertemuanKelas::firstOrCreate(
                 ['kelas_kuliah_id' => $kelas->id, 'pertemuan_ke' => $ke],
                 [
-                    'dosen_id' => $kelas->dosenPengampu()->first()?->id,
+                    'dosen_id' => $pengampu,
                     'tanggal' => (clone $mulai)->addWeeks($ke - 1),
                     'jam_mulai' => $jadwal?->jam_mulai,
                     'jam_selesai' => $jadwal?->jam_selesai,
@@ -161,6 +162,44 @@ class PresensiService
             ->count();
 
         return round($hadir / $terlaksana->count() * 100, 1);
+    }
+
+    /**
+     * persenKehadiran() for one student across several classes, keyed by class
+     * id — two queries however many classes, for the exam card that lists
+     * every class in the student's plan.
+     *
+     * @param iterable<KelasKuliah> $kelas
+     * @return array<int, float|null>
+     */
+    public function persenKehadiranPerKelas(Mahasiswa $mahasiswa, iterable $kelas): array
+    {
+        $ids = collect($kelas)->pluck('id')->all();
+
+        if ($ids === []) {
+            return [];
+        }
+
+        $terlaksana = PertemuanKelas::query()
+            ->whereIn('kelas_kuliah_id', $ids)
+            ->where('is_terlaksana', true)
+            ->get(['id', 'kelas_kuliah_id']);
+
+        $kelasPertemuan = $terlaksana->pluck('kelas_kuliah_id', 'id');
+
+        $hadir = Presensi::whereIn('pertemuan_kelas_id', $kelasPertemuan->keys())
+            ->where('mahasiswa_id', $mahasiswa->id)
+            ->get()
+            ->filter(fn (Presensi $p): bool => $p->status->countsAsPresent())
+            ->countBy(fn (Presensi $p): int => (int) $kelasPertemuan[$p->pertemuan_kelas_id]);
+
+        $sesi = $terlaksana->countBy('kelas_kuliah_id');
+
+        return collect($ids)
+            ->mapWithKeys(fn (int $id): array => [
+                $id => isset($sesi[$id]) ? round(($hadir[$id] ?? 0) / $sesi[$id] * 100, 1) : null,
+            ])
+            ->all();
     }
 
     /**
