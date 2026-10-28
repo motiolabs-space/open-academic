@@ -782,3 +782,26 @@ components:
         occurred_at: { type: string, format: date-time }
         institution: { type: string, description: Kode perguruan tinggi PDDIKTI }
         data: { type: object }
+    # Muatan `data` per event. Hanya event yang muatannya dipaku tes yang
+    # dicantumkan di sini; tes StudentEnrolledTest membandingkan kunci yang
+    # benar-benar diterbitkan dengan daftar properti ini.
+    payloads:
+      student.enrolled:
+        description: |
+          Mahasiswa baru terbentuk — daftar ulang PMB (termasuk pindahan lewat
+          PMB) atau intake pindahan/RPL langsung. Terbit satu kali per
+          mahasiswa, sesudah transaksi pendaftarannya selesai. Adopsi dan klaim
+          data PDDIKTI lama tidak menerbitkan event ini; mahasiswa yang sudah
+          ada sebelumnya dibaca lewat `GET /students`.
+        type: object
+        required: [mahasiswa_uuid, nim, nama, prodi, angkatan, semester_masuk, status]
+        properties:
+          mahasiswa_uuid: { type: string, format: uuid }
+          nim: { type: string }
+          nama: { type: string }
+          email: { type: [string, "null"] }
+          prodi: { type: string, description: Kode program studi }
+          angkatan: { type: integer }
+          semester_masuk: { type: string, description: "Kode semester PDDIKTI, mis. 20261" }
+          jenis_daftar: { type: [string, "null"], description: "baru | pindahan | rpl_transfer | rpl_perolehan | fast_track | non_gelar" }
+          status: { type: string, description: "Kode status mahasiswa, mis. A" }

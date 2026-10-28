@@ -1153,3 +1153,35 @@ satu bagian per celah.
   kueri `AnggaranKueriSkalaTest` tidak berubah. Isi pengumuman tetap teks
   polos (baris baru dipertahankan), bukan HTML — tidak ada CMS di sini.
 
+### 4. `student.enrolled`: terbit saat mahasiswa lahir, sekali, sesudah commit
+
+- **Konteks.** Event terdaftar di `config/bridge.php` dan `bridge.yaml`
+  tetapi tidak pernah diterbitkan; enam event lain sudah. Mahasiswa baru
+  terbentuk di dua tempat: daftar ulang PMB (`PmbService::daftarUlang`,
+  yang juga dilalui pindahan lewat PMB) dan intake pindahan/RPL langsung
+  (`PindahanService::daftarkanLangsung`). Adopsi dan klaim PDDIKTI (#44,
+  #44b) hanya menautkan mahasiswa yang sudah ada.
+- **Keputusan.** (1) `PenerbitPendaftaran::umumkan()` dipanggil di kedua
+  titik lahir itu dan menerbitkan lewat `BridgeEventPublisher` yang sama
+  dengan event lain (antre, HMAC). (2) **Sesudah commit**
+  (`DB::afterCommit`), muatan dibangun dari baris saat itu. Pindahan lewat
+  PMB mengoreksi `jenis_daftar` sesudah daftar ulang di dalam satu
+  transaksi; event yang dibangun lebih awal akan mengumumkan pindahan
+  sebagai mahasiswa baru, dan event untuk pendaftaran yang dibatalkan akan
+  mengumumkan orang yang tidak ada. (3) **Sekali per mahasiswa**: kolom
+  `mahasiswa.bridge_enrolled_at` diklaim dengan update bersyarat sebelum
+  apa pun diantre, jadi panggilan kedua, percobaan ulang, atau dua
+  permintaan yang berpacu tidak menerbitkan lagi. Kolom tetap diisi saat
+  Bridge dimatikan — keputusan "sudah diumumkan" tidak menunggu Bridge
+  dinyalakan. (4) **Adopsi dan klaim data lama tidak menerbitkan**: tidak
+  ada yang mendaftar di sana. Mahasiswa yang sudah ada sebelum rilis ini
+  tidak pernah menerima event; konsumen membacanya lewat `GET /students`.
+  (5) Muatan sempit seperti `StudentResource` (identitas, prodi, angkatan,
+  semester masuk, jenis daftar, status) dan kini didokumentasikan di
+  `bridge.yaml` → `x-webhooks.payloads`; tes memaku kuncinya sama dengan
+  spesifikasi.
+- **Konsekuensi.** Konsumen yang ingin populasi lengkap tetap harus
+  menarik `GET /students` sekali di awal; event hanya untuk mahasiswa baru
+  sejak sekarang. Seeder demo memanggil intake pindahan sebelum konsumen
+  demo dibuat, jadi demo segar tidak menghasilkan kiriman.
+

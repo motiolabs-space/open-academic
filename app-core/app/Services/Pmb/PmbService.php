@@ -18,6 +18,7 @@ use App\Models\Pmb\PmbGelombang;
 use App\Models\Pmb\PmbGelombangProdi;
 use App\Models\Pmb\PmbPendaftar;
 use App\Notifications\Pmb\MenjadiMahasiswa;
+use App\Services\Bridge\PenerbitPendaftaran;
 use App\Services\Keuangan\TarifResolver;
 use App\Services\Notifikasi\Notifier;
 use Illuminate\Support\Facades\DB;
@@ -40,6 +41,7 @@ class PmbService
         private readonly TarifResolver $tarif,
         private readonly PengumumanPmbService $pengumuman,
         private readonly Notifier $notifier,
+        private readonly PenerbitPendaftaran $pendaftaran,
     ) {}
 
     /** Records a selection decision. */
@@ -226,6 +228,11 @@ class PmbService
                 'tagihan' => $this->terbitkanTagihanAwal($mahasiswa, $term),
             ];
         });
+
+        // Built and published once the surrounding transaction — this one, or
+        // the transfer intake's around it — has committed, from the row as it
+        // then stands. See PenerbitPendaftaran.
+        $this->pendaftaran->umumkan($hasil['mahasiswa']);
 
         // Queued, and dispatched only once the surrounding transaction — this
         // one, or the transfer intake's around it — has committed.
