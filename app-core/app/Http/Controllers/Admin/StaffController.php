@@ -55,6 +55,8 @@ class StaffController extends Controller
         $peran = $data['peran'];
         unset($data['peran']);
 
+        $this->authorize('assignRole', [Staff::class, null, $peran]);
+
         $hasil = $this->kepegawaian->buatStaff($data, $peran);
 
         return back()->with('kata_sandi_baru', [
@@ -67,21 +69,18 @@ class StaffController extends Controller
     public function update(Request $request, Staff $staff): RedirectResponse
     {
         $this->izin('pengaturan.manage');
+        $this->authorize('manage', $staff);
 
         $data = $this->validasi($request, $staff);
         $peran = $data['peran'];
         unset($data['peran']);
 
+        $this->authorize('assignRole', [Staff::class, $staff, $peran]);
+
+        // Role first: it is the step that can be refused, and a refusal must
+        // not leave the contact details half-saved.
+        $this->kepegawaian->ubahPeranStaff($staff, $peran);
         $staff->update($data);
-
-        if (!$staff->hasRole($peran)) {
-            $lama = $staff->getRoleNames()->implode(', ');
-            $staff->syncRoles([$peran]);
-
-            // A permission change is exactly the kind of thing an auditor asks
-            // about six months later.
-            $staff->recordActivity('role_changed', "Peran diubah dari [{$lama}] menjadi [{$peran}].");
-        }
 
         return back()->with('sukses', "Akun {$staff->nama} diperbarui.");
     }
@@ -89,6 +88,7 @@ class StaffController extends Controller
     public function nonaktifkan(Staff $staff): RedirectResponse
     {
         $this->izin('pengaturan.manage');
+        $this->authorize('manage', $staff);
 
         $this->kepegawaian->nonaktifkanStaff($staff);
 
@@ -98,6 +98,7 @@ class StaffController extends Controller
     public function aktifkan(Staff $staff): RedirectResponse
     {
         $this->izin('pengaturan.manage');
+        $this->authorize('manage', $staff);
 
         $this->kepegawaian->aktifkanStaff($staff);
 
@@ -107,6 +108,7 @@ class StaffController extends Controller
     public function resetKataSandi(Staff $staff): RedirectResponse
     {
         $this->izin('pengaturan.manage');
+        $this->authorize('manage', $staff);
 
         $kataSandi = $this->kepegawaian->resetKataSandi($staff);
 

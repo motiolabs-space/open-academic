@@ -19,7 +19,7 @@
         <form
             method="POST"
             action="{{ route('dosen.nilai.finalisasi', $kelas) }}"
-            onsubmit="return confirm('Kunci nilai kelas ini? Setelah final, perubahan hanya dapat dilakukan lewat jalur koreksi ter-audit.')"
+            data-confirm="Kunci nilai kelas ini? Setelah final, perubahan hanya dapat dilakukan lewat jalur koreksi ter-audit."
         >
             @csrf
             <x-button variant="gold" type="submit">Kunci &amp; Finalisasi</x-button>

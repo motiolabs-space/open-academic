@@ -9,6 +9,7 @@ use App\Notifications\Pmb\VerifikasiSurelPendaftar;
 use App\Traits\AuthenticatesWithUuid;
 use App\Traits\HasLogAktivitas;
 use App\Traits\HasUuid;
+use App\Traits\PutarTokenIngat;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -33,6 +34,7 @@ class PmbAkun extends Authenticatable implements MustVerifyEmail
     use HasLogAktivitas;
     use HasUuid;
     use Notifiable;
+    use PutarTokenIngat;
 
     protected $table = 'pmb_akun';
 

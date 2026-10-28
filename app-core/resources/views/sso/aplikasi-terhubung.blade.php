@@ -53,7 +53,7 @@
                             method="POST"
                             action="{{ route('sso.aplikasi.cabut', $baris['client']->getKey()) }}"
                             class="flex-none"
-                            onsubmit="return confirm('Cabut akses {{ $baris['client']->name }}? Aplikasi ini akan meminta izin lagi bila Anda memakainya kembali.');"
+                            data-confirm="Cabut akses {{ $baris['client']->name }}? Aplikasi ini akan meminta izin lagi bila Anda memakainya kembali."
                         >
                             @csrf
                             @method('DELETE')

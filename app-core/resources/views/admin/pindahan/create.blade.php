@@ -27,7 +27,7 @@
             saran: { pt: [], prodi: [] },
             async cari(tipe, q) {
                 if (q.length < 2) { this.saran[tipe] = []; return; }
-                const url = '{{ route('admin.pindahan.referensi') }}?tipe=' + tipe + '&q=' + encodeURIComponent(q);
+                const url = @js(route('admin.pindahan.referensi')) + '?tipe=' + tipe + '&q=' + encodeURIComponent(q);
                 const res = await fetch(url, { headers: { Accept: 'application/json' } });
                 this.saran[tipe] = res.ok ? await res.json() : [];
             },

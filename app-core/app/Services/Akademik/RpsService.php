@@ -119,6 +119,19 @@ class RpsService
         });
     }
 
+    /**
+     * Description and references. Frozen with the rest once published: this
+     * used to be written straight from the controller, ahead of the draft
+     * check in simpanPertemuan(), so a published RPS refused the save with an
+     * error and had its text changed anyway.
+     */
+    public function simpanIsi(Rps $rps, ?string $deskripsi, ?string $pustaka): void
+    {
+        $this->pastikanDraft($rps);
+
+        $rps->update(['deskripsi' => $deskripsi, 'pustaka' => $pustaka]);
+    }
+
     /** Replaces the whole weekly plan in one go. */
     public function simpanPertemuan(Rps $rps, array $baris): void
     {

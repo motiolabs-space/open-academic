@@ -118,10 +118,7 @@ class RpsController extends Controller
             'pertemuan.*.bobot' => ['nullable', 'integer', 'min:0', 'max:100'],
         ]);
 
-        $rps->update([
-            'deskripsi' => $data['deskripsi'] ?? null,
-            'pustaka' => $data['pustaka'] ?? null,
-        ]);
+        $this->rps->simpanIsi($rps, $data['deskripsi'] ?? null, $data['pustaka'] ?? null);
 
         // Blank rows are dropped rather than stored: sixteen empty weeks would
         // satisfy the count check while saying nothing.

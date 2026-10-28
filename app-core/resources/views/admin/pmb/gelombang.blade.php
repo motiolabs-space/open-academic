@@ -177,7 +177,7 @@
                     <p class="mb-3 text-[12px] text-ink-muted">{{ __('pmb.pengumuman.belum_diputuskan', ['jumlah' => $belumDiputuskan]) }}</p>
                 @endif
                 <form method="POST" action="{{ route('admin.pmb.umumkan', $gelombang) }}"
-                    onsubmit="return confirm(@js(__('pmb.pengumuman.umumkan_konfirmasi')));">
+                    data-confirm="{{ __('pmb.pengumuman.umumkan_konfirmasi') }}">
                     @csrf
                     <x-button type="submit" variant="gold" size="sm">{{ __('pmb.pengumuman.umumkan') }}</x-button>
                 </form>

@@ -139,7 +139,7 @@
                                         {{-- Menutup satu arah. Temuan yang dapat dibuka lagi adalah
                                              temuan yang dapat dihaluskan menjelang asesmen lapangan. --}}
                                         <x-button type="submit" variant="outline" class="px-3 py-1.5 text-[11px]"
-                                            onclick="return confirm('Tutup temuan ini? Uraiannya tidak dapat diubah lagi setelah ditutup.')">
+                                            data-confirm="Tutup temuan ini? Uraiannya tidak dapat diubah lagi setelah ditutup.">
                                             Tutup temuan
                                         </x-button>
                                         @if ($t->wajibTindakLanjut())

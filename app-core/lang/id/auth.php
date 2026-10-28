@@ -7,6 +7,8 @@ return [
     'failed' => 'Data yang Anda masukkan tidak cocok dengan catatan kami.',
     'password' => 'Kata sandi salah.',
     'throttle' => 'Terlalu banyak percobaan masuk. Silakan coba lagi dalam :seconds detik.',
+    'nonaktif' => 'Akun Anda telah dinonaktifkan. Hubungi administrator kampus bila ini keliru.',
+    'sandi_berubah' => 'Kata sandi akun ini baru saja diganti. Silakan masuk kembali.',
 
     /*
      | Masuk lewat IdP eksternal. Kunci selain `masuk` dan `atau` adalah kode

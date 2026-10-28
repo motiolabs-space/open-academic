@@ -78,7 +78,7 @@
                                         </form>
 
                                         <form method="POST" action="{{ route('admin.pengumuman.hapus', $p) }}"
-                                            onsubmit="return confirm('Hapus pengumuman ini?');">
+                                            data-confirm="Hapus pengumuman ini?">
                                             @csrf @method('DELETE')
                                             <x-button type="submit" variant="danger" size="sm">Hapus</x-button>
                                         </form>

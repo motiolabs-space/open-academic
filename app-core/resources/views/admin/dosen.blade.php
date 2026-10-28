@@ -85,7 +85,7 @@
                                             {{ __('kepegawaian.judul') }}
                                         </x-button>
                                         <form method="POST" action="{{ route('admin.dosen.reset-sandi', $d) }}"
-                                            onsubmit="return confirm('Terbitkan kata sandi baru untuk {{ $d->nama }}? Kata sandi lamanya langsung tidak berlaku.');">
+                                            data-confirm="Terbitkan kata sandi baru untuk {{ $d->nama }}? Kata sandi lamanya langsung tidak berlaku.">
                                             @csrf
                                             <x-button type="submit" variant="outline" size="sm">Reset Sandi</x-button>
                                         </form>

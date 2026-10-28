@@ -169,4 +169,21 @@ return [
 
     'password_timeout' => (int) env('AUTH_PASSWORD_TIMEOUT', 10800),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Batas percobaan masuk (App\Support\BatasMasuk)
+    |--------------------------------------------------------------------------
+    |
+    | Di atas batas per identitas + alamat yang sudah ada. Per akun: percobaan
+    | gagal ke satu akun dari alamat mana pun. Per alamat: percobaan gagal dari
+    | satu alamat ke akun mana pun — dibuat jauh di atas salah ketik wajar satu
+    | kampus di balik NAT.
+    |
+    */
+
+    'batas_masuk' => [
+        'per_akun' => ['maks' => (int) env('AUTH_BATAS_PER_AKUN', 20), 'detik' => 900],
+        'per_alamat' => ['maks' => (int) env('AUTH_BATAS_PER_ALAMAT', 50), 'detik' => 300],
+    ],
+
 ];

@@ -90,8 +90,13 @@ trait HasLogAktivitas
         };
 
         $only = property_exists($this, 'logOnly') ? $this->logOnly : [];
+        // Whatever the model hides from serialisation is a secret, and the log
+        // is readable by anyone with log.view: Staff's 2FA secret (decrypted
+        // by getOriginal) and a Bridge consumer's webhook secret used to land
+        // here in full.
         $except = array_merge(
             ['id', 'uuid', 'created_at', 'updated_at', 'password', 'remember_token'],
+            $this->getHidden(),
             property_exists($this, 'logExcept') ? $this->logExcept : [],
         );
 

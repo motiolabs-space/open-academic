@@ -16,6 +16,7 @@ use App\Models\Akademik\JadwalKuliah;
 use App\Models\Akademik\KalenderPeristiwa;
 use App\Models\Akademik\Ruang;
 use App\Models\Akademik\TahunAkademik;
+use App\Support\Csv;
 use App\Support\Format;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
@@ -148,10 +149,10 @@ class PemanfaatanRuangService
                 fwrite($keluaran, "\xEF\xBB\xBF");
             }
 
-            fputcsv($keluaran, array_values(__('pemanfaatan_ruang.csv')), ',', '"', '\\');
+            Csv::tulis($keluaran, array_values(__('pemanfaatan_ruang.csv')), ',');
 
             foreach ($laporan->ruang as $r) {
-                fputcsv($keluaran, [
+                Csv::tulis($keluaran, [
                     $r->gedungKode ?? '',
                     $r->kode,
                     $r->nama,
@@ -167,7 +168,7 @@ class PemanfaatanRuangService
                     $r->sesiUjian,
                     $r->kelebihan,
                     $r->jarang ? 'ya' : 'tidak',
-                ], ',', '"', '\\');
+                ], ',');
             }
 
             fclose($keluaran);

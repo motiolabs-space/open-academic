@@ -159,7 +159,7 @@
                                 <td class="px-5 py-3">
                                     <form method="POST" action="{{ route('admin.yudisium.ukom', $m) }}"
                                         class="flex flex-wrap items-end gap-2"
-                                        onsubmit="return this.hasil.value !== 'lulus' || confirm(@js(__('ukom.form.konfirmasi_lulus', ['nama' => $m->nama])));">
+                                        data-confirm="{{ __('ukom.form.konfirmasi_lulus', ['nama' => $m->nama]) }}" data-confirm-if="hasil=lulus">
                                         @csrf
                                         <label class="block">
                                             <span class="sr-only">{{ __('ukom.form.tanggal') }}</span>
