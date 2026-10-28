@@ -5,11 +5,13 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Dosen;
 
 use App\Enums\KrsStatus;
+use App\Enums\UserRole;
 use App\Http\Controllers\Controller;
 use App\Models\Akademik\JadwalKuliah;
 use App\Models\Akademik\KelasKuliah;
 use App\Models\Akademik\Krs;
 use App\Models\Kemahasiswaan\Mahasiswa;
+use App\Models\System\Pengumuman;
 use App\Support\Portal;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
@@ -37,6 +39,7 @@ class DashboardController extends Controller
             'antreanKrs' => $this->antreanKrs($dosen->id, $term?->id),
             'jumlahBimbingan' => Mahasiswa::where('dosen_wali_id', $dosen->id)->aktif()->count(),
             'jadwalHariIni' => $this->jadwalHariIni($kelas),
+            'pengumuman' => Pengumuman::query()->tampilUntuk(UserRole::Dosen)->limit(4)->get(),
         ]);
     }
 

@@ -7,6 +7,7 @@ namespace App\Http\Controllers\Admin;
 use App\Enums\ApplicantStatus;
 use App\Enums\KrsStatus;
 use App\Enums\StudentStatus;
+use App\Enums\UserRole;
 use App\Http\Controllers\Controller;
 use App\Models\Akademik\KelasKuliah;
 use App\Models\Akademik\Krs;
@@ -17,6 +18,7 @@ use App\Models\Kemahasiswaan\Mahasiswa;
 use App\Models\Keuangan\Tagihan;
 use App\Models\Pmb\PmbPendaftar;
 use App\Models\Sdm\Dosen;
+use App\Models\System\Pengumuman;
 use App\Services\Branding\BrandingService;
 use App\Support\Portal;
 use Illuminate\Support\Collection;
@@ -62,6 +64,7 @@ class DashboardController extends Controller
             'feederTerakhir' => FeederSyncLog::latest('id')->first(),
             'feederGagal' => FeederSyncLog::gagal()->count(),
             'bridgeConsumers' => BridgeConsumer::aktif()->get(),
+            'pengumuman' => Pengumuman::query()->tampilUntuk(UserRole::Staff)->limit(4)->get(),
         ]);
     }
 

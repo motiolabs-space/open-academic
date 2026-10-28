@@ -54,10 +54,18 @@
                                         <div class="tabular mt-1 text-[11px] text-ink-faint">
                                             {{ $p->published_at->translatedFormat('j M Y H:i') }}
                                         </div>
+                                    @elseif ($p->berakhir_at?->isPast())
+                                        <x-chip tone="neutral">{{ __('pengumuman.berakhir_chip') }}</x-chip>
+                                        <div class="tabular mt-1 text-[11px] text-ink-faint">
+                                            {{ $p->berakhir_at->translatedFormat('j M Y H:i') }}
+                                        </div>
                                     @else
                                         <x-chip tone="success" dot>Terbit</x-chip>
                                         <div class="tabular mt-1 text-[11px] text-ink-faint">
                                             {{ $p->published_at->translatedFormat('j M Y') }}
+                                            @if ($p->berakhir_at)
+                                                — {{ $p->berakhir_at->translatedFormat('j M Y') }}
+                                            @endif
                                         </div>
                                     @endif
                                 </td>
@@ -128,6 +136,9 @@
 
                 <x-field label="Waktu Terbit" name="published_at" type="datetime-local"
                     hint="Kosongkan untuk menyimpan sebagai draf. Isi waktu mendatang untuk menjadwalkan." />
+
+                <x-field :label="__('pengumuman.berakhir')" name="berakhir_at" type="datetime-local"
+                    :hint="__('pengumuman.berakhir_bantuan')" />
 
                 <label class="flex items-center gap-2 text-[13px]">
                     <input type="hidden" name="is_pinned" value="0">

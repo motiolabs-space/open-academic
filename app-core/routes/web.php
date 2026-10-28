@@ -13,6 +13,7 @@ use App\Http\Controllers\KalenderController;
 use App\Http\Controllers\KalenderIcsController;
 use App\Http\Controllers\Mahasiswa;
 use App\Http\Controllers\NotifikasiController;
+use App\Http\Controllers\PengumumanPortalController;
 use App\Http\Controllers\Sso;
 use App\Http\Controllers\VerifikasiSuratController;
 use Illuminate\Support\Facades\Route;
@@ -180,6 +181,8 @@ Route::middleware(['auth:mahasiswa', 'term.active'])->prefix('mahasiswa')->name(
 
     Route::get('/khs', Mahasiswa\KhsController::class)->name('khs');
     Route::get('/khs/transkrip', Mahasiswa\TranskripController::class)->name('transkrip');
+    Route::get('/pengumuman', [PengumumanPortalController::class, 'index'])->name('pengumuman.index');
+    Route::get('/pengumuman/{pengumuman}', [PengumumanPortalController::class, 'show'])->name('pengumuman.show');
     Route::get('/tagihan', Mahasiswa\TagihanController::class)->name('tagihan');
     Route::post('/tagihan/{tagihan}/dispensasi', Mahasiswa\DispensasiController::class)->name('tagihan.dispensasi');
 
@@ -238,6 +241,9 @@ Route::middleware(['auth:dosen', 'term.active'])->prefix('dosen')->name('dosen.'
     Route::post('/helpdesk', [Helpdesk\TiketPemohonController::class, 'store'])->name('helpdesk.store');
     Route::get('/helpdesk/{tiket}', [Helpdesk\TiketPemohonController::class, 'show'])->name('helpdesk.show');
     Route::post('/helpdesk/{tiket}/balas', [Helpdesk\TiketPemohonController::class, 'balas'])->name('helpdesk.balas');
+
+    Route::get('/pengumuman', [PengumumanPortalController::class, 'index'])->name('pengumuman.index');
+    Route::get('/pengumuman/{pengumuman}', [PengumumanPortalController::class, 'show'])->name('pengumuman.show');
 
     Route::get('/kelas', Dosen\KelasController::class)->name('kelas');
     Route::get('/jadwal-ujian', Dosen\JadwalUjianController::class)->name('jadwal-ujian');
@@ -548,6 +554,11 @@ Route::middleware(['auth:staff', 'term.active'])->prefix('admin')->name('admin.'
     Route::get('/koreksi-nilai', [Admin\KoreksiNilaiController::class, 'index'])->name('koreksi-nilai');
     Route::post('/koreksi-nilai/{nilai}', [Admin\KoreksiNilaiController::class, 'koreksi'])->name('koreksi-nilai.simpan');
 
+    // Papan baca untuk setiap staf, terpisah dari layar kelola di bawahnya
+    // yang menuntut izin pengaturan. Didaftarkan lebih dulu agar "papan"
+    // tidak pernah dibaca sebagai UUID.
+    Route::get('/pengumuman/papan', [PengumumanPortalController::class, 'index'])->name('papan-pengumuman.index');
+    Route::get('/pengumuman/papan/{pengumuman}', [PengumumanPortalController::class, 'show'])->name('papan-pengumuman.show');
     Route::get('/pengumuman', [Admin\PengumumanController::class, 'index'])->name('pengumuman');
     Route::post('/pengumuman', [Admin\PengumumanController::class, 'store'])->name('pengumuman.store');
     Route::put('/pengumuman/{pengumuman}', [Admin\PengumumanController::class, 'perbarui'])->name('pengumuman.perbarui');

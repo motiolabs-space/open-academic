@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Mahasiswa;
 
+use App\Enums\UserRole;
 use App\Http\Controllers\Controller;
 use App\Models\Akademik\JadwalKuliah;
 use App\Models\Akademik\Krs;
@@ -38,8 +39,7 @@ class DashboardController extends Controller
             'krs' => $this->krs($mahasiswa->id, $term?->id),
             'tagihan' => $this->tagihan($mahasiswa->id, $term?->id),
             'jadwalHariIni' => $this->jadwalHariIni($mahasiswa->id, $term?->id),
-            'pengumuman' => Pengumuman::terbit()->untuk('mahasiswa')
-                ->orderByDesc('is_pinned')->orderByDesc('published_at')->limit(4)->get(),
+            'pengumuman' => Pengumuman::query()->tampilUntuk(UserRole::Mahasiswa)->limit(4)->get(),
         ]);
     }
 

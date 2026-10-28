@@ -135,5 +135,10 @@
                 @endforeach
             </div>
         </x-card>
+
+        @include('partials.pengumuman-kartu', [
+            'ruteTampil' => 'admin.papan-pengumuman.show',
+            'ruteDaftar' => 'admin.papan-pengumuman.index',
+        ])
     </div>
 @endsection

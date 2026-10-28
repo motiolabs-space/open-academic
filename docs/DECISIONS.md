@@ -1130,3 +1130,26 @@ satu bagian per celah.
   `grantDispensation` yang sudah ada sejak Fase 1). Pengingat jatuh tempo
   belum memperhitungkan dispensasi: mahasiswa berdispensasi masih menerima
   pengingat berdasar jatuh tempo asli.
+
+### 3. Pengumuman: satu scope untuk tiga portal, plus waktu berakhir
+
+- **Konteks.** Pengumuman punya `target_roles`, tetapi hanya dasbor
+  mahasiswa yang merendernya — dengan kuerinya sendiri. Pengumuman untuk
+  dosen atau staf tidak pernah terlihat siapa pun, dan tidak ada halaman
+  daftar di portal mana pun.
+- **Keputusan.** (1) `Pengumuman::scopeTampilUntuk(UserRole)` satu-satunya
+  definisi "yang tampil": terbit, belum berakhir, sesuai sasaran, sematan
+  di atas lalu terbaru. Dasbor ketiga portal dan halaman daftar/detail
+  membaca scope yang sama, lewat satu `PengumumanPortalController` (pola
+  kalender) dan satu partial kartu. (2) **Kolom `berakhir_at`** (nullable):
+  "belum kedaluwarsa" tidak dapat dinyatakan tanpa kolom itu, dan null
+  mempertahankan perilaku lama (tampil sampai ditarik), jadi pengumuman lama
+  tidak berubah. (3) **Papan staf terpisah dari layar kelola**: membaca
+  untuk semua staf (`/admin/pengumuman/papan`), mengelola tetap menuntut
+  `pengaturan.*`. (4) Pengumuman yang bukan sasaran portal pembaca, belum
+  terbit, atau sudah berakhir dibalas 404, bukan 403 — bagi pembaca itu,
+  pengumumannya tidak ada.
+- **Konsekuensi.** Satu kueri tambahan di dasbor dosen dan staf; anggaran
+  kueri `AnggaranKueriSkalaTest` tidak berubah. Isi pengumuman tetap teks
+  polos (baris baru dipertahankan), bukan HTML — tidak ada CMS di sini.
+

@@ -331,6 +331,23 @@ it('membuka meja dispensasi dalam anggaran kueri', function () {
 });
 
 /*
+ * Pengumuman di ketiga portal (Sesi 65): satu scope, paginasi, tanpa relasi.
+ */
+it('membuka daftar pengumuman ketiga portal dalam anggaran kueri', function (string $email, string $guard, string $url, int $anggaran) {
+    $aktor = match ($guard) {
+        'mahasiswa' => Mahasiswa::where('email', $email)->firstOrFail(),
+        'dosen' => Dosen::where('email', $email)->firstOrFail(),
+        default => Staff::where('email', $email)->firstOrFail(),
+    };
+
+    dalamAnggaranKueri(fn () => $this->actingAs($aktor, $guard)->get($url)->assertOk(), $anggaran);
+})->with([
+    ['mahasiswa1@demo.test', 'mahasiswa', '/mahasiswa/pengumuman', 8],
+    ['dosen1@demo.test', 'dosen', '/dosen/pengumuman', 8],
+    ['admin@demo.test', 'staff', '/admin/pengumuman/papan', 8],
+]);
+
+/*
  * Profil pindahan demo: dibuat lewat intake sungguhan oleh KonversiSeeder,
  * dengan tiga konversi diakui dan satu menunggu. Ringkasannya menjalankan
  * aturan FeederValidator yang sama dengan sinkronisasi — termasuk pemetaan
