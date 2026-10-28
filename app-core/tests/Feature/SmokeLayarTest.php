@@ -289,6 +289,21 @@ it('membuka berkas kepegawaian dan buku besar angka kredit satu dosen dalam angg
 });
 
 /*
+ * Penetapan dosen wali (Sesi 65): satu prodi demo dengan seluruh mahasiswanya.
+ * Wali saat ini, jumlah KRS menunggu, dan beban bimbingan tiap calon dosen
+ * dibaca bersama — bukan satu kueri per baris.
+ */
+it('membuka layar penetapan dosen wali dalam anggaran kueri', function () {
+    $staff = Staff::where('email', 'admin@demo.test')->firstOrFail();
+    $prodi = Mahasiswa::query()->selectRaw('prodi_id, count(*) as n')->groupBy('prodi_id')->orderByDesc('n')->value('prodi_id');
+
+    dalamAnggaranKueri(
+        fn () => $this->actingAs($staff, 'staff')->get('/admin/dosen-wali?prodi='.$prodi)->assertOk(),
+        16,
+    );
+});
+
+/*
  * Profil pindahan demo: dibuat lewat intake sungguhan oleh KonversiSeeder,
  * dengan tiga konversi diakui dan satu menunggu. Ringkasannya menjalankan
  * aturan FeederValidator yang sama dengan sinkronisasi — termasuk pemetaan

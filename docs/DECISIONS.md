@@ -1065,3 +1065,41 @@
   waktu tidak. Anggaran harus disesuaikan ketika sebuah layar sah menambah
   kueri — penyesuaiannya ditulis di komentar baris anggaran, seperti di
   `SmokeLayarTest`.
+
+## ADR-035 — Lima celah P0: jalur tulis untuk data yang sudah dibaca kode (2026-10-28)
+
+Inventaris modul 28 Oktober menemukan lima alur yang dibaca kode atau
+dijanjikan dokumen tetapi tidak punya jalur tulis atau tampilan. Satu ADR,
+satu bagian per celah.
+
+### 1. Dosen wali: dosen aktif ber-homebase prodi yang sama; KRS mengikuti kolom
+
+- **Konteks.** `mahasiswa.dosen_wali_id` memutuskan siapa yang boleh
+  menyetujui KRS (`KrsService::putuskan()`, `KrsPolicy::approve`), tetapi
+  hanya seeder demo yang menulisnya. Kampus nyata tidak dapat menjalankan
+  persetujuan KRS sama sekali.
+- **Keputusan.** `DosenWaliService` satu-satunya penulis kolom itu: per
+  mahasiswa, per baris (massal), dan bagi merata per prodi/angkatan. (1)
+  **Aturan ketat**: dosen wali harus dosen aktif yang homebase-nya prodi
+  mahasiswa; mahasiswa lulus/DO/keluar/ganti prodi tidak diberi wali baru.
+  Kampus yang mewalikan lintas prodi harus mengubah aturan ini di kode, bukan
+  menembusnya dari layar. (2) **KRS mengikuti kolom, tidak ditulis ulang.**
+  KRS tidak menyimpan dosen tujuannya; keputusan diperiksa terhadap wali
+  *saat keputusan dibuat*. Maka KRS yang sudah diajukan otomatis pindah ke
+  antrean wali baru begitu kolom berubah; jumlahnya dicatat di riwayat dan
+  wali baru diberi tahu. (3) **Riwayat sebagai peristiwa**: tabel
+  `riwayat_dosen_wali` (lama, baru, cara, alasan, KRS dialihkan, penetap),
+  ditambah Log Aktivitas pada baris mahasiswa. (4) **Peran mengikuti tugas**:
+  dosen yang diberi mahasiswa wali mendapat peran `dosen-wali` (pemegang
+  `krs.approve`) bila belum. Tanpa itu antreannya tampil tetapi setiap
+  keputusan ditolak. (5) **Bagi merata stabil**: kuota tiap dosen berselisih
+  paling banyak satu; mahasiswa yang sudah dibimbing salah satu dosen terpilih
+  dipertahankan selama kuotanya cukup, jadi menjalankan ulang tidak mengubah
+  apa pun. (6) **Tanpa cakupan prodi untuk staf**: kode belum punya konsep
+  staf per prodi (staf hanya ber-unit kerja), jadi izinnya `mahasiswa.manage`
+  seperti layar mahasiswa lain. `MahasiswaPolicy::assignAdvisor` adalah
+  tempat cakupan itu kelak.
+- **Konsekuensi.** Penetapan massal semua-atau-tidak: satu baris tidak sah
+  menolak seluruh kiriman dengan semua alasannya sekaligus. Mencabut wali
+  tanpa pengganti tidak tersedia — mahasiswa terdaftar tanpa wali tidak dapat
+  diputus KRS-nya, dan itu bukan keadaan yang perlu dibuat dengan sengaja.

@@ -460,6 +460,12 @@ Route::middleware(['auth:staff', 'term.active'])->prefix('admin')->name('admin.'
     Route::get('/', Admin\DashboardController::class)->name('dashboard');
     Route::get('/mahasiswa', Admin\MahasiswaController::class)->name('mahasiswa');
 
+    // Dosen wali: penetapan per prodi (massal atau merata) dan per mahasiswa.
+    Route::get('/dosen-wali', [Admin\DosenWaliController::class, 'index'])->name('dosen-wali');
+    Route::post('/dosen-wali/massal', [Admin\DosenWaliController::class, 'massal'])->name('dosen-wali.massal');
+    Route::post('/dosen-wali/merata', [Admin\DosenWaliController::class, 'merata'])->name('dosen-wali.merata');
+    Route::post('/mahasiswa/{mahasiswa}/dosen-wali', [Admin\DosenWaliController::class, 'tetapkan'])->name('dosen-wali.tetapkan');
+
     Route::get('/kelas', [Admin\KelasController::class, 'index'])->name('kelas');
     Route::post('/kelas', [Admin\KelasController::class, 'buka'])->name('kelas.buka');
     Route::put('/kelas/{kelas}', [Admin\KelasController::class, 'perbarui'])->name('kelas.perbarui');

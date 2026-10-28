@@ -159,6 +159,7 @@ final class Navigation
                 'title' => 'MAHASISWA',
                 'items' => [
                     self::item('Data Mahasiswa', '○', 'admin.mahasiswa'),
+                    self::item(__('dosen_wali.nav'), '⚑', 'admin.dosen-wali'),
                     self::item('PMB', '◇', 'admin.pmb'),
                     self::item('Pindahan & RPL', '↪', 'admin.pindahan'),
                     self::item('Cuti Mahasiswa', '◐', 'admin.cuti'),
