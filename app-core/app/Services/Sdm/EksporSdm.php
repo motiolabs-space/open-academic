@@ -75,10 +75,11 @@ class EksporSdm
      */
     public function kegiatanCsv(TahunAkademik $term): StreamedResponse
     {
-        $baris = Dosen::aktif()
-            ->orderBy('nama')
-            ->get()
-            ->flatMap(fn (Dosen $d): array => collect($this->portofolio->kegiatan($d, $term))
+        $dosen = Dosen::aktif()->orderBy('nama')->get();
+        $kegiatan = $this->portofolio->kegiatanPerDosen($dosen->modelKeys(), $term);
+
+        $baris = $dosen
+            ->flatMap(fn (Dosen $d): array => collect($kegiatan[$d->id] ?? [])
                 ->map(fn (array $k): array => [
                     $d->nidn,
                     $d->namaLengkap(),

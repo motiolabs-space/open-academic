@@ -4,6 +4,69 @@
 
 ---
 
+## Sesi 64 — 2026-10-27 · Audit N+1 dan kinerja menjelang v1.0
+
+Fase 5, branch `perf/audit-n-plus-1-v1`, satu PR. Berjalan paralel dengan
+review keamanan (Sesi 63, ADR-033); konflik teks di berkas ini, `ROADMAP.md`,
+dan `DECISIONS.md` wajar. Keputusan: ADR-034. Laporan: `docs/KAPASITAS.md`
+§Audit N+1, Oktober 2026. Tanpa migrasi.
+
+- **Cara mengukur.** Setiap rute GET berportal (staf, dosen, mahasiswa,
+  pendaftar) dan endpoint Bridge dibuka di demo, lalu sekali lagi sesudah
+  kampusnya ditumbuhkan (kelas ×2, mahasiswa ×3, pendaftar, tiket, kalender,
+  ujian, penugasan, aktivitas, tagihan ×3–4). Dua alat: jumlah kueri yang
+  bertambah (N+1) dan ukuran HTML yang bertambah (daftar tanpa batas), plus
+  `EXPLAIN QUERY PLAN` atas setiap SELECT untuk mencari pemindaian penuh.
+  Penumbuhnya `Tests\Support\PenggandaBaris`: menyalin baris beserta semua
+  turunannya lewat graf kunci asing.
+- **Tujuh N+1, kini datar:** pratinjau penutupan semester (satu kueri per
+  catatan mahasiswa — 61 → 212 kueri saat mahasiswa ×3; kini 12), katalog KRS
+  (prasyarat per baris, padahal relasinya sudah di-eager-load), mahasiswa
+  bimbingan (KRS semester per mahasiswa), analitik kelas (kehadiran dua kueri
+  per peserta), kartu ujian mahasiswa dan cetak staf (kehadiran dua kali per
+  kelas), ekspor CSV kegiatan dosen (satu kueri per dosen). Ditambah dua yang
+  tidak tumbuh bersama baris tetapi berulang: komponen bernilai di input nilai
+  (satu EXISTS per komponen → `loadExists`) dan dosen pengampu pada pembukaan
+  pertama grid presensi (16 → 1).
+- **Metode baru** `PresensiService::persenKehadiranPerKelas()` dan
+  `PortofolioDosen::kegiatanPerDosen()`; metode per-baris lama tetap, dan tes
+  memaku keduanya memberi jawaban yang sama. `PrasyaratChecker` membaca
+  relasi yang sudah dimuat bila ada (tetap menyaring `jenis = prasyarat`).
+- **Paginasi:** verifikasi data IKU (dua daftar, 25 per halaman, parameter
+  halaman terpisah) — 1.379 KB → 161 KB pada kampus tumbuh; tabel jadwal ujian
+  BAAK dipaginasi 50 di tampilan, laporan bentrok tetap membaca seluruh
+  semester.
+- **Indeks:** tidak ada yang baru. Pemindaian penuh pada tabel besar hanya
+  pada kolom FK, yang di InnoDB selalu berindeks. Filter tanggal Log Aktivitas
+  ditulis ulang dari `whereDate` menjadi rentang `created_at` agar indeksnya
+  terpakai.
+- `SmokeLayarTest`: katalog KRS 37 → 27, analitik kelas 60 → 23 (komentar
+  lama yang menerima pertumbuhan per peserta diganti). Penghitung anggarannya
+  kini mengabaikan kueri introspeksi skema (`sqlite_master`,
+  `pragma_table_xinfo`). Kueri itu dibayar sekali per proses oleh pengisian
+  model ber-`$guarded` pertama, jadi bergantung pada urutan tes. Lembar kerja
+  BKD membaca 18 atau 22 kueri hanya karena urutan, dan gagal 22 > 20 saat
+  file ini dijalankan sendiri, juga pada kode lama. Layar ini juga file
+  terlama di suite: ±12 menit di satu worker.
+
+**Tes baru:** AnggaranKueriSkalaTest 3 (38 layar, gagal di tujuh layar pada
+kode lama); PresensiServiceTest 1, KurikulumLanjutanTest 1, BkdTest 1
+(kesetaraan metode batch dengan per-baris).
+
+### Belum
+
+Rincian KKN/PKL staf merender pilihan "pindah kelompok" untuk setiap anggota
+(anggota × kelompok opsi) — perlu perubahan UI, bukan kueri. Sumber kalender
+tetap memakai `whereDate` (tabel kecil; alasan portabilitas di
+`UjianService`). Angka waktu di KAPASITAS diukur dalam proses di MariaDB
+lokal (katalog 304 kelas terlihat): kueri turun jelas (KRS 56 → 31, tutup
+semester 73 → 24), stopwatch pada data demo tertelan derau laptop. Uji beban
+HTTP 22 Agustus tidak diulang. `PenggandaBaris` kini menjaga kolom `YEAR`
+MySQL, tetapi tetap terlalu lambat di MariaDB dengan banyak basis data
+(`information_schema`); ia alat untuk SQLite.
+
+---
+
 ## Sesi 63 — 2026-10-27 · Review keamanan menjelang v1.0
 
 Fase 5, branch `fix/review-keamanan-v1`, satu PR. Mungkin berjalan paralel

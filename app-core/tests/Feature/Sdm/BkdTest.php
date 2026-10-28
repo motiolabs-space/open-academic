@@ -30,6 +30,7 @@ use App\Models\TugasAkhir\TugasAkhir;
 use App\Models\TugasAkhir\Ujian;
 use App\Services\Sdm\BebanKerjaService;
 use App\Services\Sdm\BkdService;
+use App\Services\Sdm\PortofolioDosen;
 use App\Services\Sdm\PortofolioService;
 use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Support\Str;
@@ -578,6 +579,44 @@ describe('ekspor', function () {
             ->streamedContent();
 
         expect($isi)->toContain('Riset yang harus muncul di CSV');
+    });
+
+    it('menyusun kegiatan banyak dosen sekaligus sama dengan satu per satu', function () {
+        // The campus CSV reads every lecturer's activities in one query; each
+        // lecturer's rows must be exactly what their own portfolio shows, and
+        // another term's activity must stay out.
+        $kedua = Dosen::factory()->create(['is_active' => true]);
+        $tanpaKegiatan = Dosen::factory()->create(['is_active' => true]);
+        $lampau = TahunAkademik::factory()->term(2025, SemesterType::Genap)->create();
+
+        foreach ([[$this->dosen, 'Riset A', 10], [$this->dosen, 'Riset B', 2], [$kedua, 'Riset C', 5]] as [$d, $judul, $hari]) {
+            PenugasanDosen::create([
+                'dosen_id' => $d->id,
+                'tahun_akademik_id' => $this->term->id,
+                'jenis' => 'penelitian',
+                'unsur' => UnsurBkd::Penelitian,
+                'judul' => $judul,
+                'tanggal_mulai' => $this->term->tanggal_mulai->copy()->addDays($hari),
+            ]);
+        }
+
+        PenugasanDosen::create([
+            'dosen_id' => $kedua->id,
+            'tahun_akademik_id' => $lampau->id,
+            'jenis' => 'penelitian',
+            'unsur' => UnsurBkd::Penelitian,
+            'judul' => 'Semester lain',
+            'tanggal_mulai' => $this->term->tanggal_mulai,
+        ]);
+
+        $portofolio = app(PortofolioDosen::class);
+        $sekaligus = $portofolio->kegiatanPerDosen([$this->dosen->id, $kedua->id, $tanpaKegiatan->id], $this->term);
+
+        expect($sekaligus[$this->dosen->id])->toBe($portofolio->kegiatan($this->dosen, $this->term))
+            ->and(array_column($sekaligus[$this->dosen->id], 'judul'))->toBe(['Riset B', 'Riset A'])
+            ->and($sekaligus[$kedua->id])->toBe($portofolio->kegiatan($kedua, $this->term))
+            ->and(array_column($sekaligus[$kedua->id], 'judul'))->toBe(['Riset C'])
+            ->and($sekaligus)->not->toHaveKey($tanpaKegiatan->id);
     });
 
     it('menurunkan portofolio satu dosen sebagai JSON bervesi', function () {

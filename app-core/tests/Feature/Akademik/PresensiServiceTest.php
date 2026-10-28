@@ -104,6 +104,50 @@ it('menghitung izin dan sakit sebagai kehadiran, hanya alpa yang tidak', functio
     expect($this->presensi->persenKehadiran($mahasiswa, $this->kelas->fresh()))->toBe(100.0);
 });
 
+it('menghitung persentase banyak kelas sekaligus sama dengan satu per satu', function () {
+    /*
+     * The exam card asks for every class in the plan at once. It must agree
+     * with persenKehadiran() class by class — including a class with no
+     * meeting held yet (null, not 0%) and attendance recorded in another
+     * student's name, which must not leak across.
+     */
+    $mahasiswa = pesertaBaru($this->kelas);
+    $kedua = KelasKuliah::factory()->create(['tahun_akademik_id' => $this->term->id, 'prodi_id' => $this->prodi->id]);
+    $belumMulai = KelasKuliah::factory()->create(['tahun_akademik_id' => $this->term->id, 'prodi_id' => $this->prodi->id]);
+
+    $krs = $mahasiswa->krs()->firstOrFail();
+    KrsDetail::create(['krs_id' => $krs->id, 'kelas_kuliah_id' => $kedua->id, 'sks' => $kedua->sks]);
+    KrsDetail::create(['krs_id' => $krs->id, 'kelas_kuliah_id' => $belumMulai->id, 'sks' => $belumMulai->sks]);
+
+    $lain = pesertaBaru($kedua);
+
+    $satu = $this->presensi->siapkanPertemuan($this->kelas);
+    $this->presensi->catat($satu[0], [$mahasiswa->id => 'H']);
+    $this->presensi->catat($satu[1], [$mahasiswa->id => 'A']);
+    $this->presensi->catat($satu[2], [$mahasiswa->id => 'S']);
+
+    $dua = $this->presensi->siapkanPertemuan($kedua);
+    $this->presensi->catat($dua[0], [$mahasiswa->id => 'A', $lain->id => 'H']);
+    $this->presensi->catat($dua[1], [$mahasiswa->id => 'H', $lain->id => 'H']);
+
+    $this->presensi->siapkanPertemuan($belumMulai);
+
+    $kelas = collect([$this->kelas->fresh(), $kedua->fresh(), $belumMulai->fresh()]);
+
+    expect($this->presensi->persenKehadiranPerKelas($mahasiswa, $kelas))->toBe([
+        $this->kelas->id => 66.7,
+        $kedua->id => 50.0,
+        $belumMulai->id => null,
+    ]);
+
+    foreach ($kelas as $k) {
+        expect($this->presensi->persenKehadiranPerKelas($mahasiswa, $kelas)[$k->id])
+            ->toBe($this->presensi->persenKehadiran($mahasiswa, $k));
+    }
+
+    expect($this->presensi->persenKehadiranPerKelas($mahasiswa, []))->toBe([]);
+});
+
 it('menyatakan tidak layak UAS di bawah ambang minimum', function () {
     $mahasiswa = pesertaBaru($this->kelas);
     $pertemuan = $this->presensi->siapkanPertemuan($this->kelas);

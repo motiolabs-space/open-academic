@@ -171,12 +171,14 @@ class CetakService
     {
         $tahanKehadiran = (bool) config('dokumen.kartu_ujian.tahan_bila_kehadiran_kurang');
 
-        return $krs->detail
-            ->map(function ($detail) use ($krs, $tahanKehadiran): array {
-                $kelas = $detail->kelasKuliah;
-                $persen = $this->presensi->persenKehadiran($krs->mahasiswa, $kelas);
+        $kehadiran = $this->presensi->persenKehadiranPerKelas($krs->mahasiswa, $krs->detail->pluck('kelasKuliah'));
 
-                $layak = !$tahanKehadiran || $this->presensi->layakUas($krs->mahasiswa, $kelas);
+        return $krs->detail
+            ->map(function ($detail) use ($kehadiran, $tahanKehadiran): array {
+                $kelas = $detail->kelasKuliah;
+                $persen = $kehadiran[$kelas->id] ?? null;
+
+                $layak = !$tahanKehadiran || $this->presensi->memenuhiAmbangUas($persen);
 
                 return [
                     'kelas' => $kelas,
@@ -216,18 +218,20 @@ class CetakService
             ->keyBy('kelas_kuliah_id');
 
         $ruang = $this->jadwalUjian->ruangUntukBanyak($sesi->values(), $krs->mahasiswa);
+        $kehadiran = $this->presensi->persenKehadiranPerKelas($krs->mahasiswa, $krs->detail->pluck('kelasKuliah'));
 
         return $krs->detail
-            ->map(function ($detail) use ($krs, $sesi, $ruang, $tahanKehadiran): array {
+            ->map(function ($detail) use ($sesi, $ruang, $kehadiran, $tahanKehadiran): array {
                 $kelas = $detail->kelasKuliah;
                 $ujian = $sesi->get($kelas->id);
+                $persen = $kehadiran[$kelas->id] ?? null;
 
                 return [
                     'kelas' => $kelas,
                     'ujian' => $ujian,
                     'ruang' => $ujian === null ? null : ($ruang[$ujian->id] ?? null),
-                    'persen' => $this->presensi->persenKehadiran($krs->mahasiswa, $kelas),
-                    'layak' => !$tahanKehadiran || $this->presensi->layakUas($krs->mahasiswa, $kelas),
+                    'persen' => $persen,
+                    'layak' => !$tahanKehadiran || $this->presensi->memenuhiAmbangUas($persen),
                 ];
             })
             ->sortBy(fn (array $b): string => ($b['ujian']?->mulai()->format('Y-m-d H:i') ?? '9999')

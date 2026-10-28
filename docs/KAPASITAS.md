@@ -300,6 +300,159 @@ Bentuk itu bertahan meski angkanya berubah.
 
 ---
 
+## Audit N+1, Oktober 2026
+
+Fase 5, menjelang rilis v1.0. Pertanyaannya bukan "berapa kueri layar ini",
+melainkan **"apakah jumlah kuerinya tumbuh bersama jumlah baris"** — dan itu
+tidak dapat dijawab dari kampus demo. Pratinjau penutupan semester menjalankan
+61 kueri pada 50 mahasiswa, di dalam anggaran mana pun yang ditulis untuknya.
+Pada tiga kali jumlah mahasiswa ia menjalankan 212.
+
+### Cara mengukur
+
+1. **Inventaris.** Setiap rute GET di belakang `auth:staff`, `auth:dosen`,
+   `auth:mahasiswa`, dan `auth:pendaftar`, ditambah setiap endpoint Bridge —
+   174 rute, parameter model diisi dari baris demo milik aktornya (tujuh
+   berparameter non-model dilewati).
+2. **Dua kali buka.** Sekali di demo, sekali sesudah kampusnya ditumbuhkan:
+   kelas ×2, mahasiswa ×3, lalu pendaftar PMB, tiket helpdesk, peristiwa
+   kalender, sesi ujian, ruang, tugas akhir, surat, penugasan dosen, aktivitas
+   mahasiswa, baris tagihan, dan pembayaran ×3–4. Penumbuhnya
+   `Tests\Support\PenggandaBaris`: menyalin baris beserta seluruh turunannya
+   lewat graf kunci asing, sehingga mahasiswa salinan membawa KRS, nilai,
+   presensi, dan tagihannya sendiri, dan kelas salinan mengisi rencana studi
+   mahasiswa yang sama.
+3. **Tiga alat ukur.** Selisih jumlah kueri (N+1); bentuk kueri yang berulang
+   dalam satu permintaan (N+1 yang tersembunyi di balik halaman yang sudah
+   penuh); dan rasio ukuran HTML (daftar tanpa batas). Ditambah `EXPLAIN QUERY
+   PLAN` atas setiap SELECT selama audit, untuk mencari pemindaian penuh.
+
+`Model::preventLazyLoading()` menyala sepanjang audit, jadi lazy load mana
+pun akan muncul sebagai galat — tidak ada yang muncul. Seluruh N+1 di bawah
+adalah jenis kedua yang disebut `SmokeLayarTest`: kueri baru per baris, bukan
+relasi yang dimuat malas.
+
+### Yang ditemukan dan diperbaiki
+
+Jumlah kueri satu permintaan, **demo → kampus ditumbuhkan** (kelas ×2,
+mahasiswa ×3, dosen ×2, penugasan dan aktivitas ×4, sesi ujian ×3).
+
+| Layar | Sebelum | Sesudah | Penyebab → perbaikan |
+|---|---|---|---|
+| Penutupan semester `/admin/tutup-semester` | 61 → **212** | 12 → 13 | Kelas tertunda dicari sekali **per catatan mahasiswa** → satu kueri untuk seluruh semester, dikelompokkan per mahasiswa |
+| Katalog KRS `/mahasiswa/krs` | 29 → 39 | 19 → 19 | `PrasyaratChecker` meminta ulang prasyarat per baris katalog padahal relasinya sudah di-eager-load → baca relasi yang dimuat |
+| Mahasiswa bimbingan `/dosen/bimbingan` | 16 → 32 | 9 → 9 | KRS semester berjalan dicari per mahasiswa bimbingan → eager load bersyarat |
+| Analitik kelas `/dosen/analitik/{kelas}` | 34 → 66 | 20 → 20 | Kehadiran dua kueri per peserta, dua kali → dibaca dari rekap kelas |
+| Kartu ujian `/mahasiswa/kartu-ujian`, cetak staf | 24 → 32 | 18 → 18 | Kehadiran dihitung dua kali per kelas → `persenKehadiranPerKelas()`, dua kueri untuk seluruh kartu |
+| Ekspor kegiatan dosen `/admin/bkd/ekspor/kegiatan` | 10 → 17 | 4 → 4 | Satu kueri per dosen → `kegiatanPerDosen()` |
+| Input nilai `/dosen/nilai/{kelas}` | 20 | 18 | Satu `EXISTS` per komponen → `loadExists('nilai')` |
+| Grid presensi, pembukaan pertama | 80 | 65 | Dosen pengampu dicari 16 kali saat pertemuan disiapkan → sekali |
+
+Dua yang terakhir tidak tumbuh bersama baris (komponen nilai dan pertemuan
+dibatasi), tetapi berulang tanpa alasan.
+
+Tidak ada yang di-cache. Setiap perbaikan menggantikan kueri per baris dengan
+satu kueri per daftar, dan metode per-baris lama tetap ada dengan tes yang
+memaku keduanya memberi jawaban yang sama — aturan kelayakan UAS dan
+prasyarat tidak disentuh.
+
+### Daftar tanpa batas
+
+| Layar | HTML demo → tumbuh, sebelum | Sesudah | |
+|---|---|---|---|
+| Verifikasi data IKU `/admin/data-iku` | 135 → 1.379 KB | 135 → 161 KB | Dua daftar dipaginasi 25, parameter halaman terpisah |
+| Jadwal ujian BAAK `/admin/jadwal-ujian` | 128 → 2.159 KB | 128 → 1.686 KB | Tabel dipaginasi 50; laporan bentrok tetap membaca seluruh semester |
+
+Sisa ukuran jadwal ujian adalah kartu bentrok, dan itu artefak penggandaan:
+sesi salinan berbagi jam dan peserta dengan aslinya, sehingga setiap sesi
+bentrok dengan salinannya. Pada kampus sungguhan kartu itu pendek — dan bila
+panjang, itulah yang memang harus dibaca BAAK.
+
+Daftar yang tumbuh tetapi **dibatasi oleh hal lain** sengaja dibiarkan: grid
+presensi dan input nilai (sebesar kelasnya, 30–50 orang), tagihan dan jadwal
+ujian mahasiswa (milik satu orang), pemakaian ruang (sebanyak ruangnya).
+
+### Indeks — tidak ada yang baru
+
+`EXPLAIN QUERY PLAN` menemukan pemindaian penuh pada tabel besar hanya di
+kolom kunci asing (`jadwal_kuliah.kelas_kuliah_id`,
+`nilai_komponen.krs_detail_id`, `krs_detail.aktivitas_mahasiswa_id`, …).
+SQLite tidak mengindeks FK; **InnoDB selalu**, karena kendala FK
+mewajibkannya. Tabel terbesar — presensi, nilai, KRS, notifikasi — tidak
+muncul sama sekali. Menambah indeks di sini hanya menggandakan indeks yang
+sudah dibuat MySQL.
+
+Satu predikat memang tidak dapat memakai indeks pada tabel yang tumbuh tanpa
+batas: filter tanggal Log Aktivitas, `whereDate('created_at', …)`, yang di
+MySQL menjadi `DATE(created_at)`. Ditulis ulang menjadi rentang setengah
+terbuka pada `created_at`, yang berindeks sejak awal. `whereDate` pada sumber
+kalender dibiarkan: tabelnya puluhan baris per semester, dan perbandingan
+tanggal polos tidak portabel antara SQLite dan MySQL (lihat `UjianService`).
+
+### Waktu, diukur ulang 28 Oktober 2026
+
+MariaDB 10.4 lokal (XAMPP), basis data demo segar ditambah
+`openacademic:beban-katalog` — 1.015 kelas di kampus, **304 terlihat** di
+katalog KRS mahasiswa ujinya. Permintaan dijalankan di dalam proses (kernel
+HTTP dipanggil langsung lewat `tinker`, tanpa server web), satu pemanasan lalu
+median lima, diulang dua kali untuk setiap versi kode. Jumlah kueri di sini
+mencakup sesi dan middleware, jadi lebih tinggi daripada hitungan di tes.
+
+| Layar | Kueri sebelum → sesudah | Median sebelum | Median sesudah | Ukuran |
+|---|---|---|---|---|
+| Katalog KRS `/mahasiswa/krs` (304 kelas, 25 per halaman) | 56 → **31** | 79–324 ms | 64–71 ms | 113 KB |
+| Penutupan semester `/admin/tutup-semester` | 73 → **24** | 80–478 ms | 46–71 ms | 124 KB |
+| Mahasiswa bimbingan `/dosen/bimbingan` | 27 → **20** | 33–67 ms | 42–46 ms | 65 KB |
+| Kartu ujian PDF `/mahasiswa/kartu-ujian` | 37 → **31** | 536–576 ms | 582–606 ms | 861 KB |
+
+**Cara membacanya.** Pada laptop pengembangan, dua jalannya kode yang sama
+berselisih dua sampai empat kali lipat. Selisih semacam itu lebih besar
+daripada yang dapat diselamatkan oleh dua puluh lima kueri terhadap MySQL
+lokal, yang masing-masing sekitar satu milidetik. Pada data demo,
+**perbaikan ini terbaca pada jumlah kueri, bukan pada stopwatch.** Waktunya
+baru berbeda nyata pada kampus yang besar dan pada basis data di mesin lain,
+ketika setiap kueri juga membayar ongkos jaringan. Kartu ujian
+didominasi render dompdf, seperti transkrip PDF di tabel pertama halaman ini.
+
+Katalog KRS tetap datar terhadap besarnya katalog: 304 kelas terlihat, 25
+dirender, 113 KB — selaras dengan 105 KB pada pengukuran 19 Agustus.
+Angka milidetiknya tidak dapat dibandingkan langsung dengan 0,79 s Agustus,
+karena pengukuran itu lewat server dev PHP satu utas, sedangkan yang ini di
+dalam proses.
+
+Uji beban HTTP bersamaan (22 Agustus, `scripts/beban-http.cjs`) **tidak**
+diulang. Audit ini tidak mengubah biaya tetap per permintaan yang diukurnya.
+
+Penggandaan kampus untuk pengukuran waktu dicoba di MariaDB dan dihentikan.
+`PenggandaBaris` membaca kunci asing lewat `information_schema`, yang pada
+server XAMPP berisi 71 basis data memakan beberapa detik per tabel. Ia alat
+tes untuk SQLite in-memory, tempat langkah yang sama selesai seketika.
+Pertumbuhan jumlah kueri sudah dipaku oleh `AnggaranKueriSkalaTest` di bawah.
+
+### Yang dijaga tes
+
+`AnggaranKueriSkalaTest` membuka 38 layar ramai di tiga portal pada demo,
+menumbuhkan kampus, lalu membukanya lagi: jumlah kueri harus di bawah
+anggaran **dan** tidak melebihi hitungan demo lebih dari satu langkah eager
+load. Dijalankan pada kode sebelum perbaikan, tes ini gagal di tujuh layar —
+persis tujuh yang tumbuh di tabel atas.
+
+### Yang masih terbuka
+
+- **Rincian KKN/PKL staf** merender pilihan "pindah kelompok" di setiap baris
+  anggota: anggota × kelompok opsi. Pada kampus yang ditumbuhkan HTML-nya
+  2,4 MB. Itu
+  perubahan antarmuka, bukan kueri — kueri layarnya datar.
+- Beberapa kueri berulang tetapi tetap jumlahnya: hitungan status mahasiswa di
+  Bridge `iku-data` (sembilan, satu per status) dan LKPS (sembilan, satu per
+  tahun), peserta kelas yang dibaca empat kali di analitik. Tidak tumbuh,
+  tidak diubah.
+- Dua layar GET menulis pada pembukaan pertama (grid presensi menyiapkan 16
+  pertemuan, penyusun RPS menyiapkan barisnya). Perilaku lama, di luar audit
+  ini.
+
+---
+
 ## Rekomendasi Perangkat Keras
 
 Berdasarkan angka di atas, dengan Nginx + PHP-FPM + OPcache.

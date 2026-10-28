@@ -30,8 +30,11 @@ class LogAktivitasController extends Controller
             ->when($request->filled('event'), fn ($q) => $q->where('event', $request->string('event')))
             ->when($request->filled('subjek'), fn ($q) => $q->where('subject_type', $request->string('subjek')))
             ->cari($request->string('cari'), ['description', 'causer_name', 'subject_label'])
-            ->when($request->filled('dari'), fn ($q) => $q->whereDate('created_at', '>=', $request->date('dari')))
-            ->when($request->filled('sampai'), fn ($q) => $q->whereDate('created_at', '<=', $request->date('sampai')))
+            // Half-open ranges on the raw timestamp rather than whereDate():
+            // DATE(created_at) cannot use the created_at index, and this is
+            // the one table that grows with every write the system makes.
+            ->when($request->filled('dari'), fn ($q) => $q->where('created_at', '>=', $request->date('dari')->startOfDay()))
+            ->when($request->filled('sampai'), fn ($q) => $q->where('created_at', '<', $request->date('sampai')->addDay()->startOfDay()))
             ->latest('id')
             ->paginate(50)
             ->withQueryString();

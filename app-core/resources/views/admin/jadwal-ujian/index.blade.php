@@ -77,7 +77,7 @@
                         </tr>
                     </thead>
                     <tbody>
-                        @foreach ($daftar as $j)
+                        @foreach ($halaman as $j)
                             <tr class="border-b border-line/50 last:border-b-0 odd:bg-zebra">
                                 <td class="px-5 py-3">
                                     <div class="font-medium">{{ $j->kelasKuliah->mataKuliah->nama }}</div>
@@ -113,6 +113,10 @@
                     </tbody>
                 </table>
             </div>
+
+            @if ($halaman->hasPages())
+                <div class="border-t border-line px-5 py-3">{{ $halaman->links() }}</div>
+            @endif
 
             {{-- Terbit per jenis: satu pengumuman per jenis ujian, bukan UTS dan
                  UAS bercampur dalam satu pemberitahuan. --}}

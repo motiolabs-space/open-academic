@@ -70,12 +70,14 @@ class NilaiController extends Controller
 
             // The plan as the editor needs it, plus which components already
             // hold scores: those may be reshaped but not removed.
-            'rencana' => $komponen->map(fn (KomponenNilai $k): array => [
+            //
+            // One EXISTS subquery for every component, not one query each.
+            'rencana' => $komponen->loadExists('nilai')->map(fn (KomponenNilai $k): array => [
                 'id' => $k->id,
                 'nama' => $k->nama,
                 'bobot' => (int) $k->bobot,
                 'jenis' => $k->jenis_evaluasi?->value,
-                'bernilai' => $k->nilai()->exists(),
+                'bernilai' => (bool) $k->nilai_exists,
             ])->values(),
             'jenisEvaluasi' => JenisEvaluasi::options(),
             'ambangIku7' => JenisEvaluasi::AMBANG_IKU7_PERSEN,

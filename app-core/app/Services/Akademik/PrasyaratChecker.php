@@ -31,7 +31,11 @@ class PrasyaratChecker
      */
     public function belumTerpenuhi(Mahasiswa $mahasiswa, MataKuliah $mataKuliah): array
     {
-        $prasyarat = $mataKuliah->prasyarat()->wherePivot('jenis', 'prasyarat')->get();
+        // The KRS catalogue eager-loads `prasyarat` for its whole page; asking
+        // the relation again here used to cost one query per catalogue row.
+        $prasyarat = $mataKuliah->relationLoaded('prasyarat')
+            ? $mataKuliah->prasyarat->filter(fn (MataKuliah $syarat): bool => $syarat->pivot->jenis === 'prasyarat')
+            : $mataKuliah->prasyarat()->wherePivot('jenis', 'prasyarat')->get();
 
         if ($prasyarat->isEmpty()) {
             return [];

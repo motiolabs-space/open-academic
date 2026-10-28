@@ -60,6 +60,8 @@ class PenutupanSemesterService
             ->where('tahun_akademik_id', $term->id)
             ->get();
 
+        $tertundaPerMahasiswa = $this->kelasTertunda($term, $belumFinalIds);
+
         $siap = collect();
         $terhalang = collect();
         $sudahFinal = 0;
@@ -71,7 +73,7 @@ class PenutupanSemesterService
                 continue;
             }
 
-            $tertunda = $this->kelasTertunda($baris, $belumFinalIds);
+            $tertunda = $tertundaPerMahasiswa->get($baris->mahasiswa_id, collect());
 
             if ($tertunda->isEmpty()) {
                 $siap->push($baris);
@@ -180,12 +182,17 @@ class PenutupanSemesterService
     }
 
     /**
-     * Course names in this term whose grades the lecturer has not finalised.
+     * Course codes in this term whose grades the lecturer has not finalised,
+     * keyed by student.
+     *
+     * One query for the whole term. This used to run once per student record,
+     * which on a campus of five thousand is five thousand queries for a single
+     * preview screen.
      *
      * @param array<int, int> $belumFinalIds
-     * @return Collection<int, string>
+     * @return Collection<int, Collection<int, string>>
      */
-    private function kelasTertunda(StatusMahasiswa $status, array $belumFinalIds): Collection
+    private function kelasTertunda(TahunAkademik $term, array $belumFinalIds): Collection
     {
         if ($belumFinalIds === []) {
             return collect();
@@ -195,10 +202,12 @@ class PenutupanSemesterService
             ->join('krs', 'krs.id', '=', 'krs_detail.krs_id')
             ->join('kelas_kuliah', 'kelas_kuliah.id', '=', 'krs_detail.kelas_kuliah_id')
             ->join('mata_kuliah', 'mata_kuliah.id', '=', 'kelas_kuliah.mata_kuliah_id')
-            ->where('krs.mahasiswa_id', $status->mahasiswa_id)
-            ->where('krs.tahun_akademik_id', $status->tahun_akademik_id)
+            ->where('krs.tahun_akademik_id', $term->id)
             ->whereIn('krs_detail.kelas_kuliah_id', $belumFinalIds)
             ->whereNull('krs_detail.deleted_at')
-            ->pluck('mata_kuliah.kode');
+            ->orderBy('krs_detail.id')
+            ->get(['krs.mahasiswa_id', 'mata_kuliah.kode'])
+            ->groupBy('mahasiswa_id')
+            ->map(fn (Collection $baris) => $baris->pluck('kode'));
     }
 }
