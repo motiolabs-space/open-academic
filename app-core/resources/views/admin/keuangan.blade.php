@@ -95,6 +95,16 @@
                                                 <x-chip tone="neutral">{{ __('keuangan.denda.chip_dibebaskan') }}</x-chip>
                                             </div>
                                         @endif
+                                        @if ($t->dispensasiAktif())
+                                            <div class="mt-1.5" title="{{ $t->dispensasi_catatan }}">
+                                                <x-chip tone="info">{{ __('keuangan.dispensasi.chip_berlaku', ['tanggal' => \App\Support\Format::tanggal($t->dispensasi_sampai)]) }}</x-chip>
+                                            </div>
+                                        @elseif ($sisa > 0)
+                                            <a href="{{ route('admin.keuangan.dispensasi', ['tagihan' => $t->nomor]) }}"
+                                                class="mt-1.5 inline-block text-[11.5px] font-semibold text-navy hover:underline">
+                                                {{ __('keuangan.dispensasi.tautan_baris') }}
+                                            </a>
+                                        @endif
                                     </td>
                                     <td class="px-5 py-3">
                                         @if ($t->denda > 0)

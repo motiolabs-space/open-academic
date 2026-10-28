@@ -193,6 +193,7 @@ final class Navigation
                 'items' => [
                     self::item('Matriks Tarif', '⊞', 'admin.tarif'),
                     self::item('Tagihan & Rekonsiliasi', '◈', 'admin.keuangan'),
+                    self::item(__('keuangan.dispensasi.nav'), '⧗', 'admin.keuangan.dispensasi'),
                     self::item('Beasiswa & Keringanan', '◍', 'admin.beasiswa'),
                     self::item('Biaya Formulir PMB', '◇', 'admin.pmb.formulir'),
 

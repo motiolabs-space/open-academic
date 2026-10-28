@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\DTOs\Keuangan\DispensasiData;
 use App\Enums\JenisDaftar;
 use App\Enums\JenisPeristiwa;
 use App\Enums\JenisUjianKelas;
@@ -13,6 +14,8 @@ use App\Models\Akademik\TahunAkademik;
 use App\Models\Bridge\BridgeConsumer;
 use App\Models\Kemahasiswaan\KegiatanLapangan;
 use App\Models\Kemahasiswaan\Mahasiswa;
+use App\Models\Keuangan\DispensasiTagihan;
+use App\Models\Keuangan\Tagihan;
 use App\Models\Pmb\PmbAkun;
 use App\Models\Pmb\PmbGelombang;
 use App\Models\Pmb\PmbPendaftar;
@@ -21,6 +24,7 @@ use App\Models\Sdm\Staff;
 use App\Models\TugasAkhir\Proposal;
 use App\Models\TugasAkhir\TugasAkhir;
 use App\Services\Akademik\JadwalUjianService;
+use App\Services\Keuangan\DispensasiService;
 use App\Support\Portal;
 use Database\Seeders\DemoCampusSeeder;
 use Database\Seeders\RolePermissionSeeder;
@@ -300,6 +304,29 @@ it('membuka layar penetapan dosen wali dalam anggaran kueri', function () {
     dalamAnggaranKueri(
         fn () => $this->actingAs($staff, 'staff')->get('/admin/dosen-wali?prodi='.$prodi)->assertOk(),
         16,
+    );
+});
+
+/*
+ * Meja dispensasi (Sesi 65): permohonan, yang berlaku, dan riwayat, masing-
+ * masing beserta tagihan dan mahasiswanya — dimuat per daftar, bukan per baris.
+ */
+it('membuka meja dispensasi dalam anggaran kueri', function () {
+    $staff = Staff::where('email', 'admin@demo.test')->firstOrFail();
+    $layanan = app(DispensasiService::class);
+
+    // Demo invoices that are not yet settled: two granted, two requested.
+    Tagihan::query()->with('mahasiswa')->belumLunas()->orderBy('id')->limit(4)->get()
+        ->each(fn ($t, int $i) => $i < 2
+            ? $layanan->beri($t, new DispensasiData(now()->addDays(14 + $i), 'Uji anggaran kueri'), $staff)
+            : $layanan->ajukan($t, $t->mahasiswa, new DispensasiData(now()->addDays(10), 'Uji anggaran kueri')));
+
+    expect(DispensasiTagihan::count())->toBe(4);
+
+    dalamAnggaranKueri(
+        fn () => $this->actingAs($staff, 'staff')->get('/admin/keuangan/dispensasi')->assertOk()->assertSee('Uji anggaran kueri'),
+        // 20 terukur; riwayat yang berisi menambah satu eager load per relasi.
+        26,
     );
 });
 

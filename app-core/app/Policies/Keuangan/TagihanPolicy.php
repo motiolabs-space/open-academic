@@ -51,10 +51,21 @@ class TagihanPolicy
             && $this->izin($actor, 'tagihan.view');
     }
 
-    /** Waiving the KRS payment gate is a finance-office decision. */
-    public function grantDispensation(Authenticatable $actor, Tagihan $tagihan): bool
+    /**
+     * Waiving the KRS payment gate is a finance-office decision — granting,
+     * deciding a student's request, and revoking alike.
+     */
+    public function grantDispensation(Authenticatable $actor, ?Tagihan $tagihan = null): bool
     {
         return $this->stafDenganIzin($actor, 'keuangan.manage');
+    }
+
+    /** Asking for one is the owning student's, on their own invoice only. */
+    public function requestDispensation(Authenticatable $actor, Tagihan $tagihan): bool
+    {
+        return $this->mahasiswa($actor)
+            && $actor->getKey() === $tagihan->mahasiswa_id
+            && $this->izin($actor, 'tagihan.view');
     }
 
     /** So is forgiving a late fee — it lowers what a student owes. */

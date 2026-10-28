@@ -1103,3 +1103,30 @@ satu bagian per celah.
   menolak seluruh kiriman dengan semua alasannya sekaligus. Mencabut wali
   tanpa pengganti tidak tersedia — mahasiswa terdaftar tanpa wali tidak dapat
   diputus KRS-nya, dan itu bukan keadaan yang perlu dibuat dengan sengaja.
+
+### 2. Dispensasi pembayaran: berbatas tanggal, berakhir sendiri, dicabut per kemarin
+
+- **Konteks.** `Tagihan::memenuhiSyaratKrs()` dan `DendaService` membaca
+  `tagihan.dispensasi_sampai`, ROADMAP menjanjikan "ambang + dispensasi
+  berbatas waktu", tetapi tidak ada kode yang menulis kolom itu.
+- **Keputusan.** (1) `DispensasiService` satu-satunya penulis kolom itu;
+  setiap pemberian, permohonan, penolakan, dan pencabutan adalah baris
+  `dispensasi_tagihan` dengan pelaku dan alasan, ditambah Log Aktivitas pada
+  tagihan. Kolom pada `tagihan` tetap satu-satunya yang dibaca gerbang dan
+  denda, jadi keduanya tidak berubah. (2) **Tanggal wajib di masa depan,
+  alasan wajib.** Dispensasi tanpa tanggal adalah pembebasan gerbang
+  selamanya. (3) **Berakhir sendiri**: tidak ada tugas tengah malam; gerbang
+  membandingkan tanggal dengan hari ini. (4) **Dicabut = berakhir kemarin**,
+  bukan dikosongkan. Gerbang tertutup hari itu juga, dan jam denda mulai dari
+  pencabutan. Mengosongkan kolom akan membuat `jatuhTempoEfektif()` kembali
+  ke jatuh tempo asli dan menagih hari-hari yang tadinya dijanjikan bebas.
+  (5) **Perpanjangan menggantikan**: memberi dispensasi saat masih ada yang
+  berlaku menutup yang lama sebagai dicabut ("digantikan"), jadi paling
+  banyak satu yang berlaku per tagihan. (6) Mahasiswa dapat **memohon** dari
+  layar tagihan; keuangan menyetujui (boleh dengan tanggal lain) atau menolak
+  dengan catatan wajib. Satu permohonan menunggu per tagihan; tagihan lunas
+  tidak menerima dispensasi.
+- **Konsekuensi.** Izin memakai `keuangan.manage` (policy
+  `grantDispensation` yang sudah ada sejak Fase 1). Pengingat jatuh tempo
+  belum memperhitungkan dispensasi: mahasiswa berdispensasi masih menerima
+  pengingat berdasar jatuh tempo asli.

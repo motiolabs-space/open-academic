@@ -181,6 +181,7 @@ Route::middleware(['auth:mahasiswa', 'term.active'])->prefix('mahasiswa')->name(
     Route::get('/khs', Mahasiswa\KhsController::class)->name('khs');
     Route::get('/khs/transkrip', Mahasiswa\TranskripController::class)->name('transkrip');
     Route::get('/tagihan', Mahasiswa\TagihanController::class)->name('tagihan');
+    Route::post('/tagihan/{tagihan}/dispensasi', Mahasiswa\DispensasiController::class)->name('tagihan.dispensasi');
 
     Route::get('/presensi', [Mahasiswa\PresensiMandiriController::class, 'form'])->name('presensi');
     Route::post('/presensi', [Mahasiswa\PresensiMandiriController::class, 'catat'])->name('presensi.catat');
@@ -754,6 +755,12 @@ Route::middleware(['auth:staff', 'term.active'])->prefix('admin')->name('admin.'
     Route::post('/keuangan/tagihan/{tagihan}/keringanan', [Admin\KeuanganController::class, 'keringanan'])->name('keuangan.keringanan');
     Route::post('/keuangan/potongan/{item}/hapus', [Admin\KeuanganController::class, 'hapusPotongan'])->name('keuangan.potongan.hapus');
     Route::post('/keuangan/tagihan/{tagihan}/bebaskan-denda', [Admin\KeuanganController::class, 'bebaskanDenda'])->name('keuangan.denda.bebaskan');
+
+    // Dispensasi pembayaran KRS: beri langsung, putuskan permohonan, cabut.
+    Route::get('/keuangan/dispensasi', [Admin\DispensasiController::class, 'index'])->name('keuangan.dispensasi');
+    Route::post('/keuangan/dispensasi', [Admin\DispensasiController::class, 'beri'])->name('keuangan.dispensasi.beri');
+    Route::post('/keuangan/dispensasi/{dispensasi}/putuskan', [Admin\DispensasiController::class, 'putuskan'])->name('keuangan.dispensasi.putuskan');
+    Route::post('/keuangan/dispensasi/{dispensasi}/cabut', [Admin\DispensasiController::class, 'cabut'])->name('keuangan.dispensasi.cabut');
 
     Route::get('/beasiswa', [Admin\BeasiswaController::class, 'index'])->name('beasiswa');
     Route::post('/beasiswa', [Admin\BeasiswaController::class, 'simpanSkema'])->name('beasiswa.skema');
