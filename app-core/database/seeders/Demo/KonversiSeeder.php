@@ -87,7 +87,7 @@ class KonversiSeeder extends Seeder
             IdentitasMahasiswaData::fromArray([
                 'nama' => 'Nadia Paramitha',
                 'email' => 'nadia.pindahan@demo.test',
-                'nik' => '3273015507040002',
+                'nik' => '9900000000000001',
                 'tempat_lahir' => 'Bandung',
                 'tanggal_lahir' => '2004-07-15',
                 'jenis_kelamin' => Gender::Perempuan->value,

@@ -305,7 +305,7 @@ class PmbSeeder extends Seeder
             'nomor_pendaftaran' => sprintf('%s-%04d', $gelombang->kode, $nomor),
             'nama' => 'Bagas Wicaksono',
             'email' => 'bagas.pindahan@demo.test',
-            'nik' => '3374021203030004',
+            'nik' => '9900000000000002',
             'tempat_lahir' => 'Semarang',
             'tanggal_lahir' => '2003-03-12',
             'jenis_kelamin' => Gender::LakiLaki,
