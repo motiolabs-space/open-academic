@@ -348,6 +348,23 @@ it('membuka daftar pengumuman ketiga portal dalam anggaran kueri', function (str
 ]);
 
 /*
+ * Detail mahasiswa staf (Sesi 65): mahasiswa demo dengan riwayat semester
+ * terpanjang — KRS, KHS, cuti, wali, tagihan, dan validator Feeder sekaligus.
+ * Super-admin melihat semua bagian, jadi semua kueri ikut terhitung.
+ */
+it('membuka detail mahasiswa staf dalam anggaran kueri', function () {
+    $staff = Staff::where('email', 'admin@demo.test')->firstOrFail();
+    $mahasiswa = Mahasiswa::query()->withCount('statusPerSemester')->orderByDesc('status_per_semester_count')->firstOrFail();
+
+    dalamAnggaranKueri(
+        fn () => $this->actingAs($staff, 'staff')->get('/admin/mahasiswa/'.$mahasiswa->uuid)->assertOk(),
+        // 33 terukur; setiap daftar dimuat sekali (KRS, KHS, tagihan, cuti,
+        // riwayat wali), validator Feeder menambah empat.
+        35,
+    );
+});
+
+/*
  * Profil pindahan demo: dibuat lewat intake sungguhan oleh KonversiSeeder,
  * dengan tiga konversi diakui dan satu menunggu. Ringkasannya menjalankan
  * aturan FeederValidator yang sama dengan sinkronisasi — termasuk pemetaan

@@ -181,6 +181,7 @@ Route::middleware(['auth:mahasiswa', 'term.active'])->prefix('mahasiswa')->name(
 
     Route::get('/khs', Mahasiswa\KhsController::class)->name('khs');
     Route::get('/khs/transkrip', Mahasiswa\TranskripController::class)->name('transkrip');
+    Route::get('/khs/{term}/cetak', [Mahasiswa\KhsController::class, 'cetak'])->name('khs.cetak');
     Route::get('/pengumuman', [PengumumanPortalController::class, 'index'])->name('pengumuman.index');
     Route::get('/pengumuman/{pengumuman}', [PengumumanPortalController::class, 'show'])->name('pengumuman.show');
     Route::get('/tagihan', Mahasiswa\TagihanController::class)->name('tagihan');
@@ -472,6 +473,12 @@ Route::middleware(['auth:staff', 'term.active'])->prefix('admin')->name('admin.'
     Route::post('/dosen-wali/massal', [Admin\DosenWaliController::class, 'massal'])->name('dosen-wali.massal');
     Route::post('/dosen-wali/merata', [Admin\DosenWaliController::class, 'merata'])->name('dosen-wali.merata');
     Route::post('/mahasiswa/{mahasiswa}/dosen-wali', [Admin\DosenWaliController::class, 'tetapkan'])->name('dosen-wali.tetapkan');
+
+    // Detail satu mahasiswa: baca saja, plus cetak KHS/transkrip dari service
+    // yang sama dengan portal mahasiswa.
+    Route::get('/mahasiswa/{mahasiswa}', [Admin\MahasiswaDetailController::class, 'show'])->name('mahasiswa.show');
+    Route::get('/mahasiswa/{mahasiswa}/khs/{term}', [Admin\MahasiswaDetailController::class, 'khs'])->name('mahasiswa.khs');
+    Route::get('/mahasiswa/{mahasiswa}/transkrip', [Admin\MahasiswaDetailController::class, 'transkrip'])->name('mahasiswa.transkrip');
 
     Route::get('/kelas', [Admin\KelasController::class, 'index'])->name('kelas');
     Route::post('/kelas', [Admin\KelasController::class, 'buka'])->name('kelas.buka');

@@ -4,6 +4,70 @@
 
 ---
 
+## Sesi 65 — 2026-10-28 · Lima celah P0: jalur tulis untuk data yang sudah dibaca
+
+Branch `fix/p0-lima-celah`, satu PR, lima commit (satu per celah, masing-masing
+dengan tesnya). Keputusan: ADR-035 §1–§5. Inventaris kode 28 Oktober menemukan
+lima alur yang dibaca kode atau dijanjikan dokumen tetapi tidak punya jalur
+tulis atau tampilan. Empat migrasi baru (append-only).
+
+- **Dosen wali** (`fix(akademik)`). `mahasiswa.dosen_wali_id` memutuskan
+  persetujuan KRS tetapi hanya seeder yang menulisnya — kampus nyata tidak
+  dapat menyetujui KRS sama sekali. `DosenWaliService`: per mahasiswa, per
+  baris (semua-atau-tidak, semua alasan sekaligus), dan bagi merata per
+  prodi/angkatan (stabil: dijalankan ulang tidak mengubah apa pun). Aturan:
+  dosen aktif ber-homebase prodi mahasiswa. KRS yang sudah diajukan mengikuti
+  kolom wali, jadi pindah ke wali baru tanpa ditulis ulang; jumlahnya dicatat
+  dan wali baru diberi tahu. Tabel `riwayat_dosen_wali`. Dosen yang diberi
+  mahasiswa wali mendapat peran `dosen-wali` (pemegang `krs.approve`). Layar
+  `/admin/dosen-wali`; mahasiswa diberi tahu. Daftar bimbingan dosen sudah ada
+  (`/dosen/bimbingan`).
+- **Dispensasi pembayaran** (`fix(keuangan)`). Gerbang KRS dan denda membaca
+  `tagihan.dispensasi_sampai`, tetapi tak ada yang menulisnya. `DispensasiService`
+  + tabel `dispensasi_tagihan`: beri (tanggal di masa depan dan alasan wajib),
+  perpanjang (menggantikan yang berlaku), cabut, dan putuskan permohonan
+  mahasiswa dari layar tagihan. Berakhir sendiri menurut tanggal; dicabut
+  berarti berakhir kemarin, jadi jam denda mulai dari pencabutan, tidak
+  mundur. Meja `/admin/keuangan/dispensasi`, tautan dari baris tagihan.
+- **Pengumuman tiga portal** (`fix(platform)`). Hanya dasbor mahasiswa yang
+  merender pengumuman; yang untuk dosen atau staf tidak pernah terlihat.
+  `Pengumuman::scopeTampilUntuk()` satu definisi untuk dasbor dan halaman
+  daftar/detail ketiga portal (`/mahasiswa/pengumuman`, `/dosen/pengumuman`,
+  `/admin/pengumuman/papan` — papan baca staf terpisah dari layar kelola).
+  Kolom baru `berakhir_at`; null = tampil sampai ditarik.
+- **`student.enrolled`** (`fix(bridge)`). Terdaftar tetapi tak pernah terbit.
+  `PenerbitPendaftaran` dipanggil di dua titik lahir mahasiswa — daftar ulang
+  PMB (termasuk pindahan lewat PMB) dan intake pindahan langsung — sesudah
+  commit, sekali per mahasiswa (klaim `mahasiswa.bridge_enrolled_at`). Adopsi
+  dan klaim PDDIKTI tidak menerbitkan. Muatan didokumentasikan di
+  `bridge.yaml` → `x-webhooks.payloads` dan dipaku tes.
+- **Detail mahasiswa staf** (`feat(kemahasiswaan)`). `/admin/mahasiswa/{uuid}`
+  baca saja: identitas (NIK tersamar), status & cuti, dosen wali (ganti +
+  riwayat), KRS dan KHS per semester, IPK, tagihan, kesiapan PDDIKTI (aturan
+  `FeederValidator`) dan perubahan terkunci yang terbuka — identitas terkunci
+  diubah lewat PDM/PJK, bukan di sini. Bagian nilai menuntut `nilai.view`,
+  tagihan `keuangan.view`. `KhsService` baru dipakai kedua portal; KHS per
+  semester kini juga PDF di portal mahasiswa. Daftar mahasiswa menaut ke detail.
+
+**Tes baru:** DosenWaliTest 8, DispensasiTest 9, PengumumanPortalTest 6,
+StudentEnrolledTest 8, DetailMahasiswaStafTest 7; SmokeLayarTest 4 tes baru
+(penetapan wali 16 kueri, meja dispensasi 26, daftar pengumuman tiga portal 8,
+detail mahasiswa 35). `AnggaranKueriSkalaTest` tidak berubah dan tetap hijau
+dengan kartu pengumuman di dasbor dosen dan staf.
+
+**Instalasi berjalan:** `php artisan migrate`. Dosen yang sudah menjadi wali
+lewat seeder tetap; wali baru ditetapkan dari layar.
+
+### Belum
+
+Staf belum punya cakupan prodi di kode mana pun, jadi semua layar ini memakai
+izin kampus-luas (`mahasiswa.manage`, `keuangan.manage`) — tempatnya kelak
+`MahasiswaPolicy::assignAdvisor`. Pengingat jatuh tempo belum memperhitungkan
+dispensasi. Mahasiswa yang sudah ada sebelum rilis ini tidak pernah menerima
+`student.enrolled`; konsumen menarik `GET /students` sekali.
+
+---
+
 ## Sesi 64 — 2026-10-27 · Audit N+1 dan kinerja menjelang v1.0
 
 Fase 5, branch `perf/audit-n-plus-1-v1`, satu PR. Berjalan paralel dengan

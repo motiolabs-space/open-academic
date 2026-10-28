@@ -22,7 +22,10 @@
 
         <x-card class="mb-5" flush>
             <x-slot:title>{{ $semester->tahunAkademik->nama }}</x-slot:title>
-            <x-slot:meta>Semester {{ $semester->semester_ke }}</x-slot:meta>
+            <x-slot:meta>
+                Semester {{ $semester->semester_ke }} ·
+                <a href="{{ route('mahasiswa.khs.cetak', $semester->tahunAkademik) }}" class="font-semibold text-navy hover:underline">{{ __('kemahasiswaan.khs.cetak') }}</a>
+            </x-slot:meta>
 
             <div class="overflow-x-auto">
                 <table class="w-full min-w-[560px] text-[13px]">

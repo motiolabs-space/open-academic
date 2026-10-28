@@ -1185,3 +1185,25 @@ satu bagian per celah.
   sejak sekarang. Seeder demo memanggil intake pindahan sebelum konsumen
   demo dibuat, jadi demo segar tidak menghasilkan kiriman.
 
+### 5. Detail mahasiswa staf: baca saja, bagian per izin, PDF dari service yang sama
+
+- **Konteks.** `Admin\MahasiswaController` hanya daftar. Tidak ada halaman
+  per mahasiswa di sisi staf, dan KHS/transkrip hanya dapat dibuka mahasiswa
+  sendiri.
+- **Keputusan.** (1) `/admin/mahasiswa/{uuid}` **hanya baca**: identitas
+  (NIK tersamar), akademik, riwayat status dan cuti, dosen wali (dengan
+  form ganti dari §1 dan riwayatnya), KRS dan KHS per semester, tagihan
+  ringkas, kesiapan PDDIKTI (aturan `FeederValidator` yang sama dengan
+  sinkronisasi) dan perubahan terkunci yang terbuka. Identitas yang dikunci
+  PDDIKTI diubah lewat jalur PDM/PJK (ADR-017) — halaman ini menautkan ke
+  konsol Feeder, tidak memberi tombol ubah. (2) **Bagian per izin**: nilai
+  (KHS, transkrip, cetak) menuntut `nilai.view`, tagihan `keuangan.view`;
+  staf keuangan melihat tagihan tanpa nilai, BAAK sebaliknya. (3)
+  **`KhsService`** baru untuk layar dan PDF KHS satu semester, dipakai portal
+  mahasiswa (yang kini juga dapat mencetak KHS) dan staf; transkrip memakai
+  `TranskripService` yang sudah ada. KHS hanya dicetak untuk semester yang
+  sudah ditutup. (4) Tanpa cakupan prodi: kode belum punya staf per prodi
+  (lihat §1).
+- **Konsekuensi.** Penyuntingan data mahasiswa oleh staf tetap tersebar di
+  layar asalnya (pindahan, cuti, dosen wali, Feeder). Halaman detail
+  mengumpulkan, tidak menggantikan.
