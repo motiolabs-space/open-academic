@@ -746,6 +746,16 @@ Route::middleware(['auth:staff', 'term.active'])->prefix('admin')->name('admin.'
     Route::post('/poin-kemahasiswaan/{poin}/tolak', [Admin\PoinKemahasiswaanController::class, 'tolak'])
         ->name('poin-kemahasiswaan.tolak');
 
+    // SIMKATMAWA report (ADR-037 §1): export only, nothing is sent.
+    Route::get('/simkatmawa', [Admin\SimkatmawaController::class, 'index'])->name('simkatmawa');
+    Route::get('/simkatmawa/unduh', [Admin\SimkatmawaController::class, 'unduh'])->name('simkatmawa.unduh');
+    Route::get('/poin-kemahasiswaan/{poin}/simkatmawa', [Admin\SimkatmawaController::class, 'edit'])
+        ->name('poin-kemahasiswaan.simkatmawa');
+    Route::put('/poin-kemahasiswaan/{poin}/simkatmawa', [Admin\SimkatmawaController::class, 'perbarui'])
+        ->name('poin-kemahasiswaan.simkatmawa.simpan');
+    Route::post('/poin-kemahasiswaan/kategori/{kategori}/simkatmawa', [Admin\SimkatmawaController::class, 'kategori'])
+        ->name('poin-kemahasiswaan.kategori.simkatmawa');
+
     Route::get('/evaluasi-studi', [Admin\EvaluasiStudiController::class, 'index'])->name('evaluasi-studi');
     Route::post('/evaluasi-studi/jalankan', [Admin\EvaluasiStudiController::class, 'jalankan'])
         ->name('evaluasi-studi.jalankan');

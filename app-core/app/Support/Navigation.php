@@ -169,6 +169,7 @@ final class Navigation
                     self::item('Konversi Kredit', '⇄', 'admin.konversi'),
                     self::item('Evaluasi Studi', '⚖', 'admin.evaluasi-studi'),
                     self::item('Poin Kemahasiswaan', '★', 'admin.poin-kemahasiswaan'),
+                    self::item(__('simkatmawa.nav'), '⇪', 'admin.simkatmawa'),
                     self::item('KKN / PKL', '⌂', 'admin.kegiatan-lapangan.index'),
                     self::item('Tugas Akhir', '✍', 'admin.tugas-akhir'),
                     self::item('Yudisium', '✦', 'admin.yudisium'),

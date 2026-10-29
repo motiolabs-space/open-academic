@@ -82,6 +82,9 @@
                             <th>Judul</th>
                             <th class="text-right">Poin</th>
                             <th>Status</th>
+                            @if ($bolehSimkatmawa)
+                                <th></th>
+                            @endif
                         </tr>
                     </thead>
                     <tbody>
@@ -102,9 +105,17 @@
                                         <span class="text-ink-faint">Menunggu</span>
                                     @endif
                                 </td>
+                                @if ($bolehSimkatmawa)
+                                    <td class="text-right">
+                                        @if ($baris->jenis === \App\Enums\JenisPoin::Prestasi)
+                                            <a href="{{ route('admin.poin-kemahasiswaan.simkatmawa', $baris) }}"
+                                                class="text-[11.5px] font-semibold text-navy underline">{{ __('simkatmawa.lengkapi.judul') }}</a>
+                                        @endif
+                                    </td>
+                                @endif
                             </tr>
                         @empty
-                            <tr><td colspan="5" class="py-3 text-center text-ink-muted">Belum ada catatan.</td></tr>
+                            <tr><td colspan="6" class="py-3 text-center text-ink-muted">Belum ada catatan.</td></tr>
                         @endforelse
                     </tbody>
                 </table>
@@ -225,6 +236,8 @@
 
                     <x-field label="Poin" name="poin" type="number" required />
 
+                    <x-field :label="__('simkatmawa.katalog.label')" name="simkatmawa_kategori" :options="$simkatmawaOptions" />
+
                     <label class="flex items-center gap-2 self-end pb-1.5">
                         <input type="checkbox" name="wajib_bukti" value="1" checked class="rounded border-line">
                         <span class="text-[12px]">Wajib bukti</span>
@@ -236,6 +249,30 @@
                         </x-button>
                     </div>
                 </form>
+
+                @if ($bolehSimkatmawa)
+                    {{-- Tabel SIMKATMAWA per kategori prestasi (ADR-037 §1). Katalog
+                         lama tidak punya isian ini, jadi ditetapkan di sini. --}}
+                    <div class="mt-4 divide-y divide-line/60 border-t border-line pt-2">
+                        @foreach ($kategori->where('jenis', \App\Enums\JenisPoin::Prestasi)->where('is_active', true) as $k)
+                            <form method="POST" action="{{ route('admin.poin-kemahasiswaan.kategori.simkatmawa', $k) }}"
+                                class="flex flex-wrap items-center gap-2 py-2">
+                                @csrf
+                                <span class="min-w-[160px] flex-1 text-[12.5px]">
+                                    <span class="tabular text-ink-faint">{{ $k->kode }}</span> {{ $k->nama }}
+                                </span>
+                                <select name="simkatmawa_kategori" aria-label="{{ __('simkatmawa.katalog.label') }}"
+                                    class="rounded border border-line bg-canvas px-2 py-1 text-[12px]">
+                                    <option value="">{{ __('simkatmawa.katalog.tidak_dilaporkan') }}</option>
+                                    @foreach ($simkatmawaOptions as $nilai => $label)
+                                        <option value="{{ $nilai }}" @selected($k->simkatmawa_kategori?->value === $nilai)>{{ $label }}</option>
+                                    @endforeach
+                                </select>
+                                <x-button type="submit" size="sm" variant="outline">{{ __('simkatmawa.katalog.simpan') }}</x-button>
+                            </form>
+                        @endforeach
+                    </div>
+                @endif
             </x-card>
         </div>
     </div>

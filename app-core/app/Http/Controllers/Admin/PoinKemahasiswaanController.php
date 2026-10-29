@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Admin;
 
 use App\Enums\JenisPoin;
+use App\Enums\KategoriSimkatmawa;
 use App\Http\Controllers\Controller;
 use App\Models\Akademik\TahunAkademik;
 use App\Models\Kemahasiswaan\Mahasiswa;
@@ -15,6 +16,7 @@ use App\Services\Kemahasiswaan\PoinKemahasiswaanService;
 use App\Support\Portal;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\View\View;
 
 /**
@@ -44,11 +46,13 @@ class PoinKemahasiswaanController extends Controller
             'kategori' => PoinKategori::orderBy('jenis')->orderBy('kode')->get(),
             'jenisOptions' => JenisPoin::options(),
             'tingkatOptions' => (array) config('kemahasiswaan.tingkat'),
+            'simkatmawaOptions' => KategoriSimkatmawa::optionsKatalog(),
             'daftarTerm' => TahunAkademik::orderByDesc('kode')->get(),
 
             'mahasiswa' => $mahasiswa,
             'rekap' => $mahasiswa ? $this->poin->rekap($mahasiswa) : null,
             'riwayat' => $mahasiswa ? $this->poin->riwayat($mahasiswa) : collect(),
+            'bolehSimkatmawa' => Gate::forUser(Portal::user())->allows('eksporSimkatmawa', PoinMahasiswa::class),
         ]);
     }
 
@@ -64,9 +68,18 @@ class PoinKemahasiswaanController extends Controller
             'poin' => ['required', 'integer', 'min:1', 'max:9999'],
             'keterangan' => ['nullable', 'string', 'max:500'],
             'wajib_bukti' => ['nullable', 'boolean'],
+            // Violations are never reported to SIMKATMAWA (ADR-037 §1).
+            'simkatmawa_kategori' => [
+                'nullable', 'prohibited_if:jenis,'.JenisPoin::Pelanggaran->value,
+                'in:'.implode(',', array_keys(KategoriSimkatmawa::optionsKatalog())),
+            ],
         ]);
 
-        PoinKategori::create([...$data, 'wajib_bukti' => (bool) ($data['wajib_bukti'] ?? false)]);
+        PoinKategori::create([
+            ...$data,
+            'wajib_bukti' => (bool) ($data['wajib_bukti'] ?? false),
+            'simkatmawa_kategori' => filled($data['simkatmawa_kategori'] ?? null) ? $data['simkatmawa_kategori'] : null,
+        ]);
 
         return back()->with('sukses', 'Kategori poin ditambahkan.');
     }

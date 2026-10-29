@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models\Kemahasiswaan;
 
 use App\Enums\JenisPoin;
+use App\Enums\KategoriSimkatmawa;
 use App\Traits\HasLogAktivitas;
 use App\Traits\HasUuid;
 use Illuminate\Database\Eloquent\Builder;
@@ -48,6 +49,7 @@ class PoinKategori extends Model
     {
         return [
             'jenis' => JenisPoin::class,
+            'simkatmawa_kategori' => KategoriSimkatmawa::class,
             'wajib_bukti' => 'boolean',
             'is_active' => 'boolean',
         ];
