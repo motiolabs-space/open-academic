@@ -112,6 +112,7 @@ function formIntake(array $atribut = []): array
     return [
         'nama' => 'Rizky Hidayat',
         'email' => 'rizky.pindahan@contoh.test',
+        'telepon' => '081234567801',
         'nik' => '3273011203030001',
         'tempat_lahir' => 'Bandung',
         'tanggal_lahir' => '2003-03-12',

@@ -16,6 +16,7 @@ use App\Models\Feeder\FeederChangeRequest;
 use App\Models\Feeder\FeederSyncLog;
 use App\Models\Feeder\FeederValidationIssue;
 use App\Models\Kemahasiswaan\Mahasiswa;
+use App\Models\Kemahasiswaan\StatusMahasiswa;
 use App\Models\Kemahasiswaan\Yudisium;
 use App\Models\Sdm\Staff;
 use App\Models\System\LogAktivitas;
@@ -206,6 +207,9 @@ describe('validator menahan pengiriman ulang', function () {
 
     it('menolak catatan Lulus/DO selama ada PJK yang terbuka', function () {
         $m = mhsTersinkron(['status' => StudentStatus::Lulus, 'feeder_keluar_id' => 'reg-1']);
+        StatusMahasiswa::create([
+            'mahasiswa_id' => $m->id, 'tahun_akademik_id' => $this->term->id, 'status' => 'A', 'semester_ke' => 8,
+        ]);
         $y = Yudisium::create([
             'mahasiswa_id' => $m->id, 'tahun_akademik_id' => $this->term->id, 'total_sks' => 144, 'ipk' => 3.45,
             'tanggal_lulus' => '2026-12-10', 'nomor_sk' => 'SK/1', 'status' => 'ditetapkan',

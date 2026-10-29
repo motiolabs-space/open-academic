@@ -20,6 +20,7 @@ use App\Models\Feeder\FeederSyncLog;
 use App\Models\Feeder\FeederValidationIssue;
 use App\Models\Kemahasiswaan\EvaluasiStudi;
 use App\Models\Kemahasiswaan\Mahasiswa;
+use App\Models\Kemahasiswaan\StatusMahasiswa;
 use App\Models\Kemahasiswaan\Yudisium;
 use App\Models\Sdm\Dosen;
 use App\Models\Sdm\Staff;
@@ -73,10 +74,10 @@ function dosenTerpetakan(array $atribut = []): Dosen
     ], $atribut));
 }
 
-/** A student whose registration has reached Feeder. */
+/** A student whose registration has reached Feeder, with a term on record. */
 function mahasiswaTerdaftarDiFeeder(array $atribut = []): Mahasiswa
 {
-    return Mahasiswa::factory()->create(array_merge([
+    $mahasiswa = Mahasiswa::factory()->create(array_merge([
         'prodi_id' => test()->prodi->id,
         'nik' => '3201234567890123',
         'tempat_lahir' => 'Bandung',
@@ -86,6 +87,13 @@ function mahasiswaTerdaftarDiFeeder(array $atribut = []): Mahasiswa
         'feeder_id' => 'mhs-feeder-1',
         'feeder_registrasi_id' => 'reg-feeder-1',
     ], $atribut));
+
+    // Neo Feeder refuses to close a registration with no AKM (ADR-036 §3).
+    StatusMahasiswa::create([
+        'mahasiswa_id' => $mahasiswa->id, 'tahun_akademik_id' => test()->term->id, 'status' => 'A', 'semester_ke' => 1,
+    ]);
+
+    return $mahasiswa;
 }
 
 function yudisiumDitetapkan(Mahasiswa $mahasiswa, array $atribut = []): Yudisium

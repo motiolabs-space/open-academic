@@ -123,18 +123,48 @@ describe('dua endpoint yang dulu tertinggal', function () {
         expect(array_keys($data))->toEqualCanonicalizing(array_keys($skema))
             ->and(array_keys($contoh))->toEqualCanonicalizing(array_keys($skema));
 
-        foreach ($skema as $butir => $definisi) {
-            $properti = isset($definisi['$ref'])
-                ? $this->skema[Str::afterLast($definisi['$ref'], '/')]['properties']
+        // Two levels: the legacy keys, and the iku_2026 block with its own
+        // per-indicator objects. A $ref may sit bare or inside allOf (the
+        // deprecated keys need a description beside it).
+        $properti = function (array $definisi): ?array {
+            $ref = $definisi['$ref'] ?? ($definisi['allOf'][0]['$ref'] ?? null);
+
+            return $ref !== null
+                ? $this->skema[Str::afterLast($ref, '/')]['properties']
                 : ($definisi['properties'] ?? null);
+        };
 
-            if ($properti === null) {
-                continue;
+        $periksa = function (array $skemaButir, array $data, array $contoh, string $jalur) use (&$periksa, $properti): void {
+            foreach ($skemaButir as $butir => $definisi) {
+                $anak = $properti($definisi);
+
+                if ($anak === null) {
+                    continue;
+                }
+
+                expect(array_keys($data[$butir]))->toEqualCanonicalizing(array_keys($anak), "iku-data.{$jalur}{$butir}")
+                    ->and(array_keys($contoh[$butir]))->toEqualCanonicalizing(array_keys($anak), "contoh iku-data.{$jalur}{$butir}");
+
+                if ($butir === 'iku_2026') {
+                    $periksa($anak, $data[$butir], $contoh[$butir], 'iku_2026.');
+                }
             }
+        };
 
-            expect(array_keys($data[$butir]))->toEqualCanonicalizing(array_keys($properti), "iku-data.{$butir}")
-                ->and(array_keys($contoh[$butir]))->toEqualCanonicalizing(array_keys($properti), "contoh iku-data.{$butir}");
+        $periksa($skema, $data, $contoh, '');
+    });
+
+    it('menandai setiap kunci IKU penomoran lama sebagai usang, dan iku_2026 tidak', function () {
+        $skema = $this->skema['IkuData']['properties'];
+        $lama = array_filter(array_keys($skema), fn (string $k): bool => preg_match('/^iku_\d+_/', $k) === 1);
+
+        expect($lama)->toHaveCount(6);
+
+        foreach ($lama as $kunci) {
+            expect($skema[$kunci]['deprecated'] ?? false)->toBeTrue($kunci);
         }
+
+        expect($skema['iku_2026']['deprecated'] ?? false)->toBeFalse();
     });
 
     it('menolak /iku-data bila satu saja dari kelima scope tidak dimiliki', function () {

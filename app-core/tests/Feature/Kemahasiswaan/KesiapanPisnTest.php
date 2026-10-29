@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Enums\EducationLevel;
 use App\Enums\SemesterType;
 use App\Enums\StudentStatus;
 use App\Models\Akademik\KelasKuliah;
@@ -15,17 +16,18 @@ use App\Models\Kemahasiswaan\Mahasiswa;
 use App\Models\Kemahasiswaan\StatusMahasiswa;
 use App\Models\Kemahasiswaan\Yudisium;
 use App\Models\Sdm\Staff;
-use App\Services\Kemahasiswaan\KesiapanPinService;
+use App\Services\Kemahasiswaan\KesiapanPisnService;
 use Database\Seeders\RolePermissionSeeder;
 
 /**
- * The diploma-number (PIN) pre-flight: every refusal the ministry's portal
- * can give is visible from local data before the portal is opened.
+ * The diploma-number (PISN) pre-flight: every validator the ministry's PISN
+ * site applies is visible from local data before the site is opened
+ * (ADR-036 §2).
  */
 beforeEach(function () {
     $this->term = TahunAkademik::factory()->term(2026, SemesterType::Ganjil)->berjalan()->aktif()->create();
-    $this->prodi = Prodi::factory()->create(['kode_pddikti' => 'a1b2c3d4']);
-    $this->pin = app(KesiapanPinService::class);
+    $this->prodi = Prodi::factory()->create(['kode_pddikti' => 'a1b2c3d4', 'akreditasi' => 'Unggul']);
+    $this->pisn = app(KesiapanPisnService::class);
 });
 
 /** A graduate whose PDDIKTI record is complete: the baseline everything else deviates from. */
@@ -41,6 +43,7 @@ function lulusanSiap(array $mahasiswa = [], array $yudisium = []): Mahasiswa
         'feeder_id' => 'mhs-1',
         'feeder_registrasi_id' => 'reg-1',
         'feeder_keluar_id' => 'reg-1',
+        'term_masuk' => '20261',
     ], $mahasiswa));
 
     StatusMahasiswa::create([
@@ -63,7 +66,7 @@ function lulusanSiap(array $mahasiswa = [], array $yudisium = []): Mahasiswa
     return $m;
 }
 
-function nilaiFinalPin(Mahasiswa $m, ?string $feederId): void
+function nilaiFinalPisn(Mahasiswa $m, ?string $feederId): void
 {
     $kelas = KelasKuliah::factory()->create([
         'tahun_akademik_id' => test()->term->id,
@@ -84,15 +87,15 @@ function nilaiFinalPin(Mahasiswa $m, ?string $feederId): void
 
 it('menyatakan siap ketika seluruh catatan sudah sampai di PDDIKTI', function () {
     $m = lulusanSiap();
-    nilaiFinalPin($m, 'nilai-1');
+    nilaiFinalPisn($m, 'nilai-1');
 
-    $hasil = $this->pin->periksa($m);
+    $hasil = $this->pisn->periksa($m);
 
     expect($hasil->siap())->toBeTrue()
         ->and($hasil->belumSiap())->toBe([]);
 });
 
-it('menangkap lima penolakan tersering reservasi PIN, masing-masing dengan alasannya', function () {
+it('menangkap lima penolakan tersering PISN, masing-masing dengan alasannya', function () {
     // 1. NIK salah
     $nik = lulusanSiap(['nik' => '12345']);
     // 2. SKS kurang
@@ -105,7 +108,7 @@ it('menangkap lima penolakan tersering reservasi PIN, masing-masing dengan alasa
     $akm = lulusanSiap(['nik' => '3201234567890127']);
     StatusMahasiswa::where('mahasiswa_id', $akm->id)->update(['feeder_id' => null]);
 
-    $hasil = $this->pin->periksaBanyak(collect([$nik, $sks, $aktif, $registrasi, $akm]));
+    $hasil = $this->pisn->periksaBanyak(collect([$nik, $sks, $aktif, $registrasi, $akm]));
 
     expect($hasil[$nik->id]->belumSiap())->toBe(['NIK 16 digit'])
         ->and($hasil[$sks->id]->belumSiap())->toBe(['SKS memenuhi ketentuan (144)'])
@@ -118,11 +121,11 @@ it('menangkap lima penolakan tersering reservasi PIN, masing-masing dengan alasa
 
 it('menghitung nilai final yang belum terkirim, bukan sekadar ada atau tidak', function () {
     $m = lulusanSiap();
-    nilaiFinalPin($m, 'nilai-1');
-    nilaiFinalPin($m, null);
-    nilaiFinalPin($m, null);
+    nilaiFinalPisn($m, 'nilai-1');
+    nilaiFinalPisn($m, null);
+    nilaiFinalPisn($m, null);
 
-    $rincian = collect($this->pin->periksa($m)->rincian)->firstWhere('kode', 'nilai');
+    $rincian = collect($this->pisn->periksa($m)->rincian)->firstWhere('kode', 'nilai');
 
     expect($rincian['siap'])->toBeFalse()
         ->and($rincian['keterangan'])->toBe('2 nilai belum terkirim');
@@ -131,7 +134,7 @@ it('menghitung nilai final yang belum terkirim, bukan sekadar ada atau tidak', f
 it('menolak yudisium tanpa nomor SK dan identitas PDM yang tidak lengkap', function () {
     $m = lulusanSiap(['nama_ibu' => null], ['nomor_sk' => null]);
 
-    $belum = $this->pin->periksa($m)->belumSiap();
+    $belum = $this->pisn->periksa($m)->belumSiap();
 
     expect($belum)->toContain('Yudisium ditetapkan dengan nomor SK')
         ->toContain('Identitas PDM lengkap (nama ibu, tempat & tanggal lahir)');
@@ -141,16 +144,16 @@ it('memeriksa satu kohort dalam jumlah kueri yang tetap', function () {
     $kohort = collect(range(1, 12))->map(fn (int $i): Mahasiswa => lulusanSiap(['nik' => sprintf('32012345678901%02d', $i)]));
 
     DB::enableQueryLog();
-    $this->pin->periksaBanyak($kohort);
+    $this->pisn->periksaBanyak($kohort);
     $jumlah = count(DB::getQueryLog());
     DB::disableQueryLog();
 
-    // Yudisium is already loaded by the caller in practice; here it costs one
-    // query, plus one per loadCount — never one per graduate.
-    expect($jumlah)->toBeLessThanOrEqual(6);
+    // Yudisium, its term, and the prodi are one query each; plus one per
+    // loadCount and one for every term record — never one per graduate.
+    expect($jumlah)->toBeLessThanOrEqual(9);
 });
 
-it('menampilkan kesiapan PIN pada daftar lulusan yang ditetapkan', function () {
+it('menampilkan kesiapan PISN pada daftar lulusan yang ditetapkan', function () {
     $this->seed(RolePermissionSeeder::class);
     lulusanSiap(['feeder_keluar_id' => null, 'nama' => 'Lulusan Belum Sampai']);
 
@@ -160,7 +163,78 @@ it('menampilkan kesiapan PIN pada daftar lulusan yang ditetapkan', function () {
     $this->actingAs($staf, 'staff')
         ->get('/admin/yudisium')
         ->assertOk()
-        ->assertSee('Siap PIN')
+        ->assertSee('Siap PISN')
         ->assertSee('1 belum')
         ->assertSee('Status Lulus sudah sampai di PDDIKTI');
 });
+
+describe('validator PISN sejak 1 November 2025', function () {
+    it('menolak prodi tanpa akreditasi tercatat — satu-satunya validator tanpa eksepsi', function () {
+        $this->prodi->update(['akreditasi' => null]);
+        $m = lulusanSiap();
+
+        expect($this->pisn->periksa($m)->belumSiap())->toBe(['Program studi terakreditasi']);
+    });
+
+    it('memakai SKS dan IPK minimum per jenjang, bukan angka kampus', function () {
+        $d3 = Prodi::factory()->create(['jenjang' => EducationLevel::D3, 'akreditasi' => 'Baik']);
+        $magister = Prodi::factory()->create(['jenjang' => EducationLevel::S2, 'akreditasi' => 'Baik']);
+
+        // 110 SKS: enough for D3 (108), far below S1 (144).
+        $diploma = lulusanSiap(['prodi_id' => $d3->id, 'nik' => '3201234567890131'], ['total_sks' => 110, 'ipk' => 2.10]);
+        // IPK 2,90 passes a bachelor, not a master (3,00).
+        $s2 = lulusanSiap(['prodi_id' => $magister->id, 'nik' => '3201234567890132', 'term_masuk' => '20251'], ['total_sks' => 40, 'ipk' => 2.90]);
+
+        $hasil = $this->pisn->periksaBanyak(collect([$diploma, $s2]));
+
+        expect($hasil[$diploma->id]->siap())->toBeTrue()
+            ->and(collect($hasil[$diploma->id]->rincian)->firstWhere('kode', 'sks')['label'])->toBe('SKS memenuhi ketentuan (108)')
+            ->and($hasil[$s2->id]->belumSiap())->toContain('IPK memenuhi ketentuan (3,00)');
+    });
+
+    it('menghitung masa studi dari semester masuk sampai semester lulus, cuti ikut terhitung', function () {
+        // S1: 16 semesters at most. 20181 -> 20261 is 17.
+        $lama = lulusanSiap(['term_masuk' => '20181', 'nik' => '3201234567890141']);
+        StatusMahasiswa::where('mahasiswa_id', $lama->id)->delete();
+        foreach (['20181', '20261'] as $kode) {
+            StatusMahasiswa::create([
+                'mahasiswa_id' => $lama->id, 'tahun_akademik_id' => semesterUji($kode)->id,
+                'status' => 'A', 'semester_ke' => 1, 'feeder_id' => 'akm-'.$kode,
+            ]);
+        }
+
+        $rincian = collect($this->pisn->periksa($lama)->rincian)->firstWhere('kode', 'masa_studi');
+
+        expect($rincian['siap'])->toBeFalse()
+            ->and($rincian['keterangan'])->toContain('17 semester, batas 16');
+    });
+
+    it('menuntut catatan semester pertama pada semester masuknya', function () {
+        $m = lulusanSiap(['term_masuk' => '20251']);
+
+        $rincian = collect($this->pisn->periksa($m)->rincian)->firstWhere('kode', 'semester_masuk');
+
+        expect($rincian['siap'])->toBeFalse()
+            ->and($rincian['keterangan'])->toBe('masuk 20251, catatan pertama 20261');
+    });
+
+    it('memeriksa beban SKS per semester dan semester antara', function () {
+        $m = lulusanSiap();
+        StatusMahasiswa::where('mahasiswa_id', $m->id)->update(['semester_ke' => 1, 'sks_semester' => 22]);
+        StatusMahasiswa::create([
+            'mahasiswa_id' => $m->id, 'tahun_akademik_id' => semesterUji('20263')->id,
+            'status' => 'A', 'semester_ke' => 2, 'sks_semester' => 10, 'feeder_id' => 'akm-antara',
+        ]);
+
+        $rincian = collect($this->pisn->periksa($m)->rincian)->firstWhere('kode', 'beban_semester');
+
+        expect($rincian['siap'])->toBeFalse()
+            ->and($rincian['keterangan'])->toBe('melebihi batas pada 20261 (22 SKS), 20263 (10 SKS)');
+    });
+});
+
+function semesterUji(string $kode): TahunAkademik
+{
+    return TahunAkademik::query()->where('kode', $kode)->first()
+        ?? TahunAkademik::factory()->term((int) substr($kode, 0, 4), SemesterType::from(substr($kode, 4, 1)))->create();
+}

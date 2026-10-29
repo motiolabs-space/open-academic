@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\Kemahasiswaan;
 
-use App\DTOs\Kemahasiswaan\KesiapanPin;
+use App\DTOs\Kemahasiswaan\KesiapanPisn;
 use App\DTOs\Kemahasiswaan\SyaratWisuda;
 use App\Models\Kemahasiswaan\Mahasiswa;
 use App\Models\Keuangan\Tagihan;
@@ -31,7 +31,7 @@ use Illuminate\Support\Collection;
  */
 class SyaratWisudaService
 {
-    public function __construct(private readonly KesiapanPinService $kesiapanPin) {}
+    public function __construct(private readonly KesiapanPisnService $kesiapanPisn) {}
 
     public function periksa(Mahasiswa $mahasiswa): SyaratWisuda
     {
@@ -56,14 +56,14 @@ class SyaratWisudaService
         $mahasiswa->loadMissing(['yudisium', 'prodi', 'ujiKompetensiLulus']);
 
         $tunggakan = Tagihan::tunggakanPerMahasiswa($mahasiswa->modelKeys());
-        $pin = $this->kesiapanPin->periksaBanyak($mahasiswa);
+        $pisn = $this->kesiapanPisn->periksaBanyak($mahasiswa);
 
         return $mahasiswa->mapWithKeys(fn (Mahasiswa $m): array => [
             $m->id => new SyaratWisuda([
                 $this->barisYudisium($m),
                 ...$this->barisUkom($m),
                 $this->barisKeuangan((int) ($tunggakan[$m->id] ?? 0)),
-                $this->barisPin($pin[$m->id]),
+                $this->barisPisn($pisn[$m->id]),
             ]),
         ]);
     }
@@ -74,7 +74,7 @@ class SyaratWisudaService
      *
      * Required, not informational: the diploma handed over at the ceremony is
      * not issued until the examination is passed, and the diploma number
-     * cannot be reserved for somebody PDDIKTI still lists as waiting.
+     * cannot be issued for somebody PDDIKTI still lists as waiting.
      *
      * @return array<int, array{kode: string, label: string, terpenuhi: bool, wajib: bool, keterangan: string}>
      */
@@ -145,16 +145,16 @@ class SyaratWisudaService
      *
      * @return array{kode: string, label: string, terpenuhi: bool, wajib: bool, keterangan: string}
      */
-    private function barisPin(KesiapanPin $pin): array
+    private function barisPisn(KesiapanPisn $pisn): array
     {
         return [
-            'kode' => 'pin',
-            'label' => __('wisuda.syarat.pin'),
-            'terpenuhi' => $pin->siap(),
+            'kode' => 'pisn',
+            'label' => __('wisuda.syarat.pisn'),
+            'terpenuhi' => $pisn->siap(),
             'wajib' => false,
-            'keterangan' => $pin->siap()
-                ? __('wisuda.syarat.pin_siap')
-                : __('wisuda.syarat.pin_belum', ['jumlah' => $pin->jumlahBelumSiap()]),
+            'keterangan' => $pisn->siap()
+                ? __('wisuda.syarat.pisn_siap')
+                : __('wisuda.syarat.pisn_belum', ['jumlah' => $pisn->jumlahBelumSiap()]),
         ];
     }
 }

@@ -297,7 +297,7 @@ describe('jenis pendaftaran (#25)', function () {
         ]);
     });
 
-    it('menolak pindahan tanpa SKS diakui atau asal — Feeder menolaknya, dan portal PIN menolaknya lagi', function () {
+    it('menolak pindahan tanpa SKS diakui atau asal — Feeder menolaknya, dan PISN menolaknya lagi', function () {
         sukses('mahasiswa');
         FeederMapping::create(['group' => 'jenis_daftar', 'local_value' => 'rpl_transfer', 'feeder_code' => '3']);
         mhsDiFeeder(['feeder_registrasi_id' => null, 'jenis_daftar' => JenisDaftar::RplTransfer]);

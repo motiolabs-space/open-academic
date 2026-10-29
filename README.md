@@ -38,8 +38,10 @@ bagian yang paling menyita waktu kampus kecil:
    (LMS, repositori, perpustakaan, Open Campus) memakai satu akun yang sama, dan
    menonaktifkan satu akun langsung memutus aksesnya di semua aplikasi.
    Panduannya di [`docs/SSO.md`](docs/SSO.md).
-5. **IKU Data Provider** — kebenaran transaksional untuk IKU 1/2/3/4/7/11 lewat
-   `GET /api/bridge/v1/iku-data`. Cacahan fakta, **bukan kalkulator**: tanpa skor,
+5. **IKU Data Provider** — kebenaran transaksional untuk IKU 2026
+   (Kepmendiktisaintek 358/M/KEP/2025: IKU 1–6, berikut peta ketersediaan
+   kedua belas IKU) lewat `GET /api/bridge/v1/iku-data`; kunci penomoran lama
+   tetap dilayani sebagai medan usang. Cacahan fakta, **bukan kalkulator**: tanpa skor,
    ambang, maupun target. Angka yang bergantung peraturan menteri dikembalikan per
    bucket agar keputusannya tetap milik konsumen. Dasbor dan review evidence-nya
    milik Open Campus.

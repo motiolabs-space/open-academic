@@ -189,7 +189,7 @@ describe('komponen evaluasi kelas', function () {
     });
 });
 
-describe('ambang IKU 7', function () {
+describe('ambang kelas kolaboratif', function () {
     it('memperingatkan kelas kolaboratif yang bobot partisipatif + proyeknya di bawah 50%, tanpa menahan pengiriman', function () {
         ledgerSukses('kelas_kuliah');
         $kelas = kelasDiFeeder(['is_case_method' => true]);

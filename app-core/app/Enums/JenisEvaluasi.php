@@ -37,14 +37,19 @@ enum JenisEvaluasi: string
         };
     }
 
-    /** Whether this kind counts towards the IKU 7 collaborative-class threshold. */
-    public function menghitungIku7(): bool
+    /** Whether this kind counts towards the collaborative-class threshold. */
+    public function menghitungKolaboratif(): bool
     {
         return $this === self::Partisipatif || $this === self::Proyek;
     }
 
-    /** The share of marks IKU 7 requires from participatory and project work. */
-    public const AMBANG_IKU7_PERSEN = 50;
+    /**
+     * The share of marks a collaborative class takes from participatory and
+     * project work. Set by the eight-indicator IKU numbering (its IKU 7); the
+     * 2026 numbering has no such indicator, and the rule stays as the
+     * campus's own definition of the flag (ADR-036 §1).
+     */
+    public const AMBANG_KOLABORATIF_PERSEN = 50;
 
     /** @return array<string, string> */
     public static function options(): array

@@ -99,7 +99,7 @@ app/
 TahunAkademik (20261 = 2026/2027 Ganjil — encoding PDDIKTI)
   └─ Prodi → Kurikulum (berversi) → MataKuliah (SKS, posisi semester, prasyarat)
        └─ KelasKuliah (dosen pengampu, jadwal, ruang, kuota,
-          flag case_method / team_based_project → IKU 7)
+          flag case_method / team_based_project → kelas kolaboratif)
             └─ KRS (draft → diajukan → disetujui oleh Dosen Wali;
                batas SKS dari IPS; cek prasyarat; cek kuota;
                terkunci sampai pembayaran minimum)
@@ -137,16 +137,25 @@ Empat properti yang tidak boleh dikompromikan:
 ## 6. IKU Data Provider — bukan dasbor
 
 Dasbor, review evidence, dan tata kelola **12 IKU** milik Open Campus.
-Tugas repo ini hanya menyediakan kebenaran transaksionalnya:
+Tugas repo ini hanya menyediakan kebenaran transaksionalnya. Penomoran mengikuti
+**Kepmendiktisaintek 358/M/KEP/2025** (berlaku penilaian 2026; ADR-036):
 
-| IKU | Sumber di Open Academic |
-|---|---|
-| 1 — Kesiapan lulusan | `yudisium`, `alumni` |
-| 2 — Pengalaman luar kampus | `aktivitas_mahasiswa` (MBKM, `sks_konversi`) |
-| 3 — Dosen di luar kampus | `penugasan_dosen` |
-| 4 — Praktisi mengajar | `kelas_dosen.peran = praktisi` |
-| 7 — Kelas kolaboratif | `kelas_kuliah.is_case_method` / `is_team_based_project` |
-| 11 — Efisiensi edukasi | Statistik operasional agregat |
+| IKU 2026 | Sumber di Open Academic | Ketersediaan |
+|---|---|---|
+| 1 — Angka Efisiensi Edukasi | `status_mahasiswa` per tahun akademik, `yudisium` (lama studi) | tersedia |
+| 2 — Lulusan bekerja/berwirausaha/studi lanjut | `yudisium`, `alumni` (populasi tracer study) | sebagian — tracer study di Open Campus |
+| 3 — Kegiatan/prestasi di luar prodi | `aktivitas_mahasiswa` (`sks_konversi`), `poin_mahasiswa` jenis prestasi | tersedia |
+| 4 — Rekognisi internasional dosen | `penugasan_dosen` berluaran, `tingkat = internasional` | sebagian |
+| 5 — Luaran kerja sama & hilirisasi | `penugasan_dosen` berluaran dengan mitra | sebagian |
+| 6 — Publikasi bereputasi | `penugasan_dosen` luaran jurnal/prosiding | sebagian — indeks & kuartil tidak dicatat |
+| 8 — SDM dalam penyusunan kebijakan | — | belum tersedia (ROADMAP) |
+| 7, 9–12 — SDGs, pendapatan non-UKT, ZI, tata kelola, renstra kesejahteraan dosen | — | bukan cakupan repo ini |
+
+Penomoran lama (delapan IKU) masih dilayani kunci `iku_N_*` di `GET /iku-data`
+sebagai medan **usang** yang dibekukan sampai versi mayor Bridge. Kelas
+kolaboratif (`is_case_method` / `is_team_based_project`) dan praktisi mengajar
+(`kelas_dosen.peran = praktisi`) tetap dicatat, tetapi tidak lagi berlabel nomor
+IKU. Fakta baru hanya masuk ke blok `iku_2026`.
 
 **Jangan membangun kalkulator atau dasbor IKU di sini.**
 
@@ -216,7 +225,8 @@ Event: `student.enrolled`, `student.status_changed`, `krs.approved`,
 - Satu modul per PR, diff kecil dan bisa direview.
 - Jangan pernah commit rahasia; jaga `.env.example` tetap lengkap dan mutakhir.
 - **Materi kementerian tidak pernah di-push ke GitHub.** Kode, koleksi Postman,
-  panduan, kredensial, atau data dari Neo Feeder, PDDIKTI admin, SISTER, dan PIN
+  panduan, kredensial, atau data dari Neo Feeder, PDDIKTI admin, SISTER, dan PISN
+  (dahulu PIN)
   tidak boleh masuk repo ini (publik), dan repo ini tidak pernah mendorong apa pun
   ke repositori GitHub kementerian. Kajian disimpan lokal di `docs/lokal/`
   (di-exclude). Lihat `CONTRIBUTING.md` §Aturan yang Sering Terlewat #8.

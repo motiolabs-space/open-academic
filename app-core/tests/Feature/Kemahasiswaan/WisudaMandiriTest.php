@@ -163,14 +163,14 @@ describe('SyaratWisudaService', function () {
         expect($this->syarat->periksa($m->fresh())->memenuhi())->toBeTrue();
     });
 
-    it('menampilkan kesiapan PIN sebagai informasi yang tidak menghalangi', function () {
+    it('menampilkan kesiapan PISN sebagai informasi yang tidak menghalangi', function () {
         // Mahasiswa pabrik tidak punya NIK, registrasi Feeder, maupun SK:
-        // daftar periksa PIN pasti belum siap.
+        // daftar periksa PISN pasti belum siap.
         $syarat = $this->syarat->periksa(wisudawan());
-        $pin = $syarat->baris('pin');
+        $pisn = $syarat->baris('pisn');
 
-        expect($pin['wajib'])->toBeFalse()
-            ->and($pin['terpenuhi'])->toBeFalse()
+        expect($pisn['wajib'])->toBeFalse()
+            ->and($pisn['terpenuhi'])->toBeFalse()
             ->and($syarat->memenuhi())->toBeTrue()
             ->and($syarat->belumTerpenuhi())->toBe([]);
     });

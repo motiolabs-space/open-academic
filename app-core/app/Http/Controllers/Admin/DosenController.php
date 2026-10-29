@@ -144,8 +144,7 @@ class DosenController extends Controller
             'is_praktisi' => ['sometimes', 'boolean'],
             'praktisi_instansi' => ['nullable', 'string', 'max:255', 'required_if:is_praktisi,1'],
         ], [
-            'praktisi_instansi.required_if' => 'Instansi asal wajib diisi untuk dosen praktisi — '
-                .'itulah bukti yang dihitung pada IKU 4.',
+            'praktisi_instansi.required_if' => __('iku.praktisi_instansi_wajib'),
             'nuptk.regex' => 'NUPTK terdiri dari 16 digit angka.',
         ]);
     }

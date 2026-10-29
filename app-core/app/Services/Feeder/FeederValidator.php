@@ -53,6 +53,9 @@ use Illuminate\Support\Str;
  */
 class FeederValidator
 {
+    /** @var array<string, array<string, true>> values shared by more than one student, per column */
+    private array $kontakGanda = [];
+
     /**
      * Checks every row of an entity for a term and records what it finds.
      *
@@ -167,6 +170,8 @@ class FeederValidator
             $isu->push($this->peringatan('agama_kosong', 'Agama belum diisi; akan dikirim tanpa id_agama.'));
         }
 
+        $isu = $isu->merge($this->kontakMahasiswa($m));
+
         // PDDIKTI may already hold this student. Inserting the biodata now
         // would register them a second time — or be refused for the NIK —
         // and either way the decision belongs to a person, not to a sync.
@@ -193,6 +198,55 @@ class FeederValidator
         }
 
         return $isu;
+    }
+
+    /**
+     * Contact details on the biodata (ADR-036 §3).
+     *
+     * Neo Feeder 3.0.1 made the student's mobile number mandatory, and 3.1
+     * is reported to require an e-mail address and to refuse a number or an
+     * address another student already uses. A missing number blocks; a
+     * malformed or shared one is a warning until a Feeder build here refuses
+     * it. The e-mail address is the login here, so it is never empty and
+     * never shared — only its shape is checked.
+     *
+     * @return Collection<int, array{rule: string, severity: string, message: string}>
+     */
+    private function kontakMahasiswa(Mahasiswa $m): Collection
+    {
+        $isu = collect();
+        $digit = preg_replace('/\D/', '', (string) $m->telepon) ?? '';
+
+        if (blank($m->telepon)) {
+            $isu->push($this->error('telepon_kosong', __('feeder.validasi.telepon_kosong')));
+        } elseif (strlen($digit) < 9 || strlen($digit) > 15) {
+            $isu->push($this->peringatan('telepon_tidak_valid', __('feeder.validasi.telepon_tidak_valid', ['telepon' => $m->telepon])));
+        } elseif ($this->dipakaiLebihDariSatu('telepon', (string) $m->telepon)) {
+            $isu->push($this->peringatan('telepon_ganda', __('feeder.validasi.telepon_ganda')));
+        }
+
+        if (filter_var($m->email, FILTER_VALIDATE_EMAIL) === false) {
+            $isu->push($this->peringatan('email_tidak_valid', __('feeder.validasi.email_tidak_valid', ['email' => $m->email])));
+        }
+
+        return $isu;
+    }
+
+    /**
+     * Whether another student holds the same value. One grouped query per
+     * column per validator run, not one per row.
+     */
+    private function dipakaiLebihDariSatu(string $kolom, string $nilai): bool
+    {
+        $this->kontakGanda[$kolom] ??= Mahasiswa::query()
+            ->whereNotNull($kolom)
+            ->groupBy($kolom)
+            ->havingRaw('count(*) > 1')
+            ->pluck($kolom)
+            ->mapWithKeys(fn ($v): array => [(string) $v => true])
+            ->all();
+
+        return isset($this->kontakGanda[$kolom][$nilai]);
     }
 
     /** Whether an adoption run left this student ambiguous, and nobody has decided since. */
@@ -469,21 +523,22 @@ class FeederValidator
                 $isu->push($this->error('bobot_tidak_seratus', "Bobot komponen kelas berjumlah {$total}, bukan 100."));
             }
 
-            // IKU 7 is decided here, not by the class flag. A flagged class
-            // whose plan is all exams is reported as flagged — and not counted.
+            // Whether a flagged class is collaborative in substance is decided
+            // here, not by the flag. A flagged class whose plan is all exams
+            // is reported. The rule key keeps its old name: it is an
+            // identifier stored on issues, not a label (ADR-036 §1).
             if ($kelas->kelasKolaboratif()) {
                 $kolaboratif = (int) $semua
-                    ->filter(fn (KomponenNilai $c): bool => $c->jenis_evaluasi?->menghitungIku7() ?? false)
+                    ->filter(fn (KomponenNilai $c): bool => $c->jenis_evaluasi?->menghitungKolaboratif() ?? false)
                     ->sum('bobot');
 
-                if ($kolaboratif < JenisEvaluasi::AMBANG_IKU7_PERSEN) {
+                if ($kolaboratif < JenisEvaluasi::AMBANG_KOLABORATIF_PERSEN) {
                     $isu->push($this->peringatan(
                         'iku7_bobot_kurang',
-                        sprintf(
-                            'Kelas ditandai case method / team-based project, tetapi bobot partisipatif + proyek hanya %d%% (syarat IKU 7: %d%%). PDDIKTI tidak akan mengakuinya sebagai kelas kolaboratif.',
-                            $kolaboratif,
-                            JenisEvaluasi::AMBANG_IKU7_PERSEN,
-                        ),
+                        __('iku.validator_bobot_kurang', [
+                            'bobot' => $kolaboratif,
+                            'ambang' => JenisEvaluasi::AMBANG_KOLABORATIF_PERSEN,
+                        ]),
                     ));
                 }
             }
@@ -578,6 +633,18 @@ class FeederValidator
             ));
         }
 
+        // Neo Feeder 3.1 refuses to close a registration that has no
+        // enrolment record at all (ADR-036 §3). Counted locally: a term not
+        // yet pushed may still go in the same run, a term that does not exist
+        // here never will.
+        $akm = $m->relationLoaded('statusPerSemester')
+            ? $m->statusPerSemester->count()
+            : $m->statusPerSemester()->count();
+
+        if ((int) $akm === 0) {
+            $isu->push($this->error('akm_kosong', __('feeder.validasi.akm_kosong')));
+        }
+
         if ($m->status === StudentStatus::Lulus) {
             $y = $m->yudisium;
 
@@ -596,7 +663,7 @@ class FeederValidator
             }
 
             if (blank($y->nomor_sk)) {
-                $isu->push($this->peringatan('nomor_sk_kosong', 'Nomor SK yudisium kosong; PDDIKTI menerimanya, tetapi reservasi nomor ijazah menanyakannya.'));
+                $isu->push($this->peringatan('nomor_sk_kosong', 'Nomor SK yudisium kosong; PDDIKTI menerimanya, tetapi penerbitan nomor ijazah PISN meminta SK yudisium sebagai bukti kelulusan.'));
             }
 
             // A health programme's graduate is not Lulus until the competency

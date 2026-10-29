@@ -4,6 +4,58 @@
 
 ---
 
+## Sesi 66 — 2026-10-29 · Tiga perubahan regulasi: IKU 2026, PISN, Neo Feeder 3.0.1
+
+Branch `fix/regulasi-iku-pisn-feeder301`, satu PR, tiga commit (satu per
+perubahan). Keputusan: ADR-036 §1–§3. Tanpa migrasi. Setiap butir diperiksa
+terhadap sumber resmi dulu; yang hanya bersumber sekunder dinyatakan begitu
+di ADR dan keparahan validatornya mengikuti.
+
+- **IKU 2026** (`fix(iku)`, Kepmendiktisaintek 358/M/KEP/2025 — terverifikasi
+  dari salinan resmi). `GET /iku-data` mendapat blok `iku_2026`
+  (`DataIku2026`): IKU 1 AEE per tahun akademik dan jenjang (terdaftar per
+  status, lulusan per lama studi beserta masa studi standar), 2 populasi
+  tracer study, 3 kegiatan terverifikasi dalam pita SKS Kepmen (0–5/6–10/11+,
+  dijumlahkan per mahasiswa) plus prestasi terverifikasi, 4–6 luaran dosen
+  (internasional, bermitra, jurnal/prosiding), dan peta `ketersediaan`
+  kedua belas IKU (tersedia/sebagian/belum/di luar cakupan). Kunci delapan
+  IKU lama tidak berubah sedikit pun, ditandai `deprecated` dengan padanannya
+  di `bridge.yaml`, dan dibekukan sampai versi mayor Bridge — Open Campus
+  tidak putus. Label "IKU 7"/"IKU 4" untuk kelas kolaboratif dan praktisi
+  dilepas (`lang/id/iku.php`). `CLAUDE.md` §6 kini memetakan IKU 2026.
+  Anggaran kueri `iku-data` 35 → 42 (tetap, dibaca dengan join).
+- **PISN** (`fix(wisuda)`, Permendikbudristek 50/2024; surat Ditjen Dikti
+  4889/B2/DT.00.08/2025 dan 1037/B.B2/DT.00.08/2025 — terverifikasi).
+  Istilah PIN → PISN di layar, lang, dan dokumen; `KesiapanPisnService`/
+  `KesiapanPisn` (dulu `…Pin…`); `ACADEMIC_IJAZAH_SUMBER=pisn` bawaan, `pin`
+  dibaca sebagai alias usang (`SumberNomorIjazah`) dengan peringatan di layar
+  Wisuda. Daftar periksa mengikuti validator PISN sejak 1 November 2025:
+  akreditasi, IPK dan SKS minimum per jenjang, beban per semester dan antara,
+  masa studi (cuti terhitung), dilaporkan pada semester masuk — angkanya di
+  `config('academic.ijazah.pisn')`. Nomor yang dicatat diperiksa strukturnya
+  (21 digit: PT, prodi, tahun, tipe 1/2, urut); lulusan sebelum 2025 tidak.
+  ADR-013 hanya ditambahi rujukan "diperbarui oleh".
+- **Neo Feeder 3.0.1/3.1** (`fix(feeder)` — **sumber sekunder**; tidak ada
+  changelog resmi publik). HP mahasiswa kosong menjadi galat validator
+  biodata; HP tidak berbentuk telepon atau dipakai dua mahasiswa, dan surel
+  tidak sah, menjadi peringatan. Lulus/DO tanpa satu pun AKM ditolak. AKM
+  ternyata sudah menghitung SKS konversi aktivitas (semester) dan transfer
+  (total) — kini dipaku tes. Teks OTP WhatsApp di ROADMAP diganti OTP surel.
+
+**Tes baru:** IkuData2026Test 5, SpecOpenApiTest +1 (kunci lama usang;
+pemeriksa skema kini dua tingkat), KesiapanPisnTest +5, NomorIjazahPisnTest
++6, FeederNeo301Test 6.
+
+### Belum
+
+ROADMAP #47–#48 dan #50–#55: data IKU 8, indeks/kuartil publikasi, tanggal
+berlaku akreditasi, nama medan HP pada `InsertBiodataMahasiswa` (mapper
+mengirim `telepon_seluler`; cocokkan dengan `GetDictionary` sebuah Neo Feeder
+hidup), tanggal ijazah pada Lulus/DO, changelog resmi Neo Feeder 3.1, alur
+re-NIM. Open Campus perlu pindah ke `iku_2026` dalam masa transisi.
+
+---
+
 ## Sesi 65 — 2026-10-28 · Lima celah P0: jalur tulis untuk data yang sudah dibaca
 
 Branch `fix/p0-lima-celah`, satu PR, lima commit (satu per celah, masing-masing

@@ -115,7 +115,7 @@ describe('layar', function () {
         ])->assertSessionHasErrors('komponen.0.nama');
     });
 
-    it('memberi tahu kelas kolaboratif yang rencananya belum memenuhi ambang IKU 7', function () {
+    it('memberi tahu kelas kolaboratif yang rencananya belum memenuhi ambang kelas kolaboratif', function () {
         $this->kelas->update(['is_case_method' => true]);
 
         kirimRencana([
@@ -130,7 +130,7 @@ describe('layar', function () {
         kirimRencana([
             ['nama' => 'Proyek', 'bobot' => 60, 'jenis' => 'proyek'],
             ['nama' => 'UAS', 'bobot' => 40, 'jenis' => 'uas'],
-        ])->assertSessionHas('sukses', fn (string $pesan): bool => str_contains($pesan, 'memenuhi syarat IKU 7'));
+        ])->assertSessionHas('sukses', fn (string $pesan): bool => str_contains($pesan, 'memenuhi kriteria kelas kolaboratif'));
     });
 
     it('menolak dosen yang tidak mengampu kelas itu', function () {

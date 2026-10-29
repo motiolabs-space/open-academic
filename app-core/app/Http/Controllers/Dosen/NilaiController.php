@@ -80,7 +80,7 @@ class NilaiController extends Controller
                 'bernilai' => (bool) $k->nilai_exists,
             ])->values(),
             'jenisEvaluasi' => JenisEvaluasi::options(),
-            'ambangIku7' => JenisEvaluasi::AMBANG_IKU7_PERSEN,
+            'ambangKolaboratif' => JenisEvaluasi::AMBANG_KOLABORATIF_PERSEN,
         ]);
     }
 
@@ -101,19 +101,18 @@ class NilaiController extends Controller
 
         if ($kelas->kelasKolaboratif()) {
             $kolaboratif = (int) $komponen
-                ->filter(fn (KomponenNilai $k): bool => $k->jenis_evaluasi?->menghitungIku7() ?? false)
+                ->filter(fn (KomponenNilai $k): bool => $k->jenis_evaluasi?->menghitungKolaboratif() ?? false)
                 ->sum('bobot');
 
-            if ($kolaboratif < JenisEvaluasi::AMBANG_IKU7_PERSEN) {
-                return back()->with('peringatan', sprintf(
-                    '%s Kelas ini ditandai case method / team-based project, tetapi bobot partisipatif + proyek baru %d%% — PDDIKTI mengakui IKU 7 mulai %d%%.',
-                    $pesan,
-                    $kolaboratif,
-                    JenisEvaluasi::AMBANG_IKU7_PERSEN,
-                ));
+            if ($kolaboratif < JenisEvaluasi::AMBANG_KOLABORATIF_PERSEN) {
+                return back()->with('peringatan', __('iku.rencana.kurang', [
+                    'pesan' => $pesan,
+                    'bobot' => $kolaboratif,
+                    'ambang' => JenisEvaluasi::AMBANG_KOLABORATIF_PERSEN,
+                ]));
             }
 
-            $pesan .= sprintf(' Bobot partisipatif + proyek %d%% memenuhi syarat IKU 7.', $kolaboratif);
+            $pesan .= __('iku.rencana.memenuhi', ['bobot' => $kolaboratif]);
         }
 
         return back()->with('sukses', $pesan);

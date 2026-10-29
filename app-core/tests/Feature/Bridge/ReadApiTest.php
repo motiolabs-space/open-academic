@@ -128,7 +128,7 @@ describe('privasi payload', function () {
 });
 
 describe('sumber data IKU', function () {
-    it('menandai kelas kolaboratif untuk IKU 7', function () {
+    it('menandai kelas kolaboratif (case method / team-based project)', function () {
         $mk = MataKuliah::factory()->create(['prodi_id' => $this->prodi->id]);
 
         KelasKuliah::factory()->create([

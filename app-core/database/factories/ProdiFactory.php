@@ -18,7 +18,11 @@ class ProdiFactory extends Factory
     {
         return [
             'fakultas_id' => Fakultas::factory(),
-            'kode' => (string) fake()->unique()->numberBetween(55201, 55299),
+            // PDDIKTI-shaped (five digits) but drawn from 80000–89999, a range
+            // no test pins by hand. Tests that need a real code — '55201',
+            // '57401', '61201' — create it themselves; a factory row landing
+            // on the same code broke the unique index at random (PR #22, #34).
+            'kode' => (string) fake()->unique()->numberBetween(80000, 89999),
 
             // Feeder keys on id_sms; the demo data uses a plausible UUID so the
             // sync screens have something realistic to display.

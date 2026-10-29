@@ -16,9 +16,9 @@ use Illuminate\Database\Eloquent\Model;
  * PDDIKTI.
  *
  * Until this row is sent, a graduate stays *Aktif* in the national database
- * no matter what the yudisium here says. That is one of the five most common
- * reasons a diploma-number reservation is refused, and it is found months
- * later by the graduate, not by the campus.
+ * no matter what the yudisium here says, and PISN issues no diploma number
+ * for a student who is not Lulus at PDDIKTI. The diploma number itself is not
+ * sent: PISN writes it to PDDIKTI after this record lands (ADR-036 §2).
  *
  * Two local events feed one Feeder entity: a confirmed yudisium (status
  * Lulus) and a decided study evaluation (drop-out or resignation). The
@@ -63,6 +63,8 @@ class LulusDoMapper extends FeederMapper
                 'ujiKompetensiLulus.tahunAkademik',
                 'yudisium.tahunAkademik',
                 'evaluasiStudi' => fn ($q) => $q->whereIn('keputusan', $keputusan)->latest('diputuskan_at'),
+                // Ids only: the validator needs to know there is at least one.
+                'statusPerSemester:id,mahasiswa_id',
             ])
             ->whereIn('status', [
                 StudentStatus::Lulus->value,

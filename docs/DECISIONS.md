@@ -158,6 +158,7 @@
   sampai `ACADEMIC_IJAZAH_SUMBER=lokal` disetel dengan sadar. Bawaan dipilih
   yang tidak dapat menghasilkan dokumen tak terverifikasi karena kelalaian.
   Verifikasi publik ijazah adalah SIVIL; QR lokal tetap untuk surat dan SKPI.
+- **Diperbarui oleh** ADR-036 §2 (PISN menggantikan istilah dan alur PIN).
 
 ## ADR-014 — Payment gateway opsional; transfer manual adalah jalur utama (2026-10-24)
 
@@ -1207,3 +1208,168 @@ satu bagian per celah.
 - **Konsekuensi.** Penyuntingan data mahasiswa oleh staf tetap tersebar di
   layar asalnya (pindahan, cuti, dosen wali, Feeder). Halaman detail
   mengumpulkan, tidak menggantikan.
+
+## ADR-036 — Tiga perubahan regulasi: IKU 2026, PISN, Neo Feeder 3.0.1 (2026-10-29)
+
+Komparasi modul 28 Oktober menemukan tiga perubahan regulasi/teknis yang belum
+tercermin di kode. Satu ADR, satu bagian per perubahan; setiap bagian menyebut
+sumber resminya dengan nomor saja — tidak ada dokumen kementerian yang masuk
+repo (CLAUDE.md §10, ADR-011).
+
+### 1. IKU 2026: blok `iku_2026` di samping kunci lama yang dibekukan
+
+- **Konteks.** Kepmendiktisaintek 358/M/KEP/2025 (menggantikan Kepmendikbudristek
+  210/M/2023; periode penilaian Januari–Desember) menetapkan dua belas IKU
+  perguruan tinggi, sebagian wajib dan sebagian pilihan, dengan penomoran baru:
+  1 Angka Efisiensi Edukasi, 2 lulusan bekerja/berwirausaha/studi lanjut,
+  3 mahasiswa berkegiatan atau berprestasi di luar prodi, 4 rekognisi
+  internasional dosen, 5 luaran kerja sama dan hilirisasi, 6 publikasi
+  bereputasi, 7 SDGs, 8 SDM dalam penyusunan kebijakan, 9 pendapatan non-UKT,
+  10 Zona Integritas, 11 tata kelola (opini audit, SAKIP, integritas akademik,
+  anti-kekerasan/narkoba/korupsi — pilihan), 12 perencanaan kesejahteraan dosen.
+  Diverifikasi dari salinan resmi keputusan itu. Kode, `CLAUDE.md` §6, dan
+  `GET /iku-data` masih memakai penomoran delapan IKU: lulusan sebagai IKU 1,
+  MBKM sebagai IKU 2, dosen di luar kampus 3, praktisi mengajar 4, kelas
+  kolaboratif 7, ditambah "IKU 11 efisiensi" yang tidak pernah ada di daftar
+  delapan itu. Open Campus mengonsumsi kunci-kunci itu.
+- **Keputusan.** (1) **Aditif, bukan versi baru.** `iku-data` mendapat satu
+  kunci baru, `iku_2026` (`App\Services\Bridge\DataIku2026`), berisi cacahan
+  per IKU 2026 plus peta `ketersediaan` kedua belas IKU: `tersedia`
+  (1, 3), `sebagian` (2 — status kerja dari tracer study; 4–6 — indeks,
+  kuartil, bukti pemanfaatan, dan sitasi tidak dicatat di sini),
+  `belum_tersedia` (8 — tidak ada jenis catatan keterlibatan dosen dalam
+  penyusunan kebijakan), `di_luar_cakupan` (7, 9–12: program SDGs, keuangan
+  institusi, ZI, audit, renstra). Konsumen yang mengabaikan medan tak dikenal
+  tidak terganggu; `/api/bridge/v2` tidak dibuka untuk satu endpoint. (2)
+  **Kunci lama dibekukan dan usang.** `iku_1_lulusan` … `iku_11_efisiensi`
+  tetap ada dengan isi persis seperti sebelumnya, ditandai `deprecated` di
+  `bridge.yaml` dengan padanannya, dan tidak menerima fakta baru. Dihapus
+  hanya pada versi mayor Bridge, diumumkan di CHANGELOG paling sedikit satu
+  periode penilaian penuh sebelumnya. Medan `iku: [3, 4]` pada penugasan
+  dosen dan `berpotensi_iku5` di `lecturer-workload` diperlakukan sama. (3)
+  **Tetap cacahan.** Bobot Kepmen 358 (pita SKS ≤5/6–10/>10 untuk IKU 3,
+  peringkat prestasi, kuartil jurnal, bobot tracer study) tidak diterapkan;
+  yang dikembalikan adalah pitanya. IKU 1 dibaca per **tahun akademik** tempat
+  semester yang diminta berada — menjumlahkan dua respons semester akan
+  menghitung mahasiswa lanjutan dua kali — dan lulusan dikelompokkan menurut
+  lama studi dengan masa studi standar di sampingnya; pemotongan "tepat
+  waktu" dan pengecualian (pindahan, DO, cuti berlebih) milik konsumen. (4)
+  **Label tanpa nomor yang sudah tidak berarti.** Kelas kolaboratif (case
+  method / team-based project) dan praktisi mengajar tidak punya padanan IKU
+  2026, jadi layar menyebutnya apa adanya (`lang/id/iku.php`), bukan "IKU 7"
+  atau "IKU 4". Ambang 50% bobot partisipatif + proyek tetap sebagai definisi
+  kampus atas penanda itu (`JenisEvaluasi::AMBANG_KOLABORATIF_PERSEN`); kunci
+  aturan validator `iku7_bobot_kurang` tidak diganti karena ia identifier
+  yang tersimpan, bukan label.
+- **Konsekuensi.** `CLAUDE.md` §6 kini memetakan IKU 2026 (perubahan instruksi
+  proyek). Open Campus dapat pindah ke `iku_2026` kapan saja dalam masa
+  transisi. Data IKU 8 menjadi butir ROADMAP. Anggaran kueri `iku-data`
+  bertambah sejumlah kueri tetap (tidak tumbuh bersama baris).
+
+### 2. PISN: istilah dan validator diperbarui; nama `pin` tetap dibaca sebagai alias usang
+
+Memperbarui ADR-013.
+
+- **Konteks.** ADR-013 ditulis untuk Penomoran Ijazah Nasional (PIN) dan
+  menyebut alurnya "reservasi". Layanan yang berlaku kini PISN — Penomoran
+  Ijazah dan Sertifikat Profesi Nasional — dengan dasar Permendikbudristek
+  50/2024 (yang mencabut Permendikbudristek 6/2022; nomor ijazah dan nomor
+  sertifikat profesi nasional diterbitkan sistem kementerian atas permohonan
+  berlampiran bukti kelulusan dan SPTJM; ijazah yang dikoreksi mendapat nomor
+  baru, yang diterbitkan ulang memakai nomor lama). Diverifikasi dari materi
+  resmi Direktorat Pembelajaran dan Kemahasiswaan Ditjen Dikti (paparan
+  penerapan PISN 2024, disebarkan LLDIKTI), surat Ditjen Dikti
+  4889/B2/DT.00.08/2025 dan 1037/B.B2/DT.00.08/2025, dan materi sosialisasi
+  LLDIKTI. Yang berbeda dari asumsi ADR-013: (a) nomor **terbit sesudah**
+  mahasiswa berstatus Lulus di PDDIKTI dengan tanggal lulus terisi, nomor
+  ijazah di PDDIKTI masih kosong, dan seluruh validator PISN lolos
+  ("eligible"); yang tidak lolos diperbaiki di PDDIKTI atau diajukan eksepsi
+  — kecuali akreditasi, yang tanpa eksepsi; (b) nomor 21 digit: kode PT (6),
+  kode prodi (5), tahun terbit (4), tipe (1 = ijazah, 2 = sertifikat profesi),
+  nomor urut (5); (c) nomor yang terbit dikirim PISN ke PDDIKTI dan dapat
+  diverifikasi di laman PISN; (d) "pemutihan" adalah klaim nomor sertifikat
+  profesi yang sudah dilaporkan antara Februari 2022 dan akhir 2024, bukan
+  pembatalan; (e) masa transisi modul sertifikat sampai akhir Desember 2024,
+  semua prodi memakai PISN sejak semester genap 2024/2025; (f) sejak
+  1 November 2025 validatornya mengikuti Permendiktisaintek 39/2025: IPK
+  minimum, SKS tempuh minimum, beban SKS per semester dan semester antara,
+  dan masa studi per jenjang. Ringkasan sekunder yang menyebut alur
+  "pembatalan" tidak menemukan padanan resmi; yang ada koreksi (nomor baru)
+  dan eksepsi.
+- **Keputusan.** (1) **Istilah.** Semua yang terlihat pengguna menyebut PISN
+  (`lang/id/wisuda.php`, layar Yudisium dan Wisuda, pesan validator Feeder),
+  dan kelas yang namanya terbaca di kode diganti: `KesiapanPisnService`,
+  `KesiapanPisn`, kode syarat wisuda `pisn`. Tanpa migrasi — tidak ada kolom
+  bernama PIN; `wisuda_peserta.nomor_ijazah` tetap. (2) **Config.**
+  `ACADEMIC_IJAZAH_SUMBER` bawaannya `pisn`; `pin` tetap dibaca sebagai
+  `pisn` (`App\Enums\SumberNomorIjazah`), ditandai usang di config,
+  `.env.example`, dan peringatan di layar Wisuda; berhenti diterima pada rilis
+  mayor berikutnya. Nilai tak dikenal juga dibaca `pisn` — bawaan yang aman
+  ADR-013 tidak berubah. (3) **Daftar periksa mengikuti validator PISN.**
+  Ditambah: prodi terakreditasi, IPK minimum per jenjang, beban SKS per
+  semester (D1–S1: 20 pada semester 1–2, 24 sesudahnya) dan semester antara
+  (9), masa studi (semester berjalan sejak semester masuk sampai semester
+  lulus, cuti ikut terhitung — jalur eksepsi masa studi meminta bukti cuti),
+  dan catatan semester pertama pada semester masuk. SKS minimum kini per
+  jenjang (D3 108, bukan 144 kampus-luas). Angka-angka itu di
+  `config('academic.ijazah.pisn')`, bukan di kode: sudah berubah sekali pada
+  November 2025. (4) **Struktur nomor diperiksa saat dicatat** di mode PISN:
+  21 digit, kode PT sama dengan `BRAND_INSTITUTION_CODE` dan kode prodi sama
+  dengan `prodi.kode` (masing-masing hanya bila berbentuk kode PDDIKTI), tahun
+  masuk akal, digit tipe sesuai jenjang (profesi/spesialis = 2). Lulusan
+  dengan tanggal lulus sebelum 2025 tidak diperiksa: nomornya dari skema
+  lama. (5) **Lulus/DO tidak mengirim nomor ijazah** (sudah begitu sejak
+  ADR-013); kini dinyatakan sebagai alur yang benar, bukan kebetulan: PISN
+  yang menulis nomor ke PDDIKTI.
+- **Konsekuensi.** Instalasi dengan `.env` berisi `pin` tidak berubah
+  perilakunya, hanya melihat peringatan. Lulusan yang sebelumnya tampil
+  "Siap" dapat berubah menjadi belum siap karena butir baru (akreditasi
+  belum dicatat, semester masuk tidak tercatat) — itu temuan, bukan regresi.
+  Akreditasi yang kedaluwarsa tidak terdeteksi karena tanggal berlakunya
+  tidak dicatat. Validator untuk profesi/spesialis non-medis (masa studi
+  ditetapkan kampus) tidak diperiksa di sini.
+
+### 3. Neo Feeder 3.0.1 dan 3.1: hanya yang menyentuh data yang kita kirim, dengan tingkat keyakinan yang dinyatakan
+
+- **Konteks.** Neo Feeder 3.0.1 dirilis Pusdatin pada Juli 2025 dan 3.1 pada
+  Mei 2026. **Tidak ada catatan rilis resmi yang dapat diakses publik** untuk
+  keduanya: halaman LLDIKTI hanya mengumumkan bimtek dan pemeliharaan, dan
+  daftar perubahan yang beredar berasal dari penyedia SIAKAD, konsultan, dan
+  blog operator. Yang terverifikasi resmi hanyalah alur kelulusan: materi
+  sosialisasi LLDIKTI menyuruh meluluskan mahasiswa di Neo Feeder **tanpa**
+  nomor ijazah, lalu PISN mengisinya (lihat §2). Sisanya — nomor HP wajib,
+  NUPTK pada data dosen, tanggal ijazah pada Lulus/DO, jenis daftar baru dan
+  re-NIM, AKM menghitung SKS transfer dan konversi aktivitas, komponen
+  evaluasi dapat dihapus, sinkron per kelompok tabel, OTP lewat surel, akun
+  WS khusus, validasi zona waktu WIB (3.0.1); AKM wajib sebelum Lulus/DO, HP
+  dan surel wajib serta unik (3.1) — bersumber sekunder, walau beberapa
+  sumber independen sepakat.
+- **Keputusan.** Diaudit terhadap mapper, `FeederValidator`,
+  `config/feeder.php`, dan `FakeFeederClient`; hanya yang menyentuh data
+  kiriman kita yang diubah, dan keparahannya mengikuti keyakinan. (1) **Nomor
+  HP kosong menjadi galat** pada biodata: disebut oleh setiap sumber dan oleh
+  kedua versi, dan biodata tanpa HP akan ditolak. Nomor yang tidak berbentuk
+  telepon (9–15 digit) atau dipakai dua mahasiswa hanya **peringatan**. Surel
+  di sini adalah login — tidak pernah kosong dan unik oleh skema — jadi hanya
+  bentuknya yang diperiksa. (2) **Lulus/DO tanpa satu pun catatan AKM menjadi
+  galat**: dilaporkan untuk 3.1, dan tidak ada alasan sah untuk meluluskan
+  mahasiswa tanpa riwayat semester. Yang dihitung catatan lokal, bukan yang
+  sudah terkirim, karena AKM semester itu boleh terkirim dalam putaran yang
+  sama. (3) **AKM sudah benar**: `sks_semester` menjumlahkan baris KRS
+  semester itu termasuk yang dikonversi dari aktivitas, `sks_total` diambil
+  dari `PerolehanAkademik` yang memuat SKS transfer/RPL; kini dipaku tes,
+  tanpa perubahan kode. (4) **Tidak diubah**: NUPTK (dosen tidak dikirim
+  lewat WS — dibaca dari `GetListDosen`), tanggal dan nomor ijazah pada
+  Lulus/DO (nama medan tanggal belum terverifikasi; nomor memang tidak
+  dikirim), jenis daftar (dipetakan dari referensi yang ditarik, enum lokal
+  sudah mencakup daftar resmi LLDIKTI), penghapusan komponen evaluasi (aksi
+  hapus WS belum terverifikasi), tanggal (sudah `Y-m-d` dengan zona
+  `Asia/Jakarta`). `FakeFeederClient` tidak mensimulasikan aturan per medan;
+  gerbangnya validator. (5) **Teks operator** yang menyebut OTP WhatsApp
+  diganti: otorisasi sinkron ke pusat kini lewat surel.
+- **Konsekuensi.** Mahasiswa tanpa nomor HP kini tertahan di validasi biodata
+  — temuan yang memang akan ditolak Feeder. Tindak lanjut tercatat di
+  ROADMAP #52–#55: nama medan HP (`telepon_seluler`) perlu dicocokkan dengan
+  kamus web service sebuah instalasi Neo Feeder; tanggal ijazah; changelog
+  resmi 3.1; alur re-NIM. Snapshot payload tidak berubah karena payload tidak
+  berubah.

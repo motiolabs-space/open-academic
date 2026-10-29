@@ -50,7 +50,7 @@ npm run build
    anggarannya tanpa alasan yang ditulis.
 8. **Materi milik kementerian tidak pernah masuk repo ini.** Repo ini publik.
    Kode sumber, koleksi Postman, panduan, kredensial, prefill, dan data
-   apa pun dari Neo Feeder PDDIKTI, PDDIKTI admin, SISTER, PIN, atau layanan
+   apa pun dari Neo Feeder PDDIKTI, PDDIKTI admin, SISTER, PISN (dahulu PIN), atau layanan
    kementerian lainnya **tidak boleh di-commit maupun di-push ke GitHub** —
    walaupun hanya untuk "referensi". Yang boleh ada di sini hanya kode milik
    proyek ini yang *berbicara* ke layanan itu, dengan nama aksi dan field

@@ -37,7 +37,7 @@ Konsekuensinya: sebuah tujuan berstatus "berguna" jauh sebelum berstatus
 | **PDDIKTI / Neo Feeder** | Mahasiswa, kelas, KRS, nilai, aktivitas kuliah, lulusan | Per semester | **Lengkap & tersambung** |
 | **SISTER** | Biodata dosen, riwayat pendidikan, jabfung, pangkat, sertifikasi, penugasan | Semester & insidental | **Lengkap, adaptor belum ada** |
 | **BKD** (lewat SISTER) | Beban kerja per semester; penentu tunjangan sertifikasi | Per semester | **Dihitung, bukan diketik** |
-| **PIN & SIVIL** | Penomoran ijazah nasional & verifikasi publik | Per kelulusan | **Dicatat dari PIN** (bawaan sejak 22 Okt 2026); kesiapan diperiksa sebelum reservasi |
+| **PISN** (dahulu PIN & SIVIL) | Penomoran ijazah dan sertifikat profesi nasional & verifikasi publik | Per kelulusan | **Dicatat dari PISN** (bawaan sejak 22 Okt 2026; istilah dan validator diperbarui 29 Okt 2026, ADR-036 §2); kesiapan diperiksa terhadap validator PISN sebelum nomor diterbitkan |
 | **KIP Kuliah** (Puslapdik) | Status aktif, IPK, SKS penerima | Per semester | **Terakit & terekspor** |
 | **Akreditasi LKPS** (BAN-PT / LAM) | Tabel kuantitatif kinerja prodi | Per siklus | **Sebagian besar ada** |
 | **IKU PT** | Kinerja perguruan tinggi | Tahunan | Sumbernya ada & terverifikasi |
@@ -137,6 +137,15 @@ reservasi portal PIN (NIM, nomor) di layar Wisuda, tiap baris dinilai sendiri,
 dan nomor yang sudah tercatat tidak pernah ditimpa. Kesiapan reservasi per
 lulusan ditampilkan di layar Yudisium (`KesiapanPinService`). Mode `lokal`
 tetap tersedia, dengan sadar, untuk institusi di luar skema nasional.
+
+**Diperbarui 29 Oktober 2026 (ADR-036 §2).** Layanan nasionalnya kini PISN
+(Penomoran Ijazah dan Sertifikat Profesi Nasional; Permendikbudristek 50/2024),
+dan alurnya bukan reservasi: nomor terbit **sesudah** lulusan berstatus Lulus di
+PDDIKTI dengan tanggal lulus terisi dan lolos validator PISN, lalu dikirim
+PISN ke PDDIKTI. Bawaan setelan menjadi `pisn` (`pin` tetap dibaca sebagai
+alias usang), daftar periksanya `KesiapanPisnService` mengikuti validator yang
+berlaku sejak 1 November 2025, dan nomor yang dicatat diperiksa strukturnya
+(21 digit: kode PT, kode prodi, tahun, tipe, urut).
 
 ---
 

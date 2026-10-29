@@ -18,8 +18,8 @@
         atas nama Anda beserta waktunya.
     </x-alert>
 
-    {{-- ============ AKTIVITAS MBKM (IKU 2) ============ --}}
-    <x-card class="mb-6" title="Aktivitas Mahasiswa" meta="Sumber IKU 2" flush>
+    {{-- ============ AKTIVITAS MAHASISWA (IKU 3, Kepmen 358/2025) ============ --}}
+    <x-card class="mb-6" title="Aktivitas Mahasiswa" :meta="__('iku.data.aktivitas_meta')" flush>
         <div class="overflow-x-auto">
             <table class="w-full min-w-[1080px] text-[13px]">
                 <thead>
@@ -103,7 +103,7 @@
                             <td colspan="8" class="px-5 py-10">
                                 <x-empty-state
                                     title="Tidak ada aktivitas menunggu verifikasi"
-                                    description="Catatan MBKM mahasiswa muncul di sini untuk diverifikasi sebelum menjadi bukti IKU 2."
+                                    :description="__('iku.data.aktivitas_kosong')"
                                 />
                             </td>
                         </tr>
@@ -116,8 +116,8 @@
         @endif
     </x-card>
 
-    {{-- ============ PENUGASAN DOSEN (IKU 3 & 4) ============ --}}
-    <x-card title="Penugasan Dosen" meta="Sumber IKU 3 & 4" flush>
+    {{-- ============ PENUGASAN DOSEN (luaran: IKU 4–6, Kepmen 358/2025) ============ --}}
+    <x-card title="Penugasan Dosen" :meta="__('iku.data.penugasan_meta')" flush>
         <div class="overflow-x-auto">
             <table class="w-full min-w-[880px] text-[13px]">
                 <thead>

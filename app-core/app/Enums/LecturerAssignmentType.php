@@ -7,9 +7,13 @@ namespace App\Enums;
 /**
  * External or non-teaching assignment held by a lecturer.
  *
- * Feeds two indicators that Open Campus computes from Bridge data:
+ * Fed two indicators of the older eight-indicator IKU numbering, which the
+ * legacy iku-data keys and the `iku` field on Bridge assignments still report:
  *  - IKU 3: lecturers active outside the campus
  *  - IKU 4: practitioners teaching inside the campus (PraktisiMengajar)
+ *
+ * Neither has a counterpart in Kepmendiktisaintek 358/M/KEP/2025; the outputs
+ * recorded on an assignment feed its IKU 4-6 instead (ADR-036).
  */
 enum LecturerAssignmentType: string
 {

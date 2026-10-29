@@ -13,6 +13,7 @@ use App\Models\Kemahasiswaan\Mahasiswa;
 use App\Models\Kemahasiswaan\Yudisium;
 use App\Models\Sdm\Dosen;
 use App\Models\Sdm\PenugasanDosen;
+use App\Services\Bridge\DataIku2026;
 use Illuminate\Http\Request;
 
 /**
@@ -26,12 +27,19 @@ use Illuminate\Http\Request;
  * Where an indicator depends on a policy figure that changes by ministerial
  * regulation — the 20-credit MBKM threshold, for instance — the breakdown is
  * returned per bucket and the decision is left where it belongs.
+ *
+ * Two numberings live side by side (ADR-036). `iku_2026` files the facts under
+ * the twelve indicators of Kepmendiktisaintek 358/M/KEP/2025 and says which of
+ * them this system can speak to at all. The `iku_N_*` keys below it are the
+ * older eight-indicator numbering, frozen and deprecated: the practitioner and
+ * collaborative-class counts have no 2026 counterpart, and the others moved
+ * (graduates to IKU 2, off-campus learning to IKU 3).
  */
 class IkuDataController extends Controller
 {
     use ResolvesBridgeQuery;
 
-    public function __invoke(Request $request): array
+    public function __invoke(Request $request, DataIku2026 $iku2026): array
     {
         $term = $this->term($request, wajib: true);
         $prodi = $request->string('prodi')->toString();
@@ -43,6 +51,13 @@ class IkuDataController extends Controller
                 'catatan' => 'Cacahan fakta transaksional. Tidak memuat skor, ambang, '
                     .'maupun target — perhitungan indikator dilakukan konsumen.',
 
+                // Kepmendiktisaintek 358/M/KEP/2025 numbering (ADR-036).
+                'iku_2026' => $iku2026->untuk($term, $prodi),
+
+                // Legacy keys, eight-indicator numbering. Deprecated: kept
+                // unchanged so a consumer built on them keeps working, until
+                // a major Bridge version (ADR-036 §2). New facts go into
+                // iku_2026 only.
                 'iku_1_lulusan' => $this->lulusan($term->kode, $prodi),
                 'iku_2_pengalaman_luar_kampus' => $this->aktivitasMbkm($term->id, $prodi),
                 'iku_3_dosen_luar_kampus' => $this->penugasanDosen($term->id, 3),
