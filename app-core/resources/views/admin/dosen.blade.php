@@ -162,7 +162,7 @@
 
                 <div x-show="praktisi" x-cloak>
                     <x-field label="Instansi Asal" name="praktisi_instansi"
-                        hint="Inilah bukti yang dihitung pada IKU 4." />
+                        :hint="__('iku.praktisi_instansi_hint')" />
                 </div>
 
                 <p class="rounded-card border border-line bg-canvas px-3.5 py-2.5 text-[11.5px] leading-relaxed text-ink-muted">

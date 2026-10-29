@@ -49,7 +49,9 @@ enum JenisLuaran: string
     }
 
     /**
-     * Outputs IKU 5 counts as used by society or recognised internationally.
+     * Outputs the older eight-indicator IKU 5 counted as used by society or
+     * recognised internationally. Kept for the legacy `berpotensi_iku5` count;
+     * the 2026 numbering reads outputs per indicator (DataIku2026).
      *
      * Reported as a bucket, not applied as a threshold — the qualifying set is
      * set by regulation and changes, so Open Campus decides. Same stance as

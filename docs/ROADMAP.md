@@ -365,6 +365,17 @@ sekarang punya rencana.
 | ~~44b~~ | ~~**Klaim mahasiswa lampau**~~ | ✅ 27 Oktober 2026 — `FeederKlaimLampau` (ADR-032): membaca `GetListDaftarLampau` per prodi + periode masuk dan menilai setiap baris dengan pencocok adopsi yang sama (`PencocokMahasiswaFeeder`, NIM lalu NIK) — cocok, ambigu, atau tidak ada di SIAKAD — di `/admin/feeder/lampau`. Staf memilih baris; validasi pra-kirim membaca ulang PDDIKTI dan menahan seluruh klaim bila satu baris bermasalah, dengan semua masalah sekaligus. `KlaimMahasiswaLampau` dikirim per baris, dicatat di buku besar (`direction = claim`): yang sukses tidak pernah dikirim ulang, yang ditolak dapat dicoba lagi. Klaim bukan penautan: adopsi #44 langsung dijalankan sesudahnya, jadi yang cocok teradopsi dan yang ambigu (hanya boleh diklaim dengan alasan) menunggu keputusan di layar adopsi. Validator menahan biodata yang diklaim tetapi belum teradopsi. NIK tidak disimpan |
 | ~~45~~ | ~~**Klaim program flagship MBKM**~~ | ✅ 26 Oktober 2026 — daftar program flagship ditarik sebagai referensi (`GetListAktivitasMBKMFlagship`, tipe `program_flagship`), tidak di-seed; penandanya `aktivitas_mahasiswa.flagship_kode`, dipilih per aktivitas di layar Verifikasi Data IKU. Entitas ke-26 `flagship_mbkm` (`InsertAktivitasMBKMFlagship`) bergantung pada `anggota_mbkm`; validator menolak aktivitas atau anggota yang belum terkirim dan program yang hilang dari referensi terakhir. Klaim dialamatkan pada `id_aktivitas`, jadi perpindahan program dikirim sebagai update; penanda yang klaimnya sudah diterima tidak dapat dicabut dari sini |
 
+### P7 — Perubahan regulasi 2025–2026 (ADR-036)
+
+Ditemukan komparasi modul 28 Oktober 2026. Setiap butir diverifikasi terhadap
+sumber resmi sebelum kode diubah; nomor regulasinya di ADR-036.
+
+| # | Item | Status |
+|---|---|---|
+| ~~46~~ | ~~**Penomoran IKU 2026 (Kepmendiktisaintek 358/M/KEP/2025)**~~ | ✅ 29 Oktober 2026 — `GET /iku-data` mendapat blok `iku_2026` (IKU 1 AEE per tahun akademik dan jenjang, 2 populasi tracer study, 3 kegiatan + prestasi dengan pita SKS 0–5/6–10/11+, 4–6 luaran dosen) dan peta `ketersediaan` kedua belas IKU. Kunci delapan IKU lama dibekukan dan usang sampai versi mayor Bridge. Layar tidak lagi menyebut "IKU 7" / "IKU 4" untuk kelas kolaboratif dan praktisi |
+| 47 | **Data IKU 8 — keterlibatan dosen dalam penyusunan kebijakan** | ⬜ Belum ada jenis catatannya. Kandidat: jenis `penugasan_dosen` baru (anggota tim penyusun, narasumber resmi, kontributor kajian; tingkat nasional/daerah/industri; bukti SK/undangan) lalu satu butir di `iku_2026` |
+| 48 | **Kuartil & indeks publikasi untuk IKU 6** | ⬜ `penugasan_dosen` mencatat jenis luaran dan tingkat, bukan Scopus/WoS maupun kuartil — keduanya bukti yang diperiksa manusia. Putuskan apakah dicatat di sini atau tetap di Open Campus |
+
 ### Urutan yang disarankan
 
 ~~**#19 dan #21 dulu.**~~ Selesai 22 Oktober 2026 — keduanya memperbaiki sesuatu

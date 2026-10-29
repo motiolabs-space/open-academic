@@ -46,7 +46,7 @@
                             <span class="truncate text-[13.5px] font-semibold">{{ $item->mataKuliah->nama }}</span>
 
                             @if ($item->kelasKolaboratif())
-                                <x-chip tone="gold">IKU 7</x-chip>
+                                <x-chip tone="gold">{{ __('iku.kolaboratif') }}</x-chip>
                             @endif
                         </div>
                         <div class="tabular mt-0.5 text-xs text-ink-muted">

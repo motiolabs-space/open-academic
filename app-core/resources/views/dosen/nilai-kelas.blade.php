@@ -55,19 +55,19 @@
 
     {{-- Rencana evaluasi: nama, bobot, dan JENIS tiap komponen. Jenis bukan
          hiasan — PDDIKTI mewajibkannya, dan jenis inilah yang menentukan apakah
-         kelas case method / team-based project diakui sebagai IKU 7. --}}
-    <x-card class="mb-5" title="Rencana Evaluasi" :meta="$kelas->kelasKolaboratif() ? 'Kelas kolaboratif (IKU 7)' : null">
+         kelas case method / team-based project kolaboratif secara isi. --}}
+    <x-card class="mb-5" title="Rencana Evaluasi" :meta="$kelas->kelasKolaboratif() ? __('iku.kelas_kolaboratif') : null">
         <form
             method="POST"
             action="{{ route('dosen.nilai.rencana', $kelas) }}"
             x-data="{
                 baris: @js($rencana),
                 jenis: @js($jenisEvaluasi),
-                ambang: {{ (int) $ambangIku7 }},
+                ambang: {{ (int) $ambangKolaboratif }},
                 kolaboratif: @js($kelas->kelasKolaboratif()),
                 terkunci: @js($rencanaTerkunci),
                 get total() { return this.baris.reduce((t, b) => t + (parseInt(b.bobot) || 0), 0); },
-                get iku7() { return this.baris.filter(b => b.jenis === 'partisipatif' || b.jenis === 'proyek').reduce((t, b) => t + (parseInt(b.bobot) || 0), 0); },
+                get kolaboratifPersen() { return this.baris.filter(b => b.jenis === 'partisipatif' || b.jenis === 'proyek').reduce((t, b) => t + (parseInt(b.bobot) || 0), 0); },
                 tambah() { this.baris.push({ id: null, nama: '', bobot: 0, jenis: '', bernilai: false }); },
                 hapus(i) { if (!this.baris[i].bernilai) this.baris.splice(i, 1); },
             }"
@@ -131,10 +131,10 @@
                         Total bobot <span x-text="total"></span>%<span x-show="total !== 100"> — harus 100%</span>
                     </span>
                     <template x-if="kolaboratif">
-                        <span class="tabular" :class="iku7 >= ambang ? 'text-success' : 'font-semibold text-warning'">
-                            Partisipatif + proyek <span x-text="iku7"></span>%
-                            <span x-show="iku7 < ambang"> — IKU 7 diakui mulai <span x-text="ambang"></span>%</span>
-                            <span x-show="iku7 >= ambang"> — memenuhi IKU 7</span>
+                        <span class="tabular" :class="kolaboratifPersen >= ambang ? 'text-success' : 'font-semibold text-warning'">
+                            Partisipatif + proyek <span x-text="kolaboratifPersen"></span>%
+                            <span x-show="kolaboratifPersen < ambang"> — {{ __('iku.rencana.ambang_kurang') }} <span x-text="ambang"></span>%</span>
+                            <span x-show="kolaboratifPersen >= ambang"> — {{ __('iku.rencana.ambang_memenuhi') }}</span>
                         </span>
                     </template>
                 </div>

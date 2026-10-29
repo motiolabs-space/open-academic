@@ -7,7 +7,8 @@ namespace App\Enums;
 /**
  * Off-campus student activity (MBKM / Merdeka Belajar Kampus Merdeka).
  *
- * These records are the transactional source behind IKU 2 ("mahasiswa
+ * These records are the transactional source behind IKU 3 of
+ * Kepmendiktisaintek 358/M/KEP/2025 (IKU 2 of the older numbering: "mahasiswa
  * mendapat pengalaman di luar kampus"), which Open Campus computes from data
  * served over Campus Bridge. Open Academic stores the record; it never scores
  * the indicator.

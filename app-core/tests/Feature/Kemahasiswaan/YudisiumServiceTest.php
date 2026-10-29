@@ -220,7 +220,7 @@ describe('penetapan kelulusan', function () {
             ->and(Alumni::where('mahasiswa_id', $this->mahasiswa->id)->exists())->toBeTrue();
     });
 
-    it('menerbitkan event student.graduated untuk tracer study IKU 1', function () {
+    it('menerbitkan event student.graduated untuk tracer study (IKU 2 2026)', function () {
         BridgeConsumer::create([
             'nama' => 'Open Campus',
             'slug' => 'oc',

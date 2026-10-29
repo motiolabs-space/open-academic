@@ -114,7 +114,7 @@ paths:
       description: Membutuhkan scope `lecturers.read`.
       parameters:
         - { name: prodi, in: query, schema: { type: string } }
-        - { name: praktisi, in: query, schema: { type: boolean }, description: Hanya praktisi dari industri (populasi IKU 4) }
+        - { name: praktisi, in: query, schema: { type: boolean }, description: Hanya praktisi dari industri (IKU 4 penomoran lama; tanpa padanan 2026) }
         - name: sertakan_penugasan
           in: query
           schema: { type: boolean }
@@ -153,11 +153,11 @@ paths:
         - name: kolaboratif
           in: query
           schema: { type: boolean }
-          description: Hanya kelas ber-case method atau team-based project (bukti IKU 7)
+          description: Hanya kelas ber-case method atau team-based project (IKU 7 penomoran lama; tanpa padanan 2026)
         - name: praktisi
           in: query
           schema: { type: boolean }
-          description: Hanya kelas yang diampu bersama praktisi (bukti IKU 4)
+          description: Hanya kelas yang diampu bersama praktisi (IKU 4 penomoran lama; tanpa padanan 2026)
         - $ref: '#/components/parameters/PerPage'
         - $ref: '#/components/parameters/Page'
       responses:
@@ -230,7 +230,7 @@ paths:
       tags: [Activities]
       summary: Aktivitas MBKM mahasiswa
       description: |
-        Membutuhkan scope `activities.read`. Sumber transaksional IKU 2.
+        Membutuhkan scope `activities.read`. Sumber transaksional IKU 3 (Kepmendiktisaintek 358/M/KEP/2025; IKU 2 penomoran lama).
 
         Ambang 20 SKS **tidak** diterapkan di sisi Open Academic: nilainya
         diatur peraturan menteri dan berubah, jadi keputusannya milik konsumen.
@@ -256,7 +256,7 @@ paths:
       security: [{ bearerAuth: [graduates.read] }]
       tags: [Graduates]
       summary: Lulusan yang sudah ditetapkan
-      description: Membutuhkan scope `graduates.read`. Populasi awal tracer study IKU 1.
+      description: Membutuhkan scope `graduates.read`. Populasi awal tracer study IKU 2 (Kepmendiktisaintek 358/M/KEP/2025; IKU 1 penomoran lama).
       parameters:
         - { name: semester, in: query, schema: { type: string } }
         - { name: prodi, in: query, schema: { type: string } }
@@ -268,7 +268,7 @@ paths:
     get:
       security: [{ bearerAuth: [students.read, lecturers.read, classes.read, activities.read, graduates.read] }]
       tags: [IKU]
-      summary: Cacahan fakta transaksional di balik IKU 1, 2, 3, 4, 7, dan 11
+      summary: Cacahan fakta transaksional di balik IKU (penomoran 2026 dan penomoran lama)
       description: |
         Membutuhkan **kelima** scope `students.read`, `lecturers.read`,
         `classes.read`, `activities.read`, dan `graduates.read` — endpoint
@@ -289,6 +289,26 @@ paths:
         Lulusan dan efisiensi bersifat kumulatif (seluruh lulusan, seluruh
         mahasiswa aktif); `semester` hanya menyaring `pada_semester_ini` dan
         butir IKU lainnya.
+
+        **Dua penomoran (ADR-036).** `iku_2026` memuat cacahan menurut dua belas
+        IKU Kepmendiktisaintek 358/M/KEP/2025, ditambah `ketersediaan`: per
+        nomor IKU, apakah faktanya ada di sini (`tersedia`), hanya sebagian
+        (`sebagian` — sisanya bukti yang dikumpulkan Open Campus), belum ada
+        jenis catatannya (`belum_tersedia`), atau memang bukan catatan akademik
+        (`di_luar_cakupan`). `iku_1_efisiensi_edukasi` membaca **tahun
+        akademik** tempat semester yang diminta berada, karena IKU 1 diukur per
+        tahun. Butir lain per semester; IKU 2026 dinilai per tahun kalender,
+        jadi konsumen menjumlahkan semester yang jatuh pada tahun itu.
+
+        Kunci `iku_1_lulusan` … `iku_11_efisiensi` adalah **penomoran lama**
+        (delapan IKU) dan **usang**: isinya dibekukan apa adanya agar konsumen
+        lama tetap berjalan, tidak ada fakta baru yang ditambahkan ke sana, dan
+        baru dihapus pada versi mayor Bridge berikutnya dengan pemberitahuan.
+        Padanannya: `iku_1_lulusan` → `iku_2026.iku_2_lulusan`;
+        `iku_2_pengalaman_luar_kampus` → `iku_2026.iku_3_kegiatan_luar_prodi`;
+        `iku_11_efisiensi` → `iku_2026.iku_1_efisiensi_edukasi` (isinya
+        berbeda); `iku_3_dosen_luar_kampus`, `iku_4_praktisi_mengajar`, dan
+        `iku_7_kelas_kolaboratif` tidak punya padanan 2026.
       parameters:
         - $ref: '#/components/parameters/Semester'
         - { name: prodi, in: query, schema: { type: string }, description: Kode program studi. Kosong berarti seluruh kampus. }
@@ -306,6 +326,66 @@ paths:
                   semester: "20261"
                   prodi: semua
                   catatan: Cacahan fakta transaksional. Tidak memuat skor, ambang, maupun target — perhitungan indikator dilakukan konsumen.
+                  iku_2026:
+                    acuan: Kepmendiktisaintek 358/M/KEP/2025
+                    ketersediaan:
+                      "1": { nama: Angka Efisiensi Edukasi, status: tersedia, kunci: iku_1_efisiensi_edukasi }
+                      "2": { nama: "Lulusan bekerja, berwirausaha, atau studi lanjut", status: sebagian, kunci: iku_2_lulusan }
+                      "3": { nama: Mahasiswa berkegiatan atau berprestasi di luar program studi, status: tersedia, kunci: iku_3_kegiatan_luar_prodi }
+                      "4": { nama: Dosen dengan rekognisi internasional, status: sebagian, kunci: iku_4_rekognisi_dosen }
+                      "5": { nama: Luaran kerja sama dan hilirisasi, status: sebagian, kunci: iku_5_luaran_kerja_sama }
+                      "6": { nama: Publikasi bereputasi internasional, status: sebagian, kunci: iku_6_publikasi }
+                      "7": { nama: Keterlibatan dalam SDGs, status: di_luar_cakupan, kunci: null }
+                      "8": { nama: SDM dalam penyusunan kebijakan, status: belum_tersedia, kunci: null }
+                      "9": { nama: Pendapatan non-UKT, status: di_luar_cakupan, kunci: null }
+                      "10": { nama: Zona Integritas, status: di_luar_cakupan, kunci: null }
+                      "11": { nama: Tata kelola dan akuntabilitas, status: di_luar_cakupan, kunci: null }
+                      "12": { nama: Perencanaan kesejahteraan dosen, status: di_luar_cakupan, kunci: null }
+                    iku_1_efisiensi_edukasi:
+                      tahun_akademik: 2026/2027
+                      per_jenjang:
+                        "30":
+                          jenjang: S1
+                          masa_studi_standar_semester: 8
+                          terdaftar: 2840
+                          terdaftar_per_status: { A: 2710, C: 38, N: 61, L: 31 }
+                          lulus: 31
+                          lulus_pindahan: 2
+                          lulus_per_lama_studi: [{ semester: 8, lulus: 22 }, { semester: 9, lulus: 6 }, { semester: 10, lulus: 3 }]
+                    iku_2_lulusan:
+                      total_lulusan: 412
+                      pada_semester_ini: 58
+                      per_jenjang: { "20": 61, "30": 351 }
+                      per_tahun_lulus: { "2025": 170, "2026": 242 }
+                      per_status_pekerjaan: { bekerja: 190, wirausaha: 21, studi_lanjut: 12, belum_ditelusuri: 189 }
+                    iku_3_kegiatan_luar_prodi:
+                      mahasiswa_aktif_per_jenjang: { "20": 410, "30": 2710 }
+                      pembelajaran:
+                        catatan_terverifikasi: 88
+                        mahasiswa_terlibat: 81
+                        mahasiswa_terlibat_per_jenjang: { "20": 12, "30": 69 }
+                        per_jenis: { magang: 54, studi_independen: 20, pertukaran_pelajar: 14 }
+                        mahasiswa_per_sks_konversi: { "0-5": 9, "6-10": 11, "11+": 61 }
+                      prestasi:
+                        catatan_terverifikasi: 17
+                        mahasiswa_terlibat: 15
+                        per_tingkat: { nasional: 9, internasional: 2, lokal: 6 }
+                        per_kategori: { lomba-nasional: 9, lomba-internasional: 2, lomba-lokal: 6 }
+                    iku_4_rekognisi_dosen:
+                      luaran_internasional: 9
+                      dosen_terlibat: 7
+                      dosen_terlibat_ber_nuptk: 6
+                      dosen_aktif_ber_nuptk: 98
+                      per_jenis: { jurnal: 6, prosiding: 3 }
+                    iku_5_luaran_kerja_sama:
+                      total_luaran: 41
+                      luaran_bermitra: 12
+                      per_jenis: { produk: 5, laporan: 4, jurnal: 3 }
+                      per_jenis_mitra: { industri: 8, pemerintah: 4 }
+                    iku_6_publikasi:
+                      total_publikasi: 23
+                      per_jenis: { jurnal: 17, prosiding: 6 }
+                      per_tingkat: { nasional: 14, internasional: 9 }
                   iku_1_lulusan:
                     total_lulusan: 412
                     pada_semester_ini: 58
@@ -588,7 +668,7 @@ components:
               terverifikasi: { type: boolean }
               iku:
                 type: array
-                description: IKU yang disumbang catatan ini
+                description: IKU yang disumbang catatan ini, **penomoran lama** (3 = dosen di luar kampus, 4 = praktisi mengajar). Keduanya tanpa padanan 2026; medan dibekukan (ADR-036).
                 items: { type: integer, enum: [3, 4] }
 
     CourseClass:
@@ -613,7 +693,7 @@ components:
         mode: { type: string, enum: [tatap_muka, daring, hybrid] }
         metode_pembelajaran:
           type: object
-          description: Bukti IKU 7
+          description: Metode kelas kolaboratif (IKU 7 penomoran lama; tanpa padanan 2026)
           properties:
             case_method: { type: boolean }
             team_based_project: { type: boolean }
@@ -621,7 +701,7 @@ components:
         status_nilai: { type: string, enum: [belum, sebagian, final] }
         pengajar:
           type: array
-          description: Bukti IKU 4 lewat `peran = praktisi`
+          description: Praktisi pengajar lewat `peran = praktisi` (IKU 4 penomoran lama)
           items:
             type: object
             properties:
@@ -700,8 +780,11 @@ components:
         semester: { type: string, example: "20261" }
         prodi: { type: string, description: 'Kode prodi yang diminta, atau `semua`' }
         catatan: { type: string }
+        iku_2026: { $ref: '#/components/schemas/Iku2026' }
         iku_1_lulusan:
           type: object
+          deprecated: true
+          description: Penomoran lama. Padanan 2026 — `iku_2026.iku_2_lulusan`.
           properties:
             total_lulusan: { type: integer }
             pada_semester_ini: { type: integer }
@@ -709,6 +792,8 @@ components:
             rata_ipk: { type: number, description: 0 bila belum ada lulusan }
         iku_2_pengalaman_luar_kampus:
           type: object
+          deprecated: true
+          description: Penomoran lama. Padanan 2026 — `iku_2026.iku_3_kegiatan_luar_prodi` (pita SKS berbeda).
           properties:
             total_catatan: { type: integer }
             terverifikasi: { type: integer }
@@ -722,9 +807,14 @@ components:
                 "0-5": { type: integer }
                 "6-19": { type: integer }
                 "20+": { type: integer }
-        iku_3_dosen_luar_kampus: { $ref: '#/components/schemas/CacahPenugasan' }
+        iku_3_dosen_luar_kampus:
+          deprecated: true
+          description: Penomoran lama. Tidak ada padanan 2026.
+          allOf: [{ $ref: '#/components/schemas/CacahPenugasan' }]
         iku_4_praktisi_mengajar:
           type: object
+          deprecated: true
+          description: Penomoran lama. Tidak ada padanan 2026.
           properties:
             total_kelas: { type: integer }
             kelas_dengan_praktisi: { type: integer }
@@ -732,6 +822,8 @@ components:
             penugasan_praktisi_mengajar: { $ref: '#/components/schemas/CacahPenugasan' }
         iku_7_kelas_kolaboratif:
           type: object
+          deprecated: true
+          description: Penomoran lama. Tidak ada padanan 2026.
           properties:
             total_kelas: { type: integer }
             case_method: { type: integer }
@@ -740,12 +832,112 @@ components:
             salah_satu: { type: integer }
         iku_11_efisiensi:
           type: object
+          deprecated: true
+          description: Usang. IKU 1 2026 (AEE) dibaca dari `iku_2026.iku_1_efisiensi_edukasi`.
           properties:
             mahasiswa_aktif: { type: integer }
             dosen_aktif_ber_nidn: { type: integer }
             rasio_dosen_mahasiswa: { type: [number, "null"], description: Null bila tidak ada dosen ber-NIDN }
             per_status_mahasiswa: { $ref: '#/components/schemas/CacahPerKode' }
             jumlah_prodi: { type: integer }
+
+    Iku2026:
+      type: object
+      description: Cacahan menurut Kepmendiktisaintek 358/M/KEP/2025 (ADR-036). Tanpa bobot, ambang, maupun skor.
+      properties:
+        acuan: { type: string, example: Kepmendiktisaintek 358/M/KEP/2025 }
+        ketersediaan:
+          type: object
+          description: Nomor IKU 1–12 → nama, status ketersediaan data di Open Academic, dan kunci butirnya (null bila tidak ada).
+          additionalProperties:
+            type: object
+            properties:
+              nama: { type: string }
+              status: { type: string, enum: [tersedia, sebagian, belum_tersedia, di_luar_cakupan] }
+              kunci: { type: [string, "null"] }
+        iku_1_efisiensi_edukasi:
+          type: object
+          properties:
+            tahun_akademik: { type: string, example: 2026/2027 }
+            per_jenjang:
+              description: Kode jenjang PDDIKTI → cacahan. Larik kosong `[]` bila tidak ada.
+              type: [object, array]
+              additionalProperties:
+                type: object
+                properties:
+                  jenjang: { type: string }
+                  masa_studi_standar_semester: { type: integer }
+                  terdaftar: { type: integer, description: Mahasiswa yang punya status semester pada tahun akademik itu; status terakhir di tahun itu yang dihitung }
+                  terdaftar_per_status: { $ref: '#/components/schemas/CacahPerKode' }
+                  lulus: { type: integer }
+                  lulus_pindahan: { type: integer }
+                  lulus_per_lama_studi:
+                    type: array
+                    description: Semester reguler di kampus ini, semester masuk dan lulus ikut dihitung; 0 bila salah satunya tidak tercatat.
+                    items:
+                      type: object
+                      properties:
+                        semester: { type: integer }
+                        lulus: { type: integer }
+        iku_2_lulusan:
+          type: object
+          description: Populasi tracer study. Status pekerjaan adalah jawaban tracer study yang dikumpulkan Open Campus.
+          properties:
+            total_lulusan: { type: integer }
+            pada_semester_ini: { type: integer }
+            per_jenjang: { $ref: '#/components/schemas/CacahPerKode' }
+            per_tahun_lulus: { $ref: '#/components/schemas/CacahPerKode' }
+            per_status_pekerjaan: { $ref: '#/components/schemas/CacahPerKode' }
+        iku_3_kegiatan_luar_prodi:
+          type: object
+          properties:
+            mahasiswa_aktif_per_jenjang: { $ref: '#/components/schemas/CacahPerKode' }
+            pembelajaran:
+              type: object
+              properties:
+                catatan_terverifikasi: { type: integer }
+                mahasiswa_terlibat: { type: integer }
+                mahasiswa_terlibat_per_jenjang: { $ref: '#/components/schemas/CacahPerKode' }
+                per_jenis: { $ref: '#/components/schemas/CacahPerKode' }
+                mahasiswa_per_sks_konversi:
+                  type: object
+                  description: SKS konversi dijumlahkan per mahasiswa, lalu dikelompokkan menurut pita Kepmen 358 — bobotnya milik konsumen.
+                  properties:
+                    "0-5": { type: integer }
+                    "6-10": { type: integer }
+                    "11+": { type: integer }
+            prestasi:
+              type: object
+              description: Prestasi terverifikasi dari buku poin kemahasiswaan.
+              properties:
+                catatan_terverifikasi: { type: integer }
+                mahasiswa_terlibat: { type: integer }
+                per_tingkat: { $ref: '#/components/schemas/CacahPerKode' }
+                per_kategori: { $ref: '#/components/schemas/CacahPerKode' }
+        iku_4_rekognisi_dosen:
+          type: object
+          description: Luaran dosen bertingkat internasional. Bukti rekognisi (sitasi, penghargaan, pemakaian) tidak dicatat di sini.
+          properties:
+            luaran_internasional: { type: integer }
+            dosen_terlibat: { type: integer }
+            dosen_terlibat_ber_nuptk: { type: integer }
+            dosen_aktif_ber_nuptk: { type: integer }
+            per_jenis: { $ref: '#/components/schemas/CacahPerKode' }
+        iku_5_luaran_kerja_sama:
+          type: object
+          description: Luaran dosen yang menyebut mitra. Bukti pemanfaatan oleh mitra tidak dicatat di sini.
+          properties:
+            total_luaran: { type: integer }
+            luaran_bermitra: { type: integer }
+            per_jenis: { $ref: '#/components/schemas/CacahPerKode' }
+            per_jenis_mitra: { $ref: '#/components/schemas/CacahPerKode' }
+        iku_6_publikasi:
+          type: object
+          description: Artikel jurnal dan prosiding. Indeks (Scopus/WoS) dan kuartil tidak dicatat di sini.
+          properties:
+            total_publikasi: { type: integer }
+            per_jenis: { $ref: '#/components/schemas/CacahPerKode' }
+            per_tingkat: { $ref: '#/components/schemas/CacahPerKode' }
 
   # ---------------------------------------------------------------------------
   # Webhook — sisi dorong dari kontrak ini

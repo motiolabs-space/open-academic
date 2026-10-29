@@ -157,7 +157,9 @@ class LecturerWorkloadController extends Controller
     }
 
     /**
-     * Outputs, which is the lecturer-side evidence IKU 5 rests on.
+     * Outputs, the lecturer-side evidence behind IKU 4-6 of the 2026 numbering
+     * (iku-data reads them per indicator). `berpotensi_iku5` is named after the
+     * older eight-indicator IKU 5 and is kept as is for consumers (ADR-036).
      *
      * Whether an output qualifies is a regulation question that changes, so the
      * breakdown is returned per type and per reach and the decision stays with

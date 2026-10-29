@@ -147,7 +147,7 @@
                                 <x-chip tone="neutral">{{ $kelas->sks }} SKS</x-chip>
 
                                 @if ($kelas->kelasKolaboratif())
-                                    <x-chip tone="gold">IKU 7</x-chip>
+                                    <x-chip tone="gold">{{ __('iku.kolaboratif') }}</x-chip>
                                 @endif
                             </div>
 

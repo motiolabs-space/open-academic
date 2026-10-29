@@ -1207,3 +1207,60 @@ satu bagian per celah.
 - **Konsekuensi.** Penyuntingan data mahasiswa oleh staf tetap tersebar di
   layar asalnya (pindahan, cuti, dosen wali, Feeder). Halaman detail
   mengumpulkan, tidak menggantikan.
+
+## ADR-036 — Tiga perubahan regulasi: IKU 2026, PISN, Neo Feeder 3.0.1 (2026-10-29)
+
+Komparasi modul 28 Oktober menemukan tiga perubahan regulasi/teknis yang belum
+tercermin di kode. Satu ADR, satu bagian per perubahan; setiap bagian menyebut
+sumber resminya dengan nomor saja — tidak ada dokumen kementerian yang masuk
+repo (CLAUDE.md §10, ADR-011).
+
+### 1. IKU 2026: blok `iku_2026` di samping kunci lama yang dibekukan
+
+- **Konteks.** Kepmendiktisaintek 358/M/KEP/2025 (menggantikan Kepmendikbudristek
+  210/M/2023; periode penilaian Januari–Desember) menetapkan dua belas IKU
+  perguruan tinggi, sebagian wajib dan sebagian pilihan, dengan penomoran baru:
+  1 Angka Efisiensi Edukasi, 2 lulusan bekerja/berwirausaha/studi lanjut,
+  3 mahasiswa berkegiatan atau berprestasi di luar prodi, 4 rekognisi
+  internasional dosen, 5 luaran kerja sama dan hilirisasi, 6 publikasi
+  bereputasi, 7 SDGs, 8 SDM dalam penyusunan kebijakan, 9 pendapatan non-UKT,
+  10 Zona Integritas, 11 tata kelola (opini audit, SAKIP, integritas akademik,
+  anti-kekerasan/narkoba/korupsi — pilihan), 12 perencanaan kesejahteraan dosen.
+  Diverifikasi dari salinan resmi keputusan itu. Kode, `CLAUDE.md` §6, dan
+  `GET /iku-data` masih memakai penomoran delapan IKU: lulusan sebagai IKU 1,
+  MBKM sebagai IKU 2, dosen di luar kampus 3, praktisi mengajar 4, kelas
+  kolaboratif 7, ditambah "IKU 11 efisiensi" yang tidak pernah ada di daftar
+  delapan itu. Open Campus mengonsumsi kunci-kunci itu.
+- **Keputusan.** (1) **Aditif, bukan versi baru.** `iku-data` mendapat satu
+  kunci baru, `iku_2026` (`App\Services\Bridge\DataIku2026`), berisi cacahan
+  per IKU 2026 plus peta `ketersediaan` kedua belas IKU: `tersedia`
+  (1, 3), `sebagian` (2 — status kerja dari tracer study; 4–6 — indeks,
+  kuartil, bukti pemanfaatan, dan sitasi tidak dicatat di sini),
+  `belum_tersedia` (8 — tidak ada jenis catatan keterlibatan dosen dalam
+  penyusunan kebijakan), `di_luar_cakupan` (7, 9–12: program SDGs, keuangan
+  institusi, ZI, audit, renstra). Konsumen yang mengabaikan medan tak dikenal
+  tidak terganggu; `/api/bridge/v2` tidak dibuka untuk satu endpoint. (2)
+  **Kunci lama dibekukan dan usang.** `iku_1_lulusan` … `iku_11_efisiensi`
+  tetap ada dengan isi persis seperti sebelumnya, ditandai `deprecated` di
+  `bridge.yaml` dengan padanannya, dan tidak menerima fakta baru. Dihapus
+  hanya pada versi mayor Bridge, diumumkan di CHANGELOG paling sedikit satu
+  periode penilaian penuh sebelumnya. Medan `iku: [3, 4]` pada penugasan
+  dosen dan `berpotensi_iku5` di `lecturer-workload` diperlakukan sama. (3)
+  **Tetap cacahan.** Bobot Kepmen 358 (pita SKS ≤5/6–10/>10 untuk IKU 3,
+  peringkat prestasi, kuartil jurnal, bobot tracer study) tidak diterapkan;
+  yang dikembalikan adalah pitanya. IKU 1 dibaca per **tahun akademik** tempat
+  semester yang diminta berada — menjumlahkan dua respons semester akan
+  menghitung mahasiswa lanjutan dua kali — dan lulusan dikelompokkan menurut
+  lama studi dengan masa studi standar di sampingnya; pemotongan "tepat
+  waktu" dan pengecualian (pindahan, DO, cuti berlebih) milik konsumen. (4)
+  **Label tanpa nomor yang sudah tidak berarti.** Kelas kolaboratif (case
+  method / team-based project) dan praktisi mengajar tidak punya padanan IKU
+  2026, jadi layar menyebutnya apa adanya (`lang/id/iku.php`), bukan "IKU 7"
+  atau "IKU 4". Ambang 50% bobot partisipatif + proyek tetap sebagai definisi
+  kampus atas penanda itu (`JenisEvaluasi::AMBANG_KOLABORATIF_PERSEN`); kunci
+  aturan validator `iku7_bobot_kurang` tidak diganti karena ia identifier
+  yang tersimpan, bukan label.
+- **Konsekuensi.** `CLAUDE.md` §6 kini memetakan IKU 2026 (perubahan instruksi
+  proyek). Open Campus dapat pindah ke `iku_2026` kapan saja dalam masa
+  transisi. Data IKU 8 menjadi butir ROADMAP. Anggaran kueri `iku-data`
+  bertambah sejumlah kueri tetap (tidak tumbuh bersama baris).

@@ -126,7 +126,7 @@
                                                 class="rounded-control border border-line-input bg-surface px-2 py-1.5 text-[12px]">
                                                 <option value="pengampu">Pengampu</option>
                                                 <option value="pendamping">Pendamping</option>
-                                                <option value="praktisi">Praktisi (IKU 4)</option>
+                                                <option value="praktisi">{{ __('iku.praktisi') }}</option>
                                             </select>
                                             <x-button type="submit" size="sm">Simpan</x-button>
                                         </form>
@@ -243,7 +243,7 @@
                     :options="['tatap_muka' => 'Tatap Muka', 'daring' => 'Daring', 'hybrid' => 'Hybrid']" />
 
                 <div class="flex flex-col gap-1.5 rounded-card border border-line bg-canvas px-3.5 py-3">
-                    <p class="text-[11px] font-semibold uppercase tracking-[0.08em] text-ink-muted">Metode IKU 7</p>
+                    <p class="text-[11px] font-semibold uppercase tracking-[0.08em] text-ink-muted">{{ __('iku.metode_kolaboratif') }}</p>
                     <label class="flex items-center gap-2 text-[13px]">
                         <input type="hidden" name="is_case_method" value="0">
                         <input type="checkbox" name="is_case_method" value="1" class="accent-navy">

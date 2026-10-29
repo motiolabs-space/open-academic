@@ -191,7 +191,7 @@ describe('pemetaan payload', function () {
             ->and($payload['id_registrasi_mahasiswa'])->toBe($mahasiswa->fresh()->feeder_registrasi_id);
     });
 
-    it('membawa flag IKU 7 pada payload kelas kuliah', function () {
+    it('membawa flag kelas kolaboratif pada payload kelas kuliah', function () {
         $dosen = Dosen::factory()->create(['prodi_id' => $this->prodi->id]);
         $mk = MataKuliah::factory()->create(['prodi_id' => $this->prodi->id]);
 

@@ -405,7 +405,8 @@ it('melayani endpoint Bridge dalam anggaran kueri', function (string $url, int $
     ['/api/bridge/v1/graduates', 20],
     ['/api/bridge/v1/academic-terms', 20],
     ['/api/bridge/v1/academic-terms/current', 20],
-    ['/api/bridge/v1/iku-data', 35],
+    // +7 fixed queries for the iku_2026 block (ADR-036), not per row.
+    ['/api/bridge/v1/iku-data', 42],
     ['/api/bridge/v1/teaching-evaluations', 14],
     ['/api/bridge/v1/lecturer-workload', 14],
 ]);

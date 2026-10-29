@@ -249,7 +249,7 @@
                             <td colspan="8" class="px-5 py-12">
                                 <x-empty-state
                                     title="Belum ada lulusan"
-                                    description="Lulusan yang ditetapkan di sini menjadi populasi awal tracer study IKU 1 di Open Campus."
+                                    :description="__('iku.yudisium_kosong')"
                                 />
                             </td>
                         </tr>

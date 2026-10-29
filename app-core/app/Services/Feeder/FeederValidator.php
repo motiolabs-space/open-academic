@@ -469,21 +469,22 @@ class FeederValidator
                 $isu->push($this->error('bobot_tidak_seratus', "Bobot komponen kelas berjumlah {$total}, bukan 100."));
             }
 
-            // IKU 7 is decided here, not by the class flag. A flagged class
-            // whose plan is all exams is reported as flagged — and not counted.
+            // Whether a flagged class is collaborative in substance is decided
+            // here, not by the flag. A flagged class whose plan is all exams
+            // is reported. The rule key keeps its old name: it is an
+            // identifier stored on issues, not a label (ADR-036 §1).
             if ($kelas->kelasKolaboratif()) {
                 $kolaboratif = (int) $semua
-                    ->filter(fn (KomponenNilai $c): bool => $c->jenis_evaluasi?->menghitungIku7() ?? false)
+                    ->filter(fn (KomponenNilai $c): bool => $c->jenis_evaluasi?->menghitungKolaboratif() ?? false)
                     ->sum('bobot');
 
-                if ($kolaboratif < JenisEvaluasi::AMBANG_IKU7_PERSEN) {
+                if ($kolaboratif < JenisEvaluasi::AMBANG_KOLABORATIF_PERSEN) {
                     $isu->push($this->peringatan(
                         'iku7_bobot_kurang',
-                        sprintf(
-                            'Kelas ditandai case method / team-based project, tetapi bobot partisipatif + proyek hanya %d%% (syarat IKU 7: %d%%). PDDIKTI tidak akan mengakuinya sebagai kelas kolaboratif.',
-                            $kolaboratif,
-                            JenisEvaluasi::AMBANG_IKU7_PERSEN,
-                        ),
+                        __('iku.validator_bobot_kurang', [
+                            'bobot' => $kolaboratif,
+                            'ambang' => JenisEvaluasi::AMBANG_KOLABORATIF_PERSEN,
+                        ]),
                     ));
                 }
             }
