@@ -83,6 +83,53 @@ salah satu dari tiga ini.
 
 ---
 
+## Layar (Sesi 69)
+
+| Portal | Rute | Isi |
+|---|---|---|
+| Staf | `/admin/kuesioner` | Daftar, buat draf (`kuesioner.manage`) |
+| Staf | `/admin/kuesioner/{uuid}` | Data, pertanyaan, terbitkan/tutup |
+| Staf | `/admin/kuesioner/{uuid}/hasil`, `/ekspor` | Hasil teragregasi, CSV (`kuesioner.view`) |
+| Mahasiswa / Dosen | `/{portal}/kuesioner` | Kuesioner yang dibuka untuknya, formulir isi |
+| Staf | `/admin/kuesioner-saya` | Staf sebagai responden |
+
+**Sasaran** adalah satu peran, dipersempit ke satu program studi bila perlu
+(`prodi_id`; kosong = seluruh kampus; staf tidak berprodi). Dosen dicocokkan
+dengan prodi homebase-nya. Sasaran diperiksa dua kali: policy menolak membuka
+formulir, dan `KuesionerService::isi()` menolak menyimpan — jalur tanpa
+controller tidak bisa lupa.
+
+**Terbit pertama membekukan pertanyaan.** Jawaban harus tetap menjawab
+pertanyaan yang sama; kuesioner yang ditutup boleh dibuka kembali, tetapi
+pertanyaannya tetap beku. Sasaran dan ambang ikut beku. Nama, pengantar, dan
+periode tetap dapat diubah.
+
+**Hasil kuesioner anonim tertahan di bawah ambang** (`min_responden`, bawaan
+`KUESIONER_MIN_RESPONDEN=5`, disimpan per kuesioner saat dibuat) — aturan EDOM.
+Selama tertahan, controller tidak menghitung hasilnya sama sekali, jadi tidak
+ada jawaban yang dimuat lalu disembunyikan template. Kuesioner beridentitas
+tidak memakai ambang.
+
+**Layar hasil dan ekspor menjaga anonimitas yang sama dengan skemanya:**
+
+| | Anonim | Beridentitas |
+|---|---|---|
+| Layar hasil | rerata, sebaran, isian bebas | sama — teragregasi |
+| Isian bebas | diurutkan abjad, bukan urutan pengisian | sama |
+| CSV | per pertanyaan: cacah per nilai/opsi, isian bebas terurut; tanpa id, waktu, atau nama | satu baris per responden: nama, nomor induk, waktu isi, jawaban |
+| Daftar siapa yang mengisi | tidak ditampilkan, hanya jumlah | tersedia lewat CSV |
+
+Urutan pengisian disingkirkan karena ia satu-satunya hal yang dapat menjajarkan
+jawaban anonim dengan baris `kuesioner_partisipasi`. Sel CSV melewati
+`App\Support\Csv` (penangkal formula).
+
+**Sisa risiko yang diketahui.** Bagi yang memegang akses basis data langsung,
+`kuesioner_jawaban_anonim.id` dan `created_at` masih berurutan sejalan dengan
+`kuesioner_partisipasi`. Layar dan ekspor tidak pernah memperlihatkannya; menutup
+celah di tingkat tabel tercatat sebagai butir ROADMAP tersendiri.
+
+---
+
 ## Berkas
 
 ```
@@ -90,5 +137,14 @@ database/migrations/2026_08_18_100004_create_kuesioner_tables.php
 app/Enums/{SasaranKuesioner,TipePertanyaan}.php
 app/Models/Kuesioner/*.php
 app/Services/Kuesioner/KuesionerService.php
+app/Enums/StatusKuesioner.php                 — draf / dibuka / ditutup, dibaca dari kolom
+app/DTOs/Kuesioner/{KuesionerData,PertanyaanData}.php
+app/Policies/Kuesioner/KuesionerPolicy.php
+app/Http/Controllers/Admin/KuesionerController.php
+app/Http/Controllers/Kuesioner/IsiKuesionerController.php — tiga portal
+database/migrations/2026_10_29_400000_add_pengelolaan_to_kuesioner.php
+database/seeders/Demo/KuesionerSeeder.php
+lang/id/kuesioner.php
 tests/Feature/Kuesioner/KuesionerTest.php
+tests/Feature/Kuesioner/PengelolaanKuesionerTest.php
 ```

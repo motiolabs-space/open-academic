@@ -44,6 +44,11 @@ class RolePermissionSeeder extends Seeder
             'tugas_akhir.view', 'tugas_akhir.manage',
             'surat.view', 'surat.manage',
             'edom.view', 'edom.manage',
+
+            // Kuesioner umum: writing and publishing, and reading results.
+            // Answering one is not a permission — the questionnaire's
+            // audience decides (KuesionerPolicy::respond).
+            'kuesioner.view', 'kuesioner.manage',
             'bkd.view', 'bkd.manage',
             'wisuda.view', 'wisuda.manage',
             'feeder.view', 'feeder.sync',
@@ -126,7 +131,7 @@ class RolePermissionSeeder extends Seeder
                 'nilai.view', 'presensi.view', 'pmb.view', 'pmb.manage',
                 'tugas_akhir.view', 'tugas_akhir.manage',
                 'surat.view', 'surat.manage',
-                'edom.view', 'edom.manage',
+                'edom.view', 'edom.manage', 'kuesioner.view', 'kuesioner.manage',
                 'wisuda.view', 'wisuda.manage', 'feeder.view', 'feeder.sync',
                 'helpdesk.view', 'helpdesk.tangani', 'helpdesk.manage',
             ],
@@ -150,7 +155,7 @@ class RolePermissionSeeder extends Seeder
             // being judged by them measures nothing.
             'pimpinan' => [
                 'master.view', 'mahasiswa.view', 'dosen.view', 'kelas.view', 'ruang.view',
-                'keuangan.view', 'feeder.view', 'edom.view', 'helpdesk.view',
+                'keuangan.view', 'feeder.view', 'edom.view', 'kuesioner.view', 'helpdesk.view',
             ],
         ],
         UserRole::Dosen->value => [

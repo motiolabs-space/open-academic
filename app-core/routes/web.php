@@ -11,6 +11,7 @@ use App\Http\Controllers\Dosen;
 use App\Http\Controllers\Helpdesk;
 use App\Http\Controllers\KalenderController;
 use App\Http\Controllers\KalenderIcsController;
+use App\Http\Controllers\Kuesioner\IsiKuesionerController;
 use App\Http\Controllers\Mahasiswa;
 use App\Http\Controllers\NotifikasiController;
 use App\Http\Controllers\PengumumanPortalController;
@@ -213,6 +214,11 @@ Route::middleware(['auth:mahasiswa', 'term.active'])->prefix('mahasiswa')->name(
     Route::get('/edom', [Mahasiswa\EdomController::class, 'index'])->name('edom');
     Route::post('/edom', [Mahasiswa\EdomController::class, 'kirim'])->name('edom.kirim');
 
+    // Kuesioner umum: satu controller untuk tiga portal, seperti helpdesk.
+    Route::get('/kuesioner', [IsiKuesionerController::class, 'index'])->name('kuesioner.index');
+    Route::get('/kuesioner/{kuesioner}', [IsiKuesionerController::class, 'show'])->name('kuesioner.show');
+    Route::post('/kuesioner/{kuesioner}', [IsiKuesionerController::class, 'kirim'])->name('kuesioner.kirim');
+
     Route::get('/surat', [Mahasiswa\SuratController::class, 'index'])->name('surat');
     Route::post('/surat', [Mahasiswa\SuratController::class, 'ajukan'])->name('surat.ajukan');
     Route::get('/surat/{surat}/unduh', [Mahasiswa\SuratController::class, 'unduh'])->name('surat.unduh');
@@ -271,6 +277,10 @@ Route::middleware(['auth:dosen', 'term.active'])->prefix('dosen')->name('dosen.'
     // Bimbingan tugas akhir — hal yang berbeda, dan sengaja terpisah: dosen
     // wali membimbing rencana studi, pembimbing tugas akhir membimbing karya.
     Route::get('/edom', Dosen\EdomController::class)->name('edom');
+
+    Route::get('/kuesioner', [IsiKuesionerController::class, 'index'])->name('kuesioner.index');
+    Route::get('/kuesioner/{kuesioner}', [IsiKuesionerController::class, 'show'])->name('kuesioner.show');
+    Route::post('/kuesioner/{kuesioner}', [IsiKuesionerController::class, 'kirim'])->name('kuesioner.kirim');
 
     Route::get('/rps', [Dosen\RpsController::class, 'index'])->name('rps');
     Route::get('/rps/susun/{mataKuliah}', [Dosen\RpsController::class, 'susun'])->name('rps.susun');
@@ -684,6 +694,27 @@ Route::middleware(['auth:staff', 'term.active'])->prefix('admin')->name('admin.'
     Route::post('/edom/{periode}/pertanyaan', [Admin\EdomController::class, 'tambahPertanyaan'])->name('edom.pertanyaan');
     Route::post('/edom/{periode}/salin', [Admin\EdomController::class, 'salinPertanyaan'])->name('edom.salin');
     Route::delete('/edom/pertanyaan/{pertanyaan}', [Admin\EdomController::class, 'hapusPertanyaan'])->name('edom.pertanyaan.hapus');
+
+    /*
+    | Kuesioner umum — terpisah dari EDOM. `pertanyaan/{pertanyaan}` hanya
+    | DELETE, jadi tidak pernah tertangkap sebagai {kuesioner}.
+    */
+    Route::get('/kuesioner', [Admin\KuesionerController::class, 'index'])->name('kuesioner.index');
+    Route::post('/kuesioner', [Admin\KuesionerController::class, 'store'])->name('kuesioner.store');
+    Route::delete('/kuesioner/pertanyaan/{pertanyaan}', [Admin\KuesionerController::class, 'hapusPertanyaan'])->name('kuesioner.pertanyaan.hapus');
+    Route::get('/kuesioner/{kuesioner}', [Admin\KuesionerController::class, 'show'])->name('kuesioner.show');
+    Route::put('/kuesioner/{kuesioner}', [Admin\KuesionerController::class, 'perbarui'])->name('kuesioner.perbarui');
+    Route::post('/kuesioner/{kuesioner}/pertanyaan', [Admin\KuesionerController::class, 'tambahPertanyaan'])->name('kuesioner.pertanyaan');
+    Route::post('/kuesioner/{kuesioner}/terbitkan', [Admin\KuesionerController::class, 'terbitkan'])->name('kuesioner.terbitkan');
+    Route::post('/kuesioner/{kuesioner}/tutup', [Admin\KuesionerController::class, 'tutup'])->name('kuesioner.tutup');
+    Route::get('/kuesioner/{kuesioner}/hasil', [Admin\KuesionerController::class, 'hasil'])->name('kuesioner.hasil');
+    Route::get('/kuesioner/{kuesioner}/ekspor', [Admin\KuesionerController::class, 'ekspor'])->name('kuesioner.ekspor');
+
+    // Staf sebagai responden: awalan sendiri, agar tidak bertabrakan dengan
+    // layar kelola di atas.
+    Route::get('/kuesioner-saya', [IsiKuesionerController::class, 'index'])->name('kuesioner-saya.index');
+    Route::get('/kuesioner-saya/{kuesioner}', [IsiKuesionerController::class, 'show'])->name('kuesioner-saya.show');
+    Route::post('/kuesioner-saya/{kuesioner}', [IsiKuesionerController::class, 'kirim'])->name('kuesioner-saya.kirim');
 
     Route::get('/log', Admin\LogAktivitasController::class)->name('log');
 

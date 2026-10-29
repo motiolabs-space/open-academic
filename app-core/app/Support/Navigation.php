@@ -49,6 +49,7 @@ final class Navigation
                     self::item('Wisuda', '◎', 'mahasiswa.wisuda'),
                     self::item('Surat & Dokumen', '✉', 'mahasiswa.surat'),
                     self::item('Evaluasi Dosen', '☆', 'mahasiswa.edom'),
+                    self::item(__('kuesioner.isi.nav'), '☑', 'mahasiswa.kuesioner.index'),
                     self::item('Tagihan & Pembayaran', '◈', 'mahasiswa.tagihan'),
                     self::item(__('pengumuman.judul'), '✉', 'mahasiswa.pengumuman.index'),
                     self::item('Bantuan & Helpdesk', '?', 'mahasiswa.helpdesk'),
@@ -103,6 +104,7 @@ final class Navigation
                 'title' => 'LAYANAN',
                 'items' => [
                     self::item(__('pengumuman.judul'), '✉', 'dosen.pengumuman.index'),
+                    self::item(__('kuesioner.isi.nav'), '☑', 'dosen.kuesioner.index'),
                     self::item('Bantuan & Helpdesk', '?', 'dosen.helpdesk'),
                 ],
             ],
@@ -118,6 +120,7 @@ final class Navigation
                 'items' => [
                     self::item('Dasbor', '▦', 'admin.dashboard'),
                     self::item(__('pengumuman.nav_staf'), '✉', 'admin.papan-pengumuman.index'),
+                    self::item(__('kuesioner.isi.nav'), '☑', 'admin.kuesioner-saya.index'),
                 ],
             ],
 
@@ -247,6 +250,10 @@ final class Navigation
                      */
                     self::item('Rencana Kinerja', '◎', 'admin.kinerja'),
                     self::item('SPMI & Audit Mutu', '⚖', 'admin.spmi'),
+
+                    // Kuesioner umum. EDOM tetap di SDM: ia menilai dosen,
+                    // sedangkan ini menanyai siapa saja tentang apa saja.
+                    self::item(__('kuesioner.judul'), '☑', 'admin.kuesioner.index'),
 
                     /*
                      * Helpdesk di SISTEM, bukan di MAHASISWA: tiketnya datang
