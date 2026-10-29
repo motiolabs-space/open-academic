@@ -1328,3 +1328,48 @@ Memperbarui ADR-013.
   Akreditasi yang kedaluwarsa tidak terdeteksi karena tanggal berlakunya
   tidak dicatat. Validator untuk profesi/spesialis non-medis (masa studi
   ditetapkan kampus) tidak diperiksa di sini.
+
+### 3. Neo Feeder 3.0.1 dan 3.1: hanya yang menyentuh data yang kita kirim, dengan tingkat keyakinan yang dinyatakan
+
+- **Konteks.** Neo Feeder 3.0.1 dirilis Pusdatin pada Juli 2025 dan 3.1 pada
+  Mei 2026. **Tidak ada catatan rilis resmi yang dapat diakses publik** untuk
+  keduanya: halaman LLDIKTI hanya mengumumkan bimtek dan pemeliharaan, dan
+  daftar perubahan yang beredar berasal dari penyedia SIAKAD, konsultan, dan
+  blog operator. Yang terverifikasi resmi hanyalah alur kelulusan: materi
+  sosialisasi LLDIKTI menyuruh meluluskan mahasiswa di Neo Feeder **tanpa**
+  nomor ijazah, lalu PISN mengisinya (lihat §2). Sisanya — nomor HP wajib,
+  NUPTK pada data dosen, tanggal ijazah pada Lulus/DO, jenis daftar baru dan
+  re-NIM, AKM menghitung SKS transfer dan konversi aktivitas, komponen
+  evaluasi dapat dihapus, sinkron per kelompok tabel, OTP lewat surel, akun
+  WS khusus, validasi zona waktu WIB (3.0.1); AKM wajib sebelum Lulus/DO, HP
+  dan surel wajib serta unik (3.1) — bersumber sekunder, walau beberapa
+  sumber independen sepakat.
+- **Keputusan.** Diaudit terhadap mapper, `FeederValidator`,
+  `config/feeder.php`, dan `FakeFeederClient`; hanya yang menyentuh data
+  kiriman kita yang diubah, dan keparahannya mengikuti keyakinan. (1) **Nomor
+  HP kosong menjadi galat** pada biodata: disebut oleh setiap sumber dan oleh
+  kedua versi, dan biodata tanpa HP akan ditolak. Nomor yang tidak berbentuk
+  telepon (9–15 digit) atau dipakai dua mahasiswa hanya **peringatan**. Surel
+  di sini adalah login — tidak pernah kosong dan unik oleh skema — jadi hanya
+  bentuknya yang diperiksa. (2) **Lulus/DO tanpa satu pun catatan AKM menjadi
+  galat**: dilaporkan untuk 3.1, dan tidak ada alasan sah untuk meluluskan
+  mahasiswa tanpa riwayat semester. Yang dihitung catatan lokal, bukan yang
+  sudah terkirim, karena AKM semester itu boleh terkirim dalam putaran yang
+  sama. (3) **AKM sudah benar**: `sks_semester` menjumlahkan baris KRS
+  semester itu termasuk yang dikonversi dari aktivitas, `sks_total` diambil
+  dari `PerolehanAkademik` yang memuat SKS transfer/RPL; kini dipaku tes,
+  tanpa perubahan kode. (4) **Tidak diubah**: NUPTK (dosen tidak dikirim
+  lewat WS — dibaca dari `GetListDosen`), tanggal dan nomor ijazah pada
+  Lulus/DO (nama medan tanggal belum terverifikasi; nomor memang tidak
+  dikirim), jenis daftar (dipetakan dari referensi yang ditarik, enum lokal
+  sudah mencakup daftar resmi LLDIKTI), penghapusan komponen evaluasi (aksi
+  hapus WS belum terverifikasi), tanggal (sudah `Y-m-d` dengan zona
+  `Asia/Jakarta`). `FakeFeederClient` tidak mensimulasikan aturan per medan;
+  gerbangnya validator. (5) **Teks operator** yang menyebut OTP WhatsApp
+  diganti: otorisasi sinkron ke pusat kini lewat surel.
+- **Konsekuensi.** Mahasiswa tanpa nomor HP kini tertahan di validasi biodata
+  — temuan yang memang akan ditolak Feeder. Tindak lanjut tercatat di
+  ROADMAP #52–#55: nama medan HP (`telepon_seluler`) perlu dicocokkan dengan
+  kamus web service sebuah instalasi Neo Feeder; tanggal ijazah; changelog
+  resmi 3.1; alur re-NIM. Snapshot payload tidak berubah karena payload tidak
+  berubah.

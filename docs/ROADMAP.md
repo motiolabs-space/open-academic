@@ -329,9 +329,11 @@ punya tabel lokal** — ini pekerjaan mapper dan validator, bukan model data bar
 | ~~27~~ | ~~**Perubahan Data Mahasiswa & Perubahan Jenis Keluar**~~ | ✅ 24 Oktober 2026 — bukan dikunci di layar, melainkan **dicatat saat berubah** (ADR-017): observer pada `mahasiswa`, `yudisium`, `wisuda_peserta`, `evaluasi_studi` menulis `feeder_change_requests` begitu kolom terkunci berubah pada mahasiswa yang sudah ber-`feeder_id` (PDM) atau ber-`feeder_keluar_id` (PJK). Validator **menolak mengirim ulang** biodata / Lulus/DO selama ada permintaan jalur PDDIKTI admin yang terbuka. NIM dan periode masuk dikirim lewat `UpdateRiwayatPendidikanMahasiswa` (kunci `id_registrasi_mahasiswa`); yang lain ditampilkan di konsol sebagai "harus diajukan lewat PDDIKTI admin" dengan status belum diajukan → diajukan (nomor surat) → selesai. **Cetak surat permohonannya** dari modul surat belum — dicatat sebagai #27b |
 | ~~27b~~ | ~~**Surat permohonan PDM/PJK dari modul surat**~~ | ✅ 26 Oktober 2026 — `JenisSurat::PermohonanPdm` / `PermohonanPjk` (kode PDM/PJK, urutan nomor sendiri lewat `PenomoranSurat`, tanpa masa berlaku, tidak dapat diajukan mahasiswa). Terbit dari panel Perubahan Data di `/admin/feeder`: satu surat per mahasiswa per prosedur memuat seluruh permintaan yang masih menunggu surat — jalur PDDIKTI admin, atau jalur web service yang ditolak (penolakannya menjadi alasan). Isi dibekukan dari permintaan: kolom, nilai tercatat di PDDIKTI → seharusnya, alasan, dan lampiran yang diturunkan dari kolomnya (SPTJM selalu). Nomor surat dan `surat_id` tercatat balik, permintaan berpindah ke *diajukan*, PDF dapat diunduh dari konsol |
 
-Juga dicatat, bukan pekerjaan: sinkronisasi dari UI Feeder memerlukan OTP
-WhatsApp, jadi tidak pernah dapat diotomasi penuh. Monitor Feeder harus
-menyatakan langkah itu, bukan berpura-pura "sinkron" selesai.
+Juga dicatat, bukan pekerjaan: sinkronisasi dari UI Feeder ke PDDIKTI memerlukan
+otorisasi OTP oleh operator — lewat surel sejak Neo Feeder 3.0.1 (sebelumnya
+WhatsApp; ADR-036 §3) — jadi tidak pernah dapat diotomasi penuh. Yang diotomasi
+di sini adalah dorongan ke Neo Feeder lokal lewat web service; monitor Feeder
+harus menyatakan langkah sinkron ke pusat itu, bukan berpura-pura selesai.
 
 ### P5 — Kelulusan elektronik: menutup risiko nomor ijazah
 
@@ -377,6 +379,11 @@ sumber resmi sebelum kode diubah; nomor regulasinya di ADR-036.
 | 48 | **Kuartil & indeks publikasi untuk IKU 6** | ⬜ `penugasan_dosen` mencatat jenis luaran dan tingkat, bukan Scopus/WoS maupun kuartil — keduanya bukti yang diperiksa manusia. Putuskan apakah dicatat di sini atau tetap di Open Campus |
 | ~~49~~ | ~~**PISN menggantikan PIN**~~ | ✅ 29 Oktober 2026 — istilah di layar dan dokumen, `KesiapanPisnService` mengikuti validator PISN sejak 1 November 2025 (akreditasi, IPK dan SKS per jenjang, beban per semester dan antara, masa studi, semester masuk), struktur nomor 21 digit diperiksa saat dicatat, `ACADEMIC_IJAZAH_SUMBER=pisn` bawaan dengan `pin` sebagai alias usang. ADR-036 §2 |
 | 50 | **Tanggal berlaku akreditasi prodi** | ⬜ Validator PISN menuntut akreditasi *masih berlaku*; di sini hanya peringkatnya yang tercatat, jadi akreditasi kedaluwarsa tetap tampil siap |
+| ~~51~~ | ~~**Neo Feeder 3.0.1 / 3.1 — validasi pra-kirim**~~ | ✅ 29 Oktober 2026 — nomor HP mahasiswa wajib (galat), nomor yang tidak berbentuk telepon atau dipakai dua mahasiswa diperingatkan; Lulus/DO tanpa satu pun AKM ditolak. AKM sudah menghitung SKS konversi aktivitas (baris KRS beraktivitas) dan SKS transfer (pada total) — kini dipaku tes. ADR-036 §3 |
+| 52 | **Nama medan HP pada `InsertBiodataMahasiswa`** | ⬜ Mapper mengirim `telepon_seluler`; kamus web service Neo Feeder (aksi `GetDictionary` pada instalasi kampus) perlu diperiksa apakah medan HP bernama lain. Butuh Neo Feeder hidup, bukan dokumen |
+| 53 | **Tanggal ijazah pada Lulus/DO** | ⬜ Neo Feeder 3.0.1 dilaporkan menambah tanggal terbit ijazah pada data kelulusan; nama medannya belum terverifikasi, jadi belum dikirim. Nomor ijazah memang tidak dikirim (PISN yang menulisnya, #49) |
+| 54 | **Changelog resmi Neo Feeder 3.1** | ⬜ Rilis Mei 2026 menurut sumber sekunder; tidak ada catatan rilis publik dari Pusdatin. Butir yang dilaporkan dan sudah diterapkan sebagai validator: AKM wajib sebelum Lulus/DO, nomor HP unik. Periksa ulang begitu catatan resminya ada atau begitu instalasi kampus memakai 3.1 |
+| 55 | **Jenis daftar baru dan alur re-NIM / masuk kembali** | ⬜ Dilaporkan baru di 3.0.1 (sekunder). Kode jenis daftar dipetakan lewat referensi yang ditarik, jadi kode baru tiba sendiri; yang belum ada adalah alur lokal untuk mahasiswa yang berganti NIM atau aktif kembali |
 
 ### Urutan yang disarankan
 

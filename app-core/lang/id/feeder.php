@@ -4,6 +4,15 @@ declare(strict_types=1);
 
 return [
 
+    // Pre-flight rules added for Neo Feeder 3.0.1 / 3.1 (ADR-036 §3).
+    'validasi' => [
+        'telepon_kosong' => 'Nomor HP mahasiswa kosong. Neo Feeder sejak versi 3.0.1 mewajibkan nomor HP pada biodata mahasiswa.',
+        'telepon_tidak_valid' => 'Nomor HP ":telepon" tidak berbentuk nomor telepon (9–15 digit). Periksa sebelum dikirim.',
+        'telepon_ganda' => 'Nomor HP ini juga tercatat pada mahasiswa lain. Neo Feeder versi terbaru dilaporkan menolak nomor HP yang sama untuk dua mahasiswa.',
+        'email_tidak_valid' => 'Surel ":email" tidak berbentuk alamat surel; Neo Feeder versi terbaru dilaporkan mewajibkan surel yang sah.',
+        'akm_kosong' => 'Mahasiswa tidak punya satu pun catatan aktivitas kuliah (AKM). Neo Feeder menolak meluluskan atau mengeluarkan mahasiswa tanpa riwayat AKM.',
+    ],
+
     'flagship' => [
         'kolom' => 'Flagship',
         'bukan' => 'Bukan flagship',

@@ -63,6 +63,8 @@ class LulusDoMapper extends FeederMapper
                 'ujiKompetensiLulus.tahunAkademik',
                 'yudisium.tahunAkademik',
                 'evaluasiStudi' => fn ($q) => $q->whereIn('keputusan', $keputusan)->latest('diputuskan_at'),
+                // Ids only: the validator needs to know there is at least one.
+                'statusPerSemester:id,mahasiswa_id',
             ])
             ->whereIn('status', [
                 StudentStatus::Lulus->value,
