@@ -107,7 +107,9 @@
                                 </td>
                                 @foreach ($kolom as $k)
                                     <td @class(['px-3 py-2.5', 'tabular' => in_array($k, ['nim', 'prodi_kode', 'tanggal_mulai', 'tanggal_selesai', 'jumlah_pt', 'jumlah_negara', 'pembimbing_nidn', 'pembimbing_nuptk'], true)])>
-                                        @if (str_starts_with($k, 'tautan_') && filled($b->nilai[$k]))
+                                        {{-- Hanya http(s) yang dijadikan tautan: baris lama atau hasil impor tidak
+                                             melewati validasi formulir, dan javascript: tidak boleh jadi href. --}}
+                                        @if (str_starts_with($k, 'tautan_') && preg_match('#^https?://#i', (string) $b->nilai[$k]))
                                             <a href="{{ $b->nilai[$k] }}" target="_blank" rel="noopener noreferrer" class="text-navy underline">↗</a>
                                         @else
                                             {{ $b->nilai[$k] ?? '—' }}

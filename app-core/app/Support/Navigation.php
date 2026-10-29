@@ -174,6 +174,7 @@ final class Navigation
                     self::item('Tugas Akhir', '✍', 'admin.tugas-akhir'),
                     self::item('Yudisium', '✦', 'admin.yudisium'),
                     self::item('Wisuda', '✧', 'admin.wisuda'),
+                    self::item(__('lulusan.nav'), '⌁', 'admin.lulusan'),
                     self::item('Surat & Dokumen', '✉', 'admin.surat'),
                 ],
             ],

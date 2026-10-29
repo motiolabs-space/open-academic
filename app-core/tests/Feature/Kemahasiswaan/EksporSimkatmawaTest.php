@@ -365,6 +365,16 @@ describe('akses', function () {
             ->assertSee('Penyelenggara belum diisi.');
     });
 
+    it('tidak menjadikan tautan non-http sebagai href di layar laporan', function () {
+        simkatPrestasi(simkatKategori(KategoriSimkatmawa::Kompetisi), ['tautan_bukti' => 'javascript:alert(1)']);
+
+        $this->actingAs($this->baak, 'staff')
+            ->get(route('admin.simkatmawa', ['dari' => '2026-01-01', 'sampai' => '2026-12-31']))
+            ->assertOk()
+            ->assertDontSee('href="javascript:', false)
+            ->assertSee('Tautan Bukti Kegiatan bukan alamat web yang sah.');
+    });
+
     it('menolak staf tanpa izin mengelola mahasiswa, termasuk unduhannya', function () {
         $keuangan = Staff::factory()->create();
         $keuangan->assignRole('keuangan');

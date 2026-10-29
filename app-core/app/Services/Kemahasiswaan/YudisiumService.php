@@ -8,6 +8,7 @@ use App\DTOs\Akademik\PerolehanBaris;
 use App\DTOs\Kemahasiswaan\SyaratKelulusan;
 use App\Enums\GradeLetter;
 use App\Enums\JenisPoin;
+use App\Enums\StatusPekerjaanAlumni;
 use App\Enums\StudentStatus;
 use App\Enums\TugasAkhirStatus;
 use App\Exceptions\AturanAkademikException;
@@ -409,9 +410,11 @@ class YudisiumService
             ['mahasiswa_id' => $mahasiswa->id],
             [
                 'tahun_lulus' => $tanggalLulus->year,
-                'email_pribadi' => $mahasiswa->email,
+                // The personal address first: the account address is the one
+                // that stops working after graduation (ADR-037 §2).
+                'email_pribadi' => filled($mahasiswa->email_pribadi) ? $mahasiswa->email_pribadi : $mahasiswa->email,
                 'telepon' => $mahasiswa->telepon,
-                'status_pekerjaan' => 'belum',
+                'status_pekerjaan' => StatusPekerjaanAlumni::BelumDitelusuri,
             ],
         );
     }

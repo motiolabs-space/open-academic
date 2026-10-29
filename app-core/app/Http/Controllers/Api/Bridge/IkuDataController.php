@@ -86,7 +86,7 @@ class IkuDataController extends Controller
             // Employment status is what a tracer study fills in; Open Academic
             // only holds the baseline record it starts from.
             'per_status_pekerjaan' => $lulusan
-                ->groupBy(fn (Yudisium $y): string => $y->mahasiswa->alumni?->status_pekerjaan ?? 'belum_ditelusuri')
+                ->groupBy(fn (Yudisium $y): string => $y->mahasiswa->alumni?->status_pekerjaan?->value ?? 'belum_ditelusuri')
                 ->map(fn ($g): int => $g->count()),
 
             'rata_ipk' => round((float) $lulusan->avg('ipk'), 2),
