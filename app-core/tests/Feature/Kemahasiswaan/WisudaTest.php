@@ -32,7 +32,7 @@ beforeEach(function () {
     $this->wisuda = app(WisudaService::class);
 
     // The tests below exercise the campus-generated pattern. The default is
-    // PIN, under which generation is refused — see NomorIjazahPinTest.
+    // PISN, under which generation is refused — see NomorIjazahPisnTest.
     config(['academic.ijazah.sumber' => 'lokal']);
 });
 

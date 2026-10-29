@@ -225,7 +225,8 @@ Event: `student.enrolled`, `student.status_changed`, `krs.approved`,
 - Satu modul per PR, diff kecil dan bisa direview.
 - Jangan pernah commit rahasia; jaga `.env.example` tetap lengkap dan mutakhir.
 - **Materi kementerian tidak pernah di-push ke GitHub.** Kode, koleksi Postman,
-  panduan, kredensial, atau data dari Neo Feeder, PDDIKTI admin, SISTER, dan PIN
+  panduan, kredensial, atau data dari Neo Feeder, PDDIKTI admin, SISTER, dan PISN
+  (dahulu PIN)
   tidak boleh masuk repo ini (publik), dan repo ini tidak pernah mendorong apa pun
   ke repositori GitHub kementerian. Kajian disimpan lokal di `docs/lokal/`
   (di-exclude). Lihat `CONTRIBUTING.md` §Aturan yang Sering Terlewat #8.

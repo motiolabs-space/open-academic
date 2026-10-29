@@ -105,7 +105,7 @@
                 @endforeach
             </ul>
             <p class="border-t border-line px-5 py-3 text-[11.5px] leading-relaxed text-ink-muted">
-                {{ __('wisuda.syarat.informasi_pin') }}
+                {{ __('wisuda.syarat.informasi_pisn') }}
             </p>
         </x-card>
     </div>

@@ -158,6 +158,7 @@
   sampai `ACADEMIC_IJAZAH_SUMBER=lokal` disetel dengan sadar. Bawaan dipilih
   yang tidak dapat menghasilkan dokumen tak terverifikasi karena kelalaian.
   Verifikasi publik ijazah adalah SIVIL; QR lokal tetap untuk surat dan SKPI.
+- **Diperbarui oleh** ADR-036 §2 (PISN menggantikan istilah dan alur PIN).
 
 ## ADR-014 — Payment gateway opsional; transfer manual adalah jalur utama (2026-10-24)
 
@@ -1264,3 +1265,66 @@ repo (CLAUDE.md §10, ADR-011).
   proyek). Open Campus dapat pindah ke `iku_2026` kapan saja dalam masa
   transisi. Data IKU 8 menjadi butir ROADMAP. Anggaran kueri `iku-data`
   bertambah sejumlah kueri tetap (tidak tumbuh bersama baris).
+
+### 2. PISN: istilah dan validator diperbarui; nama `pin` tetap dibaca sebagai alias usang
+
+Memperbarui ADR-013.
+
+- **Konteks.** ADR-013 ditulis untuk Penomoran Ijazah Nasional (PIN) dan
+  menyebut alurnya "reservasi". Layanan yang berlaku kini PISN — Penomoran
+  Ijazah dan Sertifikat Profesi Nasional — dengan dasar Permendikbudristek
+  50/2024 (yang mencabut Permendikbudristek 6/2022; nomor ijazah dan nomor
+  sertifikat profesi nasional diterbitkan sistem kementerian atas permohonan
+  berlampiran bukti kelulusan dan SPTJM; ijazah yang dikoreksi mendapat nomor
+  baru, yang diterbitkan ulang memakai nomor lama). Diverifikasi dari materi
+  resmi Direktorat Pembelajaran dan Kemahasiswaan Ditjen Dikti (paparan
+  penerapan PISN 2024, disebarkan LLDIKTI), surat Ditjen Dikti
+  4889/B2/DT.00.08/2025 dan 1037/B.B2/DT.00.08/2025, dan materi sosialisasi
+  LLDIKTI. Yang berbeda dari asumsi ADR-013: (a) nomor **terbit sesudah**
+  mahasiswa berstatus Lulus di PDDIKTI dengan tanggal lulus terisi, nomor
+  ijazah di PDDIKTI masih kosong, dan seluruh validator PISN lolos
+  ("eligible"); yang tidak lolos diperbaiki di PDDIKTI atau diajukan eksepsi
+  — kecuali akreditasi, yang tanpa eksepsi; (b) nomor 21 digit: kode PT (6),
+  kode prodi (5), tahun terbit (4), tipe (1 = ijazah, 2 = sertifikat profesi),
+  nomor urut (5); (c) nomor yang terbit dikirim PISN ke PDDIKTI dan dapat
+  diverifikasi di laman PISN; (d) "pemutihan" adalah klaim nomor sertifikat
+  profesi yang sudah dilaporkan antara Februari 2022 dan akhir 2024, bukan
+  pembatalan; (e) masa transisi modul sertifikat sampai akhir Desember 2024,
+  semua prodi memakai PISN sejak semester genap 2024/2025; (f) sejak
+  1 November 2025 validatornya mengikuti Permendiktisaintek 39/2025: IPK
+  minimum, SKS tempuh minimum, beban SKS per semester dan semester antara,
+  dan masa studi per jenjang. Ringkasan sekunder yang menyebut alur
+  "pembatalan" tidak menemukan padanan resmi; yang ada koreksi (nomor baru)
+  dan eksepsi.
+- **Keputusan.** (1) **Istilah.** Semua yang terlihat pengguna menyebut PISN
+  (`lang/id/wisuda.php`, layar Yudisium dan Wisuda, pesan validator Feeder),
+  dan kelas yang namanya terbaca di kode diganti: `KesiapanPisnService`,
+  `KesiapanPisn`, kode syarat wisuda `pisn`. Tanpa migrasi — tidak ada kolom
+  bernama PIN; `wisuda_peserta.nomor_ijazah` tetap. (2) **Config.**
+  `ACADEMIC_IJAZAH_SUMBER` bawaannya `pisn`; `pin` tetap dibaca sebagai
+  `pisn` (`App\Enums\SumberNomorIjazah`), ditandai usang di config,
+  `.env.example`, dan peringatan di layar Wisuda; berhenti diterima pada rilis
+  mayor berikutnya. Nilai tak dikenal juga dibaca `pisn` — bawaan yang aman
+  ADR-013 tidak berubah. (3) **Daftar periksa mengikuti validator PISN.**
+  Ditambah: prodi terakreditasi, IPK minimum per jenjang, beban SKS per
+  semester (D1–S1: 20 pada semester 1–2, 24 sesudahnya) dan semester antara
+  (9), masa studi (semester berjalan sejak semester masuk sampai semester
+  lulus, cuti ikut terhitung — jalur eksepsi masa studi meminta bukti cuti),
+  dan catatan semester pertama pada semester masuk. SKS minimum kini per
+  jenjang (D3 108, bukan 144 kampus-luas). Angka-angka itu di
+  `config('academic.ijazah.pisn')`, bukan di kode: sudah berubah sekali pada
+  November 2025. (4) **Struktur nomor diperiksa saat dicatat** di mode PISN:
+  21 digit, kode PT sama dengan `BRAND_INSTITUTION_CODE` dan kode prodi sama
+  dengan `prodi.kode` (masing-masing hanya bila berbentuk kode PDDIKTI), tahun
+  masuk akal, digit tipe sesuai jenjang (profesi/spesialis = 2). Lulusan
+  dengan tanggal lulus sebelum 2025 tidak diperiksa: nomornya dari skema
+  lama. (5) **Lulus/DO tidak mengirim nomor ijazah** (sudah begitu sejak
+  ADR-013); kini dinyatakan sebagai alur yang benar, bukan kebetulan: PISN
+  yang menulis nomor ke PDDIKTI.
+- **Konsekuensi.** Instalasi dengan `.env` berisi `pin` tidak berubah
+  perilakunya, hanya melihat peringatan. Lulusan yang sebelumnya tampil
+  "Siap" dapat berubah menjadi belum siap karena butir baru (akreditasi
+  belum dicatat, semester masuk tidak tercatat) — itu temuan, bukan regresi.
+  Akreditasi yang kedaluwarsa tidak terdeteksi karena tanggal berlakunya
+  tidak dicatat. Validator untuk profesi/spesialis non-medis (masa studi
+  ditetapkan kampus) tidak diperiksa di sini.

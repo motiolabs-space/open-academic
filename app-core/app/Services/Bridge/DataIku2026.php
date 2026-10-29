@@ -12,6 +12,7 @@ use App\Enums\TingkatKegiatan;
 use App\Models\Akademik\Prodi;
 use App\Models\Akademik\TahunAkademik;
 use App\Models\Sdm\Dosen;
+use App\Support\KodeSemester;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -141,7 +142,9 @@ class DataIku2026
                         // numeric keys starting at 0 would serialise as a
                         // bare array.
                         'lulus_per_lama_studi' => $lulusDiJenjang
-                            ->groupBy(fn (object $r): int => self::lamaStudi($r->term_masuk, $r->kode_lulus))
+                            // From first enrolment here to the graduation
+                            // term; 0 when either end is unrecorded.
+                            ->groupBy(fn (object $r): int => KodeSemester::rentang($r->term_masuk, $r->kode_lulus))
                             ->map(fn ($g, int $semester): array => ['semester' => $semester, 'lulus' => $g->count()])
                             ->sortKeys()
                             ->values(),
@@ -327,25 +330,6 @@ class DataIku2026
     private function kodeJenjang(Collection $jenjang, mixed $prodiId): string
     {
         return $jenjang->get($prodiId)?->value ?? 'tidak_diketahui';
-    }
-
-    /**
-     * Regular semesters from first enrolment here to the graduation term,
-     * both counted, short terms folded into the even semester as PDDIKTI does
-     * (same convention as Mahasiswa::semesterDiAsal). Zero when either end is
-     * unknown, so a missing record shows up as its own bucket.
-     */
-    public static function lamaStudi(?string $masuk, ?string $lulus): int
-    {
-        $sah = static fn (?string $kode): bool => $kode !== null && preg_match('/^\d{4}[123]$/', $kode) === 1;
-
-        if (!$sah($masuk) || !$sah($lulus)) {
-            return 0;
-        }
-
-        $urutan = static fn (string $kode): int => (int) substr($kode, 0, 4) * 2 + min(2, (int) substr($kode, 4, 1));
-
-        return max(0, $urutan($lulus) - $urutan($masuk) + 1);
     }
 
     /**

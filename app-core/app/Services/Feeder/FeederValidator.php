@@ -597,7 +597,7 @@ class FeederValidator
             }
 
             if (blank($y->nomor_sk)) {
-                $isu->push($this->peringatan('nomor_sk_kosong', 'Nomor SK yudisium kosong; PDDIKTI menerimanya, tetapi reservasi nomor ijazah menanyakannya.'));
+                $isu->push($this->peringatan('nomor_sk_kosong', 'Nomor SK yudisium kosong; PDDIKTI menerimanya, tetapi penerbitan nomor ijazah PISN meminta SK yudisium sebagai bukti kelulusan.'));
             }
 
             // A health programme's graduate is not Lulus until the competency

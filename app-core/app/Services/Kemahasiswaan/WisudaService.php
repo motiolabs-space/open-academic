@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Services\Kemahasiswaan;
 
 use App\DTOs\Kemahasiswaan\SyaratWisuda;
+use App\Enums\EducationLevel;
+use App\Enums\SumberNomorIjazah;
 use App\Exceptions\AturanAkademikException;
 use App\Models\Kemahasiswaan\Mahasiswa;
 use App\Models\Kemahasiswaan\WisudaPeriode;
@@ -13,6 +15,7 @@ use App\Models\Kemahasiswaan\Yudisium;
 use App\Models\Sdm\Staff;
 use App\Notifications\Kemahasiswaan\PendaftaranWisudaDibatalkan;
 use App\Notifications\Kemahasiswaan\PendaftaranWisudaDiterima;
+use App\Services\Branding\BrandingService;
 use App\Services\Notifikasi\Notifier;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Support\Collection;
@@ -36,6 +39,7 @@ class WisudaService
     public function __construct(
         private readonly SyaratWisudaService $syarat,
         private readonly Notifier $notifier,
+        private readonly BrandingService $brand,
     ) {}
 
     /**
@@ -263,12 +267,7 @@ class WisudaService
     public function terbitkanNomorIjazah(WisudaPeriode $periode, Staff $staff, string $pola): array
     {
         if (!$this->penomoranLokal()) {
-            throw new AturanAkademikException(
-                'Nomor ijazah kampus ini berasal dari Penomoran Ijazah Nasional (PIN) dan tidak '
-                    .'dibangkitkan di sini. Reservasi nomornya di portal PIN, lalu catat hasilnya '
-                    .'pada periode wisuda. Ubah ACADEMIC_IJAZAH_SUMBER=lokal hanya bila institusi '
-                    .'berada di luar skema nasional.',
-            );
+            throw new AturanAkademikException(__('wisuda.pisn.tidak_dibangkitkan'));
         }
 
         $peserta = WisudaPeserta::query()
@@ -305,17 +304,22 @@ class WisudaService
     /** Whether this campus generates its own diploma numbers. */
     public function penomoranLokal(): bool
     {
-        return config('academic.ijazah.sumber', 'pin') === 'lokal';
+        return SumberNomorIjazah::dariConfig() === SumberNomorIjazah::Lokal;
     }
 
     /**
-     * Records diploma numbers reserved at the national service (PIN).
+     * Records diploma numbers issued by the national service (PISN).
      *
-     * Input is what the portal gives back: one graduate per line, NIM and
+     * Input is what the PISN site gives back: one graduate per line, NIM and
      * number, separated by a comma, a semicolon, a tab or spaces. Each line
      * is judged on its own — a bad line is reported, the good ones land —
      * because the alternative, all-or-nothing, means an operator retypes the
      * forty good lines to fix the one typo.
+     *
+     * Under PISN a number is also checked against its structure (ADR-036 §2):
+     * 21 digits, this institution, the graduate's programme, a plausible year,
+     * and the document type the programme issues. A number pasted into the
+     * wrong row is caught here rather than printed.
      *
      * A number already recorded is never overwritten: it may be printed on a
      * document by now. A line that repeats the same number for the same
@@ -326,7 +330,7 @@ class WisudaService
     public function catatNomorIjazah(WisudaPeriode $periode, Staff $staff, string $isian): array
     {
         $peserta = WisudaPeserta::query()
-            ->with('yudisium.mahasiswa')
+            ->with('yudisium.mahasiswa.prodi')
             ->where('wisuda_periode_id', $periode->id)
             ->get()
             ->keyBy(fn (WisudaPeserta $p): string => $p->yudisium->mahasiswa->nim);
@@ -372,6 +376,12 @@ class WisudaService
                 continue;
             }
 
+            if (($masalah = $this->masalahNomorPisn($p, $nomor)) !== null) {
+                $ditolak[] = "{$label}: {$masalah}";
+
+                continue;
+            }
+
             if (isset($terpakai[$nomor]) || WisudaPeserta::query()->where('nomor_ijazah', $nomor)->exists()) {
                 $ditolak[] = "{$label}: nomor {$nomor} sudah dipakai lulusan lain.";
 
@@ -385,13 +395,50 @@ class WisudaService
 
         if ($dicatat > 0) {
             $periode->recordActivity('diploma_numbers_recorded', sprintf(
-                '%d nomor ijazah PIN dicatat oleh %s.',
+                '%d nomor ijazah PISN dicatat oleh %s.',
                 $dicatat,
                 $staff->nama,
             ));
         }
 
         return ['dicatat' => $dicatat, 'dilewati' => $dilewati, 'ditolak' => $ditolak];
+    }
+
+    /**
+     * Why a number cannot be a PISN number for this graduate, or null.
+     *
+     * Structure, from the ministry's PISN material: institution code (6),
+     * programme code (5), year of issue (4), type (1 — 1 diploma, 2
+     * professional certificate), sequence (5). The institution and programme
+     * parts are compared only when the codes held here have PDDIKTI's shape,
+     * so a demo or a campus that has not filled them in is not blocked by its
+     * own settings. Graduates before 2025 kept numbers from the earlier
+     * scheme, whose format differs, and are not checked.
+     */
+    private function masalahNomorPisn(WisudaPeserta $peserta, string $nomor): ?string
+    {
+        $yudisium = $peserta->yudisium;
+
+        if ($this->penomoranLokal() || ($yudisium->tanggal_lulus !== null && $yudisium->tanggal_lulus->year < 2025)) {
+            return null;
+        }
+
+        if (preg_match('/^\d{21}$/', $nomor) !== 1) {
+            return __('wisuda.pisn.format_digit', ['nomor' => $nomor]);
+        }
+
+        $pt = $this->brand->institutionCode();
+        $prodi = $yudisium->mahasiswa->prodi;
+        $tahun = (int) substr($nomor, 11, 4);
+        $sertifikat = in_array($prodi?->jenjang, [EducationLevel::Profesi, EducationLevel::Spesialis1, EducationLevel::Spesialis2], true);
+
+        return match (true) {
+            preg_match('/^\d{6}$/', $pt) === 1 && substr($nomor, 0, 6) !== $pt => __('wisuda.pisn.format_pt', ['kode' => substr($nomor, 0, 6), 'pt' => $pt]),
+            $prodi !== null && preg_match('/^\d{5}$/', $prodi->kode) === 1 && substr($nomor, 6, 5) !== $prodi->kode => __('wisuda.pisn.format_prodi', ['kode' => substr($nomor, 6, 5), 'prodi' => $prodi->kode]),
+            $tahun < 2024 || $tahun > now()->year + 1 => __('wisuda.pisn.format_tahun', ['tahun' => $tahun]),
+            $nomor[15] !== ($sertifikat ? '2' : '1') => __($sertifikat ? 'wisuda.pisn.format_tipe_sertifikat' : 'wisuda.pisn.format_tipe_ijazah'),
+            default => null,
+        };
     }
 
     /**

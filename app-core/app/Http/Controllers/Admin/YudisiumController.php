@@ -10,7 +10,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\CatatUjiKompetensiRequest;
 use App\Models\Kemahasiswaan\Mahasiswa;
 use App\Models\Kemahasiswaan\Yudisium;
-use App\Services\Kemahasiswaan\KesiapanPinService;
+use App\Services\Kemahasiswaan\KesiapanPisnService;
 use App\Services\Kemahasiswaan\UjiKompetensiService;
 use App\Services\Kemahasiswaan\YudisiumService;
 use App\Support\Portal;
@@ -30,7 +30,7 @@ class YudisiumController extends Controller
 {
     public function __construct(
         private readonly YudisiumService $yudisium,
-        private readonly KesiapanPinService $kesiapanPin,
+        private readonly KesiapanPisnService $kesiapanPisn,
         private readonly UjiKompetensiService $ukom,
     ) {}
 
@@ -62,10 +62,10 @@ class YudisiumController extends Controller
                 ->limit(15)
                 ->get(),
 
-            // Readiness for the national diploma number, per graduate: the
-            // reservation portal refuses without saying why, and every reason
+            // Readiness for the national diploma number, per graduate: PISN
+            // refuses a record that fails a validator, and every validator
             // it has is visible from here first.
-            'kesiapanPin' => $this->kesiapanPin->periksaBanyak($ditetapkan->pluck('mahasiswa')),
+            'kesiapanPisn' => $this->kesiapanPisn->periksaBanyak($ditetapkan->pluck('mahasiswa')),
 
             // Health programmes: academically done, waiting on the national
             // competency examination. Empty on campuses without one.

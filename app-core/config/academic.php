@@ -326,24 +326,58 @@ return [
 
     'ijazah' => [
         /*
-         * Where a diploma number comes from.
+         * Where a diploma number comes from (App\Enums\SumberNomorIjazah).
          *
-         *   pin    (default) The national diploma-numbering service. The
-         *          campus reserves numbers at the ministry's portal and
-         *          records them here; nothing is generated. This is the
-         *          mandatory route since 21 December 2020, and the one a
-         *          graduate's employer can verify through SIVIL.
+         *   pisn   (default) Penomoran Ijazah dan Sertifikat Profesi Nasional.
+         *          The ministry issues the number once the graduate's PDDIKTI
+         *          record — status Lulus, graduation date, and the PISN
+         *          validators below — is complete; the campus records it
+         *          here. Nothing is generated. Verifiable on the PISN site.
          *   lokal  Generated here from `pattern`. For institutions outside
          *          the national scheme only. A locally numbered diploma
          *          prints cleanly, is handed over at the ceremony, and fails
          *          verification years later — in the graduate's hands, not
          *          the campus's.
          *
-         * The default is the one that cannot produce an unverifiable
-         * document by accident.
+         * `pin`, the value from before PISN, is still read as `pisn` and is
+         * deprecated (ADR-036 §2). The default is the one that cannot produce
+         * an unverifiable document by accident.
          */
-        'sumber' => env('ACADEMIC_IJAZAH_SUMBER', 'pin'), // pin | lokal
+        'sumber' => env('ACADEMIC_IJAZAH_SUMBER', 'pisn'), // pisn | lokal  (pin: deprecated alias of pisn)
         'pattern' => env('ACADEMIC_IJAZAH_PATTERN', '{tahun}/{prodi}/{urut}'),
+
+        /*
+         * The PISN validators, as the ministry applies them from 1 November
+         * 2025 (Ditjen Dikti letter 1037/B.B2/DT.00.08/2025, following
+         * Permendiktisaintek 39/2025). Keyed by PDDIKTI degree-level code
+         * (App\Enums\EducationLevel). They have changed once already; when the
+         * ministry revises them again, this table is what changes.
+         *
+         * Study length is counted in elapsed regular semesters from the entry
+         * term to the graduation term, leave included — the ministry's
+         * exception route for an over-long study asks for the leave approvals,
+         * which only makes sense if leave counts. null means "set by the
+         * institution" and is not checked here.
+         */
+        'pisn' => [
+            'ipk_minimum' => [
+                '10' => 2.00, '15' => 2.00, '20' => 2.00, '21' => 2.00, '30' => 2.00,
+                '05' => 3.00, '35' => 3.00, '36' => 3.00, '40' => 3.00, '41' => 3.00, '85' => 3.00, '90' => 3.00,
+            ],
+            'sks_minimum' => [
+                '10' => 36, '15' => 72, '20' => 108, '21' => 144, '30' => 144,
+                '05' => 24, '35' => 36, '36' => 36, '40' => 42, '41' => 42, '85' => 24, '90' => 24,
+            ],
+            'masa_studi_maksimum_semester' => [
+                '10' => 4, '15' => 8, '20' => 12, '21' => 16, '30' => 16, '40' => 12, '41' => 12,
+            ],
+            'masa_studi_minimum_semester' => [
+                '35' => 3, '36' => 3,
+            ],
+            // Diploma and bachelor's programmes only: semesters 1–2, then 3 on.
+            'sks_semester_maksimum' => ['awal' => 20, 'lanjut' => 24],
+            'sks_semester_antara_maksimum' => 9,
+        ],
     ],
 
 ];

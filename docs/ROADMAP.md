@@ -375,6 +375,8 @@ sumber resmi sebelum kode diubah; nomor regulasinya di ADR-036.
 | ~~46~~ | ~~**Penomoran IKU 2026 (Kepmendiktisaintek 358/M/KEP/2025)**~~ | ✅ 29 Oktober 2026 — `GET /iku-data` mendapat blok `iku_2026` (IKU 1 AEE per tahun akademik dan jenjang, 2 populasi tracer study, 3 kegiatan + prestasi dengan pita SKS 0–5/6–10/11+, 4–6 luaran dosen) dan peta `ketersediaan` kedua belas IKU. Kunci delapan IKU lama dibekukan dan usang sampai versi mayor Bridge. Layar tidak lagi menyebut "IKU 7" / "IKU 4" untuk kelas kolaboratif dan praktisi |
 | 47 | **Data IKU 8 — keterlibatan dosen dalam penyusunan kebijakan** | ⬜ Belum ada jenis catatannya. Kandidat: jenis `penugasan_dosen` baru (anggota tim penyusun, narasumber resmi, kontributor kajian; tingkat nasional/daerah/industri; bukti SK/undangan) lalu satu butir di `iku_2026` |
 | 48 | **Kuartil & indeks publikasi untuk IKU 6** | ⬜ `penugasan_dosen` mencatat jenis luaran dan tingkat, bukan Scopus/WoS maupun kuartil — keduanya bukti yang diperiksa manusia. Putuskan apakah dicatat di sini atau tetap di Open Campus |
+| ~~49~~ | ~~**PISN menggantikan PIN**~~ | ✅ 29 Oktober 2026 — istilah di layar dan dokumen, `KesiapanPisnService` mengikuti validator PISN sejak 1 November 2025 (akreditasi, IPK dan SKS per jenjang, beban per semester dan antara, masa studi, semester masuk), struktur nomor 21 digit diperiksa saat dicatat, `ACADEMIC_IJAZAH_SUMBER=pisn` bawaan dengan `pin` sebagai alias usang. ADR-036 §2 |
+| 50 | **Tanggal berlaku akreditasi prodi** | ⬜ Validator PISN menuntut akreditasi *masih berlaku*; di sini hanya peringkatnya yang tercatat, jadi akreditasi kedaluwarsa tetap tampil siap |
 
 ### Urutan yang disarankan
 

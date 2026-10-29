@@ -9,6 +9,10 @@
         @endif
     @endforeach
 
+    @if ($aliasPinUsang)
+        <div class="mb-5"><x-alert tone="warning">{{ __('wisuda.pisn.alias_usang') }}</x-alert></div>
+    @endif
+
     @if ($errors->any())
         <div class="mb-5"><x-alert tone="danger">{{ $errors->first() }}</x-alert></div>
     @endif
@@ -120,7 +124,7 @@
                                             @if ($ps->nomor_ijazah)
                                                 {{ $ps->nomor_ijazah }}
                                             @else
-                                                <span class="text-ink-faint">{{ $penomoranLokal ? 'belum terbit' : 'belum dicatat dari PIN' }}</span>
+                                                <span class="text-ink-faint">{{ $penomoranLokal ? __('wisuda.pisn.belum_terbit') : __('wisuda.pisn.belum_dicatat') }}</span>
                                             @endif
                                         </td>
                                         <td class="px-5 py-3 text-right">
@@ -261,23 +265,20 @@
                         </p>
                     </x-card>
                 @else
-                    <x-card title="Catat Nomor Ijazah dari PIN">
+                    <x-card :title="__('wisuda.pisn.judul_catat')">
                         <form method="POST" action="{{ route('admin.wisuda.ijazah.catat', $periode) }}" class="flex flex-col gap-3">
                             @csrf
                             <label class="block">
-                                <span class="mb-1 block text-[11px] font-semibold uppercase tracking-[0.08em] text-ink-muted">Hasil reservasi PIN</span>
+                                <span class="mb-1 block text-[11px] font-semibold uppercase tracking-[0.08em] text-ink-muted">{{ __('wisuda.pisn.label_isian') }}</span>
                                 <textarea name="isian" rows="6" required
-                                    placeholder="NIM, nomor ijazah — satu lulusan per baris&#10;2201001, 1234567890123456&#10;2201002; 1234567890123457"
+                                    placeholder="{{ __('wisuda.pisn.placeholder') }}"
                                     class="tabular w-full rounded-control border border-line-input bg-surface px-3 py-2 text-[12.5px] outline-none focus:border-navy">{{ old('isian') }}</textarea>
                             </label>
                             <x-button type="submit" variant="gold" class="w-full">Catat</x-button>
                         </form>
 
                         <p class="mt-4 border-t border-line pt-3 text-[11.5px] leading-relaxed text-ink-muted">
-                            Nomor ijazah tidak dibangkitkan di sini. Kampus mereservasinya di portal
-                            Penomoran Ijazah Nasional, dan nomor itulah yang dicetak serta dapat
-                            diverifikasi publik lewat SIVIL. Nomor yang sudah tercatat tidak pernah
-                            ditimpa. Periksa kolom <em>Siap PIN</em> di layar Yudisium sebelum reservasi.
+                            {{ __('wisuda.pisn.penjelasan') }}
                         </p>
                     </x-card>
                 @endif

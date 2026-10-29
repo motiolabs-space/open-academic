@@ -201,7 +201,7 @@
                         <th class="px-5 py-3 text-center font-semibold">IPK</th>
                         <th class="px-5 py-3 font-semibold">Predikat</th>
                         <th class="px-5 py-3 font-semibold">Tanggal Lulus</th>
-                        <th class="px-5 py-3 font-semibold">Siap PIN</th>
+                        <th class="px-5 py-3 font-semibold">{{ __('wisuda.pisn.kolom_siap') }}</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -221,20 +221,20 @@
                             </td>
                             <td class="tabular px-5 py-2.5 text-ink-muted">{{ Format::tanggal($y->tanggal_lulus) }}</td>
                             <td class="px-5 py-2.5">
-                                @php $pin = $kesiapanPin[$y->mahasiswa->id] ?? null; @endphp
-                                @if ($pin === null)
+                                @php $pisn = $kesiapanPisn[$y->mahasiswa->id] ?? null; @endphp
+                                @if ($pisn === null)
                                     <span class="text-ink-faint">—</span>
-                                @elseif ($pin->siap())
+                                @elseif ($pisn->siap())
                                     <x-chip tone="success">Siap</x-chip>
                                 @else
                                     {{-- Which items, not just how many: the operator
                                          fixes these in Feeder, one screen each. --}}
                                     <details class="group">
                                         <summary class="cursor-pointer list-none">
-                                            <x-chip tone="warning">{{ $pin->jumlahBelumSiap() }} belum</x-chip>
+                                            <x-chip tone="warning">{{ $pisn->jumlahBelumSiap() }} belum</x-chip>
                                         </summary>
                                         <ul class="mt-2 space-y-1 text-[11.5px] text-ink-muted">
-                                            @foreach ($pin->rincian as $r)
+                                            @foreach ($pisn->rincian as $r)
                                                 @unless ($r['siap'])
                                                     <li>× {{ $r['label'] }} <span class="text-ink-faint">— {{ $r['keterangan'] }}</span></li>
                                                 @endunless

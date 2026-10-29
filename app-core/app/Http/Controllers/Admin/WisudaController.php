@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Admin;
 
+use App\Enums\SumberNomorIjazah;
 use App\Http\Controllers\Controller;
 use App\Models\Kemahasiswaan\WisudaPeriode;
 use App\Models\Kemahasiswaan\WisudaPeserta;
@@ -65,10 +66,11 @@ class WisudaController extends Controller
 
             'polaIjazah' => (string) config('academic.ijazah.pattern', '{tahun}/{prodi}/{urut}'),
             'penomoranLokal' => $this->wisuda->penomoranLokal(),
+            'aliasPinUsang' => SumberNomorIjazah::memakaiAliasUsang(),
         ]);
     }
 
-    /** Records numbers reserved at the national service, one graduate per line. */
+    /** Records numbers issued by the national service (PISN), one graduate per line. */
     public function catatIjazah(Request $request, WisudaPeriode $periode): RedirectResponse
     {
         $this->izin('wisuda.manage');
