@@ -6,6 +6,7 @@ namespace App\Services\Lkps;
 
 use App\Models\Akademik\Prodi;
 use App\Models\Akademik\TahunAkademik;
+use App\Services\Akademik\RekapCapaianService;
 
 /**
  * Arranges the canonical quantities into the tables a form asks for.
@@ -26,7 +27,10 @@ use App\Models\Akademik\TahunAkademik;
  */
 class PerakitBorang
 {
-    public function __construct(private readonly IndikatorLkps $indikator) {}
+    public function __construct(
+        private readonly IndikatorLkps $indikator,
+        private readonly RekapCapaianService $capaian,
+    ) {}
 
     /**
      * Every table, for one programme, as of one term.
@@ -44,6 +48,7 @@ class PerakitBorang
             $this->mahasiswaDosen($prodi, $term),
             $this->lulusan($prodi, $tahun),
             $this->putusStudi($prodi, $term),
+            $this->capaianPembelajaran($prodi, $tahun),
             ...$this->tidakTerisi(),
         ];
     }
@@ -132,6 +137,48 @@ class PerakitBorang
             $term->nama,
             $this->indikator->putusStudi($prodi, $term),
         ]], 'Ambang non-aktif berturut-turut belum diterapkan — lihat docs/LKPS-DEFINISI.md butir 7.');
+    }
+
+    /**
+     * CPL attainment of the programme over the same window of years.
+     *
+     * Read from the stored attainment of finalised classes, never computed
+     * from marks here. A programme that has mapped nothing gets the table
+     * with its reason rather than a row of zeroes: an unmeasured CPL is not a
+     * CPL nobody attained.
+     *
+     * @param array<int, int> $tahun
+     */
+    private function capaianPembelajaran(Prodi $prodi, array $tahun): array
+    {
+        $baris = $this->capaian->perCplProdi($prodi, $tahun);
+
+        if ($baris->isEmpty()) {
+            return [
+                'kunci' => 'capaian_pembelajaran',
+                'nomor' => config('lkps.borang.capaian_pembelajaran.nomor'),
+                'judul' => (string) config('lkps.borang.capaian_pembelajaran.judul', __('capaian.lkps.judul')),
+                'terisi' => false,
+                'alasan' => __('capaian.lkps.tanpa_data'),
+                'kolom' => [],
+                'baris' => [],
+                'catatan' => null,
+            ];
+        }
+
+        return $this->tabel('capaian_pembelajaran', __('capaian.lkps.kolom'), $baris
+            ->map(fn (array $b): array => [
+                $b['cpl']->kode,
+                $b['cpl']->deskripsi,
+                $b['terukur'],
+                $this->angka($b['rerata']),
+                $b['tercapai'],
+                $this->angka($b['terukur'] > 0 ? 100 * $b['tercapai'] / $b['terukur'] : null),
+            ])
+            ->all(), __('capaian.lkps.catatan', [
+                'tahun' => implode(', ', $tahun),
+                'ambang' => number_format($this->capaian->ambang(), 0, ',', '.'),
+            ]));
     }
 
     /* ---------------------------------------------------------------------

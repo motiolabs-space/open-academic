@@ -149,6 +149,8 @@
         </form>
     </x-card>
 
+    @include('dosen._pemetaan-capaian')
+
     <form
         method="POST"
         action="{{ route('dosen.nilai.simpan', $kelas) }}"

@@ -6,11 +6,13 @@ namespace App\Services\Akademik;
 
 use App\Enums\StatusRps;
 use App\Exceptions\AturanAkademikException;
+use App\Models\Akademik\CpmkVersi;
 use App\Models\Akademik\KelasKuliah;
 use App\Models\Akademik\MataKuliah;
 use App\Models\Akademik\ProdiCpl;
 use App\Models\Akademik\Rps;
 use App\Models\Akademik\RpsPertemuan;
+use App\Models\Akademik\SubCpmk;
 use App\Models\Akademik\TahunAkademik;
 use App\Models\Sdm\Dosen;
 use Illuminate\Database\UniqueConstraintViolationException;
@@ -35,6 +37,8 @@ use Illuminate\Support\Facades\DB;
  */
 class RpsService
 {
+    public function __construct(private readonly CpmkService $cpmk) {}
+
     /** Starts a draft, or returns the draft already in progress. */
     public function mulai(
         MataKuliah $mataKuliah,
@@ -47,13 +51,26 @@ class RpsService
             ->where('status', StatusRps::Draft->value)
             ->first();
 
+        $versiCpmk = $this->cpmk->berlakuUntuk($mataKuliah);
+
         if ($draft !== null) {
+            /*
+             * A draft follows the CPMK version in force.
+             *
+             * The programme may publish a revised set while a lecturer is half
+             * way through a plan; the draft is still editable, so it moves to
+             * the new set rather than being published against an archived one.
+             */
+            if ($versiCpmk !== null && $draft->cpmk_versi_id !== $versiCpmk->id) {
+                $this->pasangCpmk($draft, $versiCpmk);
+            }
+
             return $draft;
         }
 
         $berlaku = Rps::untuk($mataKuliah->id, $term->id);
 
-        return DB::transaction(function () use ($mataKuliah, $term, $penyusun, $berlaku): Rps {
+        return DB::transaction(function () use ($mataKuliah, $term, $penyusun, $berlaku, $versiCpmk): Rps {
             $rps = Rps::create([
                 'mata_kuliah_id' => $mataKuliah->id,
                 'tahun_akademik_id' => $term->id,
@@ -72,6 +89,10 @@ class RpsService
                 $this->salinDari($berlaku, $rps);
             }
 
+            if ($versiCpmk !== null) {
+                $this->pasangCpmk($rps, $versiCpmk);
+            }
+
             return $rps->fresh(['pertemuan', 'cpl']);
         });
     }
@@ -85,6 +106,11 @@ class RpsService
     {
         if (!$rps->status->dapatDisunting()) {
             throw new AturanAkademikException('Hanya draf yang dapat diterbitkan.');
+        }
+
+        if ($rps->cpmk_versi_id !== null) {
+            $this->selaraskanCpl($rps);
+            $rps->unsetRelation('cpl');
         }
 
         $this->pastikanLengkap($rps);
@@ -132,10 +158,28 @@ class RpsService
         $rps->update(['deskripsi' => $deskripsi, 'pustaka' => $pustaka]);
     }
 
-    /** Replaces the whole weekly plan in one go. */
+    /**
+     * Replaces the whole weekly plan in one go.
+     *
+     * A week may name the sub-CPMK it teaches, from the plan's own CPMK
+     * version — the same rows the grade components measure.
+     */
     public function simpanPertemuan(Rps $rps, array $baris): void
     {
         $this->pastikanDraft($rps);
+
+        $subSah = $rps->cpmk_versi_id === null
+            ? collect()
+            : SubCpmk::query()
+                ->whereHas('cpmk', fn ($q) => $q->where('cpmk_versi_id', $rps->cpmk_versi_id))
+                ->pluck('id')
+                ->flip();
+
+        foreach ($baris as $satu) {
+            if (filled($satu['sub_cpmk_id'] ?? null) && !$subSah->has((int) $satu['sub_cpmk_id'])) {
+                throw new AturanAkademikException(__('capaian.galat.sub_bukan_versi_rps'));
+            }
+        }
 
         DB::transaction(function () use ($rps, $baris): void {
             $rps->pertemuan()->delete();
@@ -144,6 +188,7 @@ class RpsService
                 RpsPertemuan::create([
                     'rps_id' => $rps->id,
                     'pertemuan_ke' => (int) $satu['pertemuan_ke'],
+                    'sub_cpmk_id' => filled($satu['sub_cpmk_id'] ?? null) ? (int) $satu['sub_cpmk_id'] : null,
                     'kemampuan_akhir' => $satu['kemampuan_akhir'],
                     'bahan_kajian' => $satu['bahan_kajian'] ?? null,
                     'metode' => $satu['metode'] ?? null,
@@ -162,6 +207,12 @@ class RpsService
     public function simpanCpl(Rps $rps, array $cpl): void
     {
         $this->pastikanDraft($rps);
+
+        if ($rps->cpmk_versi_id !== null) {
+            // One source: a plan attached to a CPMK version answers for the
+            // CPL its CPMK feed, and nothing typed here can say otherwise.
+            throw new AturanAkademikException(__('capaian.galat.cpl_dari_cpmk'));
+        }
 
         $prodiId = $rps->mataKuliah->prodi_id;
 
@@ -200,6 +251,14 @@ class RpsService
             ->join('komponen_nilai', 'komponen_nilai.id', '=', 'komponen_nilai_cpl.komponen_nilai_id')
             ->where('komponen_nilai.kelas_kuliah_id', $kelas->id)
             ->pluck('komponen_nilai_cpl.prodi_cpl_id')
+
+            // ...and through the CPMK a component measures, which is how every
+            // mapping since ADR-038 reaches a CPL.
+            ->merge(DB::table('komponen_nilai_cpmk')
+                ->join('komponen_nilai', 'komponen_nilai.id', '=', 'komponen_nilai_cpmk.komponen_nilai_id')
+                ->join('cpmk_cpl', 'cpmk_cpl.cpmk_id', '=', 'komponen_nilai_cpmk.cpmk_id')
+                ->where('komponen_nilai.kelas_kuliah_id', $kelas->id)
+                ->pluck('cpmk_cpl.prodi_cpl_id'))
             ->unique()
             ->flip();
 
@@ -246,6 +305,10 @@ class RpsService
             $pesan[] = 'Belum ada CPL yang dibebankan pada mata kuliah ini.';
         }
 
+        if ($rps->cpmk_versi_id !== null && !(CpmkVersi::find($rps->cpmk_versi_id)?->berlaku() ?? false)) {
+            $pesan[] = __('capaian.kekurangan.rps_versi_usang');
+        }
+
         return $pesan;
     }
 
@@ -280,6 +343,9 @@ class RpsService
             RpsPertemuan::create([
                 'rps_id' => $ke->id,
                 'pertemuan_ke' => $p->pertemuan_ke,
+                // Carried over while the plans share a CPMK version;
+                // pasangCpmk() clears it when the new draft moves to another.
+                'sub_cpmk_id' => $p->sub_cpmk_id,
                 'kemampuan_akhir' => $p->kemampuan_akhir,
                 'bahan_kajian' => $p->bahan_kajian,
                 'metode' => $p->metode,
@@ -297,6 +363,59 @@ class RpsService
         $ke->update([
             'deskripsi' => $dari->deskripsi,
             'pustaka' => $dari->pustaka,
+            'cpmk_versi_id' => $dari->cpmk_versi_id,
         ]);
+    }
+
+    /**
+     * Attaches a draft plan to a CPMK version and derives its CPL from it.
+     *
+     * Weeks that named a sub-CPMK of another version lose the link; the text
+     * of the week stays, so nothing the lecturer wrote disappears.
+     */
+    private function pasangCpmk(Rps $rps, CpmkVersi $versi): void
+    {
+        DB::transaction(function () use ($rps, $versi): void {
+            $rps->update(['cpmk_versi_id' => $versi->id]);
+
+            $subSah = SubCpmk::query()
+                ->whereHas('cpmk', fn ($q) => $q->where('cpmk_versi_id', $versi->id))
+                ->pluck('id');
+
+            $rps->pertemuan()
+                ->whereNotNull('sub_cpmk_id')
+                ->whereNotIn('sub_cpmk_id', $subSah)
+                ->update(['sub_cpmk_id' => null]);
+
+            $this->selaraskanCpl($rps);
+        });
+    }
+
+    /**
+     * rps_cpl as a reflection of the attached version.
+     *
+     * Kept written rather than dropped, because the plan screens and plans
+     * written before ADR-038 read rps_cpl. The CPMK text per CPL is the
+     * version's own wording.
+     */
+    private function selaraskanCpl(Rps $rps): void
+    {
+        $versi = CpmkVersi::with(CpmkVersi::MUAT)->find($rps->cpmk_versi_id);
+
+        if ($versi === null) {
+            return;
+        }
+
+        $perCpl = [];
+
+        foreach ($versi->cpmk as $cpmk) {
+            foreach ($cpmk->cpl as $cpl) {
+                $perCpl[$cpl->id][] = $cpmk->kode.' '.$cpmk->rumusan;
+            }
+        }
+
+        $rps->cpl()->sync(collect($perCpl)
+            ->map(fn (array $rumusan): array => ['rumusan' => implode("\n", $rumusan)])
+            ->all());
     }
 }

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\KoreksiNilaiRequest;
 use App\Models\Akademik\Nilai;
 use App\Services\Akademik\PenilaianService;
 use App\Support\Portal;
@@ -37,7 +38,11 @@ class KoreksiNilaiController extends Controller
             $cari = '%'.$request->string('cari').'%';
 
             $hasil = Nilai::query()
-                ->with(['mahasiswa.prodi', 'kelasKuliah.mataKuliah', 'kelasKuliah.tahunAkademik', 'krsDetail'])
+                ->with([
+                    'mahasiswa.prodi', 'kelasKuliah.mataKuliah', 'kelasKuliah.tahunAkademik',
+                    // Component scores, so a correction can go through them.
+                    'kelasKuliah.komponenNilai', 'krsDetail.nilaiKomponen',
+                ])
                 ->where('is_final', true)
                 ->cari($request->string('cari'), ['mahasiswa.nama', 'mahasiswa.nim'])
                 ->orderByDesc('id')
@@ -54,25 +59,27 @@ class KoreksiNilaiController extends Controller
         ]);
     }
 
-    public function koreksi(Request $request, Nilai $nilai): RedirectResponse
+    public function koreksi(KoreksiNilaiRequest $request, Nilai $nilai): RedirectResponse
     {
         $this->izin('nilai.manage');
 
-        $validated = $request->validate([
-            'nilai_angka' => ['required', 'numeric', 'min:0', 'max:100'],
-            'alasan' => ['required', 'string', 'min:10', 'max:500'],
-        ], [
-            'alasan.required' => 'Koreksi nilai final wajib disertai alasan — inilah satu-satunya '
-                .'keterangan yang tersisa bila suatu saat perubahan ini dipertanyakan.',
-            'alasan.min' => 'Alasan terlalu singkat untuk berguna enam bulan dari sekarang.',
-        ]);
-
+        $data = $request->koreksi();
         $sebelum = $nilai->nilai_huruf?->value;
+
+        if ($data->lewatKomponen()) {
+            $hasil = $this->penilaian->koreksiKomponen($nilai, $data->komponen, $data->alasan, Portal::user());
+
+            return back()->with('sukses', __('capaian.koreksi.sukses_komponen', [
+                'nama' => $nilai->mahasiswa->nama,
+                'mk' => $nilai->kelasKuliah->mataKuliah->nama,
+                'huruf' => $hasil->nilai_huruf?->value ?? '—',
+            ]));
+        }
 
         $this->penilaian->koreksi(
             $nilai,
-            (float) $validated['nilai_angka'],
-            $validated['alasan'],
+            (float) $data->nilaiAngka,
+            $data->alasan,
             Portal::user(),
         );
 

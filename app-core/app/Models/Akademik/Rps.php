@@ -51,6 +51,12 @@ class Rps extends Model
         return $this->belongsTo(TahunAkademik::class);
     }
 
+    /** The course outcome set this plan teaches — the same rows grades are measured against. */
+    public function cpmkVersi(): BelongsTo
+    {
+        return $this->belongsTo(CpmkVersi::class);
+    }
+
     public function pertemuan(): HasMany
     {
         return $this->hasMany(RpsPertemuan::class)->orderBy('pertemuan_ke');

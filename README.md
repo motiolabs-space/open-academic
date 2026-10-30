@@ -82,6 +82,7 @@ Yang sudah ada di `main` dan dapat dipakai hari ini. Pengguna: **S** staf ·
 | Presensi sesi dengan QR, minimum kehadiran untuk UAS | D, M |
 | Penilaian: rencana evaluasi berbobot, finalisasi, koreksi nilai ter-audit | D, S |
 | RPS, jurnal & berita acara perkuliahan, analitik kelas dan capaian CPL | D; M melihat capaian |
+| Kurikulum berbasis capaian (OBE): CPL → CPMK → sub-CPMK berversi per kurikulum, komponen nilai dipetakan ke sub-CPMK dengan peringatan cakupan, capaian CPMK/CPL tersimpan saat nilai final, rekap kelas, prodi per angkatan, dan mahasiswa + CSV | S, D; M melihat capaian |
 | KHS, transkrip PDF, penutupan semester (IPS/IPK dibekukan) | M, S |
 | Jadwal UTS/UAS: pengawas, kursi, laporan bentrok, kartu ujian | S; D, M |
 | Kalender akademik + langganan iCalendar | S, D, M, Pub |

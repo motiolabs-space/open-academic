@@ -31,6 +31,12 @@ class RpsPertemuan extends Model
         return $this->belongsTo(Rps::class);
     }
 
+    /** The sub-CPMK this week teaches, when the plan is attached to a CPMK version. */
+    public function subCpmk(): BelongsTo
+    {
+        return $this->belongsTo(SubCpmk::class);
+    }
+
     /**
      * Actual meetings that delivered this planned session.
      *

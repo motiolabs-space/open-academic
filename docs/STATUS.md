@@ -4,6 +4,61 @@
 
 ---
 
+## Sesi 68 — 2026-10-29 · Kurikulum berbasis capaian: CPL → CPMK → sub-CPMK
+
+Branch `feature/kurikulum-obe-cpmk`, satu PR. Keputusan: ADR-038 §1–§6. Satu
+migrasi baru (append-only, `2026_10_31_100000`): tujuh tabel dan dua kolom.
+Kesenjangan pasar dari komparasi modul 28 Oktober; ROADMAP #58.
+
+- **Hierarki berversi** (`CpmkService`). `cpmk_versi` per kurikulum × mata
+  kuliah, draf → berlaku → diarsipkan (`StatusCpmk`); `cpmk` → `sub_cpmk`
+  (bobot per seratus terhadap CPMK) dan `cpmk_cpl` (bobot kontribusi ke CPL).
+  Versi berlaku beku; revisi menyalin ke baris baru dan mengarsipkan yang lama
+  tanpa menyentuhnya. Terbit hanya bila bobot menutup 100 (sub per CPMK, CPMK
+  per CPL) — semua kekurangan disebut sekaligus. Disusun prodi
+  (`/admin/cpmk`, `master.manage`) dan dosen pengampu dari RPS
+  (`/dosen/rps/cpmk/{mk}`) dengan satu penyunting Alpine; `CpmkVersiPolicy`.
+- **Penilaian berbasis CPMK** (`CapaianService`). `komponen_nilai_cpmk`:
+  komponen → sub-CPMK (atau CPMK tanpa sub) berporsi, per komponen 100 atau
+  kosong. Kartu "Pemetaan Capaian" di layar nilai: matriks komponen × sasaran,
+  peringatan sub-CPMK tak terukur, komponen tanpa pemetaan, dan pemetaan versi
+  lama. Saat finalisasi — di dalam transaksinya — capaian per CPMK (dengan
+  `cakupan`) dan per CPL per mahasiswa **disimpan** di
+  `capaian_cpmk_mahasiswa`/`capaian_cpl_mahasiswa`; perhitungan pertama
+  disisipkan massal dan diaudit sekali (`capaian_dihitung`).
+- **Koreksi.** `PenilaianService::koreksiKomponen()` + `KoreksiNilaiRequest`/
+  `KoreksiNilaiData`: skor komponen dikoreksi, nilai akhir dihitung ulang,
+  capaian baris itu dihitung ulang lewat model (setiap angka yang bergeser
+  diaudit lama/baru). Koreksi nilai akhir saja tetap ada dan tidak menggeser
+  capaian; layar koreksi menyebutnya.
+- **RPS satu sumber.** `rps.cpmk_versi_id`, `rps_pertemuan.sub_cpmk_id`. RPS
+  memasang versi berlaku; draf RPS pindah ke versi yang baru terbit; CPL
+  diturunkan dari CPMK (`rps_cpl` cerminan, `simpanCpl` menolak isian
+  terpisah); `cplTanpaPengukur` membaca juga pemetaan CPMK.
+- **Rekap tiga portal** (`RekapCapaianService`, `CapaianCplMahasiswaPolicy`).
+  Kelas (`/dosen/capaian`, `/dosen/capaian/{kelas}`, tautan dari analitik),
+  prodi per angkatan (`/admin/capaian`, staf `nilai.view`), mahasiswa
+  (`/mahasiswa/capaian`: CPL lintas MK dibobot SKS dan CPMK per MK, di samping
+  lensa penguasaan berjalan lama). CSV lewat `App\Support\EksporTabel` (ADR-037), yang menulis lewat `Csv`. LKPS: tabel
+  `capaian_pembelajaran` dari baris tersimpan, atau alasan bila kosong.
+- **Demo** (`CapaianSeeder`, sebelum `RpsSeeder`). Prodi pertama: setiap MK
+  kurikulum aktif punya tiga CPMK (dua dengan dua sub-CPMK, satu tanpa sub),
+  kelas final dipetakan dan capaiannya tersimpan, satu kelas berjalan sengaja
+  menyisakan Sub-CPMK-2.1 tak terukur. Prodi kedua dibiarkan belum mengadopsi.
+- **Juga:** `CLAUDE.md` §11 baris Fase 4 kini memakai penomoran IKU 2026.
+
+**Tes baru:** CpmkServiceTest 15, CapaianServiceTest 15, RekapCapaianTest 16,
+ObeDemoTest 3; SmokeLayarTest +3 layar. Suite paralel sesudah merge `main` (Sesi 67): 2062 lulus. `AnggaranKueriSkalaTest` `/dosen/nilai/{kelas}` 16 → 22 (kartu pemetaan, datar).
+
+### Belum
+
+Alur persetujuan kaprodi antara draf dan terbit (bila kampus memintanya);
+memindahkan pemetaan langsung komponen → CPL lama ke CPMK (dibiarkan terbaca
+sebagai pengukuran berjalan). Masuk `main` sesudah Sesi 69 dan 71, tetapi
+nomornya tetap 68 (ADR-038, ROADMAP #58) dan entrinya diletakkan paling atas.
+
+---
+
 ## Sesi 71 — 2026-10-30 · Data IKU 8 dan IKU 6, masa berlaku akreditasi prodi (P7 #47, #48, #50)
 
 Branch `feature/p7-data-iku`, satu PR, tiga commit. Keputusan: ADR-041 §1–§3.
