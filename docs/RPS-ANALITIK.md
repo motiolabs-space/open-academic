@@ -61,6 +61,55 @@ ke mana-mana.
 
 ---
 
+## CPMK dan Sub-CPMK — Kurikulum Berbasis Capaian (ADR-038)
+
+Sejak 29 Oktober 2026 lapis di bawah CPL bukan teks bebas lagi:
+
+```
+CPL prodi (prodi_cpl)
+  └─ CPMK per mata kuliah per kurikulum (cpmk_versi → cpmk, cpmk_cpl.bobot)
+       └─ sub-CPMK (sub_cpmk.bobot, berjumlah 100 dalam satu CPMK)
+            └─ diukur komponen nilai (komponen_nilai_cpmk.porsi, berjumlah 100 per komponen)
+```
+
+- **Berversi per kurikulum, beku setelah berlaku.** Disusun prodi di
+  `/admin/cpmk` atau dosen pengampu dari RPS (`/dosen/rps/cpmk/{mk}`) — satu
+  penyunting. Terbit hanya bila sub-CPMK satu CPMK berjumlah 100 dan, untuk
+  setiap CPL, bobot CPMK yang mendukungnya berjumlah 100. Revisi = versi baru;
+  versi lama diarsipkan, barisnya tidak disentuh.
+- **RPS satu sumber.** RPS memasang versi berlaku; CPL-nya diturunkan dari CPMK
+  (`rps_cpl` menjadi cerminan), dan tiap pertemuan dapat menautkan sub-CPMK.
+- **Rencana evaluasi** menampilkan matriks komponen × sub-CPMK. Sub-CPMK yang
+  tidak diukur komponen mana pun diperingatkan di layar nilai dan di rekap.
+- **Disimpan saat final.** Capaian per CPMK (dengan `cakupan`) dan per CPL per
+  mahasiswa ditulis di dalam transaksi finalisasi, lalu hanya berubah lewat
+  koreksi nilai per komponen (`/admin/koreksi-nilai`, "Koreksi lewat
+  komponen"). Koreksi nilai akhir saja tidak menggeser capaian — capaian
+  diukur dari komponen.
+
+Contoh satu mahasiswa, Tugas 80 / UTS 60 / UAS 90 (bobot 30/30/40):
+
+```
+Tugas → Sub 1.1 (100%)          Sub 1.1 = 80
+UTS   → Sub 1.2 (50%), Sub 2.1 (50%)   Sub 1.2 = Sub 2.1 = 60
+UAS   → Sub 2.2 (50%), CPMK-3 (50%)    Sub 2.2 = CPMK-3 = 90
+
+CPMK-1 = 50%·80 + 50%·60 = 70        (Sub 1.1 50, Sub 1.2 50)
+CPMK-2 = 40%·60 + 60%·90 = 78        (Sub 2.1 40, Sub 2.2 60)
+CPL-A  = 60%·70 + 40%·78 = 73,2      (CPMK-1 60, CPMK-2 40)
+CPL-B  = 50%·78 + 50%·90 = 84        (CPMK-2 50, CPMK-3 50)
+```
+
+Lintas mata kuliah, CPL mahasiswa dibobot SKS. Rekap: kelas
+(`/dosen/capaian/{kelas}`), prodi per angkatan (`/admin/capaian`), mahasiswa
+(`/mahasiswa/capaian`), masing-masing dengan CSV; tabel capaian pembelajaran di
+borang LKPS membaca baris yang sama.
+
+Pemetaan langsung komponen → CPL di atas tetap terbaca untuk kelas lama, sebagai
+"pengukuran berjalan"; pemetaan baru memakai CPMK.
+
+---
+
 ## Jurnal Perkuliahan
 
 Presensi menjawab **siapa yang hadir**. Jurnal menjawab **apa yang diajarkan** —
@@ -182,4 +231,18 @@ resources/views/mahasiswa/penguasaan.blade.php
 
 database/seeders/Demo/RpsSeeder.php
 tests/Feature/Akademik/RpsAnalitikTest.php
+
+# Kurikulum berbasis capaian (ADR-038)
+database/migrations/2026_10_29_150000_create_capaian_mata_kuliah_tables.php
+app/Enums/StatusCpmk.php
+app/Models/Akademik/{CpmkVersi,Cpmk,SubCpmk,KomponenNilaiCpmk,CapaianCpmkMahasiswa,CapaianCplMahasiswa}.php
+app/Services/Akademik/CpmkService.php        — hierarki, versi, sasaran ukur
+app/Services/Akademik/CapaianService.php     — pemetaan, cakupan, perhitungan
+app/Services/Akademik/RekapCapaianService.php — rekap kelas/prodi/mahasiswa, LKPS
+app/Policies/Akademik/{CpmkVersiPolicy,CapaianCplMahasiswaPolicy}.php
+app/Http/Controllers/{Admin,Dosen}/{CpmkController,CapaianController}.php
+resources/views/capaian/_editor.blade.php    — penyunting bersama
+lang/id/capaian.php
+database/seeders/Demo/CapaianSeeder.php
+tests/Feature/Akademik/{CpmkService,CapaianService,RekapCapaian,ObeDemo}Test.php
 ```

@@ -8,10 +8,11 @@ use App\Http\Controllers\Controller;
 use App\Models\Akademik\CapaianCplMahasiswa;
 use App\Models\Akademik\Prodi;
 use App\Services\Akademik\RekapCapaianService;
-use App\Support\Csv;
+use App\Support\EksporTabel;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
@@ -45,7 +46,7 @@ class CapaianController extends Controller
         ]);
     }
 
-    public function ekspor(Request $request): StreamedResponse
+    public function ekspor(Request $request): StreamedResponse|BinaryFileResponse
     {
         $this->authorize('viewAny', CapaianCplMahasiswa::class);
 
@@ -54,33 +55,26 @@ class CapaianController extends Controller
         abort_if($prodi === null, 404);
 
         $hasil = $this->rekap->prodi($prodi, $angkatan);
-        $pemisah = (string) config('bkd.ekspor.pemisah_csv');
-        $nama = sprintf('capaian-cpl-%s%s.csv', $prodi->kode, $angkatan === null ? '' : '-'.$angkatan);
 
-        return response()->streamDownload(function () use ($hasil, $pemisah): void {
-            $keluaran = fopen('php://output', 'wb');
-            fwrite($keluaran, "\xEF\xBB\xBF");
-
-            Csv::tulis($keluaran, [
+        return EksporTabel::unduh(
+            sprintf('capaian-cpl-%s%s', $prodi->kode, $angkatan === null ? '' : '-'.$angkatan),
+            'csv',
+            [
                 __('capaian.rekap.nim'),
                 __('capaian.rekap.nama'),
                 __('capaian.rekap.angkatan'),
                 ...$hasil['cpl']->pluck('kode')->all(),
-            ], $pemisah);
-
-            foreach ($hasil['mahasiswa'] as $baris) {
-                Csv::tulis($keluaran, [
-                    $baris['mahasiswa']->nim,
-                    $baris['mahasiswa']->nama,
-                    $baris['mahasiswa']->angkatan,
-                    ...$hasil['cpl']->map(fn ($c): string => isset($baris['cpl'][$c->id])
-                        ? number_format($baris['cpl'][$c->id], 2, ',', '')
-                        : '')->all(),
-                ], $pemisah);
-            }
-
-            fclose($keluaran);
-        }, $nama, ['Content-Type' => 'text/csv; charset=UTF-8']);
+            ],
+            $hasil['mahasiswa']->map(fn (array $baris): array => [
+                $baris['mahasiswa']->nim,
+                $baris['mahasiswa']->nama,
+                $baris['mahasiswa']->angkatan,
+                // Decimal comma: the people opening the file read Indonesian numbers.
+                ...$hasil['cpl']->map(fn ($c): string => isset($baris['cpl'][$c->id])
+                    ? number_format($baris['cpl'][$c->id], 2, ',', '')
+                    : '')->all(),
+            ]),
+        );
     }
 
     /** @return array{0: Collection<int, Prodi>, 1: Prodi|null, 2: int|null} */

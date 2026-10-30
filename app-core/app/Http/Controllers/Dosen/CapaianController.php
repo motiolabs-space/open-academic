@@ -10,10 +10,11 @@ use App\Models\Akademik\CapaianCplMahasiswa;
 use App\Models\Akademik\KelasKuliah;
 use App\Services\Akademik\CapaianService;
 use App\Services\Akademik\RekapCapaianService;
-use App\Support\Csv;
+use App\Support\EksporTabel;
 use App\Support\Portal;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
@@ -68,36 +69,28 @@ class CapaianController extends Controller
         ]);
     }
 
-    public function ekspor(KelasKuliah $kelas): StreamedResponse
+    public function ekspor(KelasKuliah $kelas): StreamedResponse|BinaryFileResponse
     {
         $this->authorize('viewKelas', [CapaianCplMahasiswa::class, $kelas]);
 
         $rekap = $this->rekap->kelas($kelas);
-        $pemisah = (string) config('bkd.ekspor.pemisah_csv');
-        $nama = sprintf('capaian-%s-%s-%s.csv', $kelas->tahunAkademik->kode, $kelas->mataKuliah->kode, $kelas->kode);
 
-        return response()->streamDownload(function () use ($rekap, $pemisah): void {
-            $keluaran = fopen('php://output', 'wb');
-            fwrite($keluaran, "\xEF\xBB\xBF");
-
-            Csv::tulis($keluaran, [
+        return EksporTabel::unduh(
+            sprintf('capaian-%s-%s-%s', $kelas->tahunAkademik->kode, $kelas->mataKuliah->kode, $kelas->kode),
+            'csv',
+            [
                 __('capaian.rekap.nim'),
                 __('capaian.rekap.nama'),
                 ...$rekap['cpmk']->pluck('kode')->all(),
                 ...$rekap['cpl']->pluck('kode')->all(),
-            ], $pemisah);
-
-            foreach ($rekap['mahasiswa'] as $baris) {
-                Csv::tulis($keluaran, [
-                    $baris['mahasiswa']->nim,
-                    $baris['mahasiswa']->nama,
-                    ...$rekap['cpmk']->map(fn ($c) => self::angka($baris['cpmk'][$c->id] ?? null))->all(),
-                    ...$rekap['cpl']->map(fn ($c) => self::angka($baris['cpl'][$c->id] ?? null))->all(),
-                ], $pemisah);
-            }
-
-            fclose($keluaran);
-        }, $nama, ['Content-Type' => 'text/csv; charset=UTF-8']);
+            ],
+            $rekap['mahasiswa']->map(fn (array $baris): array => [
+                $baris['mahasiswa']->nim,
+                $baris['mahasiswa']->nama,
+                ...$rekap['cpmk']->map(fn ($c): string => self::angka($baris['cpmk'][$c->id] ?? null))->all(),
+                ...$rekap['cpl']->map(fn ($c): string => self::angka($baris['cpl'][$c->id] ?? null))->all(),
+            ]),
+        );
     }
 
     public function petakan(PemetaanCapaianRequest $request, KelasKuliah $kelas): RedirectResponse
