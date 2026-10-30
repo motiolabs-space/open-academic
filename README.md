@@ -74,7 +74,7 @@ Yang sudah ada di `main` dan dapat dipakai hari ini. Pengguna: **S** staf ·
 
 | Fitur | Pengguna |
 |---|---|
-| Master akademik: tahun akademik, fakultas, prodi, kurikulum berversi, mata kuliah + prasyarat, CPL, gedung & ruang | S |
+| Master akademik: tahun akademik, fakultas, prodi beserta riwayat akreditasi bertanggal, kurikulum berversi, mata kuliah + prasyarat, CPL, gedung & ruang | S |
 | Kelas & jadwal kuliah dengan deteksi bentrok ruang dan dosen; pemanfaatan ruang dan pencarian ruang kosong | S; D, M melihat |
 | Padanan mata kuliah, kuliah paket, kurikulum konsentrasi | S, M |
 | KRS: katalog, batas SKS dari IPS, cek prasyarat & kuota, revisi, persetujuan dosen wali, kunci pembayaran minimum | M, D |
@@ -134,7 +134,7 @@ Yang sudah ada di `main` dan dapat dipakai hari ini. Pengguna: **S** staf ·
 |---|---|
 | Akun dosen & staf, unit kerja | S |
 | Riwayat kepegawaian 14 jenis: diajukan dosen, divalidasi staf | D, S |
-| Portofolio dan penugasan dosen | D |
+| Portofolio dan penugasan dosen, termasuk publikasi berindeks & kuartil dan keterlibatan dalam penyusunan kebijakan | D, S |
 | BKD dengan asesor dan pengesahan; ekspor berkas untuk SISTER | D, S |
 | Buku besar angka kredit (unsur A–E) dan ekspor penyetaraan | S; D melihat |
 | EDOM: kuesioner dosen oleh mahasiswa, jawaban anonim | S, M, D |
