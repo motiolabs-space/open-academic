@@ -254,6 +254,8 @@ it('membuka layar admin dalam anggaran kueri', function (string $url, int $angga
     ['/admin/surat', 25],
     ['/admin/helpdesk', 20],
     ['/admin/helpdesk/pengaturan', 14],
+    // Staf sebagai pemohon: layar pemohon yang sama dengan portal mahasiswa.
+    ['/admin/tiket-saya', 20],
     ['/admin/kuesioner', 14],
     ['/admin/kuesioner-saya', 14],
     ['/admin/konversi', 25],

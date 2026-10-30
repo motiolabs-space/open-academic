@@ -125,6 +125,31 @@
                     <x-field :label="__('helpdesk.form.lampiran')" name="lampiran" type="file"
                         :hint="__('helpdesk.form.lampiran_hint', ['kb' => config('berkas.maks_kb')])" />
 
+                    {{-- Front-desk officers only. The ticket becomes the student's
+                         or lecturer's; the officer is recorded beside it. --}}
+                    @if ($bolehAtasNama)
+                        <fieldset class="rounded-card border border-line px-3 py-3" x-data="{ atasNama: @js(old('atas_nama') === '1' ? '1' : '0') }">
+                            <legend class="px-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-ink-muted">{{ __('helpdesk.staf.atas_nama_judul') }}</legend>
+
+                            <div class="flex flex-wrap gap-4 text-[13px]">
+                                <label class="flex items-center gap-2">
+                                    <input type="radio" name="atas_nama" value="0" class="accent-navy" x-model="atasNama" @checked(old('atas_nama') !== '1')>
+                                    {{ __('helpdesk.staf.atas_nama_diri') }}
+                                </label>
+                                <label class="flex items-center gap-2">
+                                    <input type="radio" name="atas_nama" value="1" class="accent-navy" x-model="atasNama" @checked(old('atas_nama') === '1')>
+                                    {{ __('helpdesk.staf.atas_nama_jenis') }}
+                                </label>
+                            </div>
+
+                            <div class="mt-3" x-show="atasNama === '1'" x-cloak>
+                                <x-field :label="__('helpdesk.staf.atas_nama_identitas')" name="atas_nama_identitas" />
+                            </div>
+
+                            <p class="mt-2 text-[11.5px] leading-relaxed text-ink-faint">{{ __('helpdesk.staf.atas_nama_hint') }}</p>
+                        </fieldset>
+                    @endif
+
                     <x-button type="submit" class="w-full">{{ __('helpdesk.form.kirim') }}</x-button>
                 </form>
             </x-card>

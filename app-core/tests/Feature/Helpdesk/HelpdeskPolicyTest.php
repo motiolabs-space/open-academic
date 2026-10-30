@@ -96,10 +96,19 @@ describe('gate', function () {
             ->and(Gate::forUser($this->baak)->allows('manage', HelpdeskTiket::class))->toBeTrue();
     });
 
-    it('pemohon dapat membuat; staf tidak', function () {
+    it('pemohon dapat membuat, termasuk staf pemegang helpdesk.ajukan (sejak Sesi 69)', function () {
+        $tanpaIzin = Staff::factory()->create();
+
         expect(Gate::forUser($this->saya)->allows('create', HelpdeskTiket::class))->toBeTrue()
             ->and(Gate::forUser($this->dosen)->allows('create', HelpdeskTiket::class))->toBeTrue()
-            ->and(Gate::forUser($this->baak)->allows('create', HelpdeskTiket::class))->toBeFalse();
+            ->and(Gate::forUser($this->baak)->allows('create', HelpdeskTiket::class))->toBeTrue()
+            ->and(Gate::forUser($tanpaIzin)->allows('create', HelpdeskTiket::class))->toBeFalse();
+    });
+
+    it('mencatat atas nama orang lain hanya bagi petugas yang menangani tiket', function () {
+        expect(Gate::forUser($this->baak)->allows('createOnBehalf', HelpdeskTiket::class))->toBeTrue()
+            ->and(Gate::forUser($this->pimpinan)->allows('createOnBehalf', HelpdeskTiket::class))->toBeFalse()
+            ->and(Gate::forUser($this->saya)->allows('createOnBehalf', HelpdeskTiket::class))->toBeFalse();
     });
 });
 

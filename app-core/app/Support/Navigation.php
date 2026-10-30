@@ -121,6 +121,7 @@ final class Navigation
                     self::item('Dasbor', '▦', 'admin.dashboard'),
                     self::item(__('pengumuman.nav_staf'), '✉', 'admin.papan-pengumuman.index'),
                     self::item(__('kuesioner.isi.nav'), '☑', 'admin.kuesioner-saya.index'),
+                    self::item(__('helpdesk.staf.nav'), '?', 'admin.saya.helpdesk'),
                 ],
             ],
 

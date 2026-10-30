@@ -652,6 +652,13 @@ Route::middleware(['auth:staff', 'term.active'])->prefix('admin')->name('admin.'
     Route::put('/helpdesk/pengaturan/faq/{faq}', [Admin\HelpdeskPengaturanController::class, 'perbaruiFaq'])->name('helpdesk.faq.perbarui');
     Route::delete('/helpdesk/pengaturan/faq/{faq}', [Admin\HelpdeskPengaturanController::class, 'hapusFaq'])->name('helpdesk.faq.hapus');
 
+    // Staf sebagai pemohon: controller yang sama dengan portal mahasiswa dan
+    // dosen, terpisah dari antrean yang mereka kerjakan.
+    Route::get('/tiket-saya', [Helpdesk\TiketPemohonController::class, 'index'])->name('saya.helpdesk');
+    Route::post('/tiket-saya', [Helpdesk\TiketPemohonController::class, 'store'])->name('saya.helpdesk.store');
+    Route::get('/tiket-saya/{tiket}', [Helpdesk\TiketPemohonController::class, 'show'])->name('saya.helpdesk.show');
+    Route::post('/tiket-saya/{tiket}/balas', [Helpdesk\TiketPemohonController::class, 'balas'])->name('saya.helpdesk.balas');
+
     Route::get('/helpdesk', [Admin\HelpdeskController::class, 'index'])->name('helpdesk');
     Route::get('/helpdesk/{tiket}', [Admin\HelpdeskController::class, 'show'])->name('helpdesk.show');
     Route::post('/helpdesk/{tiket}/disposisi', [Admin\HelpdeskController::class, 'disposisi'])->name('helpdesk.disposisi');
