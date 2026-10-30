@@ -103,6 +103,8 @@ it('menerbitkan student.enrolled saat pendaftar PMB didaftarkan ulang', function
             'semester_masuk' => $this->term->kode,
             'jenis_daftar' => $mahasiswa->fresh()->jenis_daftar?->value,
             'status' => 'A',
+            // Only a re-NIM or readmission names an earlier registration (ADR-042 §3).
+            'mahasiswa_sebelumnya_uuid' => null,
         ]);
 
     // Queued and signed like every other event.
