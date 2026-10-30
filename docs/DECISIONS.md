@@ -1497,6 +1497,112 @@ Tidak ada panduan, templat, atau contoh berkas kementerian yang masuk repo
   yang diperbarui. Instalasi berjalan: `php artisan migrate` dan
   `db:seed --class=RolePermissionSeeder`.
 
+## ADR-039 — Empat layar pengelolaan: kuesioner, konsumen Bridge, klien SSO, tiket staf (2026-10-30)
+
+Inventaris kode 28 Oktober 2026 menemukan empat alur yang mesinnya ada tetapi
+layarnya tidak: kuesioner umum (ROADMAP menandainya ✅ tanpa satu rute pun),
+konsumen Bridge dan klien SSO (hanya lewat artisan), dan staf yang tidak dapat
+membuka tiket helpdesk. Satu ADR, satu bagian per layar.
+
+### 1. Kuesioner: terbit pertama membekukan; hasil anonim tertahan di bawah ambang
+
+- **Konteks.** `KuesionerService` hanya punya `isi()` dan `hasil()`. Layar kelola
+  harus memutuskan kapan instrumen boleh disunting, dan layar hasil harus
+  mempertahankan janji skema dua tabel — padahal agregat dari dua responden atau
+  urutan isian bebas sudah cukup untuk mengenali orang.
+- **Keputusan.** (1) Terbit pertama (`diterbitkan_at`) membekukan pertanyaan,
+  sasaran, prodi, dan ambang; nama, pengantar, dan periode tetap dapat diubah;
+  `anonim` tidak pernah dibaca saat memperbarui. (2) Sasaran = satu peran,
+  dipersempit ke satu prodi (`prodi_id`, staf tidak berprodi), diperiksa policy
+  *dan* `isi()`. (3) Ambang responden EDOM dibawa ke sini (`min_responden`,
+  bawaan `KUESIONER_MIN_RESPONDEN=5`, disimpan per kuesioner); di bawahnya hasil
+  dan ekspor kuesioner anonim tidak dihitung sama sekali. (4) Isian bebas
+  diurutkan abjad; ekspor anonim per pertanyaan (cacah per nilai/opsi, teks
+  terurut) tanpa id, waktu, atau nama; ekspor beridentitas satu baris bernama
+  per responden. (5) `isi()` kini memvalidasi rentang skala dan keanggotaan
+  opsi, dan tidak menyimpan isian opsional yang kosong sebagai jawaban.
+- **Konsekuensi.** Kampus yang ingin mengubah pertanyaan sesudah terbit membuat
+  kuesioner baru — hasil lama tetap menjawab pertanyaan lama. Daftar siapa yang
+  mengisi kuesioner anonim tidak ditampilkan; hanya jumlahnya. Sisa risiko di
+  tingkat tabel (id dan `created_at` jawaban anonim berurutan sejalan dengan
+  partisipasi, terbaca oleh pemegang akses basis data) tidak diperlihatkan layar
+  mana pun dan dicatat sebagai butir ROADMAP tersendiri.
+
+### 2. Kredensial integrasi: izin sendiri, tampil sekali, rahasia webhook terenkripsi
+
+- **Konteks.** `bridge.manage` (kirim ulang webhook) hanya dipegang super-admin,
+  tetapi menerbitkan token adalah hibah membaca data mahasiswa secara massal —
+  kepercayaan yang berbeda dari mengulang pengiriman. Rahasia webhook tersimpan
+  polos di `bridge_consumers` (sudah keluar dari log sejak ADR-033, tetapi tidak
+  dari dump basis data).
+- **Keputusan.** (1) Izin baru `integrasi.kredensial` untuk konsumen Bridge dan
+  klien SSO sekaligus; dipegang super-admin dan peran baru `tik` (Bridge,
+  kredensial, log, antrean helpdesk sendiri — tanpa data akademik/keuangan).
+  (2) Token dan rahasia muncul sekali: nilai polos hanya di nilai kembali
+  service, di-flash ke satu halaman yang dikirim `Cache-Control: no-store`.
+  Token Sanctum tersimpan sebagai SHA-256; rahasia webhook tidak dapat di-hash
+  (dipakai menandatangani), jadi di-cast `encrypted` dan baris lama dienkripsi
+  migrasi `2026_10_29_400100` (kolom melebar ke `text`). (3) Log mencatat
+  peristiwa (`token_issued`, `token_revoked`, `webhook_secret_rotated`) dengan
+  nama token, tidak pernah nilainya. (4) Token dicabut lewat konsumennya
+  (`$konsumen->tokens()->whereKey()`), bukan dari id saja. (5)
+  `openacademic:bridge-token` memakai service yang sama. (6) URL webhook harus
+  HTTPS kecuali loopback (`UriCallbackAman`, aturan yang sama dengan redirect
+  SSO).
+- **Konsekuensi.** Instalasi berjalan perlu menjalankan ulang
+  `RolePermissionSeeder` dan memberi peran `tik` kepada operator TI. Rotasi
+  rahasia webhook langsung mematahkan verifikasi di sisi konsumen sampai ia
+  diperbarui — layar mengatakannya sebelum tombol ditekan. Mengganti `APP_KEY`
+  kini juga mengharuskan rahasia webhook dirotasi.
+
+### 3. Klien SSO: catatan kampus di samping tabel Passport; pihak pertama akhirnya dihormati
+
+- **Konteks.** Layar SSO butuh tiga hal yang tidak dimiliki `oauth_clients`:
+  penanda pihak pertama, siapa yang mendaftarkan, dan jejak audit —
+  `HasLogAktivitas` menuntut kunci integer, sedangkan id klien UUID. Yang
+  tersingkap: `SSO_FIRST_PARTY` didokumentasikan sebagai "melewati layar
+  persetujuan", tetapi tidak ada kode yang membacanya saat otorisasi.
+  `Client::skipsAuthorization()` milik Passport selalu `false`.
+- **Keputusan.** (1) Tabel `sso_klien` (satu baris per klien, dibuat saat
+  pertama disentuh bagi klien lama) memegang `is_first_party`, pendaftar,
+  `rahasia_dirotasi_at`, dan `dicabut_at`, diaudit lewat trait biasa. (2)
+  `KlienOAuth extends Passport\Client`, didaftarkan `Passport::useClientModel()`,
+  melewati persetujuan bila id-nya ada di `SSO_FIRST_PARTY` *atau* penandanya
+  menyala, dan tidak pernah untuk klien yang dicabut. (3) Mencabut klien final:
+  `revoked`, lalu `PencabutanTokenSso` mencabut token akses beserta refresh
+  token-nya; klien yang tercabut keliru didaftarkan ulang. (4) Rotasi memakai
+  `ClientRepository::regenerateSecret()`; rahasia ter-hash Passport, tampil
+  sekali. (5) "Pengguna mengizinkan" = orang berbeda dengan izin yang masih dapat
+  dipakai (token akses belum kedaluwarsa, atau refresh token-nya masih hidup),
+  satu kueri berkelompok. (6) Rute layar hanya terdaftar bila `SSO_ENABLED`, dan
+  item navigasinya ikut hilang.
+- **Konsekuensi.** Kampus yang sudah mengisi `SSO_FIRST_PARTY` akan melihat layar
+  persetujuan berhenti muncul bagi aplikasi itu — perilaku yang selama ini
+  dijanjikan dokumen. Tabel Passport tidak diubah, jadi pembaruan Passport tidak
+  bertabrakan dengan skema kampus.
+
+### 4. Staf sebagai pemohon helpdesk, dan pencatat atas nama orang lain
+
+- **Konteks.** ADR-018 menetapkan tiket dari mahasiswa/dosen ke unit. Staf
+  keuangan yang laptopnya rusak tidak punya jalan resmi ke UPT TIK, dan petugas
+  loket yang menerima mahasiswa datang langsung tidak dapat menuliskan tiketnya.
+- **Keputusan.** (1) Staf menjadi pemohon keempat (`helpdesk.ajukan` di guard
+  staf, semua peran staf) lewat controller pemohon yang sama, di
+  `/admin/tiket-saya`. Kategori yang ditangani unitnya sendiri ditolak — itu
+  pekerjaan antreannya, bukan tiket. (2) Lingkaran pemohon berlaku untuk staf
+  persis seperti untuk mahasiswa: ia melihat tiketnya sendiri; tidak melihat
+  tiket lain di luar unitnya; dan **pemohon tidak pernah menangani tiketnya
+  sendiri** (`handle` menolak, balasannya dihitung sebagai balasan pemohon, ia
+  tidak dapat menulis catatan internal), sekalipun tiketnya kemudian
+  didisposisi ke unitnya. (3) Pemegang `helpdesk.tangani` dapat mencatat tiket
+  atas nama mahasiswa/dosen (dicari dari NIM/NIDN). Tiket itu milik pemohonnya
+  — ia yang diberi tahu dan melihatnya di portalnya — dan pencatatnya disimpan
+  di `dicatat_oleh_staff_id`, tampil di kedua sisi. Pencatat tidak mendapat
+  akses lanjutan karena mencatat; ia melihat tiket itu hanya bila unit atau
+  namanya memang menanganinya.
+- **Konsekuensi.** Tiket staf ikut antrean dan SLA yang sama; notifikasinya
+  menuju `/admin/tiket-saya/{uuid}`. Tidak ada lingkaran "atasan pemohon".
+
 ---
 
 ## ADR-041 — Data IKU 8 dan IKU 6, dan masa berlaku akreditasi prodi: fakta yang dinyatakan, diverifikasi, lalu dihitung di tempat lain (2026-10-30)

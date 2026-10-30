@@ -59,7 +59,7 @@
                     <div class="text-[11px] font-semibold uppercase tracking-[0.08em] text-ink-muted">{{ __('helpdesk.tiket.pemohon') }}</div>
                     <div class="mt-1 font-medium">{{ $tiket->pemohon?->nama ?? '—' }}</div>
                     <div class="tabular text-[11.5px] text-ink-faint">
-                        {{ $tiket->pemohon?->nim ?? $tiket->pemohon?->nidn ?? '' }}
+                        {{ $tiket->pemohon?->nim ?? $tiket->pemohon?->nidn ?? $tiket->pemohon?->nip ?? '' }}
                         @if ($tiket->pemohon?->email) · {{ $tiket->pemohon->email }} @endif
                     </div>
                 </div>

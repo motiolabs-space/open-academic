@@ -52,6 +52,9 @@ return [
     'unique' => ':attribute sudah digunakan.',
     'uploaded' => ':attribute gagal diunggah.',
 
+    // App\Rules\UriCallbackAman — URI yang menerima kode otorisasi atau webhook.
+    'uri_callback_aman' => ':attribute harus berupa URL HTTPS (HTTP hanya untuk localhost).',
+
     'attributes' => [
         'nama' => 'nama',
         'email' => 'alamat surel',

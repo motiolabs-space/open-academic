@@ -44,6 +44,11 @@ class RolePermissionSeeder extends Seeder
             'tugas_akhir.view', 'tugas_akhir.manage',
             'surat.view', 'surat.manage',
             'edom.view', 'edom.manage',
+
+            // Kuesioner umum: writing and publishing, and reading results.
+            // Answering one is not a permission — the questionnaire's
+            // audience decides (KuesionerPolicy::respond).
+            'kuesioner.view', 'kuesioner.manage',
             'bkd.view', 'bkd.manage',
             'wisuda.view', 'wisuda.manage',
 
@@ -59,6 +64,15 @@ class RolePermissionSeeder extends Seeder
             'feeder.view', 'feeder.sync',
             'lkps.view',
             'bridge.view', 'bridge.manage',
+
+            /*
+             * Creating Campus Bridge consumers and SSO clients, and issuing,
+             * revoking and rotating their tokens and secrets. Apart from
+             * bridge.manage (replaying a webhook) because a token is a
+             * standing grant to read student records in bulk. Super-admin and
+             * the IT office only.
+             */
+            'integrasi.kredensial',
             'pengaturan.view', 'pengaturan.manage',
             'log.view',
 
@@ -72,6 +86,10 @@ class RolePermissionSeeder extends Seeder
              * staff role; manage goes to BAAK and the super-admin only.
              */
             'helpdesk.view', 'helpdesk.tangani', 'helpdesk.manage',
+
+            // Filing one's own ticket to another unit — a broken laptop to IT,
+            // a payroll question to finance. Every staff role holds it.
+            'helpdesk.ajukan',
         ],
         UserRole::Dosen->value => [
             'kelas.view',
@@ -136,24 +154,31 @@ class RolePermissionSeeder extends Seeder
                 'nilai.view', 'presensi.view', 'pmb.view', 'pmb.manage',
                 'tugas_akhir.view', 'tugas_akhir.manage',
                 'surat.view', 'surat.manage',
-                'edom.view', 'edom.manage',
+                'edom.view', 'edom.manage', 'kuesioner.view', 'kuesioner.manage',
                 'wisuda.view', 'wisuda.manage', 'feeder.view', 'feeder.sync',
                 'alumni.view', 'alumni.manage', 'alumni.ekspor',
-                'helpdesk.view', 'helpdesk.tangani', 'helpdesk.manage',
+                'helpdesk.view', 'helpdesk.tangani', 'helpdesk.manage', 'helpdesk.ajukan',
             ],
             'keuangan' => [
                 'keuangan.view', 'keuangan.manage', 'mahasiswa.view',
-                'helpdesk.view', 'helpdesk.tangani',
+                'helpdesk.view', 'helpdesk.tangani', 'helpdesk.ajukan',
             ],
             'operator-pddikti' => [
                 'feeder.view', 'feeder.sync', 'mahasiswa.view', 'dosen.view', 'kelas.view', 'nilai.view',
-                'helpdesk.view', 'helpdesk.tangani',
+                'helpdesk.view', 'helpdesk.tangani', 'helpdesk.ajukan',
             ],
 
             // Facilities: which rooms overflow and which sit empty, without
             // the timetable's editing screens.
             'sarpras' => [
-                'master.view', 'ruang.view', 'helpdesk.view', 'helpdesk.tangani',
+                'master.view', 'ruang.view', 'helpdesk.view', 'helpdesk.tangani', 'helpdesk.ajukan',
+            ],
+
+            // The IT office: integrations and their credentials, and its own
+            // helpdesk queue. No academic or financial records.
+            'tik' => [
+                'bridge.view', 'bridge.manage', 'integrasi.kredensial', 'log.view',
+                'helpdesk.view', 'helpdesk.tangani', 'helpdesk.ajukan',
             ],
 
             // Leadership reads results but does not open, close, or reword a
@@ -161,7 +186,7 @@ class RolePermissionSeeder extends Seeder
             // being judged by them measures nothing.
             'pimpinan' => [
                 'master.view', 'mahasiswa.view', 'dosen.view', 'kelas.view', 'ruang.view',
-                'keuangan.view', 'feeder.view', 'edom.view', 'helpdesk.view', 'alumni.view',
+                'keuangan.view', 'feeder.view', 'edom.view', 'kuesioner.view', 'helpdesk.view', 'helpdesk.ajukan', 'alumni.view',
             ],
         ],
         UserRole::Dosen->value => [

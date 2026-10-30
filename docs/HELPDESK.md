@@ -12,8 +12,9 @@ yang berdetak.
 
 ## Apa yang Ini, dan Apa yang Bukan
 
-**Ini helpdesk administratif.** Mahasiswa atau dosen mengajukan tiket kepada
-unit kerja kampus — BAAK, keuangan, TIK — dan unit itu menjawab. Satu tiket,
+**Ini helpdesk administratif.** Mahasiswa, dosen, atau staf unit lain
+mengajukan tiket kepada unit kerja kampus — BAAK, keuangan, TIK — dan unit itu
+menjawab. Satu tiket,
 satu pemohon, satu unit penanggung jawab pada satu waktu.
 
 **Ini bukan forum, bukan chat, bukan fitur sosial.** Tidak ada tiket yang
@@ -79,7 +80,7 @@ mengajukannya, tidak.
 
 | Siapa | Izin | Lingkup |
 |---|---|---|
-| Pemohon | `helpdesk.ajukan` (dosen & mahasiswa) | Tiketnya sendiri, persis |
+| Pemohon | `helpdesk.ajukan` (mahasiswa, dosen, staf) | Tiketnya sendiri, persis |
 | Staf unit | `helpdesk.view` + `helpdesk.tangani` | Antrean unitnya, plus tiket yang ditugaskan kepadanya **by name** |
 | BAAK / super-admin | `helpdesk.manage` | Seluruh kampus; juga kategori & FAQ |
 
@@ -89,6 +90,22 @@ atau surat dokter, dan pemohon mengajukannya dengan satu unit dalam pikirannya.
 Staf yang ditugaskan dari unit lain melihat tiket itu karena namanya tertulis
 di sana — bukan karena unitnya. Pimpinan (`helpdesk.view` saja) membaca
 antrean unitnya tanpa bisa mendisposisi atau membalas.
+
+**Tidak ada yang menangani tiketnya sendiri** (Sesi 69, ADR-039 §4). Staf yang
+mengajukan tiket adalah pemohonnya, sekalipun tiket itu kemudian didisposisi ke
+unitnya: `handle` menolaknya, balasannya dihitung balasan pemohon, ia tidak
+dapat menulis catatan internal, tiketnya tidak muncul di antreannya sendiri,
+dan membuka tiket itu dari `/admin/helpdesk/{uuid}` mengarah ke layar
+pemohon. Layar staf untuk tiket (catatan internal ikut) dijaga `viewInternal`,
+bukan `view`. Kategori yang ditangani unitnya sendiri ditolak saat mengajukan —
+itu pekerjaan antrean, bukan tiket.
+
+**Mencatat atas nama.** Pemegang `helpdesk.tangani` dapat menuliskan tiket
+untuk mahasiswa atau dosen yang datang ke loket (dicari dari NIM/NIDN). Tiket
+itu milik pemohonnya — ia diberi tahu dan melihatnya di portalnya — dan
+pencatatnya tersimpan di `dicatat_oleh_staff_id`, tampil di kedua sisi.
+Mencatat tidak memberi akses lanjutan: pencatat melihat tiket itu hanya bila
+unit atau namanya memang menanganinya.
 
 **Catatan internal disaring di SQL, bukan di template.** Controller pemohon
 memuat `balasanPublik()`; template tidak pernah tahu ada yang disembunyikan,
@@ -144,6 +161,7 @@ Keputusan yang ditanyakannya tetap tiba lewat kategori wajib masing-masing.
 |---|---|---|
 | Mahasiswa | `/mahasiswa/helpdesk` | Daftar tiket sendiri, formulir buat, lima FAQ teratas |
 | Dosen | `/dosen/helpdesk` | Layar yang sama — satu controller, awalan rute berbeda |
+| Staf | `/admin/tiket-saya` | Layar yang sama untuk staf sebagai pemohon, plus "catat atas nama" bagi petugas |
 | Staf | `/admin/helpdesk` | Antrean: lewat SLA dulu, lalu prioritas, lalu paling lama tak tersentuh |
 | Staf | `/admin/helpdesk/pengaturan` | Kategori & FAQ (`helpdesk.manage`) |
 | Publik | `/bantuan` | FAQ terbit, tanpa login, boleh diindeks |
@@ -175,6 +193,7 @@ nomor yang sama.
 
 ```
 database/migrations/2026_10_24_100000_create_helpdesk_tables.php
+database/migrations/2026_10_29_400300_add_pencatat_to_helpdesk_tiket.php
 app/Enums/StatusTiket.php                        — tabel transisi
 app/Enums/PrioritasTiket.php
 app/Models/Helpdesk/{HelpdeskKategori,HelpdeskTiket,HelpdeskBalasan,HelpdeskFaq}.php
@@ -189,5 +208,5 @@ app/Http/Controllers/Admin/{HelpdeskController,HelpdeskPengaturanController}.php
 resources/views/helpdesk/**, resources/views/admin/helpdesk/**
 lang/id/helpdesk.php                             — seluruh teks UI modul
 database/seeders/Demo/HelpdeskSeeder.php
-tests/Feature/Helpdesk/{HelpdeskServiceTest,HelpdeskPolicyTest,LayarHelpdeskTest}.php
+tests/Feature/Helpdesk/{HelpdeskServiceTest,HelpdeskPolicyTest,LayarHelpdeskTest,TiketStafTest}.php
 ```
