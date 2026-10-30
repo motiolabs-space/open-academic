@@ -37,6 +37,26 @@ return [
         'kategori_disimpan' => 'Kategori disimpan.',
         'faq_disimpan' => 'FAQ disimpan.',
         'faq_dihapus' => 'FAQ dihapus.',
+        'tiket_dicatat' => 'Tiket :nomor dicatat atas nama :nama. Pemohon diberi tahu dan dapat mengikutinya dari portalnya.',
+    ],
+
+    // Staf sebagai pemohon, dan pencatatan atas nama mahasiswa/dosen.
+    'staf' => [
+        'nav' => 'Tiket Bantuan Saya',
+        'judul' => 'Tiket Bantuan Saya',
+        'konteks' => 'Tiket Anda ke unit lain · :terbuka masih terbuka',
+        'unit_sendiri' => 'Kategori ini ditangani unit Anda sendiri. Kerjakan lewat antrean helpdesk, bukan sebagai tiket.',
+        'atas_nama_judul' => 'Catat atas nama',
+        'atas_nama_hint' => 'Untuk mahasiswa atau dosen yang datang ke loket atau menelepon. Tiket menjadi milik mereka; nama Anda tercatat sebagai pencatat.',
+        'atas_nama_jenis' => 'Pemohon',
+        'atas_nama_diri' => 'Saya sendiri',
+        'atas_nama_identitas' => 'NIM / NIDN',
+        'atas_nama_tidak_ditemukan' => 'Mahasiswa atau dosen dengan nomor itu tidak ditemukan.',
+        'atas_nama_wajib' => 'Isi NIM atau NIDN pemohon.',
+        'atas_nama_bukan_staf' => 'Hanya tiket mahasiswa atau dosen yang dapat dicatat atas nama orang lain.',
+        'dicatat_oleh' => 'Dicatat oleh :nama',
+        'pemohon_staf' => 'Staf',
+        'tangani_sendiri' => 'Tiket ini Anda ajukan sendiri; penanganannya oleh petugas lain di unit tujuan.',
     ],
 
     'tiket' => [

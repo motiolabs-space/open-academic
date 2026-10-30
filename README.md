@@ -7,7 +7,7 @@ melalui **Neo Feeder PDDIKTI**.
 
 Dibuat dan dirawat oleh **[Humanix Academy](https://humanix.id)**.
 
-Bagian dari ekosistem **Motiolabs Open Education**, bersanding dengan
+Bagian dari ekosistem **Humanix Open Education**, bersanding dengan
 [Open Campus](https://github.com/motiolabs-space/open-campus) sebagai lapisan
 ekosistem & engagement.
 
@@ -253,6 +253,10 @@ dinyatakan **belum dapat dibandingkan**, bukan terbaca cocok.
 | Laporan semester KIP Kuliah | `/admin/beasiswa` |
 
 ### Campus Bridge
+
+Konsumen, scope, token, dan webhook dikelola di **Campus Bridge → Kelola**
+(`/admin/bridge`, izin `integrasi.kredensial`; peran `super-admin` dan `tik`).
+Token dan rahasia webhook ditampilkan sekali. Perintah berikut setara:
 
 ```bash
 php artisan openacademic:bridge-token open-campus         # terbitkan token

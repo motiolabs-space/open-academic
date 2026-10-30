@@ -45,6 +45,11 @@ class BridgeConsumer extends Model implements Authenticatable
     {
         return [
             'scopes' => 'array',
+
+            // Recoverable, because every delivery is signed with it; encrypted,
+            // so a database dump does not hand out the key. See the migration
+            // 2026_10_29_400100_encrypt_bridge_webhook_secret.
+            'webhook_secret' => 'encrypted',
             'webhook_events' => 'array',
             'is_active' => 'boolean',
             'last_seen_at' => 'datetime',

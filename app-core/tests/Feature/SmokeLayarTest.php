@@ -16,6 +16,7 @@ use App\Models\Kemahasiswaan\KegiatanLapangan;
 use App\Models\Kemahasiswaan\Mahasiswa;
 use App\Models\Keuangan\DispensasiTagihan;
 use App\Models\Keuangan\Tagihan;
+use App\Models\Kuesioner\Kuesioner;
 use App\Models\Pmb\PmbAkun;
 use App\Models\Pmb\PmbGelombang;
 use App\Models\Pmb\PmbPendaftar;
@@ -164,6 +165,8 @@ it('membuka layar mahasiswa dalam anggaran kueri', function (string $url, int $a
     ['/notifikasi/preferensi', 25],
     ['/mahasiswa/surat', 30],
     ['/mahasiswa/helpdesk', 20],
+    // Kuesioner: daftar, lalu satu tengokan ke tabel partisipasi untuk semuanya.
+    ['/mahasiswa/kuesioner', 16],
     ['/mahasiswa/edom', 15],
     ['/mahasiswa/capaian', 12],
 ]);
@@ -208,6 +211,7 @@ it('membuka layar dosen dalam anggaran kueri', function (string $url, int $angga
     ['/dosen/kepegawaian', 25],
     ['/dosen/angka-kredit', 10],
     ['/dosen/helpdesk', 20],
+    ['/dosen/kuesioner', 16],
     ['/notifikasi', 25],
 ]);
 
@@ -249,9 +253,16 @@ it('membuka layar admin dalam anggaran kueri', function (string $url, int $angga
     ['/admin/feeder', 30],
     ['/admin/feeder/lampau', 12],
     ['/admin/bridge', 25],
+    // Klien SSO: daftar, catatan kampus, dan pengguna per klien dalam satu
+    // kueri berkelompok.
+    ['/admin/sso-klien', 14],
     ['/admin/surat', 25],
     ['/admin/helpdesk', 20],
     ['/admin/helpdesk/pengaturan', 14],
+    // Staf sebagai pemohon: layar pemohon yang sama dengan portal mahasiswa.
+    ['/admin/tiket-saya', 20],
+    ['/admin/kuesioner', 14],
+    ['/admin/kuesioner-saya', 14],
     ['/admin/konversi', 25],
     ['/admin/pindahan', 14],
     ['/admin/pindahan/baru', 11],
@@ -612,4 +623,25 @@ it('membuka layar proposal tugas akhir dalam anggaran kueri', function () {
 
         dalamAnggaranKueri(fn () => $this->actingAs($aktor, $guard)->get($url)->assertOk(), $anggaran);
     }
+});
+
+/*
+ * Kuesioner umum: detail, hasil, dan formulir isi kuesioner demo yang sudah
+ * melewati ambangnya — hasilnya benar-benar dihitung, bukan tertahan.
+ */
+it('membuka detail, hasil, dan formulir kuesioner dalam anggaran kueri', function () {
+    $staff = Staff::where('email', 'admin@demo.test')->firstOrFail();
+    $kuesioner = Kuesioner::where('kode', 'KEPUASAN-2026')->firstOrFail();
+    $mahasiswa = Mahasiswa::query()->whereHas('krs')->orderBy('id')->firstOrFail();
+
+    dalamAnggaranKueri(fn () => $this->actingAs($staff, 'staff')->get(route('admin.kuesioner.show', $kuesioner))->assertOk(), 16);
+    dalamAnggaranKueri(fn () => $this->actingAs($staff, 'staff')->get(route('admin.kuesioner.hasil', $kuesioner))->assertOk()->assertSee('Wi-Fi'), 14);
+    dalamAnggaranKueri(fn () => $this->actingAs($mahasiswa, 'mahasiswa')->get(route('mahasiswa.kuesioner.show', $kuesioner))->assertOk(), 16);
+});
+
+it('membuka halaman kelola konsumen Bridge demo dalam anggaran kueri', function () {
+    $staff = Staff::where('email', 'admin@demo.test')->firstOrFail();
+    $konsumen = BridgeConsumer::query()->orderBy('id')->firstOrFail();
+
+    dalamAnggaranKueri(fn () => $this->actingAs($staff, 'staff')->get(route('admin.bridge.konsumen.show', $konsumen))->assertOk(), 14);
 });

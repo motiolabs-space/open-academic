@@ -8,7 +8,7 @@ pada sebuah instalasi.
 
 **Jangan** membuka issue publik untuk kerentanan keamanan.
 
-Kirim surel ke **security@motiolabs.space** dengan:
+Kirim surel ke **info@humanix.id** dengan:
 
 - deskripsi kerentanan dan dampaknya,
 - langkah reproduksi (atau proof of concept),

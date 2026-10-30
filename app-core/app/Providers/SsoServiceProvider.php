@@ -6,6 +6,7 @@ namespace App\Providers;
 
 use App\Auth\SsoGuard;
 use App\Auth\SsoUserProvider;
+use App\Models\Sso\KlienOAuth;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\ServiceProvider;
 use Laravel\Passport\Passport;
@@ -75,5 +76,10 @@ class SsoServiceProvider extends ServiceProvider
         // The consent screen is the only place a student can refuse, so it is
         // rendered in the campus's own design rather than Passport's default.
         Passport::authorizationView('sso.persetujuan');
+
+        // Passport's client, plus the campus's first-party decision — the only
+        // place SSO_FIRST_PARTY and the flag on the SSO client screen are
+        // read when somebody signs in.
+        Passport::useClientModel(KlienOAuth::class);
     }
 }

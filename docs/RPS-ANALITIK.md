@@ -233,7 +233,7 @@ database/seeders/Demo/RpsSeeder.php
 tests/Feature/Akademik/RpsAnalitikTest.php
 
 # Kurikulum berbasis capaian (ADR-038)
-database/migrations/2026_10_29_150000_create_capaian_mata_kuliah_tables.php
+database/migrations/2026_10_31_100000_create_capaian_mata_kuliah_tables.php
 app/Enums/StatusCpmk.php
 app/Models/Akademik/{CpmkVersi,Cpmk,SubCpmk,KomponenNilaiCpmk,CapaianCpmkMahasiswa,CapaianCplMahasiswa}.php
 app/Services/Akademik/CpmkService.php        — hierarki, versi, sasaran ukur

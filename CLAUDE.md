@@ -9,7 +9,7 @@
 ## 1. Ringkasan Proyek
 
 **Open Academic** adalah SIAKAD open source untuk perguruan tinggi Indonesia,
-berperan sebagai **system of record** dalam ekosistem Motiolabs Open Education.
+berperan sebagai **system of record** dalam ekosistem Humanix Open Education.
 
 - Repo: `motiolabs-space/open-academic` · Lisensi MIT
 - Saudara: [Open Campus](https://github.com/motiolabs-space/open-campus) — lapisan
@@ -147,8 +147,8 @@ Tugas repo ini hanya menyediakan kebenaran transaksionalnya. Penomoran mengikuti
 | 3 — Kegiatan/prestasi di luar prodi | `aktivitas_mahasiswa` (`sks_konversi`), `poin_mahasiswa` jenis prestasi (juga diekspor ke SIMKATMAWA, ADR-037) | tersedia |
 | 4 — Rekognisi internasional dosen | `penugasan_dosen` berluaran, `tingkat = internasional` | sebagian |
 | 5 — Luaran kerja sama & hilirisasi | `penugasan_dosen` berluaran dengan mitra | sebagian |
-| 6 — Publikasi bereputasi | `penugasan_dosen` luaran jurnal/prosiding | sebagian — indeks & kuartil tidak dicatat |
-| 8 — SDM dalam penyusunan kebijakan | — | belum tersedia (ROADMAP) |
+| 6 — Publikasi bereputasi | `penugasan_dosen` luaran jurnal/prosiding + indeks, kuartil, DOI (ADR-041) | sebagian — indeks & kuartil dinyatakan dosen, diverifikasi staf; top tier & karya seni di Open Campus |
+| 8 — SDM dalam penyusunan kebijakan | `penugasan_dosen` jenis `penyusunan_kebijakan` (bentuk, tingkat, bukti resmi; ADR-041) | tersedia — dosen saja; peneliti non-dosen di Open Campus |
 | 7, 9–12 — SDGs, pendapatan non-UKT, ZI, tata kelola, renstra kesejahteraan dosen | — | bukan cakupan repo ini |
 
 Penomoran lama (delapan IKU) masih dilayani kunci `iku_N_*` di `GET /iku-data`
@@ -241,7 +241,7 @@ Event: `student.enrolled`, `student.status_changed`, `krs.approved`,
 | 1 — Inti Akademik | Service KRS/KHS, penilaian, presensi, transkrip PDF | Satu siklus semester penuh jalan end-to-end |
 | 2 — Feeder | Client, tarik referensi, mapper + ledger, validator, UI sinkron | Data demo terdorong bersih ke sandbox Neo Feeder |
 | 3 — Campus Bridge | SSO, Read API, webhook, OpenAPI | Instance Open Campus login via SSO & mengonsumsi data |
-| 4 — Data IKU | Endpoint aktivitas, penugasan, lulusan | Engine IKU Open Campus menghitung IKU 2026 dari blok `iku_2026` — 1 dan 3 penuh, 2 dan 4–6 sebagian (§6, ADR-036) |
+| 4 — Data IKU | Endpoint aktivitas, penugasan, lulusan | Engine IKU Open Campus menghitung IKU 2026 dari blok `iku_2026` — 1, 3, dan 8 tersedia, 2 dan 4–6 sebagian (§6, ADR-036, ADR-041) |
 | 5 — Polish & Rilis | Migrasi UI penuh, audit N+1, review keamanan, docs site | Rilis publik v1.0 |
 
 Kerjakan berurutan. Nyatakan fase/modul di awal setiap sesi.

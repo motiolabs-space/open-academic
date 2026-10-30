@@ -5,6 +5,16 @@
 @php use App\Support\Format; @endphp
 
 @section('content')
+    @foreach (['sukses' => 'success', 'galat' => 'danger'] as $kunci => $tone)
+        @if (session($kunci))
+            <div class="mb-5"><x-alert :tone="$tone">{{ session($kunci) }}</x-alert></div>
+        @endif
+    @endforeach
+
+    @if ($errors->any())
+        <div class="mb-5"><x-alert tone="danger">{{ $errors->first() }}</x-alert></div>
+    @endif
+
     {{-- ============ APLIKASI TERHUBUNG ============ --}}
     <div class="mb-5 grid gap-4 md:grid-cols-2">
         @forelse ($konsumen as $baris)
@@ -18,7 +28,9 @@
 
                     <div class="min-w-0 flex-1">
                         <div class="flex flex-wrap items-center gap-2">
-                            <h2 class="text-[15px] font-semibold">{{ $c->nama }}</h2>
+                            <h2 class="text-[15px] font-semibold">
+                                <a href="{{ route('admin.bridge.konsumen.show', $c) }}" class="hover:text-gold">{{ $c->nama }}</a>
+                            </h2>
                             <x-chip :tone="$c->is_active ? 'success' : 'neutral'" dot>
                                 {{ $c->is_active ? 'Terhubung' : 'Nonaktif' }}
                             </x-chip>
@@ -31,6 +43,8 @@
                             @endif
                         </div>
                     </div>
+
+                    <x-button href="{{ route('admin.bridge.konsumen.show', $c) }}" variant="outline" size="sm">{{ __('bridge.kelola') }}</x-button>
                 </div>
 
                 <div class="grid grid-cols-3 divide-x divide-line border-b border-line text-center">
@@ -84,11 +98,25 @@
             <div class="md:col-span-2">
                 <x-empty-state
                     title="Belum ada aplikasi terhubung"
-                    description="Daftarkan aplikasi konsumen, lalu terbitkan tokennya dengan php artisan openacademic:bridge-token {slug}."
+                    :description="__('bridge.daftar.kosong')"
                 />
             </div>
         @endforelse
     </div>
+
+    @if ($bolehKelola)
+        <x-card class="mb-5" :title="__('bridge.daftar.judul')">
+            <form method="POST" action="{{ route('admin.bridge.konsumen.store') }}" class="grid gap-3 md:grid-cols-2">
+                @csrf
+                <div class="space-y-3">
+                    @include('admin.bridge.partials.form-konsumen', ['konsumen' => null])
+                </div>
+                <div class="flex items-end">
+                    <x-button type="submit">{{ __('bridge.daftar.simpan') }}</x-button>
+                </div>
+            </form>
+        </x-card>
+    @endif
 
     {{-- ============ GRAFIK PENGGUNAAN API ============ --}}
     <x-card class="mb-5" title="Penggunaan API" meta="14 hari terakhir" flush>

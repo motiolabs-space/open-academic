@@ -5,7 +5,10 @@ declare(strict_types=1);
 namespace Database\Seeders\Demo;
 
 use App\Enums\EducationLevel;
+use App\Enums\LembagaAkreditasi;
+use App\Enums\PeringkatAkreditasi;
 use App\Enums\SemesterType;
+use App\Models\Akademik\AkreditasiProdi;
 use App\Models\Akademik\Fakultas;
 use App\Models\Akademik\Gedung;
 use App\Models\Akademik\Kurikulum;
@@ -118,10 +121,42 @@ class MasterAkademikSeeder extends Seeder
             'is_active' => true,
         ]);
 
+        $this->seedAkreditasi($informatika, $sistemInformasi);
+
         $this->seedKurikulum($informatika, self::KURIKULUM_INFORMATIKA);
         $this->seedKurikulum($sistemInformasi, self::KURIKULUM_SISTEM_INFORMASI);
 
         $this->seedRuang();
+    }
+
+    /**
+     * Accreditation histories (ADR-041 §3), dated from today so the demo
+     * stays meaningful whenever it is installed: Informatika on its second
+     * decree with the expired first one kept, Sistem Informasi inside the
+     * warning window so the staff dashboard has something to raise.
+     */
+    private function seedAkreditasi(Prodi $informatika, Prodi $sistemInformasi): void
+    {
+        $hariIni = now()->startOfDay();
+
+        foreach ([
+            [$informatika, LembagaAkreditasi::BanPt, PeringkatAkreditasi::B, '1201/SK/BAN-PT/DEMO/S/2019',
+                $hariIni->copy()->subYears(7), $hariIni->copy()->subYears(2)->subDay()],
+            [$informatika, LembagaAkreditasi::Laminfokom, PeringkatAkreditasi::BaikSekali, '0412/SK/LAMINFOKOM/DEMO/2024',
+                $hariIni->copy()->subYears(2), $hariIni->copy()->addYears(3)],
+            [$sistemInformasi, LembagaAkreditasi::BanPt, PeringkatAkreditasi::Baik, '3310/SK/BAN-PT/DEMO/S/2021',
+                $hariIni->copy()->subYears(5)->addMonths(4), $hariIni->copy()->addMonths(4)],
+        ] as [$prodi, $lembaga, $peringkat, $nomor, $mulai, $sampai]) {
+            AkreditasiProdi::create([
+                'prodi_id' => $prodi->id,
+                'lembaga' => $lembaga,
+                'peringkat' => $peringkat,
+                'nomor_sk' => $nomor,
+                'tanggal_sk' => $mulai,
+                'tanggal_berlaku' => $mulai,
+                'tanggal_kedaluwarsa' => $sampai,
+            ]);
+        }
     }
 
     /**

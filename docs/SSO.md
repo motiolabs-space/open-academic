@@ -34,7 +34,8 @@ Kunci ditulis ke `storage/oauth-*.key` dan sudah masuk `.gitignore`. **Jangan
 pernah menyalin kunci antar instalasi** — kunci yang sama berarti token terbitan
 satu kampus berlaku di kampus lain.
 
-Mendaftarkan aplikasi:
+Mendaftarkan aplikasi — dari layar **Klien SSO** (`/admin/sso-klien`, izin
+`integrasi.kredensial`; peran `super-admin` dan `tik`), atau dari terminal:
 
 ```bash
 php artisan openacademic:sso-client "Open Campus" --redirect=https://campus.kampus.ac.id/auth/callback
@@ -51,6 +52,23 @@ Perintah lain:
 php artisan openacademic:sso-client --daftar
 php artisan openacademic:sso-client --cabut=<client-id>
 ```
+
+### Layar Klien SSO (Sesi 69)
+
+Hanya terdaftar bila `SSO_ENABLED`. Per klien: URI redirect, jumlah orang yang
+izinnya masih dapat dipakai (token akses belum kedaluwarsa atau refresh
+token-nya masih hidup, dihitung sekali per orang), dan tiga aksi:
+
+| Aksi | Akibat |
+|---|---|
+| Ganti rahasia | Rahasia baru tampil sekali (tersimpan ter-hash Passport); yang lama langsung tidak berlaku untuk tukar kode dan refresh |
+| Lewati / wajibkan persetujuan | Penanda pihak pertama di tabel `sso_klien` |
+| Cabut | Klien `revoked`, lalu seluruh token akses **dan refresh token-nya** dicabut (`PencabutanTokenSso`). Final — daftarkan ulang bila keliru |
+
+Yang dicatat di log aktivitas adalah peristiwanya (didaftarkan, pihak pertama
+diubah, rahasia diganti, dicabut) pada baris `sso_klien`, tidak pernah
+rahasianya. `--cabut` di terminal tetap hanya mencabut token, tanpa mencabut
+kliennya.
 
 ---
 
@@ -166,7 +184,10 @@ menarik data akademik massal.
 
 ## Yang Perlu Diputuskan Kampus
 
-**`SSO_FIRST_PARTY`** — client id yang boleh melewati layar persetujuan. Isi
+**`SSO_FIRST_PARTY`** — client id yang boleh melewati layar persetujuan, di
+samping penanda pihak pertama di layar Klien SSO (keduanya dibaca
+`KlienOAuth::skipsAuthorization()`; sebelum 30 Oktober 2026 variabel ini
+didokumentasikan tetapi tidak pernah dibaca saat otorisasi). Isi
 hanya dengan aplikasi yang dijalankan kampus sendiri. Menaruh aplikasi pihak
 ketiga di sini menghapus satu-satunya titik di mana mahasiswa bisa menolak.
 
@@ -185,7 +206,9 @@ hanya berguna selama masih berlaku.
 
 Pengguna: menu **Aplikasi Terhubung** di portalnya masing-masing.
 
-Administrator: `php artisan openacademic:sso-client --cabut=<client-id>`.
+Administrator: tombol **Cabut** di layar Klien SSO (klien beserta seluruh
+tokennya), atau `php artisan openacademic:sso-client --cabut=<client-id>`
+(tokennya saja).
 
 Menonaktifkan akun (`is_active = false`) **langsung** memutus akses seluruh
 konsumen atas nama orang itu — tidak menunggu tokennya kedaluwarsa.

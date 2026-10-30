@@ -80,13 +80,19 @@ class HelpdeskController extends Controller
         ]);
     }
 
-    public function show(HelpdeskTiket $tiket): View
+    public function show(HelpdeskTiket $tiket): View|RedirectResponse
     {
-        $this->authorize('view', $tiket);
-
         $staf = $this->staf();
 
-        $tiket->load(['pemohon', 'kategori', 'unitKerja', 'petugas']);
+        // One's own ticket opens on the applicant's screen, where internal
+        // notes are filtered out in SQL.
+        if ($tiket->milik($staf)) {
+            return redirect()->route('admin.saya.helpdesk.show', $tiket);
+        }
+
+        $this->authorize('viewInternal', $tiket);
+
+        $tiket->load(['pemohon', 'pencatat', 'kategori', 'unitKerja', 'petugas']);
 
         return view('admin.helpdesk.show', [
             'judul' => $tiket->nomor,

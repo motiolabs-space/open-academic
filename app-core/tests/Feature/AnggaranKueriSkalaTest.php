@@ -199,7 +199,10 @@ it('menjaga layar staf tetap datar saat kampus tumbuh', function () {
         '/admin/pemanfaatan-ruang' => 11,
         '/admin/data-iku' => 12,
         '/admin/keuangan' => 16,
-        '/admin/yudisium' => 15,
+        // +1 fixed (ADR-041 §3): the PISN checklist loads every listed
+        // programme's accreditation history once, to judge it on the
+        // graduation date. Does not grow with graduates or programmes.
+        '/admin/yudisium' => 16,
         // One activities query for every lecturer in the export.
         '/admin/bkd/ekspor/kegiatan' => 3,
         '/admin/cetak/kartu-ujian/{krs}' => 20,

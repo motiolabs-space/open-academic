@@ -19,7 +19,7 @@ use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
- * One request from a student or lecturer to the campus.
+ * One request from a student, lecturer or member of staff to the campus.
  *
  * Audited like an academic record: who moved it, when, and to whom is exactly
  * what gets asked when a complaint about the complaint arrives.
@@ -56,10 +56,16 @@ class HelpdeskTiket extends Model
         ];
     }
 
-    /** Mahasiswa or Dosen. */
+    /** Mahasiswa, Dosen, or Staff filing to another unit. */
     public function pemohon(): MorphTo
     {
         return $this->morphTo();
+    }
+
+    /** The officer who typed the ticket in on the applicant's behalf, if any. */
+    public function pencatat(): BelongsTo
+    {
+        return $this->belongsTo(Staff::class, 'dicatat_oleh_staff_id');
     }
 
     public function kategori(): BelongsTo
