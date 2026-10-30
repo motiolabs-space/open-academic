@@ -11,6 +11,7 @@ use App\Enums\ModaPelaksanaan;
 use App\Enums\PeringkatPrestasi;
 use App\Enums\TingkatSimkatmawa;
 use App\Http\Requests\Kemahasiswaan\DataSimkatmawaRequest;
+use Illuminate\Http\Request;
 
 /**
  * The SIMKATMAWA details of one achievement, as staff filled them in.
@@ -40,6 +41,16 @@ final readonly class DataSimkatmawa
 
     public static function fromRequest(DataSimkatmawaRequest $request): self
     {
+        return self::fromInput($request, $request->dosenPembimbingId());
+    }
+
+    /**
+     * From any request validated against DataSimkatmawaRequest::aturanRincian()
+     * — staff's form, or the student's own achievement report, which has no
+     * supervising lecturer field.
+     */
+    public static function fromInput(Request $request, ?int $dosenPembimbingId = null): self
+    {
         $teks = fn (string $kunci): ?string => $request->filled($kunci) ? trim((string) $request->string($kunci)) : null;
         $angka = fn (string $kunci): ?int => $request->filled($kunci) ? $request->integer($kunci) : null;
 
@@ -58,7 +69,7 @@ final readonly class DataSimkatmawa
             tautanSertifikat: $teks('tautan_sertifikat'),
             tautanBukti: $teks('tautan_bukti'),
             tautanSuratTugas: $teks('tautan_surat_tugas'),
-            dosenPembimbingId: $request->dosenPembimbingId(),
+            dosenPembimbingId: $dosenPembimbingId,
         );
     }
 

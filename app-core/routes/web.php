@@ -234,6 +234,8 @@ Route::middleware(['auth:mahasiswa', 'term.active'])->prefix('mahasiswa')->name(
     Route::post('/cuti', [Mahasiswa\CutiController::class, 'ajukan'])->name('cuti.ajukan');
     Route::get('/beasiswa', [Mahasiswa\BeasiswaController::class, 'index'])->name('beasiswa');
     Route::post('/beasiswa/{periode}', [Mahasiswa\BeasiswaController::class, 'ajukan'])->name('beasiswa.ajukan');
+    Route::get('/poin', [Mahasiswa\PoinController::class, 'index'])->name('poin');
+    Route::post('/poin', [Mahasiswa\PoinController::class, 'lapor'])->name('poin.lapor');
 
     Route::get('/profil', [Mahasiswa\ProfilController::class, 'index'])->name('profil');
     Route::put('/profil', [Mahasiswa\ProfilController::class, 'perbarui'])->name('profil.perbarui');
@@ -393,6 +395,7 @@ Route::middleware('auth:staff,mahasiswa')->prefix('berkas')->name('berkas.')->gr
     Route::get('/pmb/{berkas}', [BerkasController::class, 'pmb'])->name('pmb');
     Route::get('/cuti/{cuti}', [BerkasController::class, 'cuti'])->name('cuti');
     Route::get('/beasiswa/{ajuan}/{urutan}', [BerkasController::class, 'beasiswa'])->whereNumber('urutan')->name('beasiswa');
+    Route::get('/poin/{poin}', [BerkasController::class, 'poin'])->name('poin');
 });
 
 // Dokumen riwayat kepegawaian: dosen pemiliknya dan staf kepegawaian.

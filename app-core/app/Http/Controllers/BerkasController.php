@@ -11,6 +11,7 @@ use App\Models\Helpdesk\HelpdeskTiket;
 use App\Models\Kemahasiswaan\CutiMahasiswa;
 use App\Models\Kemahasiswaan\KegiatanLapanganLogbook;
 use App\Models\Kemahasiswaan\Mahasiswa;
+use App\Models\Kemahasiswaan\PoinMahasiswa;
 use App\Models\Keuangan\BeasiswaAjuan;
 use App\Models\Pmb\PmbBerkas;
 use App\Models\Sdm\PenugasanDosen;
@@ -93,6 +94,20 @@ class BerkasController extends Controller
         return $this->alirkan(
             $berkas['path'],
             Str::slug($berkas['label']).'.'.pathinfo((string) $berkas['path'], PATHINFO_EXTENSION),
+        );
+    }
+
+    /**
+     * The evidence a student uploaded with an achievement report: the student
+     * and student-affairs staff — PoinMahasiswaPolicy.
+     */
+    public function poin(PoinMahasiswa $poin): StreamedResponse
+    {
+        $this->authorize('view', $poin);
+
+        return $this->alirkan(
+            $poin->bukti_path,
+            'bukti-prestasi-'.$poin->uuid.'.'.pathinfo((string) $poin->bukti_path, PATHINFO_EXTENSION),
         );
     }
 

@@ -146,6 +146,7 @@ class RolePermissionSeeder extends Seeder
             // a campus not ready for one can withhold it without the others.
             'cuti.ajukan',
             'beasiswa.ajukan',
+            'prestasi.lapor',
         ],
     ];
 

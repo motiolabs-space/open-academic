@@ -150,4 +150,56 @@ return [
             'ringkasan_ditolak' => 'Ajuan Anda pada :periode tidak ditetapkan. Catatan: :catatan',
         ],
     ],
+
+    'prestasi' => [
+        'judul' => 'Prestasi & Poin',
+        'riwayat' => 'Catatan Poin Saya',
+        'kosong' => 'Belum ada catatan poin',
+        'rekap_prestasi' => 'Poin Prestasi Terverifikasi',
+        'rekap_pelanggaran' => 'Poin Pelanggaran Terverifikasi',
+        'minimum' => 'Minimum kelulusan :minimum poin',
+        'memenuhi' => 'sudah terpenuhi',
+        'tanpa_temuan' => 'Belum melewati ambang mana pun',
+        'lapor' => 'Laporkan Prestasi',
+        'tanpa_kategori' => 'Katalog prestasi belum disiapkan Bagian Kemahasiswaan.',
+        'wajib_bukti' => 'wajib bukti',
+        'bukti' => 'Bukti (sertifikat, piagam, atau surat keterangan)',
+        'rincian_simkatmawa' => 'Rincian untuk Pelaporan SIMKATMAWA',
+        'rincian_petunjuk' => 'Isi sejauh yang Anda ketahui. Bagian Kemahasiswaan memeriksa dan dapat melengkapinya.',
+        'aturan' => 'Laporan baru terhitung dan dilaporkan ke SIMKATMAWA serta PDDIKTI setelah diverifikasi Bagian Kemahasiswaan.',
+        'tombol' => 'Kirim Laporan',
+        'sukses' => 'Laporan ":judul" terkirim dan menunggu verifikasi.',
+
+        'kolom' => [
+            'tanggal' => 'Tanggal',
+            'catatan' => 'Catatan',
+            'poin' => 'Poin',
+            'kategori' => 'Kategori prestasi',
+            'judul' => 'Nama kegiatan atau karya',
+            'keterangan' => 'Keterangan',
+        ],
+
+        'status' => [
+            'diverifikasi' => 'Terverifikasi',
+            'menunggu' => 'Menunggu Verifikasi',
+            'ditolak' => 'Ditolak',
+        ],
+
+        'admin' => [
+            'dilaporkan' => 'Dilaporkan mahasiswa',
+            'bukti' => 'Bukti',
+        ],
+
+        'galat' => [
+            'kategori' => 'Pilih kategori prestasi yang aktif dari katalog.',
+            'tanggal' => 'Tanggal kegiatan tidak boleh di masa depan.',
+        ],
+
+        'notifikasi' => [
+            'judul_diverifikasi' => 'Laporan prestasi diverifikasi',
+            'judul_ditolak' => 'Laporan prestasi ditolak',
+            'ringkasan_diverifikasi' => '":judul" diverifikasi dan kini terhitung :poin poin.',
+            'ringkasan_ditolak' => '":judul" tidak diverifikasi. Alasan: :alasan',
+        ],
+    ],
 ];
