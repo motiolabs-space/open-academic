@@ -7,7 +7,7 @@ melalui **Neo Feeder PDDIKTI**.
 
 Dibuat dan dirawat oleh **[Humanix Academy](https://humanix.id)**.
 
-Bagian dari ekosistem **Motiolabs Open Education**, bersanding dengan
+Bagian dari ekosistem **Humanix Open Education**, bersanding dengan
 [Open Campus](https://github.com/motiolabs-space/open-campus) sebagai lapisan
 ekosistem & engagement.
 

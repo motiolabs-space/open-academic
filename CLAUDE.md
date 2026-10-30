@@ -9,7 +9,7 @@
 ## 1. Ringkasan Proyek
 
 **Open Academic** adalah SIAKAD open source untuk perguruan tinggi Indonesia,
-berperan sebagai **system of record** dalam ekosistem Motiolabs Open Education.
+berperan sebagai **system of record** dalam ekosistem Humanix Open Education.
 
 - Repo: `motiolabs-space/open-academic` · Lisensi MIT
 - Saudara: [Open Campus](https://github.com/motiolabs-space/open-campus) — lapisan
