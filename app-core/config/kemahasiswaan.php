@@ -53,6 +53,19 @@ return [
         ],
     ],
 
+    'lulusan' => [
+
+        /*
+         * Berapa lama kontak lulusan yang sudah diverifikasi dianggap masih
+         * berlaku untuk tracer study (ADR-037 §2).
+         *
+         * Nomor telepon dan surel lulusan berganti tanpa kabar. Lewat dari
+         * angka ini, baris itu kembali ditandai "perlu verifikasi" di layar
+         * Lulusan, dan catatannya ikut tertulis di berkas ekspor tracer.
+         */
+        'verifikasi_berlaku_bulan' => (int) env('KEMAHASISWAAN_LULUSAN_VERIFIKASI_BULAN', 12),
+    ],
+
     /*
      * Tingkat yang boleh dipakai katalog poin.
      *

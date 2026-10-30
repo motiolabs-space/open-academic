@@ -42,6 +42,12 @@ class GraduateResource extends JsonResource
                 'email_pribadi' => $this->mahasiswa->alumni->email_pribadi,
                 'status_pekerjaan' => $this->mahasiswa->alumni->status_pekerjaan,
                 'instansi' => $this->mahasiswa->alumni->instansi,
+
+                // Where the status came from and as of when (ADR-037 §2): an
+                // answer from the national tracer study and one from a campus
+                // survey are not equally strong, and the consumer decides.
+                'status_pekerjaan_sumber' => $this->mahasiswa->alumni->status_pekerjaan_sumber?->value,
+                'status_pekerjaan_per' => $this->mahasiswa->alumni->status_pekerjaan_per?->toDateString(),
             ]),
         ];
     }

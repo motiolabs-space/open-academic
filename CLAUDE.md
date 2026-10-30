@@ -143,8 +143,8 @@ Tugas repo ini hanya menyediakan kebenaran transaksionalnya. Penomoran mengikuti
 | IKU 2026 | Sumber di Open Academic | Ketersediaan |
 |---|---|---|
 | 1 — Angka Efisiensi Edukasi | `status_mahasiswa` per tahun akademik, `yudisium` (lama studi) | tersedia |
-| 2 — Lulusan bekerja/berwirausaha/studi lanjut | `yudisium`, `alumni` (populasi tracer study) | sebagian — tracer study di Open Campus |
-| 3 — Kegiatan/prestasi di luar prodi | `aktivitas_mahasiswa` (`sks_konversi`), `poin_mahasiswa` jenis prestasi | tersedia |
+| 2 — Lulusan bekerja/berwirausaha/studi lanjut | `yudisium`, `alumni` (populasi; `status_pekerjaan` diimpor dari hasil tracer nasional/Open Campus, ADR-037) | sebagian — kuesioner tracer di Open Campus |
+| 3 — Kegiatan/prestasi di luar prodi | `aktivitas_mahasiswa` (`sks_konversi`), `poin_mahasiswa` jenis prestasi (juga diekspor ke SIMKATMAWA, ADR-037) | tersedia |
 | 4 — Rekognisi internasional dosen | `penugasan_dosen` berluaran, `tingkat = internasional` | sebagian |
 | 5 — Luaran kerja sama & hilirisasi | `penugasan_dosen` berluaran dengan mitra | sebagian |
 | 6 — Publikasi bereputasi | `penugasan_dosen` luaran jurnal/prosiding | sebagian — indeks & kuartil tidak dicatat |

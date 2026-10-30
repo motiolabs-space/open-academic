@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace App\Services\Kemahasiswaan;
 
+use App\DTOs\Kemahasiswaan\DataSimkatmawa;
 use App\Enums\JenisPoin;
+use App\Enums\KategoriSimkatmawa;
 use App\Exceptions\AturanAkademikException;
 use App\Models\Kemahasiswaan\Mahasiswa;
 use App\Models\Kemahasiswaan\PoinKategori;
@@ -112,6 +114,39 @@ class PoinKemahasiswaanService
         ]);
 
         return $baris->refresh();
+    }
+
+    /**
+     * Fills in what SIMKATMAWA asks about an achievement (ADR-037 §1).
+     *
+     * Allowed on verified rows too: these are reporting details, not the
+     * claim. The points, the side of the ledger and the verification stay
+     * exactly as they were, and the change is in the activity log.
+     */
+    public function lengkapiSimkatmawa(PoinMahasiswa $baris, DataSimkatmawa $data): PoinMahasiswa
+    {
+        if ($baris->jenis !== JenisPoin::Prestasi) {
+            throw new AturanAkademikException(__('simkatmawa.galat.bukan_prestasi'));
+        }
+
+        $baris->update($data->kolom());
+
+        return $baris->refresh();
+    }
+
+    /**
+     * Files a catalogue entry under a SIMKATMAWA table, or takes it off all of
+     * them. Violations are never reported to SIMKATMAWA.
+     */
+    public function tetapkanKategoriSimkatmawa(PoinKategori $kategori, ?KategoriSimkatmawa $simkatmawa): PoinKategori
+    {
+        if ($simkatmawa !== null && ($kategori->jenis !== JenisPoin::Prestasi || !$simkatmawa->dariKatalog())) {
+            throw new AturanAkademikException(__('simkatmawa.galat.kategori_tidak_sah'));
+        }
+
+        $kategori->update(['simkatmawa_kategori' => $simkatmawa]);
+
+        return $kategori->refresh();
     }
 
     /**
