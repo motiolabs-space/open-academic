@@ -248,6 +248,9 @@ it('membuka layar admin dalam anggaran kueri', function (string $url, int $angga
     ['/admin/feeder', 30],
     ['/admin/feeder/lampau', 12],
     ['/admin/bridge', 25],
+    // Klien SSO: daftar, catatan kampus, dan pengguna per klien dalam satu
+    // kueri berkelompok.
+    ['/admin/sso-klien', 14],
     ['/admin/surat', 25],
     ['/admin/helpdesk', 20],
     ['/admin/helpdesk/pengaturan', 14],

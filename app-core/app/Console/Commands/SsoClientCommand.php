@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace App\Console\Commands;
 
+use App\DTOs\Sso\KlienSsoData;
+use App\Exceptions\AturanAkademikException;
+use App\Models\Sso\KlienOAuth;
 use App\Services\Auth\PencabutanTokenSso;
+use App\Services\Sso\KlienSsoService;
 use Illuminate\Console\Command;
-use Laravel\Passport\ClientRepository;
-use Laravel\Passport\Passport;
 
 /**
  * Registers an application that may sign people in with a campus account.
@@ -17,6 +19,10 @@ use Laravel\Passport\Passport;
  * plain-HTTP redirects outside local development, warns when a client is being
  * granted the right to skip the consent screen, and prints the secret exactly
  * once with a plain statement of what that means.
+ *
+ * Registration goes through KlienSsoService, the same path as the SSO client
+ * screen (/admin/sso-klien), so a client made here has the campus's record
+ * beside it and the same redirect rules.
  */
 class SsoClientCommand extends Command
 {
@@ -28,7 +34,7 @@ class SsoClientCommand extends Command
 
     protected $description = 'Kelola aplikasi yang boleh memakai SSO Open Academic';
 
-    public function handle(ClientRepository $clients): int
+    public function handle(KlienSsoService $layanan): int
     {
         if (!config('sso.enabled')) {
             $this->components->error('SSO nonaktif. Setel SSO_ENABLED=true lebih dulu.');
@@ -44,10 +50,10 @@ class SsoClientCommand extends Command
             return $this->cabutToken($cabut);
         }
 
-        return $this->buat($clients);
+        return $this->buat($layanan);
     }
 
-    private function buat(ClientRepository $clients): int
+    private function buat(KlienSsoService $layanan): int
     {
         $nama = (string) $this->argument('nama');
 
@@ -65,17 +71,13 @@ class SsoClientCommand extends Command
             return self::FAILURE;
         }
 
-        foreach ($redirects as $uri) {
-            if (!$this->redirectSah($uri)) {
-                return self::FAILURE;
-            }
-        }
+        try {
+            ['klien' => $client, 'rahasia' => $rahasia] = $layanan->daftarkan(new KlienSsoData($nama, $redirects));
+        } catch (AturanAkademikException $e) {
+            $this->components->error($e->getMessage());
 
-        $client = $clients->createAuthorizationCodeGrantClient(
-            name: $nama,
-            redirectUris: $redirects,
-            confidential: true,
-        );
+            return self::FAILURE;
+        }
 
         $this->components->info('Aplikasi terdaftar.');
 
@@ -87,47 +89,23 @@ class SsoClientCommand extends Command
 
         $this->newLine();
         $this->components->warn('Client secret hanya ditampilkan sekali berikut ini:');
-        $this->line('  '.$client->plainSecret);
+        $this->line('  '.$rahasia);
         $this->newLine();
 
         $this->components->bulletList([
             'Simpan secret di .env aplikasi konsumen, bukan di dalam kode.',
             'Kehilangan secret berarti menerbitkan ulang client — tidak ada cara memulihkannya.',
-            'Agar aplikasi ini melewati layar persetujuan, tambahkan client id ke SSO_FIRST_PARTY. '
-                .'Lakukan hanya untuk aplikasi yang dijalankan kampus sendiri.',
+            'Agar aplikasi ini melewati layar persetujuan, tandai sebagai pihak pertama di layar Klien SSO '
+                .'atau tambahkan client id ke SSO_FIRST_PARTY. Lakukan hanya untuk aplikasi yang dijalankan kampus sendiri.',
         ]);
 
         return self::SUCCESS;
     }
 
-    private function redirectSah(string $uri): bool
-    {
-        if (filter_var($uri, FILTER_VALIDATE_URL) === false) {
-            $this->components->error("Redirect tidak valid: {$uri}");
-
-            return false;
-        }
-
-        $host = parse_url($uri, PHP_URL_HOST);
-        $skema = parse_url($uri, PHP_URL_SCHEME);
-        $lokal = in_array($host, ['localhost', '127.0.0.1', '::1'], true);
-
-        // An authorization code travels back on this URI. Over plain HTTP
-        // anyone on the path can read it and redeem it before the real
-        // consumer does — which hands them the account, not just the code.
-        if ($skema !== 'https' && !$lokal) {
-            $this->components->error("Redirect non-HTTPS ditolak: {$uri}");
-            $this->line('  Kode otorisasi dikirim lewat URI ini; di HTTP polos ia dapat dicuri dan ditukar duluan.');
-
-            return false;
-        }
-
-        return true;
-    }
-
     private function tampilkanDaftar(): int
     {
-        $clients = Passport::clientModel()::query()
+        $clients = KlienOAuth::query()
+            ->with('pengaturan')
             ->orderBy('name')
             ->get();
 
@@ -143,7 +121,7 @@ class SsoClientCommand extends Command
                 $c->getKey(),
                 $c->name,
                 $c->revoked ? 'ya' : '—',
-                in_array((string) $c->getKey(), (array) config('sso.first_party'), true) ? 'ya' : '—',
+                $c->pihakPertama() ? 'ya' : '—',
             ])->all(),
         );
 

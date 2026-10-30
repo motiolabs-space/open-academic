@@ -897,6 +897,15 @@ Route::middleware(['auth:staff', 'term.active'])->prefix('admin')->name('admin.'
     Route::put('/bridge/konsumen/{konsumen}/webhook', [Admin\KonsumenBridgeController::class, 'aturWebhook'])->name('bridge.konsumen.webhook');
     Route::post('/bridge/konsumen/{konsumen}/webhook/rahasia', [Admin\KonsumenBridgeController::class, 'rotasiRahasia'])
         ->name('bridge.konsumen.rahasia');
+
+    // Klien SSO — hanya bila SSO_ENABLED, seperti seluruh rute SSO lain.
+    if (config('sso.enabled')) {
+        Route::get('/sso-klien', [Admin\KlienSsoController::class, 'index'])->name('sso-klien.index');
+        Route::post('/sso-klien', [Admin\KlienSsoController::class, 'store'])->name('sso-klien.store');
+        Route::post('/sso-klien/{klien}/rotasi', [Admin\KlienSsoController::class, 'rotasi'])->name('sso-klien.rotasi');
+        Route::post('/sso-klien/{klien}/pihak-pertama', [Admin\KlienSsoController::class, 'pihakPertama'])->name('sso-klien.pihak-pertama');
+        Route::delete('/sso-klien/{klien}', [Admin\KlienSsoController::class, 'cabut'])->name('sso-klien.cabut');
+    }
 });
 
 /*

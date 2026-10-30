@@ -231,6 +231,12 @@ final class Navigation
                 'items' => [
                     self::item('Neo Feeder PDDIKTI', '⇅', 'admin.feeder'),
                     self::item('Campus Bridge', '⌘', 'admin.bridge'),
+
+                    // Seperti Integrasi Akuntansi: hilang, bukan nonaktif,
+                    // bila kampus ini tidak menjalankan server SSO.
+                    ...(config('sso.enabled')
+                        ? [self::item(__('sso_klien.nav'), '⚿', 'admin.sso-klien.index')]
+                        : []),
                     self::item('Verifikasi Data IKU', '◈', 'admin.iku-records'),
                     self::item('Borang LKPS', '▤', 'admin.lkps'),
                     self::item('Log Aktivitas', '◷', 'admin.log'),
