@@ -51,6 +51,16 @@ class RolePermissionSeeder extends Seeder
             'kuesioner.view', 'kuesioner.manage',
             'bkd.view', 'bkd.manage',
             'wisuda.view', 'wisuda.manage',
+
+            /*
+             * Graduates and the tracer study (ADR-037 §2), in three widening
+             * exposures: view sees who is reachable without the contacts;
+             * manage sees and corrects them and imports employment status;
+             * ekspor puts them in a file that leaves the system, and every
+             * use is logged.
+             */
+            'alumni.view', 'alumni.manage', 'alumni.ekspor',
+
             'feeder.view', 'feeder.sync',
             'lkps.view',
             'bridge.view', 'bridge.manage',
@@ -146,6 +156,7 @@ class RolePermissionSeeder extends Seeder
                 'surat.view', 'surat.manage',
                 'edom.view', 'edom.manage', 'kuesioner.view', 'kuesioner.manage',
                 'wisuda.view', 'wisuda.manage', 'feeder.view', 'feeder.sync',
+                'alumni.view', 'alumni.manage', 'alumni.ekspor',
                 'helpdesk.view', 'helpdesk.tangani', 'helpdesk.manage', 'helpdesk.ajukan',
             ],
             'keuangan' => [
@@ -175,7 +186,7 @@ class RolePermissionSeeder extends Seeder
             // being judged by them measures nothing.
             'pimpinan' => [
                 'master.view', 'mahasiswa.view', 'dosen.view', 'kelas.view', 'ruang.view',
-                'keuangan.view', 'feeder.view', 'edom.view', 'kuesioner.view', 'helpdesk.view', 'helpdesk.ajukan',
+                'keuangan.view', 'feeder.view', 'edom.view', 'kuesioner.view', 'helpdesk.view', 'helpdesk.ajukan', 'alumni.view',
             ],
         ],
         UserRole::Dosen->value => [

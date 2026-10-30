@@ -44,7 +44,9 @@ class PrestasiMapper extends FeederMapper
             'id_tingkat_prestasi' => $this->kode('tingkat_prestasi', $model->kategori->tingkat),
             'nama' => $model->judul,
             'tahun_prestasi' => $model->tanggal?->year,
-            'penyelenggara' => $model->keterangan,
+            // The organiser has had its own column since ADR-037; rows
+            // recorded before it kept the organiser in the free-text note.
+            'penyelenggara' => $model->penyelenggara ?? $model->keterangan,
         ], fn (mixed $nilai): bool => $nilai !== null && $nilai !== '');
     }
 

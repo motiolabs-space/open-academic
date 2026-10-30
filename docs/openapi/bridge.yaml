@@ -256,7 +256,14 @@ paths:
       security: [{ bearerAuth: [graduates.read] }]
       tags: [Graduates]
       summary: Lulusan yang sudah ditetapkan
-      description: Membutuhkan scope `graduates.read`. Populasi awal tracer study IKU 2 (Kepmendiktisaintek 358/M/KEP/2025; IKU 1 penomoran lama).
+      description: >-
+        Membutuhkan scope `graduates.read`. Populasi awal tracer study IKU 2
+        (Kepmendiktisaintek 358/M/KEP/2025; IKU 1 penomoran lama). Blok
+        `alumni` memuat `email_pribadi`, `status_pekerjaan` (`belum` = belum
+        ditelusuri), `instansi`, `status_pekerjaan_sumber` (`tracer_nasional`,
+        `open_campus`, `survei_kampus`), dan `status_pekerjaan_per` (tanggal
+        survei) — status diimpor dari hasil tracer, bukan diisi di sini
+        (ADR-037 §2).
       parameters:
         - { name: semester, in: query, schema: { type: string } }
         - { name: prodi, in: query, schema: { type: string } }
@@ -357,7 +364,10 @@ paths:
                       pada_semester_ini: 58
                       per_jenjang: { "20": 61, "30": 351 }
                       per_tahun_lulus: { "2025": 170, "2026": 242 }
-                      per_status_pekerjaan: { bekerja: 190, wirausaha: 21, studi_lanjut: 12, belum_ditelusuri: 189 }
+                      per_status_pekerjaan: { bekerja: 190, wirausaha: 21, studi_lanjut: 12, mencari_kerja: 30, belum_ditelusuri: 159 }
+                      ditelusuri: 253
+                      per_sumber_status: { tracer_nasional: 241, open_campus: 12 }
+                      masa_tunggu_bulan: { "0-6": 162, "7-12": 31, "13+": 6, tidak_diketahui: 12 }
                     iku_3_kegiatan_luar_prodi:
                       mahasiswa_aktif_per_jenjang: { "20": 410, "30": 2710 }
                       pembelajaran:
@@ -881,13 +891,27 @@ components:
                         lulus: { type: integer }
         iku_2_lulusan:
           type: object
-          description: Populasi tracer study. Status pekerjaan adalah jawaban tracer study yang dikumpulkan Open Campus.
+          description: >-
+            Populasi tracer study dan status pekerjaan yang diimpor dari hasil
+            tracer study nasional atau Open Campus (ADR-037 §2). `belum` dan
+            tanpa baris alumni sama-sama `belum_ditelusuri`. Masa tunggu
+            dipitakan untuk yang bekerja atau berwirausaha. Persentase IKU 2
+            dan ambang gaji milik konsumen.
           properties:
             total_lulusan: { type: integer }
             pada_semester_ini: { type: integer }
             per_jenjang: { $ref: '#/components/schemas/CacahPerKode' }
             per_tahun_lulus: { $ref: '#/components/schemas/CacahPerKode' }
             per_status_pekerjaan: { $ref: '#/components/schemas/CacahPerKode' }
+            ditelusuri: { type: integer }
+            per_sumber_status: { $ref: '#/components/schemas/CacahPerKode' }
+            masa_tunggu_bulan:
+              type: object
+              properties:
+                "0-6": { type: integer }
+                "7-12": { type: integer }
+                "13+": { type: integer }
+                tidak_diketahui: { type: integer }
         iku_3_kegiatan_luar_prodi:
           type: object
           properties:

@@ -1374,6 +1374,129 @@ Memperbarui ADR-013.
   resmi 3.1; alur re-NIM. Snapshot payload tidak berubah karena payload tidak
   berubah.
 
+## ADR-037 — Ekspor SIMKATMAWA dan data lulusan untuk tracer study nasional (2026-10-29)
+
+Pemeriksaan kompatibilitas 29 Oktober 2026 dengan enam belas sistem
+Kemdiktisaintek menemukan dua yang belum didukung sama sekali, dan keduanya
+kini sumber IKU 2026 (ADR-036 §1): SIMKATMAWA (IKU 3, prestasi) dan tracer
+study nasional (IKU 2, lulusan). Kolom dan aturan di bawah ditulis ulang dari
+panduan publiknya dengan kata-kata sendiri — Panduan SIMKATMAWA 2026 (Belmawa,
+Februari 2026) dan sosialisasi integrasi tracer study (Belmawa, Agustus 2026).
+Tidak ada panduan, templat, atau contoh berkas kementerian yang masuk repo
+(CLAUDE.md §10, ADR-011); catatan riset di `docs/lokal/`.
+
+### 1. SIMKATMAWA: ekspor empat tabel dari buku besar prestasi, tanpa pengiriman
+
+- **Konteks.** SIMKATMAWA menilai kemahasiswaan kampus dari prestasi
+  kompetisi (tingkat kabupaten/kota sampai internasional, peringkat,
+  individu/kelompok, daring/luring, bidang, jumlah PT atau negara peserta),
+  rekognisi nonkompetisi (karya, juri/pelatih, pembicara utama, buku, paten,
+  publikasi, duta), dan sertifikat kompetensi, masing-masing dengan tautan
+  bukti yang dapat dibuka penilai. Data sumbernya sudah ada di
+  `poin_mahasiswa` (prestasi terverifikasi, juga dikirim ke Feeder lewat
+  `PrestasiMapper`), tetapi buku besar poin dibangun untuk syarat kelulusan:
+  judul, tanggal, kategori katalog, dan poin. Tingkat katalog
+  (internal/lokal/nasional/internasional) tidak dapat membedakan lomba
+  kabupaten dari provinsi.
+- **Keputusan.** (1) **Kolom baru di baris prestasi, bukan tabel baru**
+  (migrasi append-only `2026_10_29_100000`): tingkat SIMKATMAWA, peringkat,
+  bentuk kepesertaan, moda, bidang lomba, jenis rekognisi, penyelenggara,
+  tanggal selesai, jumlah PT dan negara peserta, nomor sertifikat, tiga
+  tautan (sertifikat, bukti, surat tugas), dan dosen pembimbing (FK
+  `restrictOnDelete`). Semuanya nullable: baris lama tetap sah, dan layar
+  laporan yang menyebut apa yang kurang. Prestasi yang sama tidak dicatat dua
+  kali untuk dua tujuan. (2) **Tabel SIMKATMAWA ditetapkan per kategori
+  katalog** (`poin_kategori.simkatmawa_kategori`: kompetisi, rekognisi,
+  sertifikasi, atau kosong = tidak dilaporkan), bukan per baris — staf yang
+  mencatat empat puluh juara lomba nasional tidak memilih tabelnya empat
+  puluh kali. Pelanggaran tidak pernah dilaporkan. Tabel keempat,
+  pembimbing, diturunkan dari prestasi yang punya dosen pembimbing, bukan
+  dicatat. (3) **Validasi pra-ekspor seperti Feeder** (`EksporSimkatmawa`):
+  setiap baris diperiksa sekaligus; *galat* (tingkat tak dikenal atau tak
+  diterima kategorinya, penyelenggara kosong, tanpa tautan sertifikat, isian
+  wajib kompetisi kosong, jumlah PT/negara kosong, tautan bukan http(s),
+  nomor sertifikat kosong) membuat baris **tidak ikut terunduh**, karena
+  kementerian akan menolaknya; *peringatan* (tanpa tautan bukti, tanpa surat
+  tugas atau pembimbing, mahasiswa belum di PDDikti, judul berpenanda pameran
+  di tingkat internasional) tetap terunduh dengan skor yang mungkin lebih
+  rendah. Tingkat nasional/internasional katalog dipakai bila baris kosong;
+  `lokal` tidak ditebak, `internal` tidak dilaporkan. (4) **Ekspor saja.**
+  CSV lewat `App\Support\Csv` (perlindungan injeksi rumus, PR #30) dan XLSX
+  lewat `LembarKerjaXlsx` (sel teks inline yang tidak pernah dievaluasi) —
+  keduanya lewat `App\Support\EksporTabel`. Tidak ada klien, kredensial, atau
+  pengiriman otomatis ke SIMKATMAWA. (5) **Bobot dan skor tidak dihitung.**
+  Seperti `iku-data`, yang disiapkan fakta; skor SIMKATMAWA milik kementerian.
+  Indeks kompleksitas dan dampak rekognisi (penilaian penilai) tidak dicatat.
+- **Konsekuensi.** Kampus mengisi tabel SIMKATMAWA katalognya sekali, lalu
+  melengkapi prestasi dari layar Lengkapi. Kegiatan MBKM tetap mengalir ke
+  IKU 3 lewat Feeder dan `iku-data`, bukan lewat SIMKATMAWA. Kelompok lomba
+  tercatat per mahasiswa (satu baris per anggota); SIMKATMAWA menerima
+  anggota satu per satu. `PrestasiMapper` kini mengirim `penyelenggara` dari
+  kolomnya sendiri, dengan `keterangan` sebagai cadangan untuk baris lama.
+  Izin: `mahasiswa.manage` (`PoinMahasiswaPolicy`).
+
+### 2. Tracer study nasional: Open Academic menyiapkan populasinya dan menyimpan hasil status pekerjaan; Open Campus tetap pemilik kuesioner
+
+- **Konteks.** Tracer study kini terpusat di laman Kemdiktisaintek: alumni
+  masuk dengan NIM dan data yang diverifikasi kampus. Di sini `alumni`
+  dibuat `YudisiumService` dan hanya terlihat lewat Bridge `graduates` dan
+  `iku-data`; `alumni.status_pekerjaan` hanya pernah diisi `belum` (artinya
+  *belum ditelusuri*, bukan *belum bekerja*). Surel alumni disalin dari surel
+  akun kampus yang dapat mati setelah lulus, dan formulir profil mahasiswa
+  sudah mengirim `email_pribadi` ke kolom yang tidak pernah ada. Kuesioner
+  tracer dan perhitungan IKU milik Open Campus (CLAUDE.md §1, §6).
+- **Keputusan.** (1) **Pemilik data status pekerjaan: sumber jawabannya,
+  bukan sistem ini.** Jawaban dikumpulkan di luar Open Academic — oleh tracer
+  study nasional atau oleh kuesioner Open Campus. Open Academic menyimpan
+  **hasilnya** di baris alumni sebagai catatan resmi lulusan, beserta
+  sumbernya (`status_pekerjaan_sumber`: tracer nasional, Open Campus, survei
+  kampus) dan tanggal surveinya (`status_pekerjaan_per`), karena hanya di
+  sini status itu dapat bersanding dengan yudisium dan diumpankan ke
+  `iku-data`. Penulisnya satu jalur: **impor CSV** (`ImporStatusPekerjaan`);
+  tidak ada formulir untuk mengetik status satu per satu, supaya tidak ada
+  jawaban tanpa sumber. Open Campus mengirim hasilnya dalam bentuk berkas
+  yang sama — tidak ada endpoint tulis Bridge baru. (2) **Validasi pra-impor
+  dan idempoten.** Berkas diperiksa seluruhnya dulu (kolom wajib
+  `nim`/`status`, NIM dikenal dan sudah lulusan, NIM ganda, status dikenali
+  dari kode atau label kuesioner, tanggal, masa tunggu 0–120 bulan, tanggal
+  survei tidak di masa depan); setiap baris ditolak dengan nomor baris dan
+  alasannya, tanpa menahan baris yang sah. Baris yang sama dengan data
+  tersimpan dihitung *tidak berubah*; baris dengan tanggal survei lebih lama
+  dari yang tersimpan ditolak, supaya tracer tahun lalu tidak menimpa tahun
+  ini. Penerapan memeriksa ulang dan berjalan dalam satu transaksi; setiap
+  perubahan tercatat lewat `HasLogAktivitas` (kini dipasang di `Alumni`). (3)
+  **Kontak dan ekspor.** Layar Lulusan menandai kontak: surel pribadi kosong
+  atau hanya surel kampus, telepon kosong atau tidak berbentuk nomor
+  Indonesia, belum atau lebih dari 12 bulan sejak diverifikasi
+  (`KEMAHASISWAAN_LULUSAN_VERIFIKASI_BULAN`). Kontak yang dikonfirmasi staf
+  ditulis ke baris alumni, bukan ke data mahasiswa yang sudah diterima
+  PDDIKTI. Ekspor tracer memuat NIM, nama, prodi, jenjang, tahun masuk dan
+  lulus, tanggal lulus, surel, telepon, dan tanggal verifikasi — **tanpa**
+  NIK, alamat, dan tanggal lahir; kontak alumni yang menolak dibagikan
+  (`kontak_tidak_dibagikan`) dikosongkan tetapi lulusannya tetap tercantum,
+  karena populasi tracer harus utuh. (4) **Akses bertingkat.** Tiga izin
+  baru: `alumni.view` (daftar dan kelengkapan, kontak tersamar — pimpinan),
+  `alumni.manage` (melihat dan memverifikasi kontak, impor — BAAK),
+  `alumni.ekspor` (unduhan — BAAK). Setiap unduhan wajib menyebut keperluan
+  dan dicatat di Log Aktivitas (subjek `EksporTracer`: jumlah, filter,
+  format, keperluan). (5) **Bridge menyajikan, tidak menghitung.**
+  `iku_2026.iku_2_lulusan` kini memuat `per_status_pekerjaan` (null dan
+  `belum` digabung sebagai `belum_ditelusuri`), `ditelusuri`,
+  `per_sumber_status`, dan pita `masa_tunggu_bulan` (0–6, 7–12, 13+, tidak
+  diketahui) untuk yang bekerja atau berwirausaha. `GET /graduates` menambah
+  `status_pekerjaan_sumber` dan `status_pekerjaan_per`. Kunci lama
+  `iku_1_lulusan` tetap membaca nilai tersimpan apa adanya (dibekukan,
+  ADR-036). Bobot, ambang gaji, dan persentase IKU 2 tetap milik Open Campus.
+- **Konsekuensi.** `mahasiswa.email_pribadi` dibuat (memperbaiki formulir
+  profil yang selama ini gagal menyimpan), dan `YudisiumService` memakai surel
+  pribadi lebih dulu, baru surel akun. Bila kelak Open Campus perlu mengirim
+  status lewat API alih-alih berkas, endpoint itu harus menulis lewat
+  `ImporStatusPekerjaan` yang sama. Kategori status mengikuti instrumen tracer
+  lama (bekerja, wiraswasta, studi lanjut, mencari kerja, belum memungkinkan
+  bekerja); bila instrumen 2026 berbeda, `StatusPekerjaanAlumni::dariTeks()`
+  yang diperbarui. Instalasi berjalan: `php artisan migrate` dan
+  `db:seed --class=RolePermissionSeeder`.
+
 ## ADR-039 — Empat layar pengelolaan: kuesioner, konsumen Bridge, klien SSO, tiket staf (2026-10-30)
 
 Inventaris kode 28 Oktober 2026 menemukan empat alur yang mesinnya ada tetapi

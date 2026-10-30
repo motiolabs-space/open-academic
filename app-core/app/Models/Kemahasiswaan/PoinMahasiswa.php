@@ -4,8 +4,15 @@ declare(strict_types=1);
 
 namespace App\Models\Kemahasiswaan;
 
+use App\Enums\BentukKepesertaan;
+use App\Enums\BidangLomba;
 use App\Enums\JenisPoin;
+use App\Enums\JenisRekognisi;
+use App\Enums\ModaPelaksanaan;
+use App\Enums\PeringkatPrestasi;
+use App\Enums\TingkatSimkatmawa;
 use App\Models\Akademik\TahunAkademik;
+use App\Models\Sdm\Dosen;
 use App\Models\Sdm\Staff;
 use App\Traits\HasLogAktivitas;
 use App\Traits\HasUuid;
@@ -45,7 +52,18 @@ class PoinMahasiswa extends Model
             'feeder_synced_at' => 'datetime',
             'jenis' => JenisPoin::class,
             'tanggal' => 'date',
+            'tanggal_selesai' => 'date',
             'is_verified' => 'boolean',
+
+            // SIMKATMAWA details (ADR-037 §1).
+            'tingkat' => TingkatSimkatmawa::class,
+            'peringkat' => PeringkatPrestasi::class,
+            'bentuk_kepesertaan' => BentukKepesertaan::class,
+            'moda_pelaksanaan' => ModaPelaksanaan::class,
+            'bidang_lomba' => BidangLomba::class,
+            'jenis_rekognisi' => JenisRekognisi::class,
+            'jumlah_pt_peserta' => 'integer',
+            'jumlah_negara_peserta' => 'integer',
             'verified_at' => 'datetime',
         ];
     }
@@ -63,6 +81,12 @@ class PoinMahasiswa extends Model
     public function tahunAkademik(): BelongsTo
     {
         return $this->belongsTo(TahunAkademik::class);
+    }
+
+    /** The lecturer named on the assignment letter, reported to SIMKATMAWA. */
+    public function dosenPembimbing(): BelongsTo
+    {
+        return $this->belongsTo(Dosen::class, 'dosen_pembimbing_id');
     }
 
     public function diverifikasiOleh(): BelongsTo

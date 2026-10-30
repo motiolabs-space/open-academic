@@ -61,6 +61,62 @@ prosedur rotasi kunci ditulis.
 
 ---
 
+## Sesi 67 — 2026-10-29 · Ekspor SIMKATMAWA dan data lulusan untuk tracer study nasional
+
+Branch `feature/ekspor-simkatmawa-tracer`, satu PR, dua commit. Dimulai
+sesudah PR #34 (IKU 2026, Sesi 66) masuk. Keputusan: ADR-037 §1–§2. Dua
+migrasi baru (append-only). Kolom dan aturan ditulis ulang dari panduan
+publik; tidak ada materi kementerian di repo, catatan riset di `docs/lokal/`.
+
+- **SIMKATMAWA** (`feat(kemahasiswaan)`, Panduan SIMKATMAWA 2026). Layar
+  `/admin/simkatmawa`: pilih periode (tanggal prestasi) dan prodi, empat tabel
+  — prestasi kompetisi, rekognisi/karya, sertifikasi kompetensi, dan dosen
+  pembimbing (diturunkan) — dengan setiap baris yang akan ditolak tampil lebih
+  dulu beserta seluruh alasannya; unduh CSV/XLSX memuat baris yang siap saja.
+  `poin_kategori.simkatmawa_kategori` menetapkan tabel per kategori katalog;
+  `poin_mahasiswa` mendapat tingkat SIMKATMAWA, peringkat, kepesertaan, moda,
+  bidang, jenis rekognisi, penyelenggara, tanggal selesai, jumlah PT/negara,
+  nomor sertifikat, tiga tautan, dan dosen pembimbing, diisi dari layar
+  Lengkapi (`/admin/poin-kemahasiswaan/{uuid}/simkatmawa`, ditautkan dari
+  riwayat poin dan laporan). Semua ekspor lewat `App\Support\EksporTabel`
+  (CSV via `Csv`, XLSX via `LembarKerjaXlsx`). `PrestasiMapper` mengirim
+  penyelenggara dari kolomnya sendiri. Tanpa pengiriman ke kementerian.
+- **Tracer study** (`feat(alumni)`). Layar `/admin/lulusan`: lulusan per
+  tahun lulus/prodi dengan kelengkapan kontak (surel pribadi, surel kampus
+  saja, telepon berbentuk nomor Indonesia, verifikasi ≤ 12 bulan) dan formulir
+  verifikasi per baris; ekspor daftar lulusan (tanpa NIK/alamat; kontak yang
+  ditolak dibagikan dikosongkan) yang mewajibkan keperluan dan dicatat di Log
+  Aktivitas; impor status pekerjaan CSV dua langkah (periksa → terapkan) dengan
+  laporan baris ditolak, idempoten, dan tanggal survei lebih lama ditolak.
+  `alumni` mendapat sumber/tanggal status, masa tunggu, verifikasi kontak, dan
+  `HasLogAktivitas`; `StatusPekerjaanAlumni` (nilai lama `belum` = belum
+  ditelusuri). Bridge: `iku_2026.iku_2_lulusan` + `ditelusuri`,
+  `per_sumber_status`, `masa_tunggu_bulan`; `GET /graduates` + sumber dan
+  tanggal status. Izin baru `alumni.view` / `alumni.manage` / `alumni.ekspor`.
+- **Perbaikan sampingan.** Formulir profil mahasiswa mengirim `email_pribadi`
+  ke kolom yang tidak ada (MySQL 500 begitu diisi); kolomnya kini dibuat, dan
+  `YudisiumService` menyalinnya ke alumni lebih dulu daripada surel akun.
+- **Demo.** `PrestasiSeeder`: katalog enam kategori dan enam prestasi (empat
+  siap, satu kurang lengkap, satu menunggu verifikasi). `KelulusanSeeder`:
+  lulusan kini bersurel pribadi `@demo.test`, telepon `0899…`, sebagian
+  terverifikasi, status bersumber.
+
+**Tes baru:** EksporSimkatmawaTest 20 (pemilahan tabel, batas periode, setiap galat dan peringatan, tabel pembimbing, snapshot CSV dan XLSX, injeksi rumus, tautan non-http, akses, log), LulusanTracerTest 21 (kelengkapan kontak, bentuk telepon, verifikasi, snapshot ekspor tanpa NIK dan log-nya, impor titik koma ber-BOM, laporan baris ditolak, idempotensi, alur periksa → terapkan, Bridge `iku_2026` dan `/graduates` sesudah status terisi, surel pribadi profil).
+
+**Instalasi berjalan:** `php artisan migrate` lalu
+`php artisan db:seed --class=RolePermissionSeeder --force` (izin `alumni.*`).
+Tetapkan tabel SIMKATMAWA tiap kategori prestasi di layar Poin Kemahasiswaan.
+
+### Belum
+
+Format berkas hasil tracer nasional belum terlihat (sosialisasi tidak memuat
+daftar kolom); impor menerima nama kolom dan label status yang lazim — cocokkan
+dengan berkas sungguhan begitu ada. Indeks kompleksitas/dampak rekognisi
+SIMKATMAWA tidak dicatat. Staf belum punya cakupan prodi, jadi kedua layar
+kampus-luas.
+
+---
+
 ## Sesi 66 — 2026-10-29 · Tiga perubahan regulasi: IKU 2026, PISN, Neo Feeder 3.0.1
 
 Branch `fix/regulasi-iku-pisn-feeder301`, satu PR, tiga commit (satu per

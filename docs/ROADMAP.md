@@ -102,8 +102,9 @@ Apa yang ada hari ini, dikelompokkan menurut siapa yang memakainya.
 | Surat & SKPI (G3) | ✅ | Verifikasi publik ber-QR yang benar-benar memverifikasi |
 | PMB | ✅ | Generator NIM + provisioning akun; pendaftaran daring oleh calon (#32, portal `/pmb`) |
 | Poin kemahasiswaan & pelanggaran | ✅ | Dua buku besar, tidak pernah dijumlahkan — [`POIN-KEMAHASISWAAN.md`](POIN-KEMAHASISWAAN.md) |
+| Laporan SIMKATMAWA | ✅ | Empat tabel (kompetisi, rekognisi, sertifikasi, pembimbing) dari prestasi terverifikasi, baris yang akan ditolak dilaporkan sebelum unduh CSV/XLSX. Ekspor saja, tanpa pengiriman — ADR-037 §1 |
 | Career center (lowongan, forum & agenda alumni) | 🚫 | Milik Open Campus (lihat §Sengaja Bukan di Sini). Tabel `alumni` di sini hanya sumber data lulusan, disajikan lewat Campus Bridge |
-| **Tracer study** | 🚫→🟡 | Instrumennya milik Open Campus; di sini hanya `alumni.status_pekerjaan` |
+| **Tracer study** | 🟡 | Kuesioner dan perhitungan milik Open Campus. Di sini: daftar lulusan dengan kelengkapan kontak, ekspor untuk tracer nasional (tercatat di log), dan impor hasil status pekerjaan ke `alumni` yang mengisi `iku_2026` — ADR-037 §2 |
 
 ### Keuangan
 
@@ -386,6 +387,16 @@ sumber resmi sebelum kode diubah; nomor regulasinya di ADR-036.
 | 53 | **Tanggal ijazah pada Lulus/DO** | ⬜ Neo Feeder 3.0.1 dilaporkan menambah tanggal terbit ijazah pada data kelulusan; nama medannya belum terverifikasi, jadi belum dikirim. Nomor ijazah memang tidak dikirim (PISN yang menulisnya, #49) |
 | 54 | **Changelog resmi Neo Feeder 3.1** | ⬜ Rilis Mei 2026 menurut sumber sekunder; tidak ada catatan rilis publik dari Pusdatin. Butir yang dilaporkan dan sudah diterapkan sebagai validator: AKM wajib sebelum Lulus/DO, nomor HP unik. Periksa ulang begitu catatan resminya ada atau begitu instalasi kampus memakai 3.1 |
 | 55 | **Jenis daftar baru dan alur re-NIM / masuk kembali** | ⬜ Dilaporkan baru di 3.0.1 (sekunder). Kode jenis daftar dipetakan lewat referensi yang ditarik, jadi kode baru tiba sendiri; yang belum ada adalah alur lokal untuk mahasiswa yang berganti NIM atau aktif kembali |
+
+### P8 — Pelaporan ke sistem Kemdiktisaintek (ADR-037)
+
+Ditemukan pemeriksaan kompatibilitas 29 Oktober 2026 dengan enam belas sistem
+Kemdiktisaintek: dua belum didukung sama sekali, dan keduanya sumber IKU 2026.
+
+| # | Item | Status |
+|---|---|---|
+| ~~56~~ | ~~**Ekspor SIMKATMAWA**~~ | ✅ 29 Oktober 2026 — layar `/admin/simkatmawa`: periode dan prodi, empat tabel (prestasi kompetisi, rekognisi/karya, sertifikasi kompetensi, dosen pembimbing), validasi pra-ekspor seperti Feeder, unduh CSV/XLSX baris yang siap saja. Bidang yang kurang (tingkat SIMKATMAWA, peringkat, penyelenggara, jumlah PT/negara, tautan bukti, pembimbing, …) ditambahkan ke `poin_mahasiswa` dan diisi dari layar Lengkapi. Tanpa pengiriman otomatis. ADR-037 §1 |
+| ~~57~~ | ~~**Data lulusan untuk tracer study nasional**~~ | ✅ 29 Oktober 2026 — layar `/admin/lulusan`: kelengkapan dan verifikasi kontak lulusan, ekspor daftar lulusan tanpa NIK (izin `alumni.ekspor`, keperluan wajib, tercatat di log), impor CSV status pekerjaan dengan laporan baris ditolak; `iku_2026.iku_2_lulusan` dan `GET /graduates` kini memuat status, sumber, dan tanggal surveinya. Kuesioner tetap milik Open Campus. ADR-037 §2 |
 
 ### Urutan yang disarankan
 
