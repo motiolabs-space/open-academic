@@ -1605,3 +1605,47 @@ ditulis ulang dengan kata-kata sendiri; dokumennya tidak masuk repo
   berikutnya tidak mengubah catatan lama. Dosen yang sudah mencatat publikasi
   sebelum perubahan ini perlu melengkapi indeksnya lewat koreksi oleh staf
   (belum ada layar sunting kegiatan oleh dosen).
+
+### 3. Akreditasi prodi sebagai riwayat SK bertanggal; PISN membaca yang berlaku pada tanggal lulus
+
+- **Konteks.** Validator PISN menolak, tanpa jalur eksepsi, lulusan dari prodi
+  yang akreditasinya tidak berlaku (ADR-036 §2). `prodi.akreditasi` hanya
+  menyimpan peringkat yang diketik sekali, jadi SK yang sudah kedaluwarsa
+  tetap terbaca "terakreditasi" dan daftar periksa hanya bisa berkata
+  "pastikan masih berlaku". Pertanyaan yang sebenarnya — SK mana yang berlaku
+  pada tanggal lulus seseorang — hanya bisa dijawab riwayat.
+- **Keputusan.** (1) **Tabel `akreditasi_prodi`, satu baris per SK:**
+  lembaga (`LembagaAkreditasi`: BAN-PT, tujuh LAM, lembaga internasional),
+  peringkat (`PeringkatAkreditasi`: Unggul/Baik Sekali/Baik, A/B/C,
+  Terakreditasi, Terakreditasi Sementara, Tidak Terakreditasi), nomor dan
+  tanggal SK, tanggal mulai berlaku (bawaan = tanggal SK), tanggal
+  kedaluwarsa, berkas SK lewat `BerkasService`, pencatat. SK baru selalu
+  baris baru; yang salah ketik **ditarik** (hapus lunak, tercatat di Log
+  Aktivitas), tidak disunting. SK yang sama dua kali ditolak. Bila dua SK
+  bertumpang (akreditasi ulang terbit sebelum yang lama habis), yang mulai
+  berlaku belakangan yang dipakai. (2) **`prodi.akreditasi` menjadi cache**
+  peringkat SK terbaru, ditulis hanya oleh `AkreditasiProdiService`;
+  formulir master prodi tidak lagi menyuntingnya, dan kolomnya dilebarkan ke
+  32 karakter. Peringkat lama yang tercatat tanpa riwayat tetap tampil,
+  tetapi **tidak** dianggap berlaku. (3) **PISN.** `KesiapanPisnService`
+  memeriksa SK yang berlaku pada `yudisium.tanggal_lulus` (hari ini bila
+  belum ditetapkan) dan menyebut alasannya: belum dicatat, peringkat tanpa
+  SK, kedaluwarsa sebelum tanggal lulus, belum berlaku, atau SK tidak
+  terakreditasi. Riwayat dimuat sekali untuk seluruh daftar lulusan.
+  (4) **Peringatan.** Keadaan (`KeadaanAkreditasi`, diturunkan, tidak
+  disimpan): berlaku, segera kedaluwarsa (dalam
+  `ACADEMIC_AKREDITASI_PERINGATAN_BULAN`, bawaan 6, kecuali SK penerusnya
+  sudah dicatat), kedaluwarsa, tidak terakreditasi, belum dicatat. Tampil di
+  kolom baru layar master prodi, layar riwayat
+  `/admin/master/prodi/{uuid}/akreditasi` (izin `master.view` / `master.manage`
+  lewat `AkreditasiProdiPolicy`), dan sebagai peringatan di dasbor staf untuk
+  prodi aktif. (5) **LKPS** menuliskan SK yang berlaku hari ini (peringkat,
+  lembaga, nomor, masa berlaku) di layar dan sebagai baris di CSV; bila tidak
+  ada, kalimat yang menyuruh mencatatnya, bukan sel kosong.
+- **Konsekuensi.** Instalasi berjalan: setelah `php artisan migrate`, setiap
+  prodi tampil "Belum dicatat" dan lulusannya tidak siap PISN sampai SK
+  akreditasinya dicatat — itu temuan, bukan regresi, sama seperti butir PISN
+  baru di ADR-036. Dasbor staf menambah satu kueri (riwayat akreditasi dimuat
+  bersama daftar prodi); layar master prodi dan daftar periksa PISN juga satu
+  kueri tetap. Tanggal berlaku tidak diambil dari layanan BAN-PT/LAM mana pun:
+  disalin staf dari SK.

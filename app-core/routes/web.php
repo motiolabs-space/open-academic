@@ -382,6 +382,11 @@ Route::middleware('auth:staff,dosen')->prefix('berkas')->name('berkas.')->group(
     Route::get('/kegiatan-dosen/{penugasan}', [BerkasController::class, 'penugasanDosen'])->name('kegiatan-dosen');
 });
 
+// SK akreditasi prodi: staf ber-master.view — diputuskan AkreditasiProdiPolicy.
+Route::middleware('auth:staff')->prefix('berkas')->name('berkas.')->group(function (): void {
+    Route::get('/akreditasi-prodi/{akreditasi}', [BerkasController::class, 'akreditasiProdi'])->name('akreditasi-prodi');
+});
+
 // Lampiran helpdesk dapat diunggah dosen juga, maka ketiga guard. Siapa yang
 // boleh membukanya diputuskan HelpdeskTiketPolicy, bukan oleh guard.
 Route::middleware('auth:staff,dosen,mahasiswa')->prefix('berkas/helpdesk')->name('berkas.helpdesk.')
@@ -442,6 +447,10 @@ Route::middleware('auth:staff')->prefix('admin/master')->name('admin.master.')
         Route::post('/prodi', [Admin\Master\ProdiController::class, 'store'])->name('prodi.store');
         Route::put('/prodi/{prodi}', [Admin\Master\ProdiController::class, 'update'])->name('prodi.update');
         Route::delete('/prodi/{prodi}', [Admin\Master\ProdiController::class, 'destroy'])->name('prodi.destroy');
+        Route::get('/prodi/{prodi}/akreditasi', [Admin\Master\AkreditasiProdiController::class, 'index'])->name('prodi.akreditasi');
+        Route::post('/prodi/{prodi}/akreditasi', [Admin\Master\AkreditasiProdiController::class, 'store'])->name('prodi.akreditasi.store');
+        Route::delete('/prodi/{prodi}/akreditasi/{akreditasi}', [Admin\Master\AkreditasiProdiController::class, 'destroy'])
+            ->name('prodi.akreditasi.destroy');
 
         Route::get('/kurikulum', [Admin\Master\KurikulumController::class, 'index'])->name('kurikulum');
         Route::post('/kurikulum', [Admin\Master\KurikulumController::class, 'store'])->name('kurikulum.store');

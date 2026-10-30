@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers;
 
 use App\Enums\JenisRiwayat;
+use App\Models\Akademik\AkreditasiProdi;
 use App\Models\Helpdesk\HelpdeskBalasan;
 use App\Models\Helpdesk\HelpdeskTiket;
 use App\Models\Kemahasiswaan\CutiMahasiswa;
@@ -152,6 +153,17 @@ class BerkasController extends Controller
         return $this->alirkan(
             $penugasan->dokumen_path,
             'bukti-kegiatan-'.$penugasan->uuid.'.'.pathinfo((string) $penugasan->dokumen_path, PATHINFO_EXTENSION),
+        );
+    }
+
+    /** A programme's accreditation decree — master-data staff only. */
+    public function akreditasiProdi(AkreditasiProdi $akreditasi): StreamedResponse
+    {
+        $this->authorize('view', $akreditasi);
+
+        return $this->alirkan(
+            $akreditasi->dokumen_path,
+            'sk-akreditasi-'.$akreditasi->uuid.'.'.pathinfo((string) $akreditasi->dokumen_path, PATHINFO_EXTENSION),
         );
     }
 

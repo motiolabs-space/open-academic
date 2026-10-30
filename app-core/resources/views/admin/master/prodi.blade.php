@@ -8,7 +8,7 @@
     <div class="grid gap-5 lg:grid-cols-[minmax(0,1fr)_340px]">
         <x-card flush>
             <div class="overflow-x-auto">
-                <table class="w-full min-w-[820px] text-[13px]">
+                <table class="w-full min-w-[940px] text-[13px]">
                     <thead>
                         <tr class="border-b border-line text-left text-[11px] uppercase tracking-[0.08em] text-ink-muted">
                             <th class="px-5 py-3 font-semibold">Kode</th>
@@ -17,6 +17,7 @@
                             <th class="px-5 py-3 text-center font-semibold">SKS Lulus</th>
                             <th class="px-5 py-3 text-center font-semibold">Mahasiswa</th>
                             <th class="px-5 py-3 text-center font-semibold">PDDIKTI</th>
+                            <th class="px-5 py-3 font-semibold">{{ __('akreditasi.field.status') }}</th>
                             <th class="px-5 py-3 text-right font-semibold">Tindakan</th>
                         </tr>
                     </thead>
@@ -46,6 +47,23 @@
                                         <x-chip tone="danger" title="Sinkronisasi Feeder akan ditolak tanpa id_sms">belum diisi</x-chip>
                                     @endif
                                 </td>
+                                <td class="px-5 py-3">
+                                    @php
+                                        $keadaan = $keadaanAkreditasi[$p->id];
+                                        $terbaru = $p->riwayatAkreditasi->first();
+                                    @endphp
+                                    <a href="{{ route('admin.master.prodi.akreditasi', $p) }}" class="hover:underline">
+                                        <x-chip :tone="$keadaan->tone()">{{ $p->akreditasi ?? $keadaan->label() }}</x-chip>
+                                    </a>
+                                    @if ($keadaan->perluPerhatian() && $p->akreditasi)
+                                        <div class="mt-1 text-[11px] text-ink-faint">{{ $keadaan->label() }}</div>
+                                    @endif
+                                    @if ($terbaru)
+                                        <div class="tabular mt-1 text-[11px] text-ink-faint">
+                                            {{ __('akreditasi.peringatan.sampai', ['tanggal' => \App\Support\Format::tanggal($terbaru->tanggal_kedaluwarsa)]) }}
+                                        </div>
+                                    @endif
+                                </td>
                                 <td class="px-5 py-3 text-right">
                                     <form method="POST" action="{{ route('admin.master.prodi.destroy', $p) }}"
                                         data-confirm="Hapus program studi {{ $p->nama }}?">
@@ -56,7 +74,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="7" class="px-5 py-12">
+                                <td colspan="8" class="px-5 py-12">
                                     <x-empty-state title="Belum ada program studi"
                                         description="Mahasiswa, mata kuliah, dan kurikulum semuanya bergantung pada program studi." />
                                 </td>
@@ -80,10 +98,7 @@
                 <x-field label="Kode PDDIKTI (id_sms)" name="kode_pddikti"
                     hint="Wajib sebelum sinkronisasi Feeder — salah isi berarti pelaporan masuk ke prodi lain." />
 
-                <div class="grid grid-cols-2 gap-3">
-                    <x-field label="Gelar Pendek" name="gelar_pendek" placeholder="S.Kom." />
-                    <x-field label="Akreditasi" name="akreditasi" placeholder="B" />
-                </div>
+                <x-field label="Gelar Pendek" name="gelar_pendek" placeholder="S.Kom." />
 
                 <x-field label="Gelar Panjang" name="gelar_panjang" placeholder="Sarjana Komputer" />
                 <x-field label="SKS Kelulusan" name="sks_lulus" type="number" required :value="144" />
