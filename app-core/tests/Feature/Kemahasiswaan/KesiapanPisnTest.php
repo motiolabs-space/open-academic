@@ -3,8 +3,11 @@
 declare(strict_types=1);
 
 use App\Enums\EducationLevel;
+use App\Enums\LembagaAkreditasi;
+use App\Enums\PeringkatAkreditasi;
 use App\Enums\SemesterType;
 use App\Enums\StudentStatus;
+use App\Models\Akademik\AkreditasiProdi;
 use App\Models\Akademik\KelasKuliah;
 use App\Models\Akademik\Krs;
 use App\Models\Akademik\KrsDetail;
@@ -27,8 +30,23 @@ use Database\Seeders\RolePermissionSeeder;
 beforeEach(function () {
     $this->term = TahunAkademik::factory()->term(2026, SemesterType::Ganjil)->berjalan()->aktif()->create();
     $this->prodi = Prodi::factory()->create(['kode_pddikti' => 'a1b2c3d4', 'akreditasi' => 'Unggul']);
+    akreditasiPisn($this->prodi);
     $this->pisn = app(KesiapanPisnService::class);
 });
+
+/** A decree in force over the fixture's graduation date (5 Sep 2026). */
+function akreditasiPisn(Prodi $prodi, string $mulai = '2024-01-01', string $sampai = '2029-01-01', PeringkatAkreditasi $peringkat = PeringkatAkreditasi::Unggul): AkreditasiProdi
+{
+    return AkreditasiProdi::create([
+        'prodi_id' => $prodi->id,
+        'lembaga' => LembagaAkreditasi::Laminfokom,
+        'peringkat' => $peringkat,
+        'nomor_sk' => 'SK/AKR/'.$mulai.'/'.$prodi->id,
+        'tanggal_sk' => $mulai,
+        'tanggal_berlaku' => $mulai,
+        'tanggal_kedaluwarsa' => $sampai,
+    ]);
+}
 
 /** A graduate whose PDDIKTI record is complete: the baseline everything else deviates from. */
 function lulusanSiap(array $mahasiswa = [], array $yudisium = []): Mahasiswa
@@ -170,15 +188,18 @@ it('menampilkan kesiapan PISN pada daftar lulusan yang ditetapkan', function () 
 
 describe('validator PISN sejak 1 November 2025', function () {
     it('menolak prodi tanpa akreditasi tercatat — satu-satunya validator tanpa eksepsi', function () {
+        AkreditasiProdi::query()->forceDelete();
         $this->prodi->update(['akreditasi' => null]);
         $m = lulusanSiap();
 
-        expect($this->pisn->periksa($m)->belumSiap())->toBe(['Program studi terakreditasi']);
+        expect($this->pisn->periksa($m)->belumSiap())->toBe(['Program studi terakreditasi pada tanggal lulus']);
     });
 
     it('memakai SKS dan IPK minimum per jenjang, bukan angka kampus', function () {
         $d3 = Prodi::factory()->create(['jenjang' => EducationLevel::D3, 'akreditasi' => 'Baik']);
         $magister = Prodi::factory()->create(['jenjang' => EducationLevel::S2, 'akreditasi' => 'Baik']);
+        akreditasiPisn($d3);
+        akreditasiPisn($magister);
 
         // 110 SKS: enough for D3 (108), far below S1 (144).
         $diploma = lulusanSiap(['prodi_id' => $d3->id, 'nik' => '3201234567890131'], ['total_sks' => 110, 'ipk' => 2.10]);

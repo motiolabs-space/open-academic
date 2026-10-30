@@ -7,7 +7,10 @@ namespace Database\Seeders\Demo;
 use App\DTOs\Kemahasiswaan\HasilUjiKompetensiData;
 use App\Enums\EducationLevel;
 use App\Enums\HasilUjiKompetensi;
+use App\Enums\LembagaAkreditasi;
+use App\Enums\PeringkatAkreditasi;
 use App\Enums\StudentStatus;
+use App\Models\Akademik\AkreditasiProdi;
 use App\Models\Akademik\Fakultas;
 use App\Models\Akademik\Prodi;
 use App\Models\Akademik\TahunAkademik;
@@ -62,6 +65,16 @@ class UjiKompetensiSeeder extends Seeder
             'wajib_tugas_akhir' => false,
             'wajib_ukom' => true,
             'is_active' => true,
+        ]);
+
+        AkreditasiProdi::create([
+            'prodi_id' => $keperawatan->id,
+            'lembaga' => LembagaAkreditasi::LamPtkes,
+            'peringkat' => PeringkatAkreditasi::BaikSekali,
+            'nomor_sk' => '0877/LAM-PTKes/DEMO/2023',
+            'tanggal_sk' => now()->subYears(3)->startOfDay(),
+            'tanggal_berlaku' => now()->subYears(3)->startOfDay(),
+            'tanggal_kedaluwarsa' => now()->addYears(2)->startOfDay(),
         ]);
 
         $angkatan = (int) substr($lalu->kode, 0, 4) - 2;

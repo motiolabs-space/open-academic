@@ -84,7 +84,7 @@
     </section>
 
     <section class="mt-20">
-        <h2 class="font-serif text-[26px] font-semibold">Ekosistem Motiolabs Open Education</h2>
+        <h2 class="font-serif text-[26px] font-semibold">Ekosistem Humanix Open Education</h2>
         <p class="mt-2 max-w-2xl text-[14px] leading-relaxed text-ink-muted">
             Dua produk yang saling melengkapi dan <strong>tidak pernah berbagi basis data</strong> —
             keduanya hanya berbicara lewat Campus Bridge di atas HTTPS.
@@ -141,7 +141,7 @@ php artisan migrate --seed &amp;&amp; npm run build</code></pre>
 
 <footer class="border-t border-line bg-surface">
     <div class="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-6 py-8 text-[12.5px] text-ink-muted">
-        <span>{{ config('app.name') }} — bagian dari Motiolabs Open Education. Lisensi MIT.</span>
+        <span>{{ config('app.name') }} — bagian dari Humanix Open Education. Lisensi MIT.</span>
         <span>Dibangun untuk perguruan tinggi Indonesia.</span>
     </div>
 </footer>

@@ -396,4 +396,18 @@ return [
         ],
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Programme accreditation (ADR-041 §3)
+    |--------------------------------------------------------------------------
+    |
+    | How many months before a decree runs out the master prodi screen and the
+    | staff dashboard start warning. Re-accreditation takes months from
+    | submission to decree, and a graduate who graduates in the gap gets no
+    | PISN number — so the warning has to arrive before the paperwork starts.
+    */
+    'akreditasi' => [
+        'peringatan_bulan' => (int) env('ACADEMIC_AKREDITASI_PERINGATAN_BULAN', 6),
+    ],
+
 ];

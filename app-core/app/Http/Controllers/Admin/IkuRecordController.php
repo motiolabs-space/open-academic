@@ -10,6 +10,7 @@ use App\Models\Kemahasiswaan\AktivitasMahasiswa;
 use App\Models\Sdm\PenugasanDosen;
 use App\Services\Bridge\BridgeEventPublisher;
 use App\Services\Feeder\FlagshipMbkmService;
+use App\Services\Sdm\PenugasanDosenService;
 use App\Support\Portal;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -29,6 +30,7 @@ class IkuRecordController extends Controller
     public function __construct(
         private readonly BridgeEventPublisher $bridge,
         private readonly FlagshipMbkmService $flagship,
+        private readonly PenugasanDosenService $penugasan,
     ) {}
 
     public function index(Request $request): View
@@ -121,39 +123,18 @@ class IkuRecordController extends Controller
 
     public function verifikasiPenugasan(PenugasanDosen $penugasan): RedirectResponse
     {
-        $this->authorizeIku('dosen.manage');
+        $this->authorize('verifikasi', $penugasan);
 
-        $penugasan->update([
-            'is_verified' => true,
-            'verified_by_staff_id' => Portal::user()->id,
-            'verified_at' => now(),
-        ]);
-
-        $this->bridge->publish('lecturer.assignment_recorded', [
-            'penugasan_uuid' => $penugasan->uuid,
-            'dosen_uuid' => $penugasan->dosen->uuid,
-            'nidn' => $penugasan->dosen->nidn,
-            'semester' => $penugasan->tahunAkademik->kode,
-            'jenis' => $penugasan->jenis->value,
-            'judul' => $penugasan->judul,
-            'mitra' => $penugasan->mitra_nama,
-
-            // Which indicator this record feeds, decided by the enum rather
-            // than left for the consumer to infer from a free-text type.
-            'iku' => array_values(array_filter([
-                $penugasan->jenis->countsForIku3() ? 3 : null,
-                $penugasan->jenis->countsForIku4() ? 4 : null,
-            ])),
-        ]);
+        $this->penugasan->verifikasi($penugasan, Portal::user());
 
         return back()->with('sukses', 'Penugasan '.$penugasan->dosen->nama.' diverifikasi.');
     }
 
     public function batalkanPenugasan(PenugasanDosen $penugasan): RedirectResponse
     {
-        $this->authorizeIku('dosen.manage');
+        $this->authorize('verifikasi', $penugasan);
 
-        $penugasan->update(['is_verified' => false, 'verified_by_staff_id' => null, 'verified_at' => null]);
+        $this->penugasan->cabutVerifikasi($penugasan);
 
         return back()->with('sukses', 'Verifikasi penugasan dicabut.');
     }

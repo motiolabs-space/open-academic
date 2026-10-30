@@ -7,8 +7,11 @@ namespace App\Services\Kemahasiswaan;
 use App\DTOs\Kemahasiswaan\KesiapanPisn;
 use App\Enums\EducationLevel;
 use App\Enums\StudentStatus;
+use App\Models\Akademik\AkreditasiProdi;
 use App\Models\Kemahasiswaan\Mahasiswa;
+use App\Support\Format;
 use App\Support\KodeSemester;
+use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -18,7 +21,7 @@ use Illuminate\Support\Facades\DB;
  *
  * PISN issues the number only after the graduate's PDDIKTI record is
  * complete: status Lulus with a graduation date, and every PISN validator
- * passed — accredited programme, credits, GPA, study length, per-semester
+ * passed — programme accredited on the graduation day, credits, GPA, study length, per-semester
  * and short-term loads, an entry term actually reported, a NIK (ADR-036 §2).
  * A record that fails is "tidak eligible", and the campus must fix it at
  * PDDIKTI or file an exception. Every one of those checks is visible from the
@@ -52,7 +55,7 @@ class KesiapanPisnService
             return collect();
         }
 
-        $mahasiswa->loadMissing(['yudisium.tahunAkademik', 'prodi']);
+        $mahasiswa->loadMissing(['yudisium.tahunAkademik', 'prodi.riwayatAkreditasi']);
         $mahasiswa->loadCount([
             'statusPerSemester as semester_total',
             'statusPerSemester as semester_belum_sinkron' => fn ($q) => $q->whereNull('feeder_id'),
@@ -109,16 +112,7 @@ class KesiapanPisnService
                 'siap' => $identitas,
                 'keterangan' => $identitas ? 'lengkap' : 'ada yang kosong — mengubahnya setelah sinkron butuh ajuan PDM',
             ],
-            [
-                'kode' => 'akreditasi',
-                'label' => 'Program studi terakreditasi',
-                'siap' => filled($m->prodi?->akreditasi),
-                // The one validator PISN grants no exception for. Expiry is
-                // not recorded here, so a stale grade still reads as filled.
-                'keterangan' => filled($m->prodi?->akreditasi)
-                    ? (string) $m->prodi->akreditasi.' — pastikan masih berlaku'
-                    : 'akreditasi prodi belum dicatat',
-            ],
+            $this->akreditasi($m, $ditetapkan),
             [
                 'kode' => 'registrasi',
                 'label' => 'Riwayat pendidikan tersinkron ke PDDIKTI',
@@ -177,6 +171,59 @@ class KesiapanPisnService
                 },
             ],
         ];
+    }
+
+    /**
+     * The one validator PISN grants no exception for: the programme must be
+     * accredited on the day the student graduated — not today, and not by a
+     * grade typed once and never dated (ADR-041 §3). Before the graduation
+     * date is set, today stands in for it.
+     *
+     * @return array{kode: string, label: string, siap: bool, keterangan: string}
+     */
+    private function akreditasi(Mahasiswa $m, bool $ditetapkan): array
+    {
+        $prodi = $m->prodi;
+        $tanggalLulus = $ditetapkan ? $m->yudisium->tanggal_lulus : null;
+        $acuan = $tanggalLulus ?? now();
+        $berlaku = $prodi?->akreditasiPada($acuan);
+        $riwayat = $prodi?->riwayatAkreditasi ?? collect();
+        $tanggal = Format::tanggal($acuan).' ('.__('akreditasi.pisn.'.($tanggalLulus ? 'acuan_lulus' : 'acuan_hari_ini')).')';
+
+        $keterangan = match (true) {
+            $riwayat->isEmpty() && filled($prodi?->akreditasi) => __('akreditasi.pisn.tanpa_sk', ['peringkat' => $prodi->akreditasi]),
+            $riwayat->isEmpty() => __('akreditasi.pisn.belum_dicatat'),
+            $berlaku !== null && !$berlaku->peringkat->terakreditasi() => __('akreditasi.pisn.tidak_terakreditasi', [
+                'nomor' => $berlaku->nomor_sk, 'tanggal' => $tanggal,
+            ]),
+            $berlaku !== null => __('akreditasi.pisn.berlaku', [
+                'peringkat' => $berlaku->peringkat->label(),
+                'lembaga' => $berlaku->lembaga->label(),
+                'sampai' => Format::tanggal($berlaku->tanggal_kedaluwarsa),
+            ]),
+            default => $this->akreditasiTerakhirSebelum($riwayat, $acuan) !== null
+                ? __('akreditasi.pisn.kedaluwarsa', [
+                    'sampai' => Format::tanggal($this->akreditasiTerakhirSebelum($riwayat, $acuan)->tanggal_kedaluwarsa),
+                    'tanggal' => $tanggal,
+                ])
+                : __('akreditasi.pisn.belum_berlaku', ['tanggal' => $tanggal]),
+        };
+
+        return [
+            'kode' => 'akreditasi',
+            'label' => __('akreditasi.pisn.label'),
+            'siap' => $berlaku !== null && $berlaku->peringkat->terakreditasi(),
+            'keterangan' => $keterangan,
+        ];
+    }
+
+    /** @param Collection<int, AkreditasiProdi> $riwayat */
+    private function akreditasiTerakhirSebelum(Collection $riwayat, CarbonInterface $tanggal): ?AkreditasiProdi
+    {
+        return $riwayat
+            ->filter(fn (AkreditasiProdi $a): bool => $a->tanggal_kedaluwarsa->toDateString() < $tanggal->toDateString())
+            ->sortByDesc(fn (AkreditasiProdi $a): string => $a->tanggal_kedaluwarsa->toDateString())
+            ->first();
     }
 
     /**

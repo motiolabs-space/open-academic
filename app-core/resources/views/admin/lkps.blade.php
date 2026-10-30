@@ -35,6 +35,15 @@
 
             <x-button type="submit" class="px-5 py-2 text-xs">Tampilkan</x-button>
         </form>
+
+        <p class="mt-3 border-t border-line pt-3 text-[12.5px]">
+            <span class="text-[11px] uppercase tracking-[0.08em] text-ink-muted">{{ __('akreditasi.lkps.label') }}</span>
+            @if ($akreditasi)
+                <span class="tabular ml-2">{{ $akreditasi }}</span>
+            @else
+                <span class="ml-2 text-warning">{{ __('akreditasi.lkps.tidak_ada') }}</span>
+            @endif
+        </p>
     </x-card>
 
     {{--

@@ -7,6 +7,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Akademik\Prodi;
 use App\Models\Akademik\TahunAkademik;
+use App\Services\Akademik\AkreditasiProdiService;
 use App\Services\Lkps\PerakitBorang;
 use App\Support\Csv;
 use App\Support\Portal;
@@ -24,7 +25,10 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
  */
 class LkpsController extends Controller
 {
-    public function __construct(private readonly PerakitBorang $perakit) {}
+    public function __construct(
+        private readonly PerakitBorang $perakit,
+        private readonly AkreditasiProdiService $akreditasi,
+    ) {}
 
     public function index(Request $request): View
     {
@@ -50,6 +54,10 @@ class LkpsController extends Controller
 
             'tabel' => $this->perakit->rakit($prodi, $term),
 
+            // The decree in force today, from the accreditation history
+            // (ADR-041 §3) — not the bare grade typed once on the prodi row.
+            'akreditasi' => $this->akreditasi->ringkasan($prodi->load('riwayatAkreditasi')),
+
             // Ditampilkan di layar, bukan hanya di dokumentasi: angka di bawah
             // dihitung memakai definisi yang belum tentu disepakati kampus.
             'definisiSementara' => $this->definisiSementara(),
@@ -71,13 +79,16 @@ class LkpsController extends Controller
 
         $tabel = $this->perakit->rakit($prodi, $term);
         $pemisah = (string) config('bkd.ekspor.pemisah_csv');
+        $akreditasi = $this->akreditasi->ringkasan($prodi->load('riwayatAkreditasi'))
+            ?? __('akreditasi.lkps.tidak_ada');
 
-        return response()->streamDownload(function () use ($tabel, $pemisah, $prodi, $term): void {
+        return response()->streamDownload(function () use ($tabel, $pemisah, $prodi, $term, $akreditasi): void {
             $keluaran = fopen('php://output', 'wb');
             fwrite($keluaran, "\xEF\xBB\xBF");
 
             Csv::tulis($keluaran, ['Prodi', $prodi->kode.' '.$prodi->nama], $pemisah);
             Csv::tulis($keluaran, ['Semester', $term->nama], $pemisah);
+            Csv::tulis($keluaran, [__('akreditasi.lkps.label'), $akreditasi], $pemisah);
             Csv::tulis($keluaran, [], $pemisah);
 
             foreach ($tabel as $satu) {

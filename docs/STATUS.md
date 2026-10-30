@@ -62,6 +62,65 @@ Tagihan registrasi baru hasil re-NIM tidak diterbitkan otomatis.
 
 ---
 
+## Sesi 71 — 2026-10-30 · Data IKU 8 dan IKU 6, masa berlaku akreditasi prodi (P7 #47, #48, #50)
+
+Branch `feature/p7-data-iku`, satu PR, tiga commit. Keputusan: ADR-041 §1–§3.
+Tiga migrasi baru (append-only). Definisi IKU 6 dan 8 diverifikasi dari salinan
+resmi Kepmendiktisaintek 358/M/KEP/2025 dan ditulis dengan kata-kata sendiri;
+dokumennya tidak masuk repo. Penomoran Sesi/ADR disesuaikan bila urutan merge
+dengan Sesi 68–70 dan 72 berbeda.
+
+- **IKU 8 — keterlibatan dalam penyusunan kebijakan** (`feat(sdm)`). Jenis
+  `penugasan_dosen` baru `penyusunan_kebijakan`: bentuk (tim penyusun,
+  narasumber/ahli resmi, kontributor kajian), tingkat (nasional, daerah,
+  industri; internasional dicatat apa adanya), lembaga pemberi, jenis dan
+  nomor dokumen resmi, berkas bukti wajib. Penyimpanan kegiatan dosen kini
+  lewat `CatatKegiatanRequest` → `KegiatanDosenData` → `PenugasanDosenService`;
+  verifikasi `/admin/data-iku` lewat service yang sama dan
+  `PenugasanDosenPolicy`, dengan tautan bukti `/berkas/kegiatan-dosen/{uuid}`.
+  Bridge: `iku_2026.iku_8_penyusunan_kebijakan`; `ketersediaan` 8 `tersedia`.
+- **IKU 6 — indeks dan kuartil publikasi** (`feat(sdm)`). Dicatat di sini
+  sebagai fakta yang dinyatakan dosen dan diverifikasi staf; penilaian bukti,
+  bobot, top tier, dan pengecualian penerbit di Open Campus. Luaran
+  jurnal/prosiding: indeks (Scopus, WoS, SINTA 1–6, lainnya), kuartil Q1–Q4
+  (hanya jurnal Scopus/WoS), DOI ternormalkan, tautan, penerbit, kolaborasi
+  internasional. `iku_2026.iku_6_publikasi` menambah tujuh medan per artikel
+  (baris ber-DOI sama digabung). Tanpa panggilan API pengindeks.
+- **Akreditasi prodi** (`feat(akademik)`). Tabel `akreditasi_prodi` (riwayat
+  SK: lembaga BAN-PT/LAM, peringkat, nomor/tanggal SK, masa berlaku, berkas);
+  SK baru tidak menimpa yang lama, salah ketik ditarik. Layar
+  `/admin/master/prodi/{uuid}/akreditasi`, kolom status di master prodi,
+  peringatan dasbor staf (`ACADEMIC_AKREDITASI_PERINGATAN_BULAN`, bawaan 6).
+  `KesiapanPisnService` memakai SK yang berlaku pada tanggal lulus; LKPS
+  (layar dan CSV) menuliskan SK yang berlaku. `prodi.akreditasi` menjadi cache
+  peringkat terbaru dan tidak lagi disunting di formulir prodi.
+- **Demo.** SK akreditasi untuk ketiga prodi demo (Sistem Informasi dalam
+  jendela peringatan); satu keterlibatan kebijakan terverifikasi dan satu
+  menunggu; jurnal SINTA 2 ber-DOI dan satu artikel Scopus Q2 berkolaborasi
+  internasional.
+
+**Tes baru:** KeterlibatanKebijakanTest 11, IndeksPublikasiTest 11 (DOI
+dinormalkan dari empat bentuk), AkreditasiProdiTest 17 (riwayat, tarik, lima
+keadaan, jendela peringatan sebagai config, PISN pada tanggal lulus termasuk
+celah antar-SK, satu kueri riwayat untuk banyak lulusan, layar, izin, LKPS).
+KesiapanPisnTest dan IkuData2026Test disesuaikan. Anggaran kueri `iku-data`
+tetap 42 (IKU 6 dan 8 dibaca dari kueri luaran yang sama).
+
+**Instalasi berjalan:** `php artisan migrate`. Setiap prodi tampil
+"Belum dicatat" dan lulusannya belum siap PISN sampai SK akreditasinya dicatat
+di Master Akademik → Program Studi → status akreditasi.
+
+**Perubahan instruksi proyek:** `CLAUDE.md` §6 baris IKU 6 dan 8.
+
+### Belum
+
+Peneliti/perekayasa non-dosen (IKU 8) dan karya seni berpengakuan
+internasional (IKU 6) tidak tercatat. Dosen belum dapat menyunting kegiatan
+yang sudah dicatat, jadi publikasi lama dilengkapi indeksnya lewat staf.
+Pengisian kuartil dari DOI, bila kelak diperlukan, masuk di balik interface.
+
+---
+
 ## Sesi 69 — 2026-10-30 · Empat layar pengelolaan: kuesioner, Bridge, SSO, tiket staf
 
 Branch `feature/layar-pengelolaan`, satu PR, empat commit (satu per layar).

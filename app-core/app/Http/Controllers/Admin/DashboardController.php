@@ -19,6 +19,7 @@ use App\Models\Keuangan\Tagihan;
 use App\Models\Pmb\PmbPendaftar;
 use App\Models\Sdm\Dosen;
 use App\Models\System\Pengumuman;
+use App\Services\Akademik\AkreditasiProdiService;
 use App\Services\Branding\BrandingService;
 use App\Support\Portal;
 use Illuminate\Support\Collection;
@@ -31,11 +32,14 @@ use Illuminate\View\View;
  */
 class DashboardController extends Controller
 {
+    public function __construct(private readonly AkreditasiProdiService $akreditasi) {}
+
     public function __invoke(): View
     {
         $term = Portal::term();
 
         $tagihan = Tagihan::where('tahun_akademik_id', $term?->id);
+        $perProdi = $this->sebaranProdi();
 
         return view('admin.dashboard', [
             'judul' => 'Dasbor Institusi',
@@ -47,7 +51,11 @@ class DashboardController extends Controller
             'dosenAktif' => Dosen::aktif()->count(),
             'kelasBerjalan' => KelasKuliah::where('tahun_akademik_id', $term?->id)->count(),
 
-            'perProdi' => $this->sebaranProdi(),
+            'perProdi' => $perProdi,
+
+            // Read from the history already loaded with the list above.
+            'akreditasiPerhatian' => $this->akreditasi->perluPerhatian($perProdi),
+            'bulanPeringatanAkreditasi' => $this->akreditasi->bulanPeringatan(),
             'perStatus' => $this->sebaranStatus(),
             'funnelPmb' => $this->funnelPmb(),
 
@@ -72,6 +80,7 @@ class DashboardController extends Controller
     private function sebaranProdi(): Collection
     {
         return Prodi::query()
+            ->with('riwayatAkreditasi')
             ->withCount([
                 'mahasiswa as jumlah_aktif' => fn ($q) => $q->where('status', StudentStatus::Aktif->value),
                 'mahasiswa as jumlah_total',
