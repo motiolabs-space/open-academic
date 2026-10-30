@@ -570,7 +570,7 @@ components:
     bearerAuth:
       type: http
       scheme: bearer
-      description: Token Sanctum yang diterbitkan `php artisan openacademic:bridge-token {slug}`
+      description: Token Sanctum yang diterbitkan dari layar /admin/bridge (Kelola) atau `php artisan openacademic:bridge-token {slug}`
 
   parameters:
     Semester:

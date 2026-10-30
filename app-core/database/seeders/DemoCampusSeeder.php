@@ -20,6 +20,7 @@ use Database\Seeders\Demo\KemahasiswaanSeeder;
 use Database\Seeders\Demo\KepegawaianSeeder;
 use Database\Seeders\Demo\KeuanganSeeder;
 use Database\Seeders\Demo\KonversiSeeder;
+use Database\Seeders\Demo\KuesionerSeeder;
 use Database\Seeders\Demo\KurikulumLanjutanSeeder;
 use Database\Seeders\Demo\MasterAkademikSeeder;
 use Database\Seeders\Demo\MutuSeeder;
@@ -177,6 +178,10 @@ class DemoCampusSeeder extends Seeder
             // Sesudah MutuSeeder: kategori helpdesk menunjuk unit kerja yang
             // ditanam di sana, dan tiket contoh didisposisi ke unit itu.
             HelpdeskSeeder::class,
+
+            // Sesudah KemahasiswaanSeeder dan SdmSeeder: jawaban contoh diisi
+            // mahasiswa demo, dan pembuatnya akun admin demo.
+            KuesionerSeeder::class,
 
             // Sesudah KeuanganSeeder dan BeasiswaSeeder: outbox akuntansi
             // menyusuri tagihan dan pembayaran yang sudah ada, jadi keduanya

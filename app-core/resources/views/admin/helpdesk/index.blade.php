@@ -75,7 +75,7 @@
                             <td class="px-5 py-3">
                                 <div>{{ $t->pemohon?->nama ?? '—' }}</div>
                                 <div class="tabular text-[11.5px] text-ink-faint">
-                                    {{ $t->pemohon?->nim ?? $t->pemohon?->nidn ?? '' }}
+                                    {{ $t->pemohon?->nim ?? $t->pemohon?->nidn ?? $t->pemohon?->nip ?? '' }}
                                 </div>
                             </td>
                             <td class="px-5 py-3">

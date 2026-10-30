@@ -38,6 +38,7 @@ class BridgeController extends Controller
             'penggunaan' => $this->penggunaanHarian(),
             'scopeTersedia' => config('bridge.scopes'),
             'eventTersedia' => config('bridge.events'),
+            'bolehKelola' => Portal::user()->can('kelolaKredensial', BridgeConsumer::class),
         ]);
     }
 
