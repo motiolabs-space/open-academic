@@ -1,6 +1,6 @@
 {
     "$schema": "https://getcomposer.org/schema.json",
-    "name": "motiolabs/open-academic",
+    "name": "humanix/open-academic",
     "type": "project",
     "description": "Open Academic — sistem informasi akademik (SIAKAD) open source untuk perguruan tinggi Indonesia, siap lapor PDDIKTI Neo Feeder.",
     "keywords": [
