@@ -54,6 +54,15 @@ class RolePermissionSeeder extends Seeder
             'feeder.view', 'feeder.sync',
             'lkps.view',
             'bridge.view', 'bridge.manage',
+
+            /*
+             * Creating Campus Bridge consumers and SSO clients, and issuing,
+             * revoking and rotating their tokens and secrets. Apart from
+             * bridge.manage (replaying a webhook) because a token is a
+             * standing grant to read student records in bulk. Super-admin and
+             * the IT office only.
+             */
+            'integrasi.kredensial',
             'pengaturan.view', 'pengaturan.manage',
             'log.view',
 
@@ -148,6 +157,13 @@ class RolePermissionSeeder extends Seeder
             // the timetable's editing screens.
             'sarpras' => [
                 'master.view', 'ruang.view', 'helpdesk.view', 'helpdesk.tangani',
+            ],
+
+            // The IT office: integrations and their credentials, and its own
+            // helpdesk queue. No academic or financial records.
+            'tik' => [
+                'bridge.view', 'bridge.manage', 'integrasi.kredensial', 'log.view',
+                'helpdesk.view', 'helpdesk.tangani',
             ],
 
             // Leadership reads results but does not open, close, or reword a

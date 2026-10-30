@@ -254,6 +254,10 @@ dinyatakan **belum dapat dibandingkan**, bukan terbaca cocok.
 
 ### Campus Bridge
 
+Konsumen, scope, token, dan webhook dikelola di **Campus Bridge → Kelola**
+(`/admin/bridge`, izin `integrasi.kredensial`; peran `super-admin` dan `tik`).
+Token dan rahasia webhook ditampilkan sekali. Perintah berikut setara:
+
 ```bash
 php artisan openacademic:bridge-token open-campus         # terbitkan token
 php artisan openacademic:bridge-token open-campus --cabut # cabut seluruh token

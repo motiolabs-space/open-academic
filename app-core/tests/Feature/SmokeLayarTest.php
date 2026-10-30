@@ -628,3 +628,10 @@ it('membuka detail, hasil, dan formulir kuesioner dalam anggaran kueri', functio
     dalamAnggaranKueri(fn () => $this->actingAs($staff, 'staff')->get(route('admin.kuesioner.hasil', $kuesioner))->assertOk()->assertSee('Wi-Fi'), 14);
     dalamAnggaranKueri(fn () => $this->actingAs($mahasiswa, 'mahasiswa')->get(route('mahasiswa.kuesioner.show', $kuesioner))->assertOk(), 16);
 });
+
+it('membuka halaman kelola konsumen Bridge demo dalam anggaran kueri', function () {
+    $staff = Staff::where('email', 'admin@demo.test')->firstOrFail();
+    $konsumen = BridgeConsumer::query()->orderBy('id')->firstOrFail();
+
+    dalamAnggaranKueri(fn () => $this->actingAs($staff, 'staff')->get(route('admin.bridge.konsumen.show', $konsumen))->assertOk(), 14);
+});

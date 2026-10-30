@@ -885,6 +885,18 @@ Route::middleware(['auth:staff', 'term.active'])->prefix('admin')->name('admin.'
     Route::get('/bridge', [Admin\BridgeController::class, 'index'])->name('bridge');
     Route::post('/bridge/pengiriman/{pengiriman}/kirim-ulang', [Admin\BridgeController::class, 'kirimUlang'])
         ->name('bridge.kirim-ulang');
+
+    // Konsumen dan kredensialnya (integrasi.kredensial). Token dicari lewat
+    // konsumennya, tidak pernah dari id-nya saja.
+    Route::post('/bridge/konsumen', [Admin\KonsumenBridgeController::class, 'store'])->name('bridge.konsumen.store');
+    Route::get('/bridge/konsumen/{konsumen}', [Admin\KonsumenBridgeController::class, 'show'])->name('bridge.konsumen.show');
+    Route::put('/bridge/konsumen/{konsumen}', [Admin\KonsumenBridgeController::class, 'perbarui'])->name('bridge.konsumen.perbarui');
+    Route::post('/bridge/konsumen/{konsumen}/token', [Admin\KonsumenBridgeController::class, 'terbitkanToken'])->name('bridge.konsumen.token');
+    Route::delete('/bridge/konsumen/{konsumen}/token/{token}', [Admin\KonsumenBridgeController::class, 'cabutToken'])
+        ->whereNumber('token')->name('bridge.konsumen.token.cabut');
+    Route::put('/bridge/konsumen/{konsumen}/webhook', [Admin\KonsumenBridgeController::class, 'aturWebhook'])->name('bridge.konsumen.webhook');
+    Route::post('/bridge/konsumen/{konsumen}/webhook/rahasia', [Admin\KonsumenBridgeController::class, 'rotasiRahasia'])
+        ->name('bridge.konsumen.rahasia');
 });
 
 /*
