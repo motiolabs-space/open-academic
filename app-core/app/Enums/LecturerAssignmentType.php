@@ -13,7 +13,9 @@ namespace App\Enums;
  *  - IKU 4: practitioners teaching inside the campus (PraktisiMengajar)
  *
  * Neither has a counterpart in Kepmendiktisaintek 358/M/KEP/2025; the outputs
- * recorded on an assignment feed its IKU 4-6 instead (ADR-036).
+ * recorded on an assignment feed its IKU 4-6 instead (ADR-036), and policy
+ * drafting is its IKU 8 (ADR-041 §1). The legacy counts are frozen, so the
+ * newer type feeds neither IKU 3 nor IKU 4 of the old numbering.
  */
 enum LecturerAssignmentType: string
 {
@@ -24,6 +26,7 @@ enum LecturerAssignmentType: string
     case StudiLanjut = 'studi_lanjut';
     case Sertifikasi = 'sertifikasi_kompetensi';
     case PembinaMahasiswa = 'pembina_prestasi_mahasiswa';
+    case PenyusunanKebijakan = 'penyusunan_kebijakan';
 
     public function label(): string
     {
@@ -35,6 +38,7 @@ enum LecturerAssignmentType: string
             self::StudiLanjut => 'Studi Lanjut',
             self::Sertifikasi => 'Sertifikasi Kompetensi',
             self::PembinaMahasiswa => 'Membina Mahasiswa Berprestasi',
+            self::PenyusunanKebijakan => __('portofolio.kebijakan.jenis'),
         };
     }
 
@@ -49,6 +53,16 @@ enum LecturerAssignmentType: string
             self::Sertifikasi,
             self::PembinaMahasiswa,
         ], true);
+    }
+
+    /**
+     * IKU 8 (2026 numbering): taking part in drafting a public or sector
+     * policy. The only type whose row needs the kebijakan_* columns and an
+     * official document before it may be saved.
+     */
+    public function untukIku8(): bool
+    {
+        return $this === self::PenyusunanKebijakan;
     }
 
     /** IKU 4 counts practitioners brought in to teach. */

@@ -4,11 +4,14 @@ declare(strict_types=1);
 
 namespace Database\Seeders\Demo;
 
+use App\Enums\BentukKeterlibatanKebijakan;
 use App\Enums\EducationLevel;
 use App\Enums\Gender;
+use App\Enums\JenisBuktiKebijakan;
 use App\Enums\JenisLuaran;
 use App\Enums\LecturerAssignmentType;
 use App\Enums\PeranKegiatan;
+use App\Enums\TingkatKebijakan;
 use App\Enums\TingkatKegiatan;
 use App\Enums\UnsurBkd;
 use App\Models\Akademik\Fakultas;
@@ -19,6 +22,7 @@ use App\Models\Sdm\PenugasanDosen;
 use App\Models\Sdm\Staff;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Storage;
 
 /**
  * Staff and lecturers, including the two populations the IKU data provider
@@ -30,6 +34,12 @@ use Illuminate\Support\Collection;
  */
 class SdmSeeder extends Seeder
 {
+    // A one-page PDF, so the demo evidence link opens something.
+    private const PDF_CONTOH = "%PDF-1.4\n1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj\n"
+        ."2 0 obj<</Type/Pages/Kids[3 0 R]/Count 1>>endobj\n"
+        ."3 0 obj<</Type/Page/Parent 2 0 R/MediaBox[0 0 595 842]>>endobj\n"
+        ."trailer<</Root 1 0 R>>\n%%EOF\n";
+
     public function run(): void
     {
         $this->seedStaff();
@@ -202,6 +212,48 @@ class SdmSeeder extends Seeder
                 'is_verified' => true,
                 'verified_by_staff_id' => $staff->id,
                 'verified_at' => now(),
+            ]);
+        }
+
+        /*
+         * Policy drafting (IKU 8, ADR-041 §1): one verified with its decree on
+         * file, one still waiting on the verification screen — the two states
+         * a demo of /admin/data-iku needs.
+         */
+        // The portfolio form refuses this type without its document, so the
+        // demo rows carry one too.
+        $sk = 'portofolio/'.$dosen[0]->uuid.'/sk-tim-penyusun-demo.pdf';
+        $undangan = 'portofolio/'.$dosen[2]->uuid.'/undangan-narasumber-demo.pdf';
+        if (!app()->runningUnitTests()) {
+            Storage::disk((string) config('berkas.disk'))->put($sk, self::PDF_CONTOH);
+            Storage::disk((string) config('berkas.disk'))->put($undangan, self::PDF_CONTOH);
+        }
+
+        foreach ([
+            [$dosen[0], 'Tim Penyusun Peraturan Daerah tentang Transformasi Digital', 'Pemerintah Kota Demo',
+                BentukKeterlibatanKebijakan::TimPenyusun, TingkatKebijakan::Daerah,
+                JenisBuktiKebijakan::SkPenugasan, 'SK/DEMO/014/2026', $sk, true],
+            [$dosen[2], 'Masukan Tertulis Rancangan Standar Keamanan Data Sektor Keuangan', 'Asosiasi Industri Demo',
+                BentukKeterlibatanKebijakan::Narasumber, TingkatKebijakan::Industri,
+                JenisBuktiKebijakan::UndanganResmi, 'UND/DEMO/031/2026', $undangan, false],
+        ] as [$pengampu, $judul, $lembaga, $bentuk, $tingkat, $jenisBukti, $nomor, $path, $terverifikasi]) {
+            PenugasanDosen::create([
+                'dosen_id' => $pengampu->id,
+                'tahun_akademik_id' => $term->id,
+                'jenis' => LecturerAssignmentType::PenyusunanKebijakan,
+                'unsur' => UnsurBkd::Pengabdian,
+                'judul' => $judul,
+                'mitra_nama' => $lembaga,
+                'mitra_jenis' => 'pemerintah',
+                'tanggal_mulai' => $term->tanggal_mulai,
+                'kebijakan_bentuk' => $bentuk,
+                'kebijakan_tingkat' => $tingkat,
+                'kebijakan_bukti_jenis' => $jenisBukti,
+                'kebijakan_nomor_bukti' => $nomor,
+                'dokumen_path' => $path,
+                'is_verified' => $terverifikasi,
+                'verified_by_staff_id' => $terverifikasi ? $staff->id : null,
+                'verified_at' => $terverifikasi ? now() : null,
             ]);
         }
     }

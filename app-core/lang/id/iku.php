@@ -19,7 +19,7 @@ return [
     'data' => [
         'aktivitas_meta' => 'Sumber IKU 3',
         'aktivitas_kosong' => 'Kegiatan mahasiswa di luar program studi muncul di sini untuk diverifikasi sebelum menjadi bukti IKU 3.',
-        'penugasan_meta' => 'Sumber luaran IKU 4–6',
+        'penugasan_meta' => 'Sumber luaran IKU 4–6 dan keterlibatan kebijakan IKU 8',
     ],
 
     'yudisium_kosong' => 'Lulusan yang ditetapkan di sini menjadi populasi awal tracer study IKU 2 di Open Campus.',

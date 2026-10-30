@@ -376,6 +376,12 @@ Route::middleware('auth:staff,dosen')->prefix('berkas/kepegawaian')->name('berka
         Route::get('/{jenis}/{riwayat}', [BerkasController::class, 'riwayatKepegawaian'])->name('kepegawaian');
     });
 
+// Bukti kegiatan dosen (SK, undangan, bukti terbit): dosen pemiliknya dan staf
+// yang memverifikasinya — diputuskan PenugasanDosenPolicy.
+Route::middleware('auth:staff,dosen')->prefix('berkas')->name('berkas.')->group(function (): void {
+    Route::get('/kegiatan-dosen/{penugasan}', [BerkasController::class, 'penugasanDosen'])->name('kegiatan-dosen');
+});
+
 // Lampiran helpdesk dapat diunggah dosen juga, maka ketiga guard. Siapa yang
 // boleh membukanya diputuskan HelpdeskTiketPolicy, bukan oleh guard.
 Route::middleware('auth:staff,dosen,mahasiswa')->prefix('berkas/helpdesk')->name('berkas.helpdesk.')

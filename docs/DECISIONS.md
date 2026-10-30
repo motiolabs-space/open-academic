@@ -1496,3 +1496,63 @@ Tidak ada panduan, templat, atau contoh berkas kementerian yang masuk repo
   bekerja); bila instrumen 2026 berbeda, `StatusPekerjaanAlumni::dariTeks()`
   yang diperbarui. Instalasi berjalan: `php artisan migrate` dan
   `db:seed --class=RolePermissionSeeder`.
+
+---
+
+## ADR-041 — Data IKU 8 dan IKU 6, dan masa berlaku akreditasi prodi: fakta yang dinyatakan, diverifikasi, lalu dihitung di tempat lain (2026-10-30)
+
+Tiga butir ROADMAP P7 (#47, #48, #50) yang tertunda di ADR-036 karena
+butuh jenis data baru. Satu ADR, satu bagian per butir. Definisi IKU
+diverifikasi dari salinan resmi Kepmendiktisaintek 358/M/KEP/2025 dan
+ditulis ulang dengan kata-kata sendiri; dokumennya tidak masuk repo
+(CLAUDE.md §10).
+
+### 1. IKU 8 — keterlibatan dosen dalam penyusunan kebijakan sebagai jenis penugasan
+
+- **Konteks.** IKU 8 (pilihan) mengukur proporsi SDM perguruan tinggi —
+  dosen tetap, atau peneliti/perekayasa yang berafiliasi — yang secara resmi
+  ditugaskan atau diakui terlibat dalam penyusunan kebijakan publik tingkat
+  nasional, daerah, atau sektor industri dalam periode pengukuran. Bentuk
+  yang diakui ada tiga: anggota tim penyusun; narasumber atau ahli yang
+  diminta memberi masukan tertulis; kontributor yang kajiannya dimuat dalam
+  dokumen kebijakan resmi. Buktinya harus dokumen resmi yang mencantumkan
+  nama orangnya (SK penugasan, undangan resmi, laporan FGD, notulen, atau
+  dokumen kebijakannya). ADR-036 mencatat IKU 8 `belum_tersedia` karena tidak
+  ada jenis catatannya.
+- **Keputusan.** (1) **Jenis `penugasan_dosen` baru,
+  `penyusunan_kebijakan`**, bukan tabel baru: judul, lembaga pemberi
+  (`mitra_nama`), tanggal, unsur BKD, dan berkas bukti sudah ada di baris itu,
+  dan satu catatan dengan banyak pembaca adalah alasan tabel itu diperlebar
+  sejak BKD. Empat kolom baru: `kebijakan_bentuk`
+  (`BentukKeterlibatanKebijakan`: tim penyusun, narasumber, kontributor
+  kajian), `kebijakan_tingkat` (`TingkatKebijakan`: internasional, nasional,
+  daerah, industri — bukan `TingkatKegiatan`, karena "industri" adalah jenis
+  pembuat aturan, bukan jangkauan), `kebijakan_bukti_jenis`
+  (`JenisBuktiKebijakan`, lima jenis dokumen di atas), dan
+  `kebijakan_nomor_bukti`. Kepmen menyebut tiga tingkat; `internasional`
+  tetap dicatat agar faktanya tidak hilang, dan konsumen yang memutuskan
+  apakah dihitung. (2) **Wajib lengkap saat dicatat.** Untuk jenis ini
+  `CatatKegiatanRequest` mewajibkan bentuk, tingkat, lembaga pemberi, jenis
+  bukti, dan **berkas bukti** (lewat `BerkasService`); jenis lain tetap boleh
+  menyusulkan bukti. `KegiatanDosenData` membuang medan kebijakan dari jenis
+  lain sehingga baris penelitian tidak pernah membawa tingkat kebijakan.
+  (3) **Diverifikasi seperti penugasan lain** di `/admin/data-iku`, kini lewat
+  `PenugasanDosenService::verifikasi()` dan `PenugasanDosenPolicy`
+  (`dosen.manage`); layar menampilkan bentuk, tingkat, jenis dan nomor bukti,
+  serta tautan bukti (`/berkas/kegiatan-dosen/{uuid}`, hanya pemilik dan staf
+  ber-`dosen.view`). Penyimpanan kegiatan dosen yang sebelumnya ditulis di
+  controller dipindah ke service yang sama, FormRequest, dan DTO.
+  (4) **Bridge.** `iku_2026.iku_8_penyusunan_kebijakan` (baru): keterlibatan
+  terverifikasi, dosen terlibat (sekali per orang), dosen **tetap** terlibat,
+  dosen tetap aktif sebagai penyebut, per bentuk, per tingkat — per semester
+  seperti IKU 4–6. `ketersediaan` IKU 8 menjadi `tersedia` dengan kunci itu.
+  Butirnya dibaca dari kueri luaran yang sama (satu kueri untuk IKU 4–6 dan
+  8) dan kedua penyebut dosen digabung dalam satu kueri, sehingga anggaran
+  kueri `iku-data` tidak bertambah. Kunci penomoran lama dan medan `iku` pada
+  event `lecturer.assignment_recorded` tidak berubah (dibekukan, ADR-036):
+  jenis baru tidak dihitung ke "IKU 3" atau "IKU 4" lama.
+- **Konsekuensi.** Peneliti/perekayasa yang bukan dosen tidak tercatat di
+  sini; bila kampus memilikinya, Open Campus melengkapinya. Persentase dan
+  keputusan apakah dosen tidak tetap atau tingkat internasional dihitung
+  milik konsumen. Ekspor portofolio (SISTER/BKD, `lecturer-workload`) ikut
+  membawa empat medan baru.

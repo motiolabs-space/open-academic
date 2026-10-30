@@ -11,6 +11,7 @@ use App\Models\Kemahasiswaan\CutiMahasiswa;
 use App\Models\Kemahasiswaan\KegiatanLapanganLogbook;
 use App\Models\Kemahasiswaan\Mahasiswa;
 use App\Models\Pmb\PmbBerkas;
+use App\Models\Sdm\PenugasanDosen;
 use App\Models\TugasAkhir\Proposal;
 use App\Services\Berkas\BerkasService;
 use App\Support\Portal;
@@ -137,6 +138,20 @@ class BerkasController extends Controller
         return $this->alirkan(
             $riwayat->dokumen_path,
             $jenis->value.'-'.$riwayat->uuid.'.'.pathinfo((string) $riwayat->dokumen_path, PATHINFO_EXTENSION),
+        );
+    }
+
+    /**
+     * The evidence behind a lecturer's recorded activity — the decree or
+     * invitation a staff member opens before verifying it for IKU.
+     */
+    public function penugasanDosen(PenugasanDosen $penugasan): StreamedResponse
+    {
+        $this->authorize('view', $penugasan);
+
+        return $this->alirkan(
+            $penugasan->dokumen_path,
+            'bukti-kegiatan-'.$penugasan->uuid.'.'.pathinfo((string) $penugasan->dokumen_path, PATHINFO_EXTENSION),
         );
     }
 

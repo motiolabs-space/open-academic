@@ -343,7 +343,7 @@ paths:
                       "5": { nama: Luaran kerja sama dan hilirisasi, status: sebagian, kunci: iku_5_luaran_kerja_sama }
                       "6": { nama: Publikasi bereputasi internasional, status: sebagian, kunci: iku_6_publikasi }
                       "7": { nama: Keterlibatan dalam SDGs, status: di_luar_cakupan, kunci: null }
-                      "8": { nama: SDM dalam penyusunan kebijakan, status: belum_tersedia, kunci: null }
+                      "8": { nama: SDM dalam penyusunan kebijakan, status: tersedia, kunci: iku_8_penyusunan_kebijakan }
                       "9": { nama: Pendapatan non-UKT, status: di_luar_cakupan, kunci: null }
                       "10": { nama: Zona Integritas, status: di_luar_cakupan, kunci: null }
                       "11": { nama: Tata kelola dan akuntabilitas, status: di_luar_cakupan, kunci: null }
@@ -396,6 +396,13 @@ paths:
                       total_publikasi: 23
                       per_jenis: { jurnal: 17, prosiding: 6 }
                       per_tingkat: { nasional: 14, internasional: 9 }
+                    iku_8_penyusunan_kebijakan:
+                      keterlibatan_terverifikasi: 6
+                      dosen_terlibat: 5
+                      dosen_tetap_terlibat: 4
+                      dosen_tetap_aktif: 112
+                      per_bentuk: { tim_penyusun: 2, narasumber: 3, kontributor_kajian: 1 }
+                      per_tingkat: { nasional: 2, daerah: 3, industri: 1 }
                   iku_1_lulusan:
                     total_lulusan: 412
                     pada_semester_ini: 58
@@ -961,6 +968,22 @@ components:
           properties:
             total_publikasi: { type: integer }
             per_jenis: { $ref: '#/components/schemas/CacahPerKode' }
+            per_tingkat: { $ref: '#/components/schemas/CacahPerKode' }
+        iku_8_penyusunan_kebijakan:
+          type: object
+          description: >-
+            Keterlibatan dosen yang terverifikasi dalam penyusunan kebijakan
+            (ADR-041 §1): anggota tim penyusun, narasumber atau ahli resmi, atau
+            kontributor kajian, dengan dokumen resmi yang mencantumkan namanya.
+            Dosen dihitung sekali berapa pun kebijakannya. Kepmen 358 menyebut
+            tingkat nasional, daerah, dan industri; `internasional` ikut dicatat
+            dan konsumen yang memutuskan apakah dihitung. Persentase milik konsumen.
+          properties:
+            keterlibatan_terverifikasi: { type: integer }
+            dosen_terlibat: { type: integer }
+            dosen_tetap_terlibat: { type: integer, description: Dosen berstatus kepegawaian tetap — populasi IKU 8. }
+            dosen_tetap_aktif: { type: integer, description: Penyebut — dosen tetap yang aktif. }
+            per_bentuk: { $ref: '#/components/schemas/CacahPerKode' }
             per_tingkat: { $ref: '#/components/schemas/CacahPerKode' }
 
   # ---------------------------------------------------------------------------

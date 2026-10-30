@@ -76,7 +76,7 @@ it('menyebut acuan dan ketersediaan kedua belas IKU', function () {
     expect($iku['acuan'])->toBe('Kepmendiktisaintek 358/M/KEP/2025')
         ->and(array_keys($iku['ketersediaan']))->toBe(range(1, 12))
         ->and($iku['ketersediaan']['3'])->toBe(['nama' => 'Mahasiswa berkegiatan atau berprestasi di luar program studi', 'status' => 'tersedia', 'kunci' => 'iku_3_kegiatan_luar_prodi'])
-        ->and($iku['ketersediaan']['8']['status'])->toBe('belum_tersedia')
+        ->and($iku['ketersediaan']['8']['status'])->toBe('tersedia')
         ->and($iku['ketersediaan']['9']['status'])->toBe('di_luar_cakupan');
 
     // Every key the map names exists in the block, and nothing else does.

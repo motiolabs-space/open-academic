@@ -195,6 +195,10 @@ class PortofolioDosen
                 'luaran_identitas' => $p->luaran_identitas,
                 'luaran_tahun' => $p->luaran_tahun,
                 'luaran_iku5' => $p->luaran_jenis?->luaranIku5() ?? false,
+                'kebijakan_bentuk' => $p->kebijakan_bentuk?->value,
+                'kebijakan_tingkat' => $p->kebijakan_tingkat?->value,
+                'kebijakan_bukti_jenis' => $p->kebijakan_bukti_jenis?->value,
+                'kebijakan_nomor_bukti' => $p->kebijakan_nomor_bukti,
                 'terverifikasi' => (bool) $p->is_verified,
             ])
             ->all();
