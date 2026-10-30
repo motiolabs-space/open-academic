@@ -226,7 +226,7 @@
                             @csrf
                             @method('PUT')
                             <x-field :label="__('pindahan.kolom.jenis_daftar')" name="jenis_daftar"
-                                :options="\App\Enums\JenisDaftar::options()" :value="$mahasiswa->jenis_daftar?->value" required />
+                                :options="\App\Enums\JenisDaftar::optionsIntake()" :value="$mahasiswa->jenis_daftar?->value" required />
                             <x-field :label="__('pindahan.kolom.pt_asal')" name="pt_asal" :value="$mahasiswa->pt_asal" />
                             <x-field :label="__('pindahan.kolom.prodi_asal')" name="prodi_asal" :value="$mahasiswa->prodi_asal" />
                             <x-field :label="__('pindahan.kolom.term_masuk_asal')" name="term_masuk_asal"

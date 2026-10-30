@@ -238,10 +238,13 @@ class FeederValidator
      */
     private function dipakaiLebihDariSatu(string $kolom, string $nilai): bool
     {
+        // Counted per person, not per row: a re-NIM gives one person two
+        // registrations carrying the same number (ADR-042 §3). The NIK is
+        // the person; a row without one counts on its own.
         $this->kontakGanda[$kolom] ??= Mahasiswa::query()
             ->whereNotNull($kolom)
             ->groupBy($kolom)
-            ->havingRaw('count(*) > 1')
+            ->havingRaw('count(distinct coalesce(nik, cast(id as char))) > 1')
             ->pluck($kolom)
             ->mapWithKeys(fn ($v): array => [(string) $v => true])
             ->all();
@@ -380,7 +383,15 @@ class FeederValidator
         // A transfer without its origin is refused by Feeder, and a transfer
         // whose recognised credits are short is refused again at the
         // diploma-number portal. Both are visible here first.
-        if ($jenis->butuhAsal()) {
+        if ($jenis->internal()) {
+            // A new registration of someone already here (ADR-042 §3): the
+            // origin is this campus and is filled in by the re-NIM flow.
+            // Zero recognised credits is a real answer — a readmission may
+            // carry none — so it is said, not refused.
+            if (blank($m->sks_diakui)) {
+                $isu->push($this->peringatan('sks_diakui_kosong', __('registrasi_ulang.feeder.sks_diakui_kosong')));
+            }
+        } elseif ($jenis->butuhAsal()) {
             if (blank($m->sks_diakui)) {
                 $isu->push($this->error('sks_diakui_kosong', "Mahasiswa {$jenis->label()} wajib membawa jumlah SKS yang diakui."));
             }
@@ -682,6 +693,17 @@ class FeederValidator
             // way PDDIKTI must not be told the degree is complete.
             if ($m->prodi?->wajib_ukom && $m->ujiKompetensiLulus === null) {
                 $isu->push($this->error('ukom_belum_lulus', __('ukom.feeder.lulus_tanpa_ukom')));
+            }
+
+            return $isu;
+        }
+
+        // Closed by an internal programme transfer: the event is the exit
+        // record's source, and a status set by hand without one has neither
+        // a date nor a term to report.
+        if ($m->status === StudentStatus::GantiProdi) {
+            if ($m->registrasiLanjutan === null) {
+                $isu->push($this->error('pindah_prodi_tidak_tercatat', __('registrasi_ulang.feeder.pindah_tidak_tercatat')));
             }
 
             return $isu;

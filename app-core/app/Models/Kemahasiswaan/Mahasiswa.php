@@ -226,6 +226,27 @@ class Mahasiswa extends Authenticatable implements OAuthenticatable
         return $this->hasMany(FeederPastStudent::class)->orderByDesc('id');
     }
 
+    /** Re-NIM, readmission and reactivation events that started from this registration, newest first. */
+    public function peristiwaRegistrasi(): HasMany
+    {
+        return $this->hasMany(RiwayatRegistrasiMahasiswa::class, 'mahasiswa_lama_id')->orderByDesc('id');
+    }
+
+    /**
+     * The event that replaced this registration with a new one, if any.
+     * There is at most one: a closed registration is not transferred twice.
+     */
+    public function registrasiLanjutan(): HasOne
+    {
+        return $this->hasOne(RiwayatRegistrasiMahasiswa::class, 'mahasiswa_lama_id')->whereNotNull('mahasiswa_baru_id');
+    }
+
+    /** The event that opened this registration, when it came from re-NIM or readmission. */
+    public function registrasiSebelumnya(): HasOne
+    {
+        return $this->hasOne(RiwayatRegistrasiMahasiswa::class, 'mahasiswa_baru_id');
+    }
+
     /** Official letters requested by or issued to this student. */
     public function surat(): HasMany
     {

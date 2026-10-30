@@ -73,7 +73,9 @@ class RiwayatPendidikanMapper extends FeederMapper
             // Transfer and RPL only: what was recognised, and from where.
             // PDDIKTI has no identifier for another institution's programme,
             // so the origin travels as text.
-            'sks_diakui' => $jenis->butuhAsal() ? $model->sks_diakui : null,
+            // A re-NIM may recognise nothing yet; PDDIKTI still asks for the
+            // figure, so zero is sent rather than left out (ADR-042 §3).
+            'sks_diakui' => $jenis->butuhAsal() ? ($model->sks_diakui ?? ($jenis->internal() ? 0 : null)) : null,
             'nama_perguruan_tinggi_asal' => $jenis->butuhAsal() ? $model->pt_asal : null,
             'nama_program_studi_asal' => $jenis->butuhAsal() ? $model->prodi_asal : null,
         ], fn (mixed $nilai): bool => $nilai !== null && $nilai !== '');

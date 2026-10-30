@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\Feeder\Mappers;
 
+use App\Enums\JenisRegistrasiUlang;
 use App\Enums\KeputusanEvaluasi;
 use App\Enums\StudentStatus;
 use App\Models\Kemahasiswaan\EvaluasiStudi;
@@ -21,8 +22,10 @@ use Illuminate\Database\Eloquent\Model;
  * for a student who is not Lulus at PDDIKTI. The diploma number itself is not
  * sent: PISN writes it to PDDIKTI after this record lands (ADR-036 §2).
  *
- * Two local events feed one Feeder entity: a confirmed yudisium (status
- * Lulus) and a decided study evaluation (drop-out or resignation). The
+ * Three local events feed one Feeder entity: a confirmed yudisium (status
+ * Lulus), a decided study evaluation (drop-out or resignation), and an
+ * internal programme transfer that closed this registration (status Ganti
+ * Prodi, ADR-042 §3). The
  * student row is the unit pushed, because Feeder keys this record on the
  * student's registration, not on the yudisium or the evaluation.
  *
@@ -80,6 +83,7 @@ class LulusDoMapper extends FeederMapper
                 'ujiKompetensiLulus.tahunAkademik',
                 'yudisium.tahunAkademik',
                 'yudisium.pesertaWisuda.periode',
+                'registrasiLanjutan.tahunAkademik',
                 'evaluasiStudi' => fn ($q) => $q->whereIn('keputusan', $keputusan)->latest('diputuskan_at'),
                 // Ids only: the validator needs to know there is at least one.
                 'statusPerSemester:id,mahasiswa_id',
@@ -88,6 +92,7 @@ class LulusDoMapper extends FeederMapper
                 StudentStatus::Lulus->value,
                 StudentStatus::DropOut->value,
                 StudentStatus::Keluar->value,
+                StudentStatus::GantiProdi->value,
             ])
             ->where(fn (Builder $q) => $q
                 ->whereHas('yudisium', fn (Builder $y) => $y
@@ -101,6 +106,11 @@ class LulusDoMapper extends FeederMapper
                 ->orWhereIn('id', EvaluasiStudi::query()
                     ->select('mahasiswa_id')
                     ->whereIn('keputusan', $keputusan)
+                    ->whereHas('tahunAkademik', fn (Builder $t) => $t->where('kode', $termCode)))
+                // An internal programme transfer closes the old registration
+                // in the term it was recorded (ADR-042 §3).
+                ->orWhereHas('registrasiLanjutan', fn (Builder $r) => $r
+                    ->where('jenis', JenisRegistrasiUlang::PindahProdi->value)
                     ->whereHas('tahunAkademik', fn (Builder $t) => $t->where('kode', $termCode))))
             ->orderBy('nim');
     }
@@ -109,7 +119,8 @@ class LulusDoMapper extends FeederMapper
     public function payload(Model $model): array
     {
         $yudisium = $model->status === StudentStatus::Lulus ? $model->yudisium : null;
-        $evaluasi = $yudisium === null ? $model->evaluasiStudi->first() : null;
+        $pindah = $model->status === StudentStatus::GantiProdi ? $model->registrasiLanjutan : null;
+        $evaluasi = $yudisium === null && $pindah === null ? $model->evaluasiStudi->first() : null;
 
         // For a programme with a competency examination the exit term is the
         // term of the passing sitting; yudisium.tanggal_lulus already holds
@@ -130,15 +141,15 @@ class LulusDoMapper extends FeederMapper
             ...$tanggalIjazah,
             'id_registrasi_mahasiswa' => $model->feeder_registrasi_id,
             'id_jenis_keluar' => $this->kode('jenis_keluar', $model->status->value),
-            'tanggal_keluar' => $this->tanggal($yudisium?->tanggal_lulus ?? $evaluasi?->diputuskan_at),
-            'id_periode_keluar' => $periodeUkom ?? $yudisium?->tahunAkademik->kode ?? $evaluasi?->tahunAkademik->kode,
+            'tanggal_keluar' => $this->tanggal($yudisium?->tanggal_lulus ?? $pindah?->tanggal ?? $evaluasi?->diputuskan_at),
+            'id_periode_keluar' => $periodeUkom ?? $yudisium?->tahunAkademik->kode ?? $pindah?->tahunAkademik->kode ?? $evaluasi?->tahunAkademik->kode,
             'nomor_sk_yudisium' => $yudisium?->nomor_sk,
             'tanggal_sk_yudisium' => $this->tanggal($yudisium?->tanggal_yudisium),
             'ipk' => $yudisium !== null ? number_format((float) $yudisium->ipk, 2, '.', '') : null,
             'judul_skripsi' => $yudisium?->judul_tugas_akhir,
             // The decision label, never the written reason: that text is for
             // the campus, not the national database.
-            'keterangan' => $evaluasi?->keputusan->label(),
+            'keterangan' => $evaluasi?->keputusan->label() ?? $pindah?->jenis->label(),
         ], fn (mixed $nilai): bool => $nilai !== null && $nilai !== '');
     }
 

@@ -477,6 +477,8 @@ Route::middleware(['auth:staff', 'term.active'])->prefix('admin')->name('admin.'
     // Detail satu mahasiswa: baca saja, plus cetak KHS/transkrip dari service
     // yang sama dengan portal mahasiswa.
     Route::get('/mahasiswa/{mahasiswa}', [Admin\MahasiswaDetailController::class, 'show'])->name('mahasiswa.show');
+    Route::get('/mahasiswa/{mahasiswa}/registrasi-ulang', [Admin\RegistrasiUlangController::class, 'create'])->name('mahasiswa.registrasi-ulang');
+    Route::post('/mahasiswa/{mahasiswa}/registrasi-ulang', [Admin\RegistrasiUlangController::class, 'store'])->name('mahasiswa.registrasi-ulang.store');
     Route::get('/mahasiswa/{mahasiswa}/khs/{term}', [Admin\MahasiswaDetailController::class, 'khs'])->name('mahasiswa.khs');
     Route::get('/mahasiswa/{mahasiswa}/transkrip', [Admin\MahasiswaDetailController::class, 'transkrip'])->name('mahasiswa.transkrip');
 

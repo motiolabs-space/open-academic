@@ -1595,3 +1595,72 @@ bagian per butir.
   Lulus/DO yang sudah dikunci PDDIKTI dapat ditolak saat diperbarui; tolakan
   itu tercatat di buku besar dengan pesan Feeder, dan jalurnya PJK yang sudah
   ada (ADR-017). Snapshot payload bawaan tidak berubah.
+
+### 3. Re-NIM dan masuk kembali membuka registrasi baru sebagai baris mahasiswa baru yang tertaut; aktif kembali membuka ulang yang sama
+
+- **Konteks.** Neo Feeder 3.0.1 dilaporkan (sekunder) menambah jenis daftar
+  untuk re-NIM dan masuk kembali; kodenya tiba sendiri lewat referensi
+  `GetJenisPendaftaran`. Yang belum ada adalah alur lokal (#55). PDDIKTI
+  mengikat semuanya pada **registrasi** — satu orang, satu prodi, satu NIM
+  (`id_registrasi_mahasiswa` di bawah `id_mahasiswa`) — dan di sini satu
+  baris `mahasiswa` sudah berperan sebagai satu registrasi: NIM unik, satu
+  prodi, `feeder_registrasi_id` sendiri, KRS/nilai/AKM menggantung padanya.
+  Menimpa NIM di tempat akan memindahkan seluruh KRS dan nilai lama ke
+  registrasi baru begitu semester lama disinkronkan ulang, transkrip prodi
+  lama bercampur dengan prodi baru, dan catatan keluar registrasi lama
+  kehilangan identitasnya — dan melanggar prinsip integritas CLAUDE.md §4.
+- **Keputusan.** (1) **Tiga peristiwa** (`JenisRegistrasiUlang`), dicatat
+  staf ber-`mahasiswa.manage` dari halaman detail mahasiswa
+  (`/admin/mahasiswa/{uuid}/registrasi-ulang`) lewat
+  `RegistrasiUlangService`, satu transaksi, dan ditulis sebagai peristiwa di
+  tabel baru `riwayat_registrasi_mahasiswa` (NIM, prodi, dan status
+  sebelum/sesudah disalin; SK dan alasan; soft delete, log aktivitas; tidak
+  pernah disunting). **Pindah prodi internal** (dari Aktif, Cuti, Non-Aktif)
+  dan **masuk kembali** (dari Keluar; dari DO hanya bila
+  `ACADEMIC_MASUK_KEMBALI_DARI_DO=true`) membuka **baris mahasiswa baru**:
+  NIM baru (diisi atau dari pola prodi tujuan), akun dan surel baru, data
+  pribadi disalin, `feeder_id` orang yang sama diwarisi, jenis daftar
+  `pindah_prodi`/`masuk_kembali` (kasus baru `JenisDaftar`, `internal()`),
+  asal = kampus ini dan prodi lama, `term_masuk_asal` = semester masuk lama.
+  Baris lama tetap dengan NIM, nilai, dan registrasi PDDIKTI-nya; pindah prodi
+  mengubah statusnya menjadi Ganti Prodi (`G`), masuk kembali membiarkannya
+  tertutup. **Aktif kembali** (dari Keluar, atau DO bila diizinkan) membuka
+  ulang **baris yang sama** dengan NIM yang sama. Lulusan tidak termasuk:
+  gelar berikutnya adalah pendaftaran baru lewat PMB. Satu registrasi hanya
+  dialihkan sekali (dikunci baris saat dicatat). (2) **Yang dikirim ke
+  Feeder memakai jalur yang ada, tanpa aksi baru.** Registrasi baru: biodata
+  tidak didaftarkan dua kali (`feeder_id` warisan membuatnya pembaruan),
+  riwayat pendidikannya `InsertRiwayatPendidikanMahasiswa` pada
+  `id_mahasiswa` yang sama dengan jenis daftar yang **dipetakan kampus** dari
+  referensi Feeder (validator menolak selama belum dipetakan, seperti jenis
+  pindahan lain) dan `sks_diakui` dari konversi yang disetujui — nol dikirim
+  dan hanya diperingatkan, karena masuk kembali sah tanpa pengakuan.
+  Registrasi lama pada pindah prodi: `InsertMahasiswaLulusDO` pada semester
+  peristiwa dengan jenis keluar yang dipetakan untuk `G` (demo: Mutasi),
+  tanggal peristiwa, dan label peristiwa sebagai keterangan; status `G` tanpa
+  peristiwa tercatat ditolak validator. Aktif kembali dengan keluar yang sudah
+  dilaporkan membuka **PJK** lewat observer kolom terkunci yang sudah ada
+  (ADR-017): pembatalan keluar diajukan lewat PDDIKTI admin, tidak pernah
+  dihapus dari sini. Yang membedakan riwayat pendidikan baru dari PDM: PDM
+  untuk **koreksi** identitas registrasi yang sama; re-NIM adalah
+  **registrasi lain**, jadi tidak pernah lewat PDM. (3) **Campus Bridge.**
+  Registrasi baru adalah baris mahasiswa dan subjek SSO baru, jadi diumumkan
+  sebagai `student.enrolled` lewat `PenerbitPendaftaran` yang sama (sekali,
+  sesudah commit) — ADR-035 §4 menerbitkannya saat baris mahasiswa lahir, dan
+  adopsi/klaim tetap tidak menerbitkan karena tidak ada yang lahir. Muatannya
+  mendapat `mahasiswa_sebelumnya_uuid` (null untuk pendaftaran pertama;
+  `bridge.yaml` diperbarui) supaya konsumen dapat menautkan dua akun satu
+  orang. Perubahan status registrasi lama (pindah prodi A→G, aktif kembali
+  K→A) terbit sebagai `student.status_changed`; aktif kembali tidak
+  menerbitkan `student.enrolled`. (4) **Nomor HP ganda dihitung per orang**
+  (NIK), bukan per baris, supaya dua registrasi satu orang tidak saling
+  memperingatkan. (5) Layar intake pindahan tidak menawarkan jenis daftar
+  internal dan menolak menyunting asal registrasi internal.
+- **Konsekuensi.** Mahasiswa yang pindah prodi masuk dengan NIM dan kata sandi
+  baru; akun lama tetap dapat dibuka untuk KHS/transkrip prodi lamanya.
+  Pengakuan mata kuliah dari prodi lama dilakukan di layar konversi yang
+  sudah ada untuk baris baru. Tagihan semester baru tidak diterbitkan oleh
+  alur ini — keuangan mengikuti siklus semesternya. Kampus memetakan
+  `pindah_prodi`, `masuk_kembali` (grup `jenis_daftar`) dan `G` (grup
+  `jenis_keluar`) dari referensi yang ditarik sebelum sinkronisasi. Konsumen
+  Bridge yang mengabaikan medan tak dikenal tidak terganggu.
