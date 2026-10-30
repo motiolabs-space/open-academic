@@ -64,6 +64,109 @@ Engagement, evidence, analitik, jejaring → Open Campus. Jangan duplikasi fitur
 
 ---
 
+## Daftar Fitur
+
+Yang sudah ada di `main` dan dapat dipakai hari ini. Pengguna: **S** staf ·
+**D** dosen · **M** mahasiswa · **P** pendaftar PMB · **Pub** publik ·
+**API** sistem lain lewat Campus Bridge.
+
+### Akademik
+
+| Fitur | Pengguna |
+|---|---|
+| Master akademik: tahun akademik, fakultas, prodi beserta riwayat akreditasi bertanggal, kurikulum berversi, mata kuliah + prasyarat, CPL, gedung & ruang | S |
+| Kelas & jadwal kuliah dengan deteksi bentrok ruang dan dosen; pemanfaatan ruang dan pencarian ruang kosong | S; D, M melihat |
+| Padanan mata kuliah, kuliah paket, kurikulum konsentrasi | S, M |
+| KRS: katalog, batas SKS dari IPS, cek prasyarat & kuota, revisi, persetujuan dosen wali, kunci pembayaran minimum | M, D |
+| Penetapan dosen wali perorangan & massal, beserta riwayatnya | S; D melihat anak wali |
+| Presensi sesi dengan QR, minimum kehadiran untuk UAS | D, M |
+| Penilaian: rencana evaluasi berbobot, finalisasi, koreksi nilai ter-audit | D, S |
+| RPS, jurnal & berita acara perkuliahan, analitik kelas dan capaian CPL | D; M melihat capaian |
+| KHS, transkrip PDF, penutupan semester (IPS/IPK dibekukan) | M, S |
+| Jadwal UTS/UAS: pengawas, kursi, laporan bentrok, kartu ujian | S; D, M |
+| Kalender akademik + langganan iCalendar | S, D, M, Pub |
+| Cetak KTM, kartu ujian, daftar hadir, jurnal perkuliahan | S, D, M |
+
+### Kemahasiswaan
+
+| Fitur | Pengguna |
+|---|---|
+| Data mahasiswa dengan halaman detail staf: identitas, status, dosen wali, KRS/KHS/IPK, tagihan, kesiapan PDDIKTI | S; M profil |
+| Cuti dan perubahan status mahasiswa | S |
+| Evaluasi studi: peringatan dan putus studi | S; M menerima notifikasi |
+| Poin kemahasiswaan, pelanggaran, prestasi; ekspor SIMKATMAWA dengan validasi pra-ekspor | S |
+| Konversi kredit, RPL, intake mahasiswa pindahan | S |
+| KKN/PKL: kelompok, DPL, logbook, nilai masuk ke KRS | S, D, M |
+| SKPI | S, M |
+
+### Tugas Akhir & Kelulusan
+
+| Fitur | Pengguna |
+|---|---|
+| Tugas akhir: tahap proposal per prodi, pembimbing, seminar & sidang | M, D, S |
+| Yudisium dengan daftar periksa kesiapan nomor ijazah dan uji kompetensi | S |
+| Nomor ijazah dari PISN (impor) | S |
+| Wisuda: dikelola staf atau didaftar sendiri oleh mahasiswa | S, M |
+| Data lulusan untuk tracer study nasional (ekspor) | S |
+
+### Penerimaan Mahasiswa Baru
+
+| Fitur | Pengguna |
+|---|---|
+| Portal pendaftar: akun + verifikasi surel, biodata, unggah berkas, kartu ujian, pengumuman hasil | Pub, P |
+| Gelombang, penawaran prodi, jadwal seleksi, impor nilai seleksi (CSV), daftar ulang + penerbitan NIM | S |
+
+### Keuangan
+
+| Fitur | Pengguna |
+|---|---|
+| Matriks tarif: UKT, komponen biaya, per SKS, per mata kuliah | S |
+| Tagihan massal dan tagihan per SKS dari KRS yang disetujui | S; M melihat |
+| Pencatatan pembayaran kasir; transfer manual sebagai jalur utama | S |
+| Denda keterlambatan beserta pembebasannya (bawaan mati) | S |
+| Dispensasi pembayaran untuk membuka KRS | S; M melihat |
+| Beasiswa, keringanan, potongan; laporan semester KIP Kuliah | S |
+| Integrasi akuntansi lewat outbox jurnal (opsional, bawaan mati) | S |
+
+### SDM & Dosen
+
+| Fitur | Pengguna |
+|---|---|
+| Akun dosen & staf, unit kerja | S |
+| Riwayat kepegawaian 14 jenis: diajukan dosen, divalidasi staf | D, S |
+| Portofolio dan penugasan dosen, termasuk publikasi berindeks & kuartil dan keterlibatan dalam penyusunan kebijakan | D, S |
+| BKD dengan asesor dan pengesahan; ekspor berkas untuk SISTER | D, S |
+| Buku besar angka kredit (unsur A–E) dan ekspor penyetaraan | S; D melihat |
+| EDOM: kuesioner dosen oleh mahasiswa, jawaban anonim | S, M, D |
+| Kuesioner umum: penyusunan, sasaran per peran/prodi, hasil teragregasi, ekspor | S, D, M |
+
+### Pelaporan & Integrasi
+
+| Fitur | Pengguna |
+|---|---|
+| Neo Feeder PDDIKTI: 26 entitas, Insert/Update/Delete, validasi pra-kirim, buku besar idempotent, pembanding selisih, adopsi & klaim data lampau, PDM/PJK beserta suratnya | S |
+| Borang LKPS per prodi | S |
+| Data IKU 2026 (Kepmendiktisaintek 358/M/KEP/2025) dengan layar verifikasi bukti | S, API |
+| Campus Bridge: Read API ber-scope, webhook bertanda tangan HMAC, OpenAPI; konsumen dan token dikelola dari layar staf | S, API |
+| SSO OAuth2 sebagai sumber identitas kampus, federasi IdP kampus; klien SSO dikelola dari layar staf (bawaan mati) | semua portal |
+| SPMI/AMI dan rencana kinerja | S |
+
+### Layanan & Platform
+
+| Fitur | Pengguna |
+|---|---|
+| Surat akademik dengan verifikasi QR publik | M, S, Pub |
+| Helpdesk dengan SLA dan FAQ publik; tiket dapat dibuka mahasiswa, dosen, dan staf | M, D, S, Pub |
+| Pengumuman ke seluruh portal | S mengelola |
+| Notifikasi surel dan pengingat tenggat terjadwal | semua |
+| Berkas privat, verifikasi dua langkah (TOTP) untuk staf, log audit, branding, pengaturan dokumen | S |
+| Login dengan NIM, NIDN, NIP, atau surel; portal ditentukan otomatis | semua |
+
+Rencana kerja per modul — termasuk yang sengaja ditunda atau di luar cakupan —
+ada di [`docs/ROADMAP.md`](docs/ROADMAP.md).
+
+---
+
 ## Pelaporan ke Kementerian
 
 Kampus tidak melapor ke satu tempat. Peta kewajibannya — beserta penilaian mana
