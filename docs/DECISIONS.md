@@ -1664,3 +1664,18 @@ bagian per butir.
   `pindah_prodi`, `masuk_kembali` (grup `jenis_daftar`) dan `G` (grup
   `jenis_keluar`) dari referensi yang ditarik sebelum sinkronisasi. Konsumen
   Bridge yang mengabaikan medan tak dikenal tidak terganggu.
+
+### 4. Neo Feeder 3.1 diverifikasi di instalasi kampus, bukan dari catatan rilis
+
+- **Konteks.** Pemeriksaan ulang 30 Oktober 2026 terhadap sumber resmi
+  (Pusdatin Kemdiktisaintek, laman LLDIKTI) tetap tidak menemukan catatan
+  rilis 3.1; yang beredar hanya pengumuman bimtek/pemeliharaan dan ringkasan
+  sekunder yang tidak saling konsisten soal tanggal dan isi.
+- **Keputusan.** #54 tetap terbuka dengan tanggal pemeriksaan. Cara
+  memverifikasinya tanpa catatan rilis adalah pemeriksa kamus (§1) pada
+  instalasi kampus yang menjalankan 3.1: selisihnya per aksi adalah daftar
+  perubahan yang menyentuh data kiriman kita. Butir sekunder yang sudah
+  diterapkan sebagai validator (AKM sebelum Lulus/DO, HP unik) tidak diubah.
+- **Konsekuensi.** #54 ditutup begitu catatan resmi terbit atau satu kampus
+  melaporkan hasil pemeriksaan kamus 3.1 — laporan selisihnya, bukan
+  salinan kamusnya.
