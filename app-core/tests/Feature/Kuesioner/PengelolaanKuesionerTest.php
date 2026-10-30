@@ -338,6 +338,10 @@ describe('layar staf', function () {
         expect($csv)->toContain('Bagus')
             // Formula injection is neutralised by App\Support\Csv.
             ->toContain("'=HYPERLINK");
+
+        $this->get(route('admin.kuesioner.ekspor', [$k, 'format' => 'xlsx']))
+            ->assertOk()
+            ->assertHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     });
 
     it('membatasi layar menurut izin: pimpinan membaca, tidak menulis; keuangan tidak keduanya', function () {

@@ -15,6 +15,7 @@
             <span class="tabular text-[12.5px] text-ink-muted">{{ Format::bulat($responden) }} {{ Str::lower(__('kuesioner.ringkasan.responden')) }}</span>
             @if ($terbuka && $responden > 0)
                 <x-button href="{{ route('admin.kuesioner.ekspor', $kuesioner) }}" variant="outline" size="sm">{{ __('kuesioner.aksi.ekspor') }}</x-button>
+                    <x-button href="{{ route('admin.kuesioner.ekspor', [$kuesioner, 'format' => 'xlsx']) }}" variant="outline" size="sm">{{ __('kuesioner.aksi.ekspor_xlsx') }}</x-button>
             @endif
         </div>
     </div>

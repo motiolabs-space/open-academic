@@ -75,6 +75,7 @@ return [
         'tutup_konfirmasi' => 'Tutup kuesioner ini? Responden tidak lagi dapat mengisinya.',
         'hasil' => 'Lihat hasil',
         'ekspor' => 'Ekspor CSV',
+        'ekspor_xlsx' => 'Ekspor XLSX',
     ],
 
     'ringkasan' => [

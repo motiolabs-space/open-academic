@@ -13,10 +13,12 @@ use App\Models\Akademik\Prodi;
 use App\Models\Kuesioner\Kuesioner;
 use App\Models\Kuesioner\KuesionerPertanyaan;
 use App\Services\Kuesioner\KuesionerService;
-use App\Support\Csv;
+use App\Support\EksporTabel;
 use App\Support\Portal;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
@@ -155,24 +157,19 @@ class KuesionerController extends Controller
         ]);
     }
 
-    public function ekspor(Kuesioner $kuesioner): StreamedResponse
+    /** CSV or XLSX through EksporTabel, like the other exports. */
+    public function ekspor(Request $request, Kuesioner $kuesioner): StreamedResponse|BinaryFileResponse
     {
         $this->authorize('view', $kuesioner);
 
-        // Built before the stream opens: a held-back result is refused with a
-        // message, not with a half-written file.
+        $format = in_array($request->query('format'), EksporTabel::FORMAT, true) ? (string) $request->query('format') : 'csv';
+
+        // Built before the download starts: a held-back result is refused
+        // with a message, not with a half-written file.
         $baris = $this->kuesioner->barisEkspor($kuesioner);
+        $judul = array_map('strval', array_shift($baris) ?? []);
 
-        return response()->streamDownload(function () use ($baris): void {
-            $keluaran = fopen('php://output', 'wb');
-            fwrite($keluaran, "\xEF\xBB\xBF");
-
-            foreach ($baris as $satu) {
-                Csv::tulis($keluaran, $satu);
-            }
-
-            fclose($keluaran);
-        }, 'kuesioner-'.$kuesioner->kode.'.csv', ['Content-Type' => 'text/csv; charset=UTF-8']);
+        return EksporTabel::unduh('kuesioner-'.$kuesioner->kode, $format, $judul, $baris);
     }
 
     /** @return array<int, string> */

@@ -120,7 +120,8 @@ tidak memakai ambang.
 | Daftar siapa yang mengisi | tidak ditampilkan, hanya jumlah | tersedia lewat CSV |
 
 Urutan pengisian disingkirkan karena ia satu-satunya hal yang dapat menjajarkan
-jawaban anonim dengan baris `kuesioner_partisipasi`. Sel CSV melewati
+jawaban anonim dengan baris `kuesioner_partisipasi`. Ekspor CSV atau XLSX
+(`?format=xlsx`) lewat `App\Support\EksporTabel`; sel CSV melewati
 `App\Support\Csv` (penangkal formula).
 
 **Sisa risiko yang diketahui.** Bagi yang memegang akses basis data langsung,
