@@ -7,6 +7,7 @@ namespace App\Notifications\Helpdesk;
 use App\Enums\KategoriNotifikasi;
 use App\Models\Helpdesk\HelpdeskTiket;
 use App\Models\Kemahasiswaan\Mahasiswa;
+use App\Models\Sdm\Staff;
 use App\Notifications\Notifikasi;
 
 /**
@@ -26,9 +27,11 @@ abstract class NotifikasiTiket extends Notifikasi
 
     public function tautan(object $penerima): ?string
     {
-        return $penerima instanceof Mahasiswa
-            ? route('mahasiswa.helpdesk.show', $this->tiket)
-            : route('dosen.helpdesk.show', $this->tiket);
+        return match (true) {
+            $penerima instanceof Mahasiswa => route('mahasiswa.helpdesk.show', $this->tiket),
+            $penerima instanceof Staff => route('admin.saya.helpdesk.show', $this->tiket),
+            default => route('dosen.helpdesk.show', $this->tiket),
+        };
     }
 
     public function ajakan(): string

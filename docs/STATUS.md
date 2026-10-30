@@ -62,6 +62,63 @@ Tagihan registrasi baru hasil re-NIM tidak diterbitkan otomatis.
 
 ---
 
+## Sesi 69 — 2026-10-30 · Empat layar pengelolaan: kuesioner, Bridge, SSO, tiket staf
+
+Branch `feature/layar-pengelolaan`, satu PR, empat commit (satu per layar).
+Keputusan: ADR-039 §1–§4. Empat migrasi baru (append-only, nama indeks
+eksplisit). Instalasi berjalan: jalankan ulang `RolePermissionSeeder` (izin
+`kuesioner.*`, `integrasi.kredensial`, `helpdesk.ajukan` untuk staf; peran
+baru `tik`).
+
+- **Kuesioner umum** (`feat(kuesioner)`). ROADMAP menandainya ✅ sejak 18 Agustus,
+  padahal hanya mesin dan tesnya yang ada — tanpa controller, rute, layar, atau
+  menu. Kini: staf menulis kuesioner (sasaran per peran, opsional per prodi;
+  periode; anonim atau tidak), menerbitkan/menutup, membaca hasil teragregasi,
+  dan mengekspor CSV (`kuesioner.view`/`kuesioner.manage`). Responden mengisi
+  dari portal mahasiswa, dosen, dan staf lewat satu controller. Terbit pertama
+  membekukan pertanyaan, sasaran, dan ambang. Hasil anonim tertahan di bawah
+  `min_responden` (aturan EDOM; `KUESIONER_MIN_RESPONDEN=5`) dan tidak dihitung
+  sama sekali selama tertahan; isian bebas diurutkan abjad; ekspor anonim per
+  pertanyaan tanpa id, waktu, atau nama. Service kini memvalidasi rentang skala
+  dan opsi, dan tidak menyimpan isian opsional kosong sebagai jawaban. Demo
+  mendapat tiga kuesioner. EDOM tidak disentuh.
+- **Konsumen Campus Bridge** (`feat(bridge)`). `/admin/bridge` mendaftarkan
+  konsumen; halaman kelola per konsumen mengatur scope, menerbitkan token
+  (tampil sekali), mencabut per token, menampilkan kapan token terakhir dipakai,
+  mengatur URL/event webhook, dan merotasi rahasia penandatangan (tampil sekali).
+  Rahasia webhook kini `encrypted` di basis data (migrasi mengenkripsi baris
+  lama). Log mencatat peristiwa dan nama token, tidak pernah nilainya. Halaman
+  rahasia dikirim `no-store`. `openacademic:bridge-token` lewat service yang sama.
+- **Klien SSO** (`feat(sso)`). `/admin/sso-klien`, hanya bila `SSO_ENABLED`:
+  daftar klien (redirect HTTPS), rahasia tampil sekali dan rotasi, pihak pertama,
+  cabut beserta refresh token (`PencabutanTokenSso`), jumlah pengguna dengan izin
+  yang masih dapat dipakai. Tabel `sso_klien` di samping `oauth_clients` untuk
+  keputusan kampus dan audit. **Temuan:** `SSO_FIRST_PARTY` didokumentasikan
+  melewati persetujuan tetapi tak pernah dibaca — `KlienOAuth` kini
+  menghormatinya. `openacademic:sso-client` lewat service yang sama.
+- **Tiket helpdesk oleh staf** (`feat(helpdesk)`). Staf mengajukan tiket ke unit
+  lain di `/admin/tiket-saya` (controller pemohon yang sama); kategori unit
+  sendiri ditolak. Pemegang `helpdesk.tangani` mencatat tiket atas nama
+  mahasiswa/dosen (NIM/NIDN); tiket milik pemohon, pencatat tercatat di
+  `dicatat_oleh_staff_id`. Policy: pemohon tidak pernah menangani tiketnya
+  sendiri, tiket sendiri tidak muncul di antrean sendiri, dan layar staf
+  (catatan internal) dijaga `viewInternal` — **celah yang ditutup sebelum
+  sempat ada:** tanpa itu, staf pemohon yang tiketnya didisposisi ke unitnya
+  akan membaca catatan internal tentang dirinya.
+
+**Tes baru:** PengelolaanKuesionerTest 26, KonsumenBridgeTest 16, KlienSsoTest 15,
+TiketStafTest 14, HelpdeskPolicyTest +1 (satu diubah: staf kini boleh mengajukan),
+SmokeLayarTest +6 layar di daftar anggaran dan 2 tes (detail/hasil/isi kuesioner, kelola konsumen Bridge).
+
+### Belum
+
+Urutan baris jawaban kuesioner anonim masih berurutan sejalan dengan
+partisipasi di tingkat tabel (Utang Teknis ROADMAP). Mengganti `APP_KEY` kini
+mengharuskan rahasia webhook dirotasi — perlu dicatat di DEPLOYMENT.md bila
+prosedur rotasi kunci ditulis.
+
+---
+
 ## Sesi 67 — 2026-10-29 · Ekspor SIMKATMAWA dan data lulusan untuk tracer study nasional
 
 Branch `feature/ekspor-simkatmawa-tracer`, satu PR, dua commit. Dimulai

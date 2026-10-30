@@ -4,9 +4,18 @@ declare(strict_types=1);
 
 namespace App\Console\Commands;
 
+use App\Exceptions\AturanAkademikException;
 use App\Models\Bridge\BridgeConsumer;
+use App\Services\Bridge\KonsumenBridgeService;
 use Illuminate\Console\Command;
 
+/**
+ * The command-line twin of the consumer screen (/admin/bridge/konsumen/{uuid}).
+ *
+ * Both go through KonsumenBridgeService, so a token issued here is audited the
+ * same way as one issued from the screen, and refused the same way for an
+ * inactive consumer.
+ */
 class BridgeTokenCommand extends Command
 {
     protected $signature = 'openacademic:bridge-token
@@ -16,7 +25,7 @@ class BridgeTokenCommand extends Command
 
     protected $description = 'Menerbitkan atau mencabut token Campus Bridge untuk sebuah aplikasi konsumen';
 
-    public function handle(): int
+    public function handle(KonsumenBridgeService $layanan): int
     {
         $consumer = BridgeConsumer::where('slug', $this->argument('slug'))->first();
 
@@ -27,7 +36,7 @@ class BridgeTokenCommand extends Command
         }
 
         if ($this->option('cabut')) {
-            $jumlah = $consumer->tokens()->delete();
+            $jumlah = $layanan->cabutSemuaToken($consumer);
             $this->info("{$jumlah} token {$consumer->nama} dicabut.");
 
             return self::SUCCESS;
@@ -36,7 +45,13 @@ class BridgeTokenCommand extends Command
         // Token abilities mirror the consumer's scopes. The scope list on the
         // consumer stays authoritative, so narrowing access later does not
         // require reissuing anything.
-        $token = $consumer->createToken((string) $this->option('nama'), $consumer->scopes ?? []);
+        try {
+            $token = $layanan->terbitkanToken($consumer, (string) $this->option('nama'));
+        } catch (AturanAkademikException $e) {
+            $this->error($e->getMessage());
+
+            return self::FAILURE;
+        }
 
         $this->newLine();
         $this->info("Token untuk {$consumer->nama}:");

@@ -30,7 +30,8 @@
 
     @forelse ($percakapan as $b)
         @php
-            $staf = $b->penulis instanceof Staff;
+            // Staff replying to their own ticket write as the applicant.
+            $staf = $b->penulis instanceof Staff && ! $tiket->milik($b->penulis);
         @endphp
         <article @class([
             'rounded-card border px-5 py-4',

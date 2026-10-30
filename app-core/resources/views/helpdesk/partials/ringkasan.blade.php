@@ -35,7 +35,14 @@
     </div>
     <div>
         <dt class="text-[11px] font-semibold uppercase tracking-[0.08em] text-ink-muted">{{ __('helpdesk.tiket.dibuat') }}</dt>
-        <dd class="tabular mt-1">{{ Format::tanggal($tiket->created_at) }} {{ Format::jam($tiket->created_at) }}</dd>
+        <dd class="tabular mt-1">
+            {{ Format::tanggal($tiket->created_at) }} {{ Format::jam($tiket->created_at) }}
+            {{-- Typed in by an officer on the applicant's behalf: said on both
+                 sides, so "I never filed that" has an answer. --}}
+            @if ($tiket->dicatat_oleh_staff_id)
+                <span class="block text-[11.5px] text-ink-faint">{{ __('helpdesk.staf.dicatat_oleh', ['nama' => $tiket->pencatat?->nama ?? '—']) }}</span>
+            @endif
+        </dd>
     </div>
     <div>
         <dt class="text-[11px] font-semibold uppercase tracking-[0.08em] text-ink-muted">{{ __('helpdesk.tiket.tenggat_sla') }}</dt>

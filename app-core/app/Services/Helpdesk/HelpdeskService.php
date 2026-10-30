@@ -27,7 +27,8 @@ use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\DB;
 
 /**
- * Tickets from students and lecturers to the campus, and what happens to them.
+ * Tickets from students, lecturers and staff to the campus, and what happens
+ * to them.
  *
  * Two rules shape everything here.
  *
@@ -55,13 +56,28 @@ class HelpdeskService
      * the category's default unit, and the SLA deadline is fixed now rather
      * than recomputed later, so a category edited next month does not move the
      * goalposts on tickets already in the queue.
+     *
+     * A member of staff files to another unit; their own unit's work belongs
+     * in its queue, not in a ticket to itself. An officer may also type a
+     * ticket in for a student or lecturer (`$dicatatOleh`): the ticket is the
+     * applicant's in every respect, and the officer is recorded beside it.
      */
-    public function buat(Mahasiswa|Dosen $pemohon, TiketBaruData $data): HelpdeskTiket
+    public function buat(Mahasiswa|Dosen|Staff $pemohon, TiketBaruData $data, ?Staff $dicatatOleh = null): HelpdeskTiket
     {
         $kategori = HelpdeskKategori::query()->aktif()->find($data->kategoriId);
 
         if ($kategori === null) {
             throw new AturanAkademikException('Kategori tiket tidak dikenal atau sudah tidak aktif.');
+        }
+
+        if ($dicatatOleh !== null && $pemohon instanceof Staff) {
+            throw new AturanAkademikException(__('helpdesk.staf.atas_nama_bukan_staf'));
+        }
+
+        if ($pemohon instanceof Staff
+            && $pemohon->unit_kerja_id !== null
+            && (int) $kategori->unit_kerja_id === (int) $pemohon->unit_kerja_id) {
+            throw new AturanAkademikException(__('helpdesk.staf.unit_sendiri'));
         }
 
         $slaJam = $kategori->slaJamEfektif();
@@ -74,6 +90,7 @@ class HelpdeskService
             'nomor' => $nomor,
             'pemohon_type' => $pemohon->getMorphClass(),
             'pemohon_id' => $pemohon->getKey(),
+            'dicatat_oleh_staff_id' => $dicatatOleh?->id,
             'helpdesk_kategori_id' => $kategori->id,
             'judul' => $data->judul,
             'isi' => $data->isi,
@@ -98,6 +115,8 @@ class HelpdeskService
      */
     public function disposisi(HelpdeskTiket $tiket, Staff $oleh, DisposisiData $data): HelpdeskTiket
     {
+        $this->pastikanBukanPemohon($tiket, $oleh);
+
         if (!$data->menamaiSeseorang()) {
             throw new AturanAkademikException('Disposisi wajib menyebut unit kerja atau petugas yang menangani.');
         }
@@ -179,7 +198,10 @@ class HelpdeskService
             throw new AturanAkademikException('Isi balasan tidak boleh kosong.');
         }
 
-        $dariStaf = $penulis instanceof Staff;
+        // "From the campus" means staff answering somebody else's ticket. A
+        // member of staff replying to their own ticket is the applicant, and
+        // their reply moves the ticket the way an applicant's does.
+        $dariStaf = $penulis instanceof Staff && !$tiket->milik($penulis);
 
         if ($data->internal && !$dariStaf) {
             throw new AturanAkademikException('Catatan internal hanya dapat ditulis oleh staf.');
@@ -251,6 +273,8 @@ class HelpdeskService
      */
     public function ubahStatus(HelpdeskTiket $tiket, Staff $oleh, StatusTiket $ke, ?string $catatan = null): HelpdeskTiket
     {
+        $this->pastikanBukanPemohon($tiket, $oleh);
+
         $this->pastikanTransisi($tiket, $ke);
 
         if ($ke === StatusTiket::Ditutup && blank($catatan)) {
@@ -333,7 +357,11 @@ class HelpdeskService
      */
     public function antreanUntuk(Staff $staf): Builder
     {
-        $query = HelpdeskTiket::query();
+        // Never one's own tickets: those are followed from the applicant's
+        // screen, and handled by somebody else.
+        $query = HelpdeskTiket::query()->whereNot(fn (Builder $q) => $q
+            ->where('pemohon_type', $staf->getMorphClass())
+            ->where('pemohon_id', $staf->getKey()));
 
         if ($this->bolehSemua($staf)) {
             return $query;
@@ -354,6 +382,18 @@ class HelpdeskService
             return $staf->hasPermissionTo('helpdesk.manage', 'staff');
         } catch (\Throwable) {
             return false;
+        }
+    }
+
+    /**
+     * Nobody handles their own ticket — not even after it was dispositioned
+     * to their unit. The policy says so too; this holds for commands and
+     * tests that never pass a policy.
+     */
+    private function pastikanBukanPemohon(HelpdeskTiket $tiket, Staff $oleh): void
+    {
+        if ($tiket->milik($oleh)) {
+            throw new AturanAkademikException(__('helpdesk.staf.tangani_sendiri'));
         }
     }
 

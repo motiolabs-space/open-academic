@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 namespace App\Enums;
 
+use App\Models\Kemahasiswaan\Mahasiswa;
+use App\Models\Sdm\Dosen;
+use App\Models\Sdm\Staff;
+
 /** Who a questionnaire is put to. One audience per form, never a mixture. */
 enum SasaranKuesioner: string
 {
@@ -28,6 +32,23 @@ enum SasaranKuesioner: string
             self::Dosen => 'dosen',
             self::Staf => 'staff',
         };
+    }
+
+    /** The audience a signed-in person belongs to, or null for anyone else. */
+    public static function untuk(object $responden): ?self
+    {
+        return match (true) {
+            $responden instanceof Mahasiswa => self::Mahasiswa,
+            $responden instanceof Dosen => self::Dosen,
+            $responden instanceof Staff => self::Staf,
+            default => null,
+        };
+    }
+
+    /** Students and lecturers belong to a study programme; staff do not. */
+    public function berprodi(): bool
+    {
+        return $this !== self::Staf;
     }
 
     /** @return array<string, string> */

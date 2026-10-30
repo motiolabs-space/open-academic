@@ -139,6 +139,8 @@ Apa yang ada hari ini, dikelompokkan menurut siapa yang memakainya.
 | Neo Feeder PDDIKTI | ✅ | Idempoten, ledger, validator pra-kirim. Dua puluh lima entitas sejak 24 Okt 2026: + dosen pengajar kelas, + Lulus/DO, + komponen evaluasi, + nilai per komponen, + 7 entitas aktivitas (MBKM dan tugas akhir beserta anggota, pembimbing, penguji), + prestasi, transfer kredit, konversi MBKM, + kurikulum, mata kuliah, matkul kurikulum, + skala nilai prodi, periode perkuliahan; `Delete*` untuk yang sudah tiada di sini |
 | Campus Bridge | ✅ | 14 endpoint ber-scope, webhook HMAC, spec OpenAPI — sejak 26 Okt 2026 dipaku tes: setiap rute `bridge.*` beserta scope-nya harus ada di spec. Ketujuh event kini benar-benar terbit: `student.enrolled` baru diterbitkan 28 Okt 2026, sekali per mahasiswa (ADR-035 §4) |
 | SSO OAuth2 (Passport) | ✅ | Kampus jadi penerbit identitas |
+| Layar konsumen Campus Bridge | ✅ | 30 Okt 2026 (Sesi 69, ADR-039 §2) — daftar konsumen, scope, token tampil sekali, cabut per token, terakhir dipakai, URL dan rahasia webhook (rotasi, terenkripsi). Izin `integrasi.kredensial`, peran `tik`. Sebelumnya hanya `openacademic:bridge-token` |
+| Layar klien SSO | ✅ | 30 Okt 2026 (Sesi 69, ADR-039 §3) — daftar klien HTTPS, rahasia tampil sekali dan rotasi, pihak pertama, cabut beserta refresh token, jumlah pengguna mengizinkan; hanya bila `SSO_ENABLED`. `SSO_FIRST_PARTY` yang selama ini tidak pernah dibaca kini dihormati. Sebelumnya hanya `openacademic:sso-client` |
 | Notifikasi (G2) | ✅ | Kategori wajib tidak dapat dimatikan |
 | **Komparasi data SIAKAD ↔ Neo Feeder** | ✅ | FeederRekonsiliasi 21 Agu 2026: membaca Feeder kembali dan melaporkan hanya-lokal / hanya-Feeder / berbeda isinya. Entitas tanpa aksi pembacaan dinyatakan belum dapat dibandingkan, bukan cocok |
 | **Klien SISTER** | 🚫 | Tidak ada lagi web service SISTER per kampus: pengajaran, pembimbingan, dan pengujian turun ke SISTER **dari PDDIKTI**. Jalurnya Feeder — §Peta Jalan Lanjutan #19–22 |
@@ -156,8 +158,8 @@ Apa yang ada hari ini, dikelompokkan menurut siapa yang memakainya.
 | Review keamanan v1.0 | ✅ | 27 Okt 2026 — 3 tinggi + 8 sedang diperbaiki, 16 rendah ditunda: [`KEAMANAN-AUDIT-2026-10.md`](KEAMANAN-AUDIT-2026-10.md) |
 | **CBT** | 🚫 | Platform ujian — di luar cakupan, lihat §Sengaja Bukan di Sini |
 | **LMS / forum kelas** | 🚫 | Platform belajar — idem |
-| **Helpdesk** | ✅ | Tiket administratif ke unit kerja, SLA ditandai bukan diputus, FAQ publik — [`HELPDESK.md`](HELPDESK.md). Forum dan chat tetap wilayah Open Campus |
-| Kuesioner umum | ✅ | Dua tabel jawaban; anonimitas jadi properti skema — [`KUESIONER.md`](KUESIONER.md) |
+| **Helpdesk** | ✅ | Tiket administratif ke unit kerja, SLA ditandai bukan diputus, FAQ publik — [`HELPDESK.md`](HELPDESK.md). Sejak 30 Okt 2026 staf mengajukan tiket ke unit lain dan petugas mencatat atas nama mahasiswa/dosen (Sesi 69, ADR-039 §4). Forum dan chat tetap wilayah Open Campus |
+| Kuesioner umum | ✅ | Dua tabel jawaban; anonimitas jadi properti skema — [`KUESIONER.md`](KUESIONER.md). **Koreksi:** sampai 30 Okt 2026 hanya mesinnya; tidak ada controller, rute, layar, maupun menu. Layar staf (tulis, terbit, hasil, CSV) dan pengisian dari tiga portal masuk Sesi 69 (ADR-039 §1) |
 | **Aplikasi mobile native** | ⬜ | Web responsif saja |
 | 2FA staf | ✅ | TOTP + kode pemulihan, 22 Agu 2026 — `/admin/dua-langkah`, ditantang di `/masuk/dua-langkah` |
 | Pengumuman | ✅ | Terbit, berakhir, sasaran per portal, sematan. Sejak 28 Okt 2026 tampil di dasbor dan halaman daftar **ketiga** portal — sebelumnya hanya dasbor mahasiswa, jadi pengumuman untuk dosen dan staf tidak pernah terlihat (ADR-035 §3) |
@@ -270,7 +272,7 @@ kini opsional (ADR-014).
 | ~~10~~ | ~~**Poin kemahasiswaan & pelanggaran**~~ | ✅ 18 Agustus 2026 — dua buku besar yang tidak pernah dijumlahkan. [`POIN-KEMAHASISWAAN.md`](POIN-KEMAHASISWAAN.md) |
 | ~~12~~ | ~~**Manajemen unit kerja**~~ | ✅ 18 Agustus 2026 — dikerjakan **sebelum** #11 karena mutasi merujuk unit. [`UNIT-KERJA.md`](UNIT-KERJA.md) |
 | ~~11~~ | ~~**Kepegawaian mendalam**~~ | ✅ 18 Agustus 2026 — enam riwayat; hanya pangkat & mutasi yang punya aturan. [`KEPEGAWAIAN.md`](KEPEGAWAIAN.md) |
-| ~~13~~ | ~~**Kuesioner umum**~~ | ✅ 18 Agustus 2026 — dua tabel jawaban, karena anonimitas harus properti skema. [`KUESIONER.md`](KUESIONER.md) |
+| ~~13~~ | ~~**Kuesioner umum**~~ | ✅ 18 Agustus 2026 — dua tabel jawaban, karena anonimitas harus properti skema. [`KUESIONER.md`](KUESIONER.md). Layarnya baru menyusul 30 Oktober 2026 (Sesi 69); tanda ✅ sebelum itu keliru |
 
 **P2 tuntas.** Yang tersisa P3; payment gateway ikut di sana sebagai butir
 opsional (ADR-014).
@@ -518,6 +520,8 @@ yang tidak ada di sini.
 | Uji beban bersamaan | ✅ | Perebutan kuota diuji 19 Agu 2026: 19 proses, 1 kursi, tepat 1 pemenang. Beban HTTP penuh masih terbuka |
 | Audit N+1 menjelang v1.0 | ✅ | Lunas 27 Okt 2026 (ADR-034). Setiap layar GET berportal dan endpoint Bridge dihitung kuerinya di demo lalu pada kampus yang ditumbuhkan (kelas ×2, mahasiswa ×3, antrean lain ×3–4). Tujuh layar tumbuh bersama data — terberat pratinjau penutupan semester, 61 → 212 kueri — kini datar dan dipaku `AnggaranKueriSkalaTest` (38 layar). Dua daftar yang memuat semua baris dipaginasi; tidak ada indeks baru yang diperlukan. Rincian di [`KAPASITAS.md`](KAPASITAS.md) §Audit N+1 |
 | ~~Lima alur setengah jadi (inventaris 28 Okt 2026)~~ | ✅ | Lunas 28 Okt 2026 (Sesi 65, ADR-035). Dibaca kode atau dijanjikan dokumen, tetapi tanpa jalur tulis atau tampilan: penetapan dosen wali (KRS tidak dapat disetujui di kampus nyata), dispensasi pembayaran, pengumuman untuk dosen/staf, event `student.enrolled`, dan detail mahasiswa + KHS/transkrip di sisi staf |
+| ~~Empat layar pengelolaan (inventaris 28 Okt 2026)~~ | ✅ | Lunas 30 Okt 2026 (Sesi 69, ADR-039): kuesioner umum, konsumen Bridge, klien SSO, tiket helpdesk oleh staf |
+| Urutan baris jawaban kuesioner anonim | 🟡 | `kuesioner_jawaban_anonim.id` dan `created_at` berurutan sejalan dengan `kuesioner_partisipasi`, sehingga pemegang akses basis data langsung dapat menjajarkan jawaban dengan pengisinya. Layar dan ekspor tidak pernah memperlihatkannya (ADR-039 §1). Kandidat: tanpa `created_at`, kunci acak, atau penulisan berbatch |
 | CSP masih `'unsafe-eval'` | 🟡 | Alpine mengevaluasi ekspresi `x-` lewat konstruktor `Function`. `'unsafe-inline'` untuk skrip sudah dicabut 27 Okt 2026 (ADR-033) |
 | Temuan rendah audit keamanan Oktober 2026 | 🟡 | 16 butir ditunda, D-1 s.d. D-16 di [`KEAMANAN-AUDIT-2026-10.md`](KEAMANAN-AUDIT-2026-10.md). Yang perlu keputusan proses lebih dulu: pemisahan pengaju dan penyetuju konversi kredit dan poin kemahasiswaan (D-1), perubahan kelas sesudah semester dikunci (D-2), telaah pendidikan dan jabatan fungsional yang dientri dosen (D-7). Sisanya pekerjaan kecil |
 | **CI merah sejak 22 Agustus 2026** | ✅ | Lunas 22 Okt 2026. Bukan 8 tes: **170**. CI menjalankan Pest *sebelum* `npm run build`, dan sejak tata letak dipisah (`build/` di root, di-ignore) setiap layar membalas 500 "Vite manifest not found". Di mesin pengembang `build/` selalu ada, jadi suite terlihat hijau dua bulan. Ditambah 14 tes SSO yang hanya lolos bila `.env` menyetel `SSO_ENABLED=true` — rute SSO didaftarkan saat boot, jadi `config()` di dalam tes terlambat. Keduanya diperbaiki di suite, bukan di CI: `TestCase::setUp()` memanggil `withoutVite()`, dan `phpunit.xml` menyetel `SSO_ENABLED=true` |
