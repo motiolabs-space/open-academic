@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\Bridge;
 
 use App\Enums\EducationLevel;
+use App\Enums\IndeksPublikasi;
 use App\Enums\JenisLuaran;
 use App\Enums\JenisPoin;
 use App\Enums\LecturerAssignmentType;
@@ -270,10 +271,12 @@ class DataIku2026
      * IKU 4, 5, 6, and 8 — lecturers' verified records, read four ways.
      *
      * What this system holds is the output, its kind, its reach, and the
-     * partner; and, for policy drafting, the form of involvement, whose
-     * policy it was, and the official document. What the decree also asks
-     * for on 4–5 — a partner's letter of use, a citation — is evidence a
-     * person reviews, which is why those stay `sebagian`.
+     * partner, and for publications the index, quartile, and DOI the
+     * lecturer declared and staff verified; for policy drafting, the form of
+     * involvement, whose policy it was, and the official document. What the
+     * decree also asks for — a partner's letter of use, a citation, a
+     * journal's top-tier standing, recognition of artistic work — is
+     * evidence a person reviews, which is why 4–6 stay `sebagian`.
      *
      * One read for all four: outputs and policy involvement are both rows of
      * penugasan_dosen, and a second query would only re-join the same table.
@@ -292,7 +295,8 @@ class DataIku2026
             ->where('p.is_verified', true)
             ->where(fn (Builder $q) => $q->whereNotNull('p.luaran_jenis')->orWhere('p.jenis', $kebijakan))
             ->get([
-                'p.dosen_id', 'p.jenis', 'p.luaran_jenis', 'p.tingkat', 'p.mitra_nama', 'p.mitra_jenis',
+                'p.id', 'p.dosen_id', 'p.jenis', 'p.luaran_jenis', 'p.tingkat', 'p.mitra_nama', 'p.mitra_jenis',
+                'p.luaran_indeks', 'p.luaran_kuartil', 'p.luaran_doi', 'p.luaran_kolaborasi_internasional',
                 'p.kebijakan_bentuk', 'p.kebijakan_tingkat', 'd.nuptk', 'd.status_kepegawaian',
             ]);
 
@@ -336,8 +340,50 @@ class DataIku2026
                 'per_tingkat' => $publikasi
                     ->groupBy(fn (object $r): string => $r->tingkat ?? 'tidak_disebutkan')
                     ->map(fn ($g): int => $g->count()),
+                ...$this->publikasiTerindeks($publikasi),
             ],
             'iku_8_penyusunan_kebijakan' => $this->penyusunanKebijakan($keterlibatan, (int) $dosen->tetap),
+        ];
+    }
+
+    /**
+     * IKU 6 — the index and quartile facts on each publication (ADR-041 §2).
+     *
+     * Counted per article, not per row: two co-authors from this campus each
+     * record the same paper, and the decree counts the paper once. Rows with
+     * the same DOI are one article; a row without a DOI stands alone, so
+     * `ber_doi` says how far the deduplication can be trusted. Weights by
+     * quartile, the top-tier class, the bonus for a foreign co-author, and
+     * the excluded publishers stay with the consumer.
+     *
+     * @param Collection<int, object> $publikasi
+     * @return array<string, mixed>
+     */
+    private function publikasiTerindeks(Collection $publikasi): array
+    {
+        $artikel = $publikasi
+            ->groupBy(fn (object $r): string => $r->luaran_doi !== null ? 'doi:'.$r->luaran_doi : 'baris:'.$r->id)
+            ->map(fn (Collection $g): object => $g->first());
+
+        $bereputasi = $artikel->filter(
+            fn (object $r): bool => IndeksPublikasi::tryFrom((string) $r->luaran_indeks)?->bereputasiInternasional() ?? false,
+        );
+
+        return [
+            'publikasi_unik' => $artikel->count(),
+            'ber_doi' => $artikel->filter(fn (object $r): bool => $r->luaran_doi !== null)->count(),
+            'per_indeks' => $artikel
+                ->groupBy(fn (object $r): string => $r->luaran_indeks ?? 'tidak_disebutkan')
+                ->map(fn ($g): int => $g->count()),
+            'bereputasi_internasional' => $bereputasi->count(),
+            'jurnal_bereputasi_per_kuartil' => $bereputasi
+                ->where('luaran_jenis', JenisLuaran::Jurnal->value)
+                ->groupBy(fn (object $r): string => $r->luaran_kuartil ?? 'tidak_disebutkan')
+                ->map(fn ($g): int => $g->count()),
+            'prosiding_bereputasi' => $bereputasi->where('luaran_jenis', JenisLuaran::Prosiding->value)->count(),
+            'bereputasi_kolaborasi_internasional' => $bereputasi
+                ->filter(fn (object $r): bool => (bool) $r->luaran_kolaborasi_internasional)
+                ->count(),
         ];
     }
 

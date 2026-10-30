@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace App\Http\Requests\Dosen;
 
 use App\Enums\BentukKeterlibatanKebijakan;
+use App\Enums\IndeksPublikasi;
 use App\Enums\JenisBuktiKebijakan;
 use App\Enums\JenisLuaran;
+use App\Enums\KuartilPublikasi;
 use App\Enums\LecturerAssignmentType;
 use App\Enums\PeranKegiatan;
 use App\Enums\TingkatKebijakan;
@@ -54,6 +56,19 @@ class CatatKegiatanRequest extends FormRequest
             'luaran_tahun' => ['nullable', 'integer', 'min:1950', 'max:'.(date('Y') + 1)],
             'keterangan' => ['nullable', 'string', 'max:1000'],
 
+            // IKU 6 facts (ADR-041 §2). A quartile belongs to a journal in
+            // Scopus or WoS only; anything else claiming one is a typo.
+            'luaran_indeks' => ['nullable', Rule::enum(IndeksPublikasi::class)],
+            'luaran_kuartil' => [
+                'nullable', Rule::enum(KuartilPublikasi::class),
+                'prohibited_unless:luaran_jenis,'.JenisLuaran::Jurnal->value,
+                'prohibited_unless:luaran_indeks,'.implode(',', IndeksPublikasi::berkuartil()),
+            ],
+            'luaran_doi' => ['nullable', 'string', 'max:255', 'regex:~^(https?://(dx\.)?doi\.org/|doi:\s*)?10\.\d{4,9}/\S+$~i'],
+            'luaran_tautan' => ['nullable', 'url:http,https', 'max:512'],
+            'luaran_penerbit' => ['nullable', 'string', 'max:255'],
+            'luaran_kolaborasi_internasional' => ['nullable', 'boolean'],
+
             'kebijakan_bentuk' => [$kebijakan, 'nullable', Rule::enum(BentukKeterlibatanKebijakan::class)],
             'kebijakan_tingkat' => [$kebijakan, 'nullable', Rule::enum(TingkatKebijakan::class)],
             'kebijakan_bukti_jenis' => [$kebijakan, 'nullable', Rule::enum(JenisBuktiKebijakan::class)],
@@ -74,6 +89,8 @@ class CatatKegiatanRequest extends FormRequest
             'kebijakan_tingkat.required_if' => __('portofolio.kebijakan.wajib.tingkat'),
             'kebijakan_bukti_jenis.required_if' => __('portofolio.kebijakan.wajib.bukti_jenis'),
             'dokumen.required_if' => __('portofolio.kebijakan.wajib.dokumen'),
+            'luaran_kuartil.prohibited_unless' => __('portofolio.publikasi.validasi.kuartil'),
+            'luaran_doi.regex' => __('portofolio.publikasi.validasi.doi'),
         ];
     }
 }

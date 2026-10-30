@@ -7,8 +7,10 @@ namespace Database\Seeders\Demo;
 use App\Enums\BentukKeterlibatanKebijakan;
 use App\Enums\EducationLevel;
 use App\Enums\Gender;
+use App\Enums\IndeksPublikasi;
 use App\Enums\JenisBuktiKebijakan;
 use App\Enums\JenisLuaran;
+use App\Enums\KuartilPublikasi;
 use App\Enums\LecturerAssignmentType;
 use App\Enums\PeranKegiatan;
 use App\Enums\TingkatKebijakan;
@@ -214,6 +216,40 @@ class SdmSeeder extends Seeder
                 'verified_at' => now(),
             ]);
         }
+
+        /*
+         * Publication facts (IKU 6, ADR-041 §2): the national journal row
+         * above gains its SINTA rank and DOI, and one Scopus Q2 article with a
+         * foreign co-author is added.
+         */
+        PenugasanDosen::query()
+            ->where('dosen_id', $dosen[0]->id)
+            ->where('luaran_jenis', JenisLuaran::Jurnal->value)
+            ->update(['luaran_indeks' => IndeksPublikasi::Sinta2->value, 'luaran_doi' => '10.1234/jnteti.2026.01']);
+
+        PenugasanDosen::create([
+            'dosen_id' => $dosen[4]->id,
+            'tahun_akademik_id' => $term->id,
+            'jenis' => LecturerAssignmentType::Penelitian,
+            'unsur' => UnsurBkd::Penelitian,
+            'judul' => 'Graph-Based Intrusion Detection for Campus Networks',
+            'peran' => PeranKegiatan::Anggota,
+            'tingkat' => TingkatKegiatan::Internasional,
+            'mitra_nama' => 'Universiti Teknologi Demo',
+            'mitra_jenis' => 'kampus',
+            'tanggal_mulai' => $term->tanggal_mulai,
+            'luaran_jenis' => JenisLuaran::Jurnal,
+            'luaran_identitas' => 'ISSN 0000-0000',
+            'luaran_tahun' => (int) date('Y'),
+            'luaran_indeks' => IndeksPublikasi::Scopus,
+            'luaran_kuartil' => KuartilPublikasi::Q2,
+            'luaran_doi' => '10.5555/demo.2026.042',
+            'luaran_penerbit' => 'Penerbit Demo Internasional',
+            'luaran_kolaborasi_internasional' => true,
+            'is_verified' => true,
+            'verified_by_staff_id' => $staff->id,
+            'verified_at' => now(),
+        ]);
 
         /*
          * Policy drafting (IKU 8, ADR-041 §1): one verified with its decree on

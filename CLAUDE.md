@@ -147,7 +147,7 @@ Tugas repo ini hanya menyediakan kebenaran transaksionalnya. Penomoran mengikuti
 | 3 — Kegiatan/prestasi di luar prodi | `aktivitas_mahasiswa` (`sks_konversi`), `poin_mahasiswa` jenis prestasi (juga diekspor ke SIMKATMAWA, ADR-037) | tersedia |
 | 4 — Rekognisi internasional dosen | `penugasan_dosen` berluaran, `tingkat = internasional` | sebagian |
 | 5 — Luaran kerja sama & hilirisasi | `penugasan_dosen` berluaran dengan mitra | sebagian |
-| 6 — Publikasi bereputasi | `penugasan_dosen` luaran jurnal/prosiding | sebagian — indeks & kuartil tidak dicatat |
+| 6 — Publikasi bereputasi | `penugasan_dosen` luaran jurnal/prosiding + indeks, kuartil, DOI (ADR-041) | sebagian — indeks & kuartil dinyatakan dosen, diverifikasi staf; top tier & karya seni di Open Campus |
 | 8 — SDM dalam penyusunan kebijakan | `penugasan_dosen` jenis `penyusunan_kebijakan` (bentuk, tingkat, bukti resmi; ADR-041) | tersedia — dosen saja; peneliti non-dosen di Open Campus |
 | 7, 9–12 — SDGs, pendapatan non-UKT, ZI, tata kelola, renstra kesejahteraan dosen | — | bukan cakupan repo ini |
 

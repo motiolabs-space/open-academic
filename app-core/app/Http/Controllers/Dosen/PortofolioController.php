@@ -7,10 +7,12 @@ namespace App\Http\Controllers\Dosen;
 use App\DTOs\Sdm\KegiatanDosenData;
 use App\Enums\BentukKeterlibatanKebijakan;
 use App\Enums\EducationLevel;
+use App\Enums\IndeksPublikasi;
 use App\Enums\JabatanFungsional;
 use App\Enums\JenisBuktiKebijakan;
 use App\Enums\JenisLuaran;
 use App\Enums\JenisSertifikasi;
+use App\Enums\KuartilPublikasi;
 use App\Enums\LecturerAssignmentType;
 use App\Enums\PeranKegiatan;
 use App\Enums\TingkatKebijakan;
@@ -89,6 +91,13 @@ class PortofolioController extends Controller
             'peranPilihan' => PeranKegiatan::options(),
             'tingkatPilihan' => TingkatKegiatan::options(),
             'luaranPilihan' => JenisLuaran::options(),
+            'luaranPublikasi' => collect(JenisLuaran::cases())
+                ->filter(fn (JenisLuaran $j): bool => $j->publikasi())
+                ->map(fn (JenisLuaran $j): string => $j->value)
+                ->values()
+                ->all(),
+            'indeksPilihan' => IndeksPublikasi::options(),
+            'kuartilPilihan' => KuartilPublikasi::options(),
             'kebijakanBentukPilihan' => BentukKeterlibatanKebijakan::options(),
             'kebijakanTingkatPilihan' => TingkatKebijakan::options(),
             'kebijakanBuktiPilihan' => JenisBuktiKebijakan::options(),

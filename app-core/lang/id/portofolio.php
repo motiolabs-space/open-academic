@@ -51,6 +51,42 @@ return [
         ],
     ],
 
+    'publikasi' => [
+        'judul_bagian' => 'Indeks publikasi',
+        'petunjuk' => 'Isi sesuai halaman pengindeks pada tahun terbit. Data ini Anda nyatakan dan diperiksa staf sebelum dihitung; sistem tidak mencarinya sendiri.',
+
+        'field' => [
+            'indeks' => 'Terindeks di',
+            'kuartil' => 'Kuartil jurnal',
+            'kuartil_hint' => 'Hanya untuk artikel jurnal terindeks Scopus atau Web of Science.',
+            'doi' => 'DOI',
+            'doi_hint' => 'Contoh: 10.1234/abcd.2026.01 — dipakai untuk mengenali artikel yang sama dari beberapa penulis.',
+            'tautan' => 'Tautan artikel',
+            'penerbit' => 'Penerbit',
+            'kolaborasi' => 'Kolaborasi internasional',
+            'kolaborasi_hint' => 'Ada penulis dari perguruan tinggi atau lembaga luar negeri',
+        ],
+
+        'indeks' => [
+            'scopus' => 'Scopus',
+            'wos' => 'Web of Science',
+            'sinta_1' => 'SINTA 1',
+            'sinta_2' => 'SINTA 2',
+            'sinta_3' => 'SINTA 3',
+            'sinta_4' => 'SINTA 4',
+            'sinta_5' => 'SINTA 5',
+            'sinta_6' => 'SINTA 6',
+            'lainnya' => 'Pengindeks lain',
+        ],
+
+        'kolaborasi_singkat' => 'kolaborasi internasional',
+
+        'validasi' => [
+            'kuartil' => 'Kuartil hanya diisi untuk artikel jurnal yang terindeks Scopus atau Web of Science.',
+            'doi' => 'DOI harus berbentuk 10.xxxx/… (boleh diawali https://doi.org/).',
+        ],
+    ],
+
     'verifikasi' => [
         'bukti' => 'Bukti',
         'unduh_bukti' => 'Buka bukti',

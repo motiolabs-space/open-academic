@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace App\Models\Sdm;
 
 use App\Enums\BentukKeterlibatanKebijakan;
+use App\Enums\IndeksPublikasi;
 use App\Enums\JenisBuktiKebijakan;
 use App\Enums\JenisLuaran;
+use App\Enums\KuartilPublikasi;
 use App\Enums\LecturerAssignmentType;
 use App\Enums\PeranKegiatan;
 use App\Enums\TingkatKebijakan;
@@ -34,6 +36,8 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property ?PeranKegiatan $peran
  * @property ?TingkatKegiatan $tingkat
  * @property ?JenisLuaran $luaran_jenis
+ * @property ?IndeksPublikasi $luaran_indeks
+ * @property ?KuartilPublikasi $luaran_kuartil
  * @property ?BentukKeterlibatanKebijakan $kebijakan_bentuk
  * @property ?TingkatKebijakan $kebijakan_tingkat
  * @property ?JenisBuktiKebijakan $kebijakan_bukti_jenis
@@ -58,6 +62,9 @@ class PenugasanDosen extends Model
             'tingkat' => TingkatKegiatan::class,
             'luaran_jenis' => JenisLuaran::class,
             'luaran_tahun' => 'integer',
+            'luaran_indeks' => IndeksPublikasi::class,
+            'luaran_kuartil' => KuartilPublikasi::class,
+            'luaran_kolaborasi_internasional' => 'boolean',
             'kebijakan_bentuk' => BentukKeterlibatanKebijakan::class,
             'kebijakan_tingkat' => TingkatKebijakan::class,
             'kebijakan_bukti_jenis' => JenisBuktiKebijakan::class,
@@ -82,6 +89,12 @@ class PenugasanDosen extends Model
     public function verifikator(): BelongsTo
     {
         return $this->belongsTo(Staff::class, 'verified_by_staff_id');
+    }
+
+    /** The DOI as a link, or null when none was recorded. */
+    public function tautanDoi(): ?string
+    {
+        return $this->luaran_doi === null ? null : 'https://doi.org/'.$this->luaran_doi;
     }
 
     /** @param Builder<self> $query */

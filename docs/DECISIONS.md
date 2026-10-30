@@ -1556,3 +1556,52 @@ ditulis ulang dengan kata-kata sendiri; dokumennya tidak masuk repo
   keputusan apakah dosen tidak tetap atau tingkat internasional dihitung
   milik konsumen. Ekspor portofolio (SISTER/BKD, `lecturer-workload`) ikut
   membawa empat medan baru.
+
+### 2. IKU 6 — indeks dan kuartil publikasi dicatat sebagai fakta yang dinyatakan dan diverifikasi
+
+- **Konteks.** IKU 6 (wajib bagi PTN-BH, pilihan bagi yang lain) mengukur
+  proporsi publikasi hasil riset yang terindeks basis data internasional
+  bereputasi — Scopus dan/atau Web of Science — terhadap seluruh publikasi
+  perguruan tinggi. Artikel jurnal diberi bobot menurut kuartil (dengan kelas
+  "top tier" di atas Q1), prosiding bereputasi berbobot tetap, publikasi
+  dengan penulis dari luar negeri mendapat tambahan bobot, beberapa penerbit
+  dikecualikan, dan karya seni/budaya berpengakuan internasional ikut
+  dihitung. `penugasan_dosen` hanya mencatat jenis luaran dan tingkatnya;
+  ROADMAP #48 menanyakan apakah indeks dan kuartil dicatat di sini atau tetap
+  di Open Campus.
+- **Keputusan.** (1) **Dicatat di sini, sebagai fakta.** Indeks dan kuartil
+  adalah sifat artikel, sama seperti DOI-nya — bukan penilaian. Open Academic
+  mencatat apa yang **dinyatakan** dosen dan **diverifikasi** staf; menilai
+  bukti, menimbang, dan menghitung persentase tetap di Open Campus. Enam
+  kolom baru pada luaran publikasi (jurnal/prosiding): `luaran_indeks`
+  (`IndeksPublikasi`: Scopus, WoS, SINTA 1–6, lainnya — satu indeks tempat
+  artikel dilaporkan), `luaran_kuartil` (`KuartilPublikasi`: Q1–Q4, hanya
+  untuk artikel jurnal ber-Scopus/WoS; selain itu ditolak validasi),
+  `luaran_doi` (dinormalkan: tanpa awalan `https://doi.org/`, huruf kecil),
+  `luaran_tautan`, `luaran_penerbit`, dan `luaran_kolaborasi_internasional`.
+  `KegiatanDosenData` membuang semuanya dari luaran yang bukan publikasi.
+  (2) **Tanpa I/O ke pengindeks.** Tidak ada panggilan ke API Scopus, WoS,
+  SINTA, atau Crossref: itu I/O eksternal baru (CLAUDE.md §3 aturan 6) dan
+  di luar cakupan. Bila kelak dibutuhkan — misalnya mengisi kuartil dari
+  DOI — ia masuk di balik interface dengan implementasi palsu untuk uji,
+  dan hasilnya tetap usulan yang diverifikasi staf, bukan penimpa data.
+  (3) **Top tier dan penerbit tidak diputuskan di sini.** "Top tier" adalah
+  penggolongan di atas kuartil yang daftarnya ditetapkan di luar repo ini,
+  dan pengecualian penerbit adalah aturan penghitungan; keduanya milik
+  konsumen. Repo ini menyimpan nama penerbit agar aturan itu dapat diterapkan.
+  (4) **Bridge menghitung artikel, bukan baris.** Dua dosen kampus yang sama
+  menulis satu artikel menghasilkan dua baris; `iku_2026.iku_6_publikasi`
+  mendapat medan baru yang menggabungkan baris ber-DOI sama:
+  `publikasi_unik`, `ber_doi`, `per_indeks`, `bereputasi_internasional`,
+  `jurnal_bereputasi_per_kuartil`, `prosiding_bereputasi`,
+  `bereputasi_kolaborasi_internasional`. Tiga medan lama (`total_publikasi`,
+  `per_jenis`, `per_tingkat`) tidak diubah dan tetap menghitung baris.
+  `ketersediaan` IKU 6 tetap `sebagian`: pengakuan karya seni/budaya dan
+  penetapan top tier tidak dicatat. Tanpa kueri tambahan — kolomnya ikut
+  dibaca kueri luaran yang sama.
+- **Konsekuensi.** Kualitas penggabungan bergantung pada DOI; `ber_doi`
+  memberi tahu konsumen seberapa jauh angka unik dapat dipercaya. Kuartil
+  dicatat sebagaimana tertera saat terbit; perubahan kuartil jurnal di tahun
+  berikutnya tidak mengubah catatan lama. Dosen yang sudah mencatat publikasi
+  sebelum perubahan ini perlu melengkapi indeksnya lewat koreksi oleh staf
+  (belum ada layar sunting kegiatan oleh dosen).
