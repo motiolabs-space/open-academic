@@ -16,6 +16,7 @@
             <x-button variant="outline" type="submit">Tarik Referensi</x-button>
         </form>
 
+        <x-button variant="outline" href="{{ route('admin.feeder.kamus') }}">{{ __('feeder.kamus.tautan_konsol') }}</x-button>
         <x-button variant="outline" href="{{ route('admin.feeder.adopsi') }}">{{ __('feeder.adopsi.tautan_konsol') }}</x-button>
         <x-button variant="outline" href="{{ route('admin.feeder.lampau') }}">{{ __('feeder.lampau.tautan_konsol') }}</x-button>
     </div>
@@ -48,6 +49,31 @@
             <x-chip :tone="$aktif ? ($sehat ? 'success' : 'danger') : 'neutral'">
                 {{ $aktif ? ($sehat ? 'Siap' : 'Gangguan') : 'Nonaktif' }}
             </x-chip>
+        </div>
+    </x-card>
+
+    {{-- ============ KAMUS WEB SERVICE ============ --}}
+    <x-card class="mb-5">
+        <div class="flex flex-wrap items-center gap-3">
+            <div class="min-w-0 flex-1">
+                <div class="text-[13px] font-semibold">{{ __('feeder.kamus.konsol.judul') }}</div>
+                <div class="tabular text-[12px] text-ink-muted">
+                    @if ($kamus)
+                        {{ __('feeder.kamus.konsol.ringkas', [
+                            'tanggal' => App\Support\Format::tanggal($kamus['run']->diperiksa_at),
+                            'versi' => $kamus['run']->versi_feeder ?? __('feeder.kamus.versi_tidak_diketahui'),
+                            'selisih' => $kamus['selisih'],
+                            'entitas' => $kamus['entitas'],
+                        ]) }}
+                    @else
+                        {{ __('feeder.kamus.konsol.belum') }}
+                    @endif
+                </div>
+            </div>
+            @if ($kamus)
+                <x-chip :tone="$kamus['selisih'] > 0 ? 'danger' : 'success'">{{ $kamus['selisih'] }}</x-chip>
+            @endif
+            <x-button variant="outline" size="sm" href="{{ route('admin.feeder.kamus') }}">{{ __('feeder.kamus.konsol.buka') }}</x-button>
         </div>
     </x-card>
 

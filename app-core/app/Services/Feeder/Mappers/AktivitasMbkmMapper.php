@@ -32,6 +32,21 @@ class AktivitasMbkmMapper extends FeederMapper
         return 'InsertAktivitasMahasiswa';
     }
 
+    public function medan(): array
+    {
+        return [
+            'id_jenis_aktivitas',
+            'id_prodi',
+            'id_semester',
+            'judul',
+            'keterangan',
+            'lokasi',
+            'sk_tugas',
+            'tanggal_sk_tugas',
+            'untuk_kampus_merdeka',
+        ];
+    }
+
     /** @return Builder<AktivitasMahasiswa> */
     protected function query(string $termCode): Builder
     {

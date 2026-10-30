@@ -42,6 +42,21 @@ class LulusDoMapper extends FeederMapper
         return 'InsertMahasiswaLulusDO';
     }
 
+    public function medan(): array
+    {
+        return [
+            'id_registrasi_mahasiswa',
+            'id_jenis_keluar',
+            'tanggal_keluar',
+            'id_periode_keluar',
+            'nomor_sk_yudisium',
+            'tanggal_sk_yudisium',
+            'ipk',
+            'judul_skripsi',
+            'keterangan',
+        ];
+    }
+
     /**
      * Students whose exit was decided in this term.
      *

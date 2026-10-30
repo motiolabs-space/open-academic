@@ -23,6 +23,11 @@ class KrsMapper extends FeederMapper
         return 'InsertKRSMahasiswa';
     }
 
+    public function medan(): array
+    {
+        return ['id_registrasi_mahasiswa', 'id_kelas_kuliah', 'id_matkul', 'id_semester', 'sks_mata_kuliah'];
+    }
+
     /** @return Builder<KrsDetail> */
     protected function query(string $termCode): Builder
     {

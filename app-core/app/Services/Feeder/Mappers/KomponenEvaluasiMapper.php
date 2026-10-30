@@ -26,6 +26,18 @@ class KomponenEvaluasiMapper extends FeederMapper
         return 'InsertKomponenEvaluasiKelas';
     }
 
+    public function medan(): array
+    {
+        return [
+            'id_kelas_kuliah',
+            'id_jenis_evaluasi',
+            'nama',
+            'nama_inggris',
+            'nomor_urut',
+            'bobot_evaluasi',
+        ];
+    }
+
     /** @return Builder<KomponenNilai> */
     protected function query(string $termCode): Builder
     {

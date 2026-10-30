@@ -17,6 +17,11 @@ class AnggotaTugasAkhirMapper extends FeederMapper
         return 'InsertAnggotaAktivitasMahasiswa';
     }
 
+    public function medan(): array
+    {
+        return ['id_aktivitas', 'id_registrasi_mahasiswa', 'jenis_peran'];
+    }
+
     /** @return Builder<TugasAkhir> */
     protected function query(string $termCode): Builder
     {

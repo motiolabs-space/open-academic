@@ -25,6 +25,18 @@ abstract class FeederMapper
     abstract public function act(): string;
 
     /**
+     * Every field this mapper can put in a record, the natural key included.
+     *
+     * A payload drops its empty fields, so no single row shows all of them;
+     * this list is what the web-service dictionary check compares against
+     * Feeder's own dictionary for act(). A test holds it to the keys the
+     * payload actually writes, so the two cannot drift apart unnoticed.
+     *
+     * @return array<int, string>
+     */
+    abstract public function medan(): array;
+
+    /**
      * The query selecting this entity's rows for the given term, eager loads
      * included. Everything else — the rows themselves, and how many there are
      * — derives from it.

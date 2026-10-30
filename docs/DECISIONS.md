@@ -1496,3 +1496,56 @@ Tidak ada panduan, templat, atau contoh berkas kementerian yang masuk repo
   bekerja); bila instrumen 2026 berbeda, `StatusPekerjaanAlumni::dariTeks()`
   yang diperbarui. Instalasi berjalan: `php artisan migrate` dan
   `db:seed --class=RolePermissionSeeder`.
+
+## ADR-042 — Butir Feeder P7: kamus web service, nama medan yang dapat diatur, re-NIM dan masuk kembali (2026-10-30)
+
+ROADMAP P7 menyisakan empat butir Feeder yang tidak dapat diselesaikan dari
+dokumen publik (ADR-036 §3): nama medan HP (#52), tanggal ijazah (#53),
+changelog 3.1 (#54), dan alur re-NIM / masuk kembali (#55). Satu ADR, satu
+bagian per butir.
+
+### 1. Kamus web service dibaca dari Feeder kampus, dibandingkan, dilaporkan — tidak diterapkan
+
+- **Konteks.** Nama medan hanya pasti di kamus yang dijawab Neo Feeder yang
+  terpasang (aksi kamus, lazimnya `GetDictionary`). Kamus itu materi
+  kementerian: tidak boleh masuk repo (CLAUDE.md §10), dan bentuk balasannya
+  tidak dipublikasikan sehingga tidak dapat ditulis sebagai fixture "asli".
+  Menebak nama medan sudah dua kali ditolak (#52, #53).
+- **Keputusan.** (1) **Alat, bukan tebakan.** `openacademic:feeder-kamus` dan
+  layar `/admin/feeder/kamus` (tautan dan panel ringkas di konsol Feeder)
+  memanggil aksi kamus untuk setiap aksi yang dikirim mapper, menyimpan
+  hasilnya ke dua tabel infrastruktur (`feeder_dictionary_runs`: versi,
+  driver, jumlah aksi/gagal, siapa, kapan; `feeder_dictionary_acts`: medan
+  per aksi atau galatnya), lalu membandingkannya dengan **`medan()`** — daftar
+  medan yang dideklarasikan setiap mapper. Nama aksi kamus dan nama parameter
+  pembawa aksi dapat diatur (`FEEDER_KAMUS_ACT`, `FEEDER_KAMUS_PARAMETER`),
+  seperti nama aksi lain di `config/feeder.php`. (2) **Empat jenis temuan**
+  (`JenisTemuanKamus`): medan yang kita kirim tetapi tidak dikenal kamus;
+  medan wajib yang tidak kita kirim (kunci primer tidak dihitung — itu yang
+  dikembalikan Feeder); pasangan keduanya yang tampak satu medan berganti
+  nama (sinonim yang dikenal, mis. `telepon_seluler`/`handphone`/`nomor_hp`,
+  kata yang termuat di nama lain, atau ejaan ≥ 80% mirip; dipasangkan yang
+  terbaik dulu, setiap nama sekali); dan aksi yang kamusnya tidak terbaca.
+  Medan opsional yang tidak dikirim hanya didaftar, bukan temuan. (3)
+  **Pembaca kamus toleran, penolakannya jujur.** `KamusFeeder` mencari daftar
+  medan di bentuk yang lazim (peta bernama medan, atau daftar baris yang
+  menyebut nama medan) di bawah pembungkus yang lazim (nama aksi, `request`,
+  `record`, …). Balasan yang tidak berbentuk itu dicatat sebagai "tidak
+  terbaca", **tidak pernah** sebagai aksi tanpa medan wajib. (4) **Laporan
+  diturunkan saat ditampilkan**, dari bacaan yang tersimpan dan kode yang
+  berjalan: mapper yang diperbaiki sesudah bacaan langsung terlihat cocok
+  tanpa bertanya ke Feeder lagi. (5) **Tidak ada yang diterapkan otomatis.**
+  Pemetaan, config, dan buku besar tidak disentuh; yang memutuskan orang.
+  Membaca (`feeder.view`) dan menjalankan (`feeder.sync`) dipisah. (6)
+  **`medan()` dipaku tes** terhadap kunci yang benar-benar ditulis
+  `payload()` setiap mapper, supaya deklarasi dan payload tidak bergeser.
+  (7) **Kamus palsu dikarang.** `FakeFeederClient::kamus()` punya skenario
+  `selaras`, `3.0.1`, dan `3.1` yang dibangun dari `medan()` mapper ditambah
+  perubahan fiktif (HP berganti nama, medan wajib baru, medan dihapus, aksi
+  tidak dilayani). Label versinya menamai situasi yang dikhawatirkan ROADMAP,
+  bukan klaim tentang isi Neo Feeder versi itu.
+- **Konsekuensi.** Kampus menjalankan pemeriksaan sesudah memasang atau
+  memperbarui Neo Feeder dan sebelum sinkronisasi semester. Isi kamus berada
+  di basis data kampus saja. Bila balasan Feeder kampus berbentuk lain dari
+  yang dikenali, layar mengatakan "tidak terbaca"; bentuk baru ditambahkan ke
+  `KamusFeeder` beserta tesnya, tanpa menyalin balasan aslinya ke repo.

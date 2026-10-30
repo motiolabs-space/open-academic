@@ -23,6 +23,23 @@ class KelasKuliahMapper extends FeederMapper
         return 'InsertKelasKuliah';
     }
 
+    public function medan(): array
+    {
+        return [
+            'id_semester',
+            'id_prodi',
+            'id_matkul',
+            'nama_kelas_kuliah',
+            'sks',
+            'jumlah_mahasiswa',
+            'id_dosen',
+            'nidn',
+            'apa_untuk_pditt',
+            'metode_case_method',
+            'metode_team_based_project',
+        ];
+    }
+
     /** @return Builder<KelasKuliah> */
     protected function query(string $termCode): Builder
     {

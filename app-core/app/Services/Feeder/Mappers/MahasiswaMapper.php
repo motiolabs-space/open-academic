@@ -21,6 +21,27 @@ class MahasiswaMapper extends FeederMapper
         return 'InsertBiodataMahasiswa';
     }
 
+    public function medan(): array
+    {
+        return [
+            'nama_mahasiswa',
+            'jenis_kelamin',
+            'tempat_lahir',
+            'tanggal_lahir',
+            'id_agama',
+            'nik',
+            'nisn',
+            'kewarganegaraan',
+            'jalan',
+            'kelurahan',
+            'kode_pos',
+            'telepon_seluler',
+            'email',
+            'nama_ayah',
+            'nama_ibu_kandung',
+        ];
+    }
+
     /**
      * Students who first enrolled in this term.
      *

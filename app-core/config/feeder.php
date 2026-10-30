@@ -358,6 +358,29 @@ return [
         ],
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Web-Service Dictionary
+    |--------------------------------------------------------------------------
+    |
+    | Neo Feeder describes the fields each act accepts through its own
+    | dictionary act. `openacademic:feeder-kamus` and the console's
+    | dictionary screen read it for every act we send and compare it with the
+    | mappers — the only way to settle a field name that public documents do
+    | not (ROADMAP #52, #53). `parameter` names the request field carrying the
+    | act being described. Both follow the community's usage; a wrong one
+    | surfaces as a Feeder error on every act, not as an empty dictionary.
+    |
+    | What the dictionary says is stored in this campus's database only. It is
+    | ministry material and never belongs in the repository.
+    |
+    */
+
+    'kamus' => [
+        'act' => env('FEEDER_KAMUS_ACT', 'GetDictionary'),
+        'parameter' => env('FEEDER_KAMUS_PARAMETER', 'fungsi'),
+    ],
+
     // Rows pulled per page when reading Feeder back. Higher is fewer requests
     // and more memory; a term of KRS at a mid-sized campus is tens of
     // thousands of rows, so it is paged rather than fetched whole.

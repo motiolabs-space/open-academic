@@ -28,6 +28,11 @@ class BimbingMbkmMapper extends FeederMapper
         return 'InsertBimbingMahasiswa';
     }
 
+    public function medan(): array
+    {
+        return ['id_aktivitas', 'id_kategori_kegiatan', 'id_dosen', 'pembimbing_ke'];
+    }
+
     /** @return Builder<AktivitasMahasiswa> */
     protected function query(string $termCode): Builder
     {

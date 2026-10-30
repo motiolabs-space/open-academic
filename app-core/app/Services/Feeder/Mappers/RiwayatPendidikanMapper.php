@@ -24,6 +24,22 @@ class RiwayatPendidikanMapper extends FeederMapper
         return 'InsertRiwayatPendidikanMahasiswa';
     }
 
+    public function medan(): array
+    {
+        return [
+            'id_mahasiswa',
+            'nim',
+            'id_prodi',
+            'id_jenis_daftar',
+            'id_jalur_masuk',
+            'id_periode_masuk',
+            'tanggal_daftar',
+            'sks_diakui',
+            'nama_perguruan_tinggi_asal',
+            'nama_program_studi_asal',
+        ];
+    }
+
     /**
      * Students whose biodata already reached Feeder but whose enrolment has not.
      *

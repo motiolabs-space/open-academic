@@ -825,6 +825,8 @@ Route::middleware(['auth:staff', 'term.active'])->prefix('admin')->name('admin.'
     Route::get('/feeder', [Admin\FeederController::class, 'index'])->name('feeder');
     Route::post('/feeder/validasi', [Admin\FeederController::class, 'validasi'])->name('feeder.validasi');
     Route::post('/feeder/referensi', [Admin\FeederController::class, 'tarikReferensi'])->name('feeder.referensi');
+    Route::get('/feeder/kamus', [Admin\FeederKamusController::class, 'index'])->name('feeder.kamus');
+    Route::post('/feeder/kamus', [Admin\FeederKamusController::class, 'periksa'])->name('feeder.kamus.periksa');
     Route::get('/feeder/adopsi', [Admin\FeederAdopsiController::class, 'index'])->name('feeder.adopsi');
     Route::post('/feeder/adopsi', [Admin\FeederAdopsiController::class, 'jalankan'])->name('feeder.adopsi.jalankan');
     Route::post('/feeder/adopsi/{adopsi}/tautkan', [Admin\FeederAdopsiController::class, 'tautkan'])->name('feeder.adopsi.tautkan');

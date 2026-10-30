@@ -222,4 +222,71 @@ return [
         ],
     ],
 
+    // Web-service dictionary check (ADR-042 §1).
+    'kamus' => [
+        'judul' => 'Kamus Web Service',
+        'konteks' => 'Medan yang diterima Neo Feeder kampus, dibandingkan dengan medan yang dikirim SIAKAD',
+        'tautan_konsol' => 'Kamus WS',
+        'penjelasan' => 'Nama medan pada web service Neo Feeder hanya dapat dipastikan dari kamus yang dijawab Feeder kampus '
+            .'sendiri (GetDictionary). Pemeriksaan membaca kamus setiap aksi yang dipakai SIAKAD, menyimpannya, lalu '
+            .'membandingkannya dengan medan yang dikirim setiap entitas. Hasilnya laporan: tidak ada pemetaan atau '
+            .'pengaturan yang diubah otomatis. Jalankan ulang setiap kali Neo Feeder kampus diperbarui.',
+        'privasi' => 'Isi kamus disimpan di basis data kampus ini saja dan tidak pernah dikirim ke mana pun.',
+        'form' => [
+            'versi' => 'Versi Neo Feeder',
+            'versi_hint' => 'Isi bila Feeder tidak melaporkan versinya sendiri, mis. 3.1.',
+            'periksa' => 'Baca kamus dari Feeder',
+        ],
+        'ringkasan' => [
+            'diperiksa' => 'Diperiksa',
+            'versi' => 'Versi Feeder',
+            'aksi' => 'Aksi dibaca',
+            'gagal' => 'Aksi gagal dibaca',
+            'selisih' => 'Entitas berselisih',
+            'oleh' => 'Dijalankan oleh',
+            'perintah' => 'perintah artisan',
+        ],
+        'versi_tidak_diketahui' => 'tidak dilaporkan',
+        'cocok' => 'Cocok',
+        'tidak_terbaca' => 'Tidak terbaca',
+        'semua_cocok' => 'Seluruh medan yang dikirim dikenal kamus, dan tidak ada medan wajib yang tertinggal.',
+        'opsional' => ':jumlah medan opsional di kamus tidak dikirim: :daftar',
+        'riwayat' => 'Pemeriksaan sebelumnya',
+        'kolom' => [
+            'entitas' => 'Entitas',
+            'aksi' => 'Aksi',
+            'temuan' => 'Temuan',
+            'dikirim' => 'Dikirim SIAKAD',
+            'kamus' => 'Di kamus Feeder',
+        ],
+        'jenis' => [
+            'tidak_dikenal' => 'Tidak dikenal Feeder',
+            'wajib_tidak_dikirim' => 'Wajib, tidak dikirim',
+            'beda_nama' => 'Beda nama',
+            'aksi_tidak_terbaca' => 'Aksi tidak terbaca',
+        ],
+        'wajib' => 'wajib',
+        'galat' => [
+            'ditolak' => 'Feeder menolak permintaan kamus untuk aksi ini.',
+            'bentuk' => 'Balasan kamus tidak berbentuk daftar medan yang dikenali; periksa versi Feeder atau nama parameter kamus.',
+        ],
+        'kosong' => [
+            'judul' => 'Kamus belum pernah dibaca',
+            'deskripsi' => 'Baca kamus dari Neo Feeder kampus untuk membandingkan nama medan dengan yang dikirim SIAKAD.',
+        ],
+        'konsol' => [
+            'judul' => 'Kamus Web Service',
+            'belum' => 'Kamus Feeder belum pernah dibaca. Bacalah sesudah memasang atau memperbarui Neo Feeder.',
+            'ringkas' => 'Dibaca :tanggal (versi :versi): :selisih dari :entitas entitas berselisih dengan kamus.',
+            'buka' => 'Buka laporan',
+        ],
+        'pesan' => [
+            'selesai' => 'Kamus dibaca untuk :aksi aksi (:gagal gagal dibaca); :selisih entitas berselisih dengan kamus.',
+        ],
+        'perintah' => [
+            'ringkasan' => 'Kamus dibaca untuk :aksi aksi (:gagal gagal), versi Feeder: :versi.',
+            'ada_selisih' => ':jumlah entitas berselisih dengan kamus. Laporan lengkap ada di konsol Feeder → Kamus WS.',
+        ],
+    ],
+
 ];

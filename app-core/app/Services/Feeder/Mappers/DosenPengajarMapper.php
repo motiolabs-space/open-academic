@@ -34,6 +34,19 @@ class DosenPengajarMapper extends FeederMapper
         return 'InsertDosenPengajarKelasKuliah';
     }
 
+    public function medan(): array
+    {
+        return [
+            'id_kelas_kuliah',
+            'id_dosen',
+            'nidn',
+            'sks_substansi_total',
+            'rencana_minggu_pertemuan',
+            'realisasi_minggu_pertemuan',
+            'id_jenis_evaluasi',
+        ];
+    }
+
     /** @return Builder<KelasDosen> */
     protected function query(string $termCode): Builder
     {

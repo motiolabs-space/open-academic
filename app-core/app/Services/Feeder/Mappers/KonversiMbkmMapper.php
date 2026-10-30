@@ -26,6 +26,19 @@ class KonversiMbkmMapper extends FeederMapper
         return 'InsertKonversiKampusMerdeka';
     }
 
+    public function medan(): array
+    {
+        return [
+            'id_matkul',
+            'id_anggota',
+            'id_semester',
+            'sks_mata_kuliah',
+            'nilai_angka',
+            'nilai_huruf',
+            'nilai_indeks',
+        ];
+    }
+
     /** @return Builder<KrsDetail> */
     protected function query(string $termCode): Builder
     {

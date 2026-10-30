@@ -33,6 +33,38 @@ class FakeFeederClient implements FeederClientInterface
 
     private bool $tersedia = true;
 
+    /** Which invented dictionary GetDictionary answers from; see kamus(). */
+    private string $kamus = 'selaras';
+
+    /**
+     * Invented dictionaries, as changes to the mappers' own field lists.
+     *
+     * None of this is copied from a real Neo Feeder: the version labels name
+     * the situations ROADMAP #52–#54 worry about, and the field names are
+     * made up to exercise every kind of finding — a rename, a required field
+     * we never send, a field we send that the build does not know, an act
+     * the build does not serve. Real dictionaries stay in the campus's own
+     * database (CLAUDE.md §10).
+     *
+     * Per act: `ganti` renames ours => theirs (required), `wajib` adds a
+     * required field, `opsional` an optional one, `hapus` drops one of ours;
+     * null means the act is not served at all.
+     *
+     * @var array<string, array<string, array<string, mixed>|null>>
+     */
+    private const KAMUS_FIKTIF = [
+        'selaras' => [],
+        '3.0.1' => [
+            'InsertBiodataMahasiswa' => ['ganti' => ['telepon_seluler' => 'nomor_hp'], 'wajib' => ['id_wilayah']],
+            'InsertMahasiswaLulusDO' => ['opsional' => ['tanggal_terbit_ijazah']],
+        ],
+        '3.1' => [
+            'InsertBiodataMahasiswa' => ['ganti' => ['telepon_seluler' => 'nomor_hp'], 'wajib' => ['id_wilayah'], 'hapus' => ['kewarganegaraan']],
+            'InsertMahasiswaLulusDO' => ['wajib' => ['tanggal_terbit_ijazah']],
+            'InsertAktivitasMBKMFlagship' => null,
+        ],
+    ];
+
     public function __construct(private readonly string $fixturePath = '') {}
 
     /* ---------------------------------------------------------------------
@@ -124,6 +156,21 @@ class FakeFeederClient implements FeederClientInterface
         return $this;
     }
 
+    /**
+     * Which invented dictionary GetDictionary answers from: "selaras" (the
+     * mappers' own fields, nothing to report), "3.0.1" or "3.1".
+     */
+    public function kamus(string $skenario): self
+    {
+        if (!array_key_exists($skenario, self::KAMUS_FIKTIF)) {
+            throw new \InvalidArgumentException("Skenario kamus palsu tidak dikenal: {$skenario}");
+        }
+
+        $this->kamus = $skenario;
+
+        return $this;
+    }
+
     public function matikan(): self
     {
         $this->tersedia = false;
@@ -160,6 +207,10 @@ class FakeFeederClient implements FeederClientInterface
 
         if ($act === config('feeder.adopt.lampau.claim_action')) {
             return $this->klaimLampau((array) ($payload['key'] ?? []));
+        }
+
+        if ($act === config('feeder.kamus.act')) {
+            return $this->balasKamus((string) ($payload[(string) config('feeder.kamus.parameter')] ?? ''));
         }
 
         if (isset($this->isi[$act])) {
@@ -234,6 +285,55 @@ class FakeFeederClient implements FeederClientInterface
     public function tersedia(): bool
     {
         return $this->tersedia;
+    }
+
+    /**
+     * One act's dictionary from the armed scenario.
+     *
+     * Starts from the fields the act's mappers send — so "selaras" agrees
+     * with the code as it stands — and applies the scenario's changes. The
+     * shape (act name, then `record`, then a map of fields) is one of the
+     * shapes KamusFeeder reads; the parser's own tests cover the others.
+     */
+    private function balasKamus(string $act): FeederResponse
+    {
+        $ubahan = self::KAMUS_FIKTIF[$this->kamus];
+        $mappers = collect(FeederSyncService::MAPPERS)->map(fn (string $kelas) => app($kelas))
+            ->filter(fn ($mapper): bool => $mapper->act() === $act);
+
+        if ($mappers->isEmpty() || (array_key_exists($act, $ubahan) && $ubahan[$act] === null)) {
+            return new FeederResponse(100, "Fungsi {$act} tidak ditemukan", null);
+        }
+
+        $medan = [];
+
+        foreach ($mappers->flatMap(fn ($mapper): array => $mapper->medan())->unique() as $nama) {
+            $medan[$nama] = ['tipe' => 'teks', 'wajib' => false];
+        }
+
+        $ubah = $ubahan[$act] ?? [];
+
+        foreach ($ubah['ganti'] ?? [] as $kita => $mereka) {
+            if (isset($medan[$kita])) {
+                unset($medan[$kita]);
+                $medan[$mereka] = ['tipe' => 'teks', 'wajib' => true];
+            }
+        }
+
+        foreach ($ubah['hapus'] ?? [] as $nama) {
+            unset($medan[$nama]);
+        }
+
+        foreach (['wajib' => true, 'opsional' => false] as $jenis => $wajib) {
+            foreach ($ubah[$jenis] ?? [] as $nama) {
+                $medan[$nama] = ['tipe' => 'teks', 'wajib' => $wajib];
+            }
+        }
+
+        $data = [$act => ['record' => $medan]];
+        $versi = $this->kamus === 'selaras' ? null : $this->kamus;
+
+        return new FeederResponse(0, '', $data, array_filter(['error_code' => 0, 'versi' => $versi, 'data' => $data], fn ($v): bool => $v !== null));
     }
 
     /**
