@@ -149,6 +149,41 @@
                                         · {{ Format::angka($p->sks_ekuivalen) }} SKS ekuivalen
                                     @endif
                                 </div>
+                                @if ($p->luaran_jenis?->publikasi())
+                                    <div class="text-[11px] text-ink-muted">
+                                        {{ $p->luaran_jenis->label() }}
+                                        @if ($p->luaran_indeks)
+                                            · {{ $p->luaran_indeks->label() }}{{ $p->luaran_kuartil ? ' '.$p->luaran_kuartil->label() : '' }}
+                                        @endif
+                                        @if ($p->luaran_kolaborasi_internasional) · {{ __('portofolio.publikasi.kolaborasi_singkat') }} @endif
+                                        @if ($p->luaran_penerbit) · {{ $p->luaran_penerbit }} @endif
+                                    </div>
+                                    @if ($p->luaran_doi || $p->luaran_tautan)
+                                        <div class="text-[11px]">
+                                            @if ($p->luaran_doi)
+                                                <a href="{{ $p->tautanDoi() }}" class="tabular text-navy hover:underline" rel="noopener noreferrer" target="_blank">DOI {{ $p->luaran_doi }}</a>
+                                            @endif
+                                            @if ($p->luaran_tautan)
+                                                <a href="{{ $p->luaran_tautan }}" class="ml-1 text-navy hover:underline" rel="noopener noreferrer" target="_blank">{{ __('portofolio.publikasi.field.tautan') }}</a>
+                                            @endif
+                                        </div>
+                                    @endif
+                                @endif
+                                @if ($p->kebijakan_bentuk)
+                                    <div class="text-[11px] text-ink-muted">
+                                        {{ $p->kebijakan_bentuk->label() }} · {{ $p->kebijakan_tingkat?->label() }}
+                                    </div>
+                                @endif
+                                <div class="text-[11px]">
+                                    @if ($p->dokumen_path)
+                                        <a href="{{ route('berkas.kegiatan-dosen', $p) }}" class="text-navy hover:underline">{{ __('portofolio.verifikasi.unduh_bukti') }}</a>
+                                        @if ($p->kebijakan_bukti_jenis)
+                                            <span class="text-ink-faint">· {{ $p->kebijakan_bukti_jenis->label() }}{{ $p->kebijakan_nomor_bukti ? ' '.$p->kebijakan_nomor_bukti : '' }}</span>
+                                        @endif
+                                    @else
+                                        <span class="text-ink-faint">{{ __('portofolio.verifikasi.tanpa_bukti') }}</span>
+                                    @endif
+                                </div>
                             </td>
                             <td class="px-5 py-2.5 text-ink-muted">{{ $p->mitra_nama ?? '—' }}</td>
                             <td class="px-5 py-2.5 text-center">
@@ -158,6 +193,12 @@
                                     @endif
                                     @if ($p->jenis->countsForIku4())
                                         <x-chip tone="gold">4</x-chip>
+                                    @endif
+                                    @if ($p->luaran_jenis?->publikasi())
+                                        <x-chip tone="info" :title="__('portofolio.verifikasi.iku_2026')">6</x-chip>
+                                    @endif
+                                    @if ($p->jenis->untukIku8())
+                                        <x-chip tone="info" :title="__('portofolio.verifikasi.iku_2026')">8</x-chip>
                                     @endif
                                 </div>
                             </td>
@@ -189,7 +230,7 @@
                             <td colspan="7" class="px-5 py-10">
                                 <x-empty-state
                                     title="Tidak ada penugasan menunggu verifikasi"
-                                    description="Penugasan dosen di luar kampus dan praktisi mengajar muncul di sini."
+                                    description="Penugasan dosen di luar kampus, praktisi mengajar, luaran, dan keterlibatan dalam penyusunan kebijakan muncul di sini."
                                 />
                             </td>
                         </tr>

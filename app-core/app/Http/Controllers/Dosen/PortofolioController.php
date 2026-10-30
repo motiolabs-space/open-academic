@@ -4,21 +4,29 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Dosen;
 
+use App\DTOs\Sdm\KegiatanDosenData;
+use App\Enums\BentukKeterlibatanKebijakan;
 use App\Enums\EducationLevel;
+use App\Enums\IndeksPublikasi;
 use App\Enums\JabatanFungsional;
+use App\Enums\JenisBuktiKebijakan;
 use App\Enums\JenisLuaran;
 use App\Enums\JenisSertifikasi;
+use App\Enums\KuartilPublikasi;
 use App\Enums\LecturerAssignmentType;
 use App\Enums\PeranKegiatan;
+use App\Enums\TingkatKebijakan;
 use App\Enums\TingkatKegiatan;
 use App\Enums\UnsurBkd;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Dosen\CatatKegiatanRequest;
 use App\Models\Sdm\Dosen;
 use App\Models\Sdm\PenugasanDosen;
 use App\Models\Sdm\RiwayatPendidikanDosen;
 use App\Models\Sdm\SertifikasiDosen;
 use App\Services\Berkas\BerkasService;
 use App\Services\Sdm\AngkaKreditService;
+use App\Services\Sdm\PenugasanDosenService;
 use App\Services\Sdm\PortofolioService;
 use App\Support\Portal;
 use Illuminate\Http\RedirectResponse;
@@ -43,6 +51,7 @@ class PortofolioController extends Controller
         private readonly PortofolioService $portofolio,
         private readonly BerkasService $berkas,
         private readonly AngkaKreditService $angkaKredit,
+        private readonly PenugasanDosenService $kegiatan,
     ) {}
 
     public function index(): View
@@ -82,6 +91,16 @@ class PortofolioController extends Controller
             'peranPilihan' => PeranKegiatan::options(),
             'tingkatPilihan' => TingkatKegiatan::options(),
             'luaranPilihan' => JenisLuaran::options(),
+            'luaranPublikasi' => collect(JenisLuaran::cases())
+                ->filter(fn (JenisLuaran $j): bool => $j->publikasi())
+                ->map(fn (JenisLuaran $j): string => $j->value)
+                ->values()
+                ->all(),
+            'indeksPilihan' => IndeksPublikasi::options(),
+            'kuartilPilihan' => KuartilPublikasi::options(),
+            'kebijakanBentukPilihan' => BentukKeterlibatanKebijakan::options(),
+            'kebijakanTingkatPilihan' => TingkatKebijakan::options(),
+            'kebijakanBuktiPilihan' => JenisBuktiKebijakan::options(),
         ]);
     }
 
@@ -172,47 +191,14 @@ class PortofolioController extends Controller
         return back()->with('sukses', 'Sertifikasi tersimpan.');
     }
 
-    public function simpanKegiatan(Request $request): RedirectResponse
+    public function simpanKegiatan(CatatKegiatanRequest $request): RedirectResponse
     {
-        $data = $request->validate([
-            'jenis' => ['required', Rule::enum(LecturerAssignmentType::class)],
-            'unsur' => ['required', Rule::enum(UnsurBkd::class), 'not_in:'.UnsurBkd::Pendidikan->value],
-            'judul' => ['required', 'string', 'max:255'],
-            'peran' => ['nullable', Rule::enum(PeranKegiatan::class)],
-            'tingkat' => ['nullable', Rule::enum(TingkatKegiatan::class)],
-            'mitra_nama' => ['nullable', 'string', 'max:255'],
-            'mitra_jenis' => ['nullable', 'string', 'max:48'],
-            'lokasi' => ['nullable', 'string', 'max:255'],
-            'tanggal_mulai' => ['required', 'date'],
-            'tanggal_selesai' => ['nullable', 'date', 'after_or_equal:tanggal_mulai'],
-            'sks_ekuivalen' => ['nullable', 'numeric', 'min:0', 'max:20'],
-            'luaran_jenis' => ['nullable', Rule::enum(JenisLuaran::class)],
-            'luaran_identitas' => ['nullable', 'string', 'max:255'],
-            'luaran_tahun' => ['nullable', 'integer', 'min:1950', 'max:'.(date('Y') + 1)],
-            'keterangan' => ['nullable', 'string', 'max:1000'],
-            'dokumen' => $this->berkas->aturan('dokumen', wajib: false),
-        ]);
-
-        $dosen = $this->dosen();
-
-        PenugasanDosen::create([
-            'dosen_id' => $dosen->id,
-            'tahun_akademik_id' => Portal::term()->id,
-            ...collect($data)->except('dokumen')->all(),
-            'dokumen_path' => $request->hasFile('dokumen')
-                ? $this->berkas->simpan($request->file('dokumen'), 'portofolio/'.$dosen->uuid)
-                : null,
-
-            /*
-             * Never verified on creation, whoever is signed in.
-             *
-             * This row becomes a BKD line and IKU evidence. A self-reported
-             * activity that arrives pre-verified is an indicator resting on an
-             * unchecked claim, which is the one thing the verification screen
-             * exists to prevent.
-             */
-            'is_verified' => false,
-        ]);
+        $this->kegiatan->catat(
+            $this->dosen(),
+            Portal::term(),
+            KegiatanDosenData::fromRequest($request),
+            $request->file('dokumen'),
+        );
 
         return back()->with('sukses',
             'Kegiatan tercatat. Unggah bukti bila belum, lalu ajukan BKD bila semester ini sudah lengkap.');

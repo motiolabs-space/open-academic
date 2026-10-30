@@ -7,11 +7,12 @@ namespace App\Enums;
 /**
  * What an activity produced.
  *
- * The list ministry forms ask about, kept deliberately short. Anything finer —
- * which quartile a journal sits in, whether a patent is granted or pending — is
- * a property of the specific output and belongs in `luaran_identitas` where a
- * human can read it, not in an enum this codebase would have to keep in step
- * with an external ranking.
+ * The list ministry forms ask about, kept deliberately short. Anything finer is
+ * a property of the specific output: whether a patent is granted or pending
+ * belongs in `luaran_identitas` where a human can read it. The index and
+ * quartile of a publication are the exception — IKU 6 counts by them — and
+ * have their own columns, declared and verified rather than looked up
+ * (ADR-041 §2).
  */
 enum JenisLuaran: string
 {
@@ -34,6 +35,12 @@ enum JenisLuaran: string
             self::Produk => 'Produk / Purwarupa',
             self::Laporan => 'Laporan',
         };
+    }
+
+    /** Journal articles and proceedings: the outputs IKU 6 reads, with index and DOI. */
+    public function publikasi(): bool
+    {
+        return $this === self::Jurnal || $this === self::Prosiding;
     }
 
     /** What the identifier field is called for this kind of output. */

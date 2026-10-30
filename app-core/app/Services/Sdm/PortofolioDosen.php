@@ -195,6 +195,16 @@ class PortofolioDosen
                 'luaran_identitas' => $p->luaran_identitas,
                 'luaran_tahun' => $p->luaran_tahun,
                 'luaran_iku5' => $p->luaran_jenis?->luaranIku5() ?? false,
+                'luaran_indeks' => $p->luaran_indeks?->value,
+                'luaran_kuartil' => $p->luaran_kuartil?->value,
+                'luaran_doi' => $p->luaran_doi,
+                'luaran_tautan' => $p->luaran_tautan,
+                'luaran_penerbit' => $p->luaran_penerbit,
+                'luaran_kolaborasi_internasional' => $p->luaran_kolaborasi_internasional,
+                'kebijakan_bentuk' => $p->kebijakan_bentuk?->value,
+                'kebijakan_tingkat' => $p->kebijakan_tingkat?->value,
+                'kebijakan_bukti_jenis' => $p->kebijakan_bukti_jenis?->value,
+                'kebijakan_nomor_bukti' => $p->kebijakan_nomor_bukti,
                 'terverifikasi' => (bool) $p->is_verified,
             ])
             ->all();

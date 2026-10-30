@@ -1602,3 +1602,156 @@ membuka tiket helpdesk. Satu ADR, satu bagian per layar.
   namanya memang menanganinya.
 - **Konsekuensi.** Tiket staf ikut antrean dan SLA yang sama; notifikasinya
   menuju `/admin/tiket-saya/{uuid}`. Tidak ada lingkaran "atasan pemohon".
+
+---
+
+## ADR-041 — Data IKU 8 dan IKU 6, dan masa berlaku akreditasi prodi: fakta yang dinyatakan, diverifikasi, lalu dihitung di tempat lain (2026-10-30)
+
+Tiga butir ROADMAP P7 (#47, #48, #50) yang tertunda di ADR-036 karena
+butuh jenis data baru. Satu ADR, satu bagian per butir. Definisi IKU
+diverifikasi dari salinan resmi Kepmendiktisaintek 358/M/KEP/2025 dan
+ditulis ulang dengan kata-kata sendiri; dokumennya tidak masuk repo
+(CLAUDE.md §10).
+
+### 1. IKU 8 — keterlibatan dosen dalam penyusunan kebijakan sebagai jenis penugasan
+
+- **Konteks.** IKU 8 (pilihan) mengukur proporsi SDM perguruan tinggi —
+  dosen tetap, atau peneliti/perekayasa yang berafiliasi — yang secara resmi
+  ditugaskan atau diakui terlibat dalam penyusunan kebijakan publik tingkat
+  nasional, daerah, atau sektor industri dalam periode pengukuran. Bentuk
+  yang diakui ada tiga: anggota tim penyusun; narasumber atau ahli yang
+  diminta memberi masukan tertulis; kontributor yang kajiannya dimuat dalam
+  dokumen kebijakan resmi. Buktinya harus dokumen resmi yang mencantumkan
+  nama orangnya (SK penugasan, undangan resmi, laporan FGD, notulen, atau
+  dokumen kebijakannya). ADR-036 mencatat IKU 8 `belum_tersedia` karena tidak
+  ada jenis catatannya.
+- **Keputusan.** (1) **Jenis `penugasan_dosen` baru,
+  `penyusunan_kebijakan`**, bukan tabel baru: judul, lembaga pemberi
+  (`mitra_nama`), tanggal, unsur BKD, dan berkas bukti sudah ada di baris itu,
+  dan satu catatan dengan banyak pembaca adalah alasan tabel itu diperlebar
+  sejak BKD. Empat kolom baru: `kebijakan_bentuk`
+  (`BentukKeterlibatanKebijakan`: tim penyusun, narasumber, kontributor
+  kajian), `kebijakan_tingkat` (`TingkatKebijakan`: internasional, nasional,
+  daerah, industri — bukan `TingkatKegiatan`, karena "industri" adalah jenis
+  pembuat aturan, bukan jangkauan), `kebijakan_bukti_jenis`
+  (`JenisBuktiKebijakan`, lima jenis dokumen di atas), dan
+  `kebijakan_nomor_bukti`. Kepmen menyebut tiga tingkat; `internasional`
+  tetap dicatat agar faktanya tidak hilang, dan konsumen yang memutuskan
+  apakah dihitung. (2) **Wajib lengkap saat dicatat.** Untuk jenis ini
+  `CatatKegiatanRequest` mewajibkan bentuk, tingkat, lembaga pemberi, jenis
+  bukti, dan **berkas bukti** (lewat `BerkasService`); jenis lain tetap boleh
+  menyusulkan bukti. `KegiatanDosenData` membuang medan kebijakan dari jenis
+  lain sehingga baris penelitian tidak pernah membawa tingkat kebijakan.
+  (3) **Diverifikasi seperti penugasan lain** di `/admin/data-iku`, kini lewat
+  `PenugasanDosenService::verifikasi()` dan `PenugasanDosenPolicy`
+  (`dosen.manage`); layar menampilkan bentuk, tingkat, jenis dan nomor bukti,
+  serta tautan bukti (`/berkas/kegiatan-dosen/{uuid}`, hanya pemilik dan staf
+  ber-`dosen.view`). Penyimpanan kegiatan dosen yang sebelumnya ditulis di
+  controller dipindah ke service yang sama, FormRequest, dan DTO.
+  (4) **Bridge.** `iku_2026.iku_8_penyusunan_kebijakan` (baru): keterlibatan
+  terverifikasi, dosen terlibat (sekali per orang), dosen **tetap** terlibat,
+  dosen tetap aktif sebagai penyebut, per bentuk, per tingkat — per semester
+  seperti IKU 4–6. `ketersediaan` IKU 8 menjadi `tersedia` dengan kunci itu.
+  Butirnya dibaca dari kueri luaran yang sama (satu kueri untuk IKU 4–6 dan
+  8) dan kedua penyebut dosen digabung dalam satu kueri, sehingga anggaran
+  kueri `iku-data` tidak bertambah. Kunci penomoran lama dan medan `iku` pada
+  event `lecturer.assignment_recorded` tidak berubah (dibekukan, ADR-036):
+  jenis baru tidak dihitung ke "IKU 3" atau "IKU 4" lama.
+- **Konsekuensi.** Peneliti/perekayasa yang bukan dosen tidak tercatat di
+  sini; bila kampus memilikinya, Open Campus melengkapinya. Persentase dan
+  keputusan apakah dosen tidak tetap atau tingkat internasional dihitung
+  milik konsumen. Ekspor portofolio (SISTER/BKD, `lecturer-workload`) ikut
+  membawa empat medan baru.
+
+### 2. IKU 6 — indeks dan kuartil publikasi dicatat sebagai fakta yang dinyatakan dan diverifikasi
+
+- **Konteks.** IKU 6 (wajib bagi PTN-BH, pilihan bagi yang lain) mengukur
+  proporsi publikasi hasil riset yang terindeks basis data internasional
+  bereputasi — Scopus dan/atau Web of Science — terhadap seluruh publikasi
+  perguruan tinggi. Artikel jurnal diberi bobot menurut kuartil (dengan kelas
+  "top tier" di atas Q1), prosiding bereputasi berbobot tetap, publikasi
+  dengan penulis dari luar negeri mendapat tambahan bobot, beberapa penerbit
+  dikecualikan, dan karya seni/budaya berpengakuan internasional ikut
+  dihitung. `penugasan_dosen` hanya mencatat jenis luaran dan tingkatnya;
+  ROADMAP #48 menanyakan apakah indeks dan kuartil dicatat di sini atau tetap
+  di Open Campus.
+- **Keputusan.** (1) **Dicatat di sini, sebagai fakta.** Indeks dan kuartil
+  adalah sifat artikel, sama seperti DOI-nya — bukan penilaian. Open Academic
+  mencatat apa yang **dinyatakan** dosen dan **diverifikasi** staf; menilai
+  bukti, menimbang, dan menghitung persentase tetap di Open Campus. Enam
+  kolom baru pada luaran publikasi (jurnal/prosiding): `luaran_indeks`
+  (`IndeksPublikasi`: Scopus, WoS, SINTA 1–6, lainnya — satu indeks tempat
+  artikel dilaporkan), `luaran_kuartil` (`KuartilPublikasi`: Q1–Q4, hanya
+  untuk artikel jurnal ber-Scopus/WoS; selain itu ditolak validasi),
+  `luaran_doi` (dinormalkan: tanpa awalan `https://doi.org/`, huruf kecil),
+  `luaran_tautan`, `luaran_penerbit`, dan `luaran_kolaborasi_internasional`.
+  `KegiatanDosenData` membuang semuanya dari luaran yang bukan publikasi.
+  (2) **Tanpa I/O ke pengindeks.** Tidak ada panggilan ke API Scopus, WoS,
+  SINTA, atau Crossref: itu I/O eksternal baru (CLAUDE.md §3 aturan 6) dan
+  di luar cakupan. Bila kelak dibutuhkan — misalnya mengisi kuartil dari
+  DOI — ia masuk di balik interface dengan implementasi palsu untuk uji,
+  dan hasilnya tetap usulan yang diverifikasi staf, bukan penimpa data.
+  (3) **Top tier dan penerbit tidak diputuskan di sini.** "Top tier" adalah
+  penggolongan di atas kuartil yang daftarnya ditetapkan di luar repo ini,
+  dan pengecualian penerbit adalah aturan penghitungan; keduanya milik
+  konsumen. Repo ini menyimpan nama penerbit agar aturan itu dapat diterapkan.
+  (4) **Bridge menghitung artikel, bukan baris.** Dua dosen kampus yang sama
+  menulis satu artikel menghasilkan dua baris; `iku_2026.iku_6_publikasi`
+  mendapat medan baru yang menggabungkan baris ber-DOI sama:
+  `publikasi_unik`, `ber_doi`, `per_indeks`, `bereputasi_internasional`,
+  `jurnal_bereputasi_per_kuartil`, `prosiding_bereputasi`,
+  `bereputasi_kolaborasi_internasional`. Tiga medan lama (`total_publikasi`,
+  `per_jenis`, `per_tingkat`) tidak diubah dan tetap menghitung baris.
+  `ketersediaan` IKU 6 tetap `sebagian`: pengakuan karya seni/budaya dan
+  penetapan top tier tidak dicatat. Tanpa kueri tambahan — kolomnya ikut
+  dibaca kueri luaran yang sama.
+- **Konsekuensi.** Kualitas penggabungan bergantung pada DOI; `ber_doi`
+  memberi tahu konsumen seberapa jauh angka unik dapat dipercaya. Kuartil
+  dicatat sebagaimana tertera saat terbit; perubahan kuartil jurnal di tahun
+  berikutnya tidak mengubah catatan lama. Dosen yang sudah mencatat publikasi
+  sebelum perubahan ini perlu melengkapi indeksnya lewat koreksi oleh staf
+  (belum ada layar sunting kegiatan oleh dosen).
+
+### 3. Akreditasi prodi sebagai riwayat SK bertanggal; PISN membaca yang berlaku pada tanggal lulus
+
+- **Konteks.** Validator PISN menolak, tanpa jalur eksepsi, lulusan dari prodi
+  yang akreditasinya tidak berlaku (ADR-036 §2). `prodi.akreditasi` hanya
+  menyimpan peringkat yang diketik sekali, jadi SK yang sudah kedaluwarsa
+  tetap terbaca "terakreditasi" dan daftar periksa hanya bisa berkata
+  "pastikan masih berlaku". Pertanyaan yang sebenarnya — SK mana yang berlaku
+  pada tanggal lulus seseorang — hanya bisa dijawab riwayat.
+- **Keputusan.** (1) **Tabel `akreditasi_prodi`, satu baris per SK:**
+  lembaga (`LembagaAkreditasi`: BAN-PT, tujuh LAM, lembaga internasional),
+  peringkat (`PeringkatAkreditasi`: Unggul/Baik Sekali/Baik, A/B/C,
+  Terakreditasi, Terakreditasi Sementara, Tidak Terakreditasi), nomor dan
+  tanggal SK, tanggal mulai berlaku (bawaan = tanggal SK), tanggal
+  kedaluwarsa, berkas SK lewat `BerkasService`, pencatat. SK baru selalu
+  baris baru; yang salah ketik **ditarik** (hapus lunak, tercatat di Log
+  Aktivitas), tidak disunting. SK yang sama dua kali ditolak. Bila dua SK
+  bertumpang (akreditasi ulang terbit sebelum yang lama habis), yang mulai
+  berlaku belakangan yang dipakai. (2) **`prodi.akreditasi` menjadi cache**
+  peringkat SK terbaru, ditulis hanya oleh `AkreditasiProdiService`;
+  formulir master prodi tidak lagi menyuntingnya, dan kolomnya dilebarkan ke
+  32 karakter. Peringkat lama yang tercatat tanpa riwayat tetap tampil,
+  tetapi **tidak** dianggap berlaku. (3) **PISN.** `KesiapanPisnService`
+  memeriksa SK yang berlaku pada `yudisium.tanggal_lulus` (hari ini bila
+  belum ditetapkan) dan menyebut alasannya: belum dicatat, peringkat tanpa
+  SK, kedaluwarsa sebelum tanggal lulus, belum berlaku, atau SK tidak
+  terakreditasi. Riwayat dimuat sekali untuk seluruh daftar lulusan.
+  (4) **Peringatan.** Keadaan (`KeadaanAkreditasi`, diturunkan, tidak
+  disimpan): berlaku, segera kedaluwarsa (dalam
+  `ACADEMIC_AKREDITASI_PERINGATAN_BULAN`, bawaan 6, kecuali SK penerusnya
+  sudah dicatat), kedaluwarsa, tidak terakreditasi, belum dicatat. Tampil di
+  kolom baru layar master prodi, layar riwayat
+  `/admin/master/prodi/{uuid}/akreditasi` (izin `master.view` / `master.manage`
+  lewat `AkreditasiProdiPolicy`), dan sebagai peringatan di dasbor staf untuk
+  prodi aktif. (5) **LKPS** menuliskan SK yang berlaku hari ini (peringkat,
+  lembaga, nomor, masa berlaku) di layar dan sebagai baris di CSV; bila tidak
+  ada, kalimat yang menyuruh mencatatnya, bukan sel kosong.
+- **Konsekuensi.** Instalasi berjalan: setelah `php artisan migrate`, setiap
+  prodi tampil "Belum dicatat" dan lulusannya tidak siap PISN sampai SK
+  akreditasinya dicatat — itu temuan, bukan regresi, sama seperti butir PISN
+  baru di ADR-036. Dasbor staf menambah satu kueri (riwayat akreditasi dimuat
+  bersama daftar prodi); layar master prodi dan daftar periksa PISN juga satu
+  kueri tetap. Tanggal berlaku tidak diambil dari layanan BAN-PT/LAM mana pun:
+  disalin staf dari SK.

@@ -8,6 +8,7 @@ use App\Enums\EducationLevel;
 use App\Models\Akademik\Fakultas;
 use App\Models\Akademik\Prodi;
 use App\Models\Sdm\Dosen;
+use App\Services\Akademik\AkreditasiProdiService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -15,12 +16,14 @@ use Illuminate\View\View;
 
 class ProdiController extends MasterController
 {
+    public function __construct(private readonly AkreditasiProdiService $akreditasi) {}
+
     public function index(): View
     {
         $this->izin('master.view');
 
         $daftar = Prodi::query()
-            ->with(['fakultas', 'kaprodi'])
+            ->with(['fakultas', 'kaprodi', 'riwayatAkreditasi'])
             ->withCount(['mahasiswa', 'mataKuliah'])
             ->orderBy('kode')
             ->get();
@@ -34,6 +37,9 @@ class ProdiController extends MasterController
                 'daftarDosen' => Dosen::orderBy('nama')
                     ->get(['id', 'nama', 'gelar_depan', 'gelar_belakang']),
                 'jenjangPilihan' => EducationLevel::cases(),
+                'keadaanAkreditasi' => $daftar->mapWithKeys(fn (Prodi $p): array => [
+                    $p->id => $this->akreditasi->keadaan($p),
+                ]),
             ],
         ));
     }
@@ -91,7 +97,9 @@ class ProdiController extends MasterController
             'jenjang' => ['required', Rule::enum(EducationLevel::class)],
             'gelar_pendek' => ['nullable', 'string', 'max:32'],
             'gelar_panjang' => ['nullable', 'string', 'max:128'],
-            'akreditasi' => ['nullable', 'string', 'max:16'],
+
+            // The grade is no longer typed here: it is a cache of the latest
+            // decree in the accreditation history (ADR-041 §3).
             'sks_lulus' => ['required', 'integer', 'min:36', 'max:300'],
 
             // Health programmes: graduates wait at "Menunggu Uji Kompetensi"

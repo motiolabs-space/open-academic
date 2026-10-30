@@ -343,7 +343,7 @@ paths:
                       "5": { nama: Luaran kerja sama dan hilirisasi, status: sebagian, kunci: iku_5_luaran_kerja_sama }
                       "6": { nama: Publikasi bereputasi internasional, status: sebagian, kunci: iku_6_publikasi }
                       "7": { nama: Keterlibatan dalam SDGs, status: di_luar_cakupan, kunci: null }
-                      "8": { nama: SDM dalam penyusunan kebijakan, status: belum_tersedia, kunci: null }
+                      "8": { nama: SDM dalam penyusunan kebijakan, status: tersedia, kunci: iku_8_penyusunan_kebijakan }
                       "9": { nama: Pendapatan non-UKT, status: di_luar_cakupan, kunci: null }
                       "10": { nama: Zona Integritas, status: di_luar_cakupan, kunci: null }
                       "11": { nama: Tata kelola dan akuntabilitas, status: di_luar_cakupan, kunci: null }
@@ -396,6 +396,20 @@ paths:
                       total_publikasi: 23
                       per_jenis: { jurnal: 17, prosiding: 6 }
                       per_tingkat: { nasional: 14, internasional: 9 }
+                      publikasi_unik: 21
+                      ber_doi: 19
+                      per_indeks: { scopus: 7, wos: 1, sinta_2: 6, sinta_4: 5, tidak_disebutkan: 2 }
+                      bereputasi_internasional: 8
+                      jurnal_bereputasi_per_kuartil: { q1: 1, q2: 3, q3: 2, q4: 1 }
+                      prosiding_bereputasi: 1
+                      bereputasi_kolaborasi_internasional: 3
+                    iku_8_penyusunan_kebijakan:
+                      keterlibatan_terverifikasi: 6
+                      dosen_terlibat: 5
+                      dosen_tetap_terlibat: 4
+                      dosen_tetap_aktif: 112
+                      per_bentuk: { tim_penyusun: 2, narasumber: 3, kontributor_kajian: 1 }
+                      per_tingkat: { nasional: 2, daerah: 3, industri: 1 }
                   iku_1_lulusan:
                     total_lulusan: 412
                     pada_semester_ini: 58
@@ -957,10 +971,41 @@ components:
             per_jenis_mitra: { $ref: '#/components/schemas/CacahPerKode' }
         iku_6_publikasi:
           type: object
-          description: Artikel jurnal dan prosiding. Indeks (Scopus/WoS) dan kuartil tidak dicatat di sini.
+          description: >-
+            Artikel jurnal dan prosiding terverifikasi. Indeks, kuartil, DOI, dan
+            kolaborasi internasional dinyatakan dosen dan diverifikasi staf;
+            tidak ada yang dicari ke layanan pengindeks (ADR-041 §2).
+            `total_publikasi`, `per_jenis`, dan `per_tingkat` menghitung baris;
+            medan lain menghitung **artikel** — baris ber-DOI sama dari beberapa
+            penulis kampus ini dihitung sekali, baris tanpa DOI berdiri sendiri.
+            Bobot kuartil, kelas top tier, tambahan kolaborasi, dan penerbit yang
+            dikecualikan Kepmen 358 milik konsumen.
           properties:
             total_publikasi: { type: integer }
             per_jenis: { $ref: '#/components/schemas/CacahPerKode' }
+            per_tingkat: { $ref: '#/components/schemas/CacahPerKode' }
+            publikasi_unik: { type: integer, description: Artikel setelah baris ber-DOI sama digabung. }
+            ber_doi: { type: integer, description: Artikel yang punya DOI — seberapa jauh penggabungan dapat dipercaya. }
+            per_indeks: { $ref: '#/components/schemas/CacahPerKode' }
+            bereputasi_internasional: { type: integer, description: Artikel terindeks Scopus atau Web of Science. }
+            jurnal_bereputasi_per_kuartil: { $ref: '#/components/schemas/CacahPerKode' }
+            prosiding_bereputasi: { type: integer }
+            bereputasi_kolaborasi_internasional: { type: integer, description: Artikel bereputasi dengan penulis dari luar negeri. }
+        iku_8_penyusunan_kebijakan:
+          type: object
+          description: >-
+            Keterlibatan dosen yang terverifikasi dalam penyusunan kebijakan
+            (ADR-041 §1): anggota tim penyusun, narasumber atau ahli resmi, atau
+            kontributor kajian, dengan dokumen resmi yang mencantumkan namanya.
+            Dosen dihitung sekali berapa pun kebijakannya. Kepmen 358 menyebut
+            tingkat nasional, daerah, dan industri; `internasional` ikut dicatat
+            dan konsumen yang memutuskan apakah dihitung. Persentase milik konsumen.
+          properties:
+            keterlibatan_terverifikasi: { type: integer }
+            dosen_terlibat: { type: integer }
+            dosen_tetap_terlibat: { type: integer, description: Dosen berstatus kepegawaian tetap — populasi IKU 8. }
+            dosen_tetap_aktif: { type: integer, description: Penyebut — dosen tetap yang aktif. }
+            per_bentuk: { $ref: '#/components/schemas/CacahPerKode' }
             per_tingkat: { $ref: '#/components/schemas/CacahPerKode' }
 
   # ---------------------------------------------------------------------------

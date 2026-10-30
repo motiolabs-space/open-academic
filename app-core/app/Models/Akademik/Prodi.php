@@ -9,6 +9,7 @@ use App\Models\Kemahasiswaan\Mahasiswa;
 use App\Models\Sdm\Dosen;
 use App\Traits\HasLogAktivitas;
 use App\Traits\HasUuid;
+use Carbon\CarbonInterface;
 use Database\Factories\ProdiFactory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -95,6 +96,28 @@ class Prodi extends Model
     public function cpl(): HasMany
     {
         return $this->hasMany(ProdiCpl::class)->orderBy('urutan')->orderBy('kode');
+    }
+
+    /**
+     * Accreditation decrees, newest first. A new decree is a new row; the
+     * one before it stays, because PISN asks which was in force on a
+     * graduate's graduation day (ADR-041 §3).
+     */
+    public function riwayatAkreditasi(): HasMany
+    {
+        return $this->hasMany(AkreditasiProdi::class)
+            ->orderByDesc('tanggal_berlaku')
+            ->orderByDesc('id');
+    }
+
+    /**
+     * The decree in force on that day, read from the loaded history. When two
+     * overlap — a re-accreditation issued before the old one ran out — the
+     * one that took effect later wins.
+     */
+    public function akreditasiPada(CarbonInterface $tanggal): ?AkreditasiProdi
+    {
+        return $this->riwayatAkreditasi->first(fn (AkreditasiProdi $a): bool => $a->berlakuPada($tanggal));
     }
 
     public function mahasiswa(): HasMany

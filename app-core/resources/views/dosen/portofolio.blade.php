@@ -50,9 +50,9 @@
                                 </td>
                                 <td class="px-5 py-3">
                                     {{ $k->unsur?->label() ?? '—' }}
-                                    @if ($k->peran || $k->tingkat)
+                                    @if ($k->peran || $k->tingkat || $k->kebijakan_bentuk)
                                         <div class="text-[11.5px] text-ink-faint">
-                                            {{ collect([$k->peran?->label(), $k->tingkat?->label()])->filter()->implode(' · ') }}
+                                            {{ collect([$k->peran?->label(), $k->tingkat?->label(), $k->kebijakan_bentuk?->label(), $k->kebijakan_tingkat?->label()])->filter()->implode(' · ') }}
                                         </div>
                                     @endif
                                 </td>
@@ -60,13 +60,29 @@
                                     @if ($k->luaran_jenis)
                                         {{ $k->luaran_jenis->label() }}
                                         <div class="text-[11.5px] text-ink-faint">{{ $k->luaran_identitas ?? '—' }}</div>
+                                        @if ($k->luaran_indeks)
+                                            <div class="text-[11.5px] text-ink-muted">
+                                                {{ $k->luaran_indeks->label() }}{{ $k->luaran_kuartil ? ' '.$k->luaran_kuartil->label() : '' }}
+                                                @if ($k->luaran_kolaborasi_internasional) · {{ __('portofolio.publikasi.kolaborasi_singkat') }} @endif
+                                            </div>
+                                        @endif
+                                        @if ($k->luaran_doi)
+                                            <a href="{{ $k->tautanDoi() }}" class="tabular text-[11.5px] text-navy hover:underline" rel="noopener noreferrer" target="_blank">{{ $k->luaran_doi }}</a>
+                                        @endif
                                     @else
                                         <span class="text-ink-faint">—</span>
                                     @endif
                                 </td>
                                 <td class="px-5 py-3">
                                     @if ($k->dokumen_path)
-                                        <x-chip tone="success">Ada</x-chip>
+                                        <a href="{{ route('berkas.kegiatan-dosen', $k) }}" class="hover:underline">
+                                            <x-chip tone="success">Ada</x-chip>
+                                        </a>
+                                        @if ($k->kebijakan_bukti_jenis)
+                                            <div class="mt-1 text-[11px] text-ink-faint">
+                                                {{ $k->kebijakan_bukti_jenis->label() }}{{ $k->kebijakan_nomor_bukti ? ' · '.$k->kebijakan_nomor_bukti : '' }}
+                                            </div>
+                                        @endif
                                     @else
                                         <x-chip tone="warning">Belum</x-chip>
                                     @endif
@@ -93,24 +109,83 @@
 
         <x-card title="Catat Kegiatan">
             <form method="POST" action="{{ route('dosen.portofolio.kegiatan') }}"
-                enctype="multipart/form-data" class="grid gap-3 lg:grid-cols-3">
+                enctype="multipart/form-data" class="grid gap-3 lg:grid-cols-3"
+                x-data="{ jenis: @js(old('jenis', array_key_first($jenisPilihan))), luaran: @js(old('luaran_jenis', '')) }">
                 @csrf
                 <x-field label="Judul kegiatan" name="judul" required class="lg:col-span-3" />
-                <x-field label="Jenis" name="jenis" :options="$jenisPilihan" required />
+                <div class="min-w-0">
+                    <label for="kegiatan-jenis" class="mb-1.5 block text-[11px] font-semibold uppercase tracking-[0.08em] text-ink-muted">
+                        Jenis <span class="text-danger" aria-hidden="true">*</span><span class="sr-only">(wajib)</span>
+                    </label>
+                    <select id="kegiatan-jenis" name="jenis" x-model="jenis" required
+                        class="w-full rounded-control border border-line-input bg-surface px-3 py-2 text-[13px] outline-none focus:border-navy focus:ring-4 focus:ring-navy/10">
+                        @foreach ($jenisPilihan as $nilai => $teks)
+                            <option value="{{ $nilai }}">{{ $teks }}</option>
+                        @endforeach
+                    </select>
+                </div>
                 <x-field label="Unsur BKD" name="unsur" :options="$unsurPilihan" required
                     hint="Pendidikan tidak ada di sini karena ditarik otomatis dari daftar kelas." />
                 <x-field label="Peran" name="peran" :options="$peranPilihan" />
                 <x-field label="Tingkat" name="tingkat" :options="$tingkatPilihan" />
-                <x-field label="Mitra" name="mitra_nama" />
+                <x-field label="Mitra / lembaga pemberi" name="mitra_nama"
+                    :hint="__('portofolio.kebijakan.field.lembaga_hint')" />
                 <x-field label="Lokasi" name="lokasi" />
                 <x-field label="Mulai" name="tanggal_mulai" type="date" required />
                 <x-field label="Selesai" name="tanggal_selesai" type="date" />
                 <x-field label="SKS ekuivalen" name="sks_ekuivalen" type="number"
                     hint="Kosongkan bila mengikuti rubrik kampus." />
-                <x-field label="Jenis luaran" name="luaran_jenis" :options="$luaranPilihan" />
+                <div class="min-w-0">
+                    <label for="kegiatan-luaran" class="mb-1.5 block text-[11px] font-semibold uppercase tracking-[0.08em] text-ink-muted">Jenis luaran</label>
+                    <select id="kegiatan-luaran" name="luaran_jenis" x-model="luaran"
+                        class="w-full rounded-control border border-line-input bg-surface px-3 py-2 text-[13px] outline-none focus:border-navy focus:ring-4 focus:ring-navy/10">
+                        <option value="">—</option>
+                        @foreach ($luaranPilihan as $nilai => $teks)
+                            <option value="{{ $nilai }}">{{ $teks }}</option>
+                        @endforeach
+                    </select>
+                </div>
                 <x-field label="Identitas luaran" name="luaran_identitas"
                     hint="DOI, ISBN, ISSN, atau nomor pendaftaran." />
                 <x-field label="Tahun luaran" name="luaran_tahun" type="number" />
+
+                {{-- IKU 6: hanya untuk artikel jurnal dan prosiding (ADR-041 §2). --}}
+                <template x-if="@js($luaranPublikasi).includes(luaran)">
+                    <div class="contents">
+                        <div class="lg:col-span-3 rounded-control border border-line bg-zebra px-4 py-3 text-[12.5px] leading-relaxed text-ink-muted">
+                            <strong class="text-ink">{{ __('portofolio.publikasi.judul_bagian') }}.</strong>
+                            {{ __('portofolio.publikasi.petunjuk') }}
+                        </div>
+                        <x-field :label="__('portofolio.publikasi.field.indeks')" name="luaran_indeks" :options="$indeksPilihan" />
+                        <x-field :label="__('portofolio.publikasi.field.kuartil')" name="luaran_kuartil" :options="$kuartilPilihan"
+                            :hint="__('portofolio.publikasi.field.kuartil_hint')" />
+                        <x-field :label="__('portofolio.publikasi.field.doi')" name="luaran_doi"
+                            :hint="__('portofolio.publikasi.field.doi_hint')" />
+                        <x-field :label="__('portofolio.publikasi.field.tautan')" name="luaran_tautan" type="url" />
+                        <x-field :label="__('portofolio.publikasi.field.penerbit')" name="luaran_penerbit" />
+                        <x-field :label="__('portofolio.publikasi.field.kolaborasi')" name="luaran_kolaborasi_internasional"
+                            type="checkbox" :hint="__('portofolio.publikasi.field.kolaborasi_hint')" />
+                    </div>
+                </template>
+
+                {{-- IKU 8: hanya untuk jenis penyusunan kebijakan. Disembunyikan,
+                     bukan dilepas, agar nilai lama tetap ada bila jenisnya
+                     dipilih ulang; DTO membuangnya untuk jenis lain. --}}
+                <template x-if="jenis === @js(\App\Enums\LecturerAssignmentType::PenyusunanKebijakan->value)">
+                    <div class="contents">
+                        <div class="lg:col-span-3 rounded-control border border-line bg-zebra px-4 py-3 text-[12.5px] leading-relaxed text-ink-muted">
+                            <strong class="text-ink">{{ __('portofolio.kebijakan.judul_bagian') }}.</strong>
+                            {{ __('portofolio.kebijakan.petunjuk') }}
+                        </div>
+                        <x-field :label="__('portofolio.kebijakan.field.bentuk')" name="kebijakan_bentuk"
+                            :options="$kebijakanBentukPilihan" required />
+                        <x-field :label="__('portofolio.kebijakan.field.tingkat')" name="kebijakan_tingkat"
+                            :options="$kebijakanTingkatPilihan" required />
+                        <x-field :label="__('portofolio.kebijakan.field.bukti_jenis')" name="kebijakan_bukti_jenis"
+                            :options="$kebijakanBuktiPilihan" required />
+                        <x-field :label="__('portofolio.kebijakan.field.nomor_bukti')" name="kebijakan_nomor_bukti" />
+                    </div>
+                </template>
                 <x-field label="Bukti" name="dokumen" type="file" class="lg:col-span-2"
                     hint="Surat tugas, sertifikat, atau bukti terbit." />
                 <div class="flex items-end lg:col-span-1">

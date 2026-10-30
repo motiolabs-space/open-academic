@@ -5,14 +5,15 @@ declare(strict_types=1);
 namespace App\Services\Bridge;
 
 use App\Enums\EducationLevel;
+use App\Enums\IndeksPublikasi;
 use App\Enums\JenisLuaran;
 use App\Enums\JenisPoin;
+use App\Enums\LecturerAssignmentType;
 use App\Enums\StatusPekerjaanAlumni;
 use App\Enums\StudentStatus;
 use App\Enums\TingkatKegiatan;
 use App\Models\Akademik\Prodi;
 use App\Models\Akademik\TahunAkademik;
-use App\Models\Sdm\Dosen;
 use App\Support\KodeSemester;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Collection;
@@ -42,6 +43,9 @@ class DataIku2026
 {
     public const ACUAN = 'Kepmendiktisaintek 358/M/KEP/2025';
 
+    /** `dosen.status_kepegawaian` of a permanent lecturer — IKU 8's population. */
+    private const DOSEN_TETAP = 'tetap';
+
     /**
      * What this system holds for each indicator.
      *
@@ -49,7 +53,9 @@ class DataIku2026
      *  - sebagian: part of the facts is here; the rest (tracer-study answers,
      *    journal indexing, partner usage letters) is evidence Open Campus
      *    collects.
-     *  - belum_tersedia: would belong here, but no record type captures it yet.
+     *  - belum_tersedia: would belong here, but no record type captures it yet
+     *    (none since ADR-041 gave IKU 8 its assignment type; kept for the
+     *    contract).
      *  - di_luar_cakupan: institutional governance, finance, or programme
      *    reporting — not an academic record (CLAUDE.md §6).
      *
@@ -63,7 +69,7 @@ class DataIku2026
         5 => ['nama' => 'Luaran kerja sama dan hilirisasi', 'status' => 'sebagian', 'kunci' => 'iku_5_luaran_kerja_sama'],
         6 => ['nama' => 'Publikasi bereputasi internasional', 'status' => 'sebagian', 'kunci' => 'iku_6_publikasi'],
         7 => ['nama' => 'Keterlibatan dalam SDGs', 'status' => 'di_luar_cakupan', 'kunci' => null],
-        8 => ['nama' => 'SDM dalam penyusunan kebijakan', 'status' => 'belum_tersedia', 'kunci' => null],
+        8 => ['nama' => 'SDM dalam penyusunan kebijakan', 'status' => 'tersedia', 'kunci' => 'iku_8_penyusunan_kebijakan'],
         9 => ['nama' => 'Pendapatan non-UKT', 'status' => 'di_luar_cakupan', 'kunci' => null],
         10 => ['nama' => 'Zona Integritas', 'status' => 'di_luar_cakupan', 'kunci' => null],
         11 => ['nama' => 'Tata kelola dan akuntabilitas', 'status' => 'di_luar_cakupan', 'kunci' => null],
@@ -262,25 +268,49 @@ class DataIku2026
     }
 
     /**
-     * IKU 4, 5, and 6 — lecturers' recorded outputs, read three ways.
+     * IKU 4, 5, 6, and 8 — lecturers' verified records, read four ways.
      *
      * What this system holds is the output, its kind, its reach, and the
-     * partner. What the decree also asks for — indexing and quartile, a
-     * partner's letter of use, a citation — is evidence a person reviews,
-     * which is why all three are `sebagian`.
+     * partner, and for publications the index, quartile, and DOI the
+     * lecturer declared and staff verified; for policy drafting, the form of
+     * involvement, whose policy it was, and the official document. What the
+     * decree also asks for — a partner's letter of use, a citation, a
+     * journal's top-tier standing, recognition of artistic work — is
+     * evidence a person reviews, which is why 4–6 stay `sebagian`.
+     *
+     * One read for all four: outputs and policy involvement are both rows of
+     * penugasan_dosen, and a second query would only re-join the same table.
      *
      * @return array<string, array<string, mixed>>
      */
     private function luaranDosen(TahunAkademik $term): array
     {
-        $luaran = DB::table('penugasan_dosen as p')
+        $kebijakan = LecturerAssignmentType::PenyusunanKebijakan->value;
+
+        $baris = DB::table('penugasan_dosen as p')
             ->join('dosen as d', 'd.id', '=', 'p.dosen_id')
             ->whereNull('p.deleted_at')
             ->whereNull('d.deleted_at')
             ->where('p.tahun_akademik_id', $term->id)
             ->where('p.is_verified', true)
-            ->whereNotNull('p.luaran_jenis')
-            ->get(['p.dosen_id', 'p.luaran_jenis', 'p.tingkat', 'p.mitra_nama', 'p.mitra_jenis', 'd.nuptk']);
+            ->where(fn (Builder $q) => $q->whereNotNull('p.luaran_jenis')->orWhere('p.jenis', $kebijakan))
+            ->get([
+                'p.id', 'p.dosen_id', 'p.jenis', 'p.luaran_jenis', 'p.tingkat', 'p.mitra_nama', 'p.mitra_jenis',
+                'p.luaran_indeks', 'p.luaran_kuartil', 'p.luaran_doi', 'p.luaran_kolaborasi_internasional',
+                'p.kebijakan_bentuk', 'p.kebijakan_tingkat', 'd.nuptk', 'd.status_kepegawaian',
+            ]);
+
+        $luaran = $baris->whereNotNull('luaran_jenis');
+        $keterlibatan = $baris->where('jenis', $kebijakan);
+
+        // Both denominators in one read: lecturers with a NUPTK (IKU 4) and
+        // permanent lecturers (IKU 8 counts dosen tetap).
+        $dosen = DB::table('dosen')
+            ->whereNull('deleted_at')
+            ->where('is_active', true)
+            ->selectRaw('count(case when nuptk is not null then 1 end) as ber_nuptk')
+            ->selectRaw('count(case when status_kepegawaian = ? then 1 end) as tetap', [self::DOSEN_TETAP])
+            ->first();
 
         $internasional = $luaran->where('tingkat', TingkatKegiatan::Internasional->value);
         $bermitra = $luaran->filter(fn (object $r): bool => filled($r->mitra_nama));
@@ -293,7 +323,7 @@ class DataIku2026
                 'dosen_terlibat_ber_nuptk' => $internasional
                     ->filter(fn (object $r): bool => filled($r->nuptk))
                     ->pluck('dosen_id')->unique()->count(),
-                'dosen_aktif_ber_nuptk' => Dosen::aktif()->whereNotNull('nuptk')->count(),
+                'dosen_aktif_ber_nuptk' => (int) $dosen->ber_nuptk,
                 'per_jenis' => $this->cacah($internasional, 'luaran_jenis'),
             ],
             'iku_5_luaran_kerja_sama' => [
@@ -310,7 +340,83 @@ class DataIku2026
                 'per_tingkat' => $publikasi
                     ->groupBy(fn (object $r): string => $r->tingkat ?? 'tidak_disebutkan')
                     ->map(fn ($g): int => $g->count()),
+                ...$this->publikasiTerindeks($publikasi),
             ],
+            'iku_8_penyusunan_kebijakan' => $this->penyusunanKebijakan($keterlibatan, (int) $dosen->tetap),
+        ];
+    }
+
+    /**
+     * IKU 6 — the index and quartile facts on each publication (ADR-041 §2).
+     *
+     * Counted per article, not per row: two co-authors from this campus each
+     * record the same paper, and the decree counts the paper once. Rows with
+     * the same DOI are one article; a row without a DOI stands alone, so
+     * `ber_doi` says how far the deduplication can be trusted. Weights by
+     * quartile, the top-tier class, the bonus for a foreign co-author, and
+     * the excluded publishers stay with the consumer.
+     *
+     * @param Collection<int, object> $publikasi
+     * @return array<string, mixed>
+     */
+    private function publikasiTerindeks(Collection $publikasi): array
+    {
+        $artikel = $publikasi
+            ->groupBy(fn (object $r): string => $r->luaran_doi !== null ? 'doi:'.$r->luaran_doi : 'baris:'.$r->id)
+            ->map(fn (Collection $g): object => $g->first());
+
+        $bereputasi = $artikel->filter(
+            fn (object $r): bool => IndeksPublikasi::tryFrom((string) $r->luaran_indeks)?->bereputasiInternasional() ?? false,
+        );
+
+        return [
+            'publikasi_unik' => $artikel->count(),
+            'ber_doi' => $artikel->filter(fn (object $r): bool => $r->luaran_doi !== null)->count(),
+            'per_indeks' => $artikel
+                ->groupBy(fn (object $r): string => $r->luaran_indeks ?? 'tidak_disebutkan')
+                ->map(fn ($g): int => $g->count()),
+            'bereputasi_internasional' => $bereputasi->count(),
+            'jurnal_bereputasi_per_kuartil' => $bereputasi
+                ->where('luaran_jenis', JenisLuaran::Jurnal->value)
+                ->groupBy(fn (object $r): string => $r->luaran_kuartil ?? 'tidak_disebutkan')
+                ->map(fn ($g): int => $g->count()),
+            'prosiding_bereputasi' => $bereputasi->where('luaran_jenis', JenisLuaran::Prosiding->value)->count(),
+            'bereputasi_kolaborasi_internasional' => $bereputasi
+                ->filter(fn (object $r): bool => (bool) $r->luaran_kolaborasi_internasional)
+                ->count(),
+        ];
+    }
+
+    /**
+     * IKU 8 — lecturers officially involved in drafting a national, regional,
+     * or sector policy (ADR-041 §1).
+     *
+     * Verified rows only, and only rows whose official document a staff
+     * member opened. Lecturers are counted once however many policies they
+     * worked on; the decree counts people, not documents. Permanent
+     * lecturers are counted apart because the decree's population is dosen
+     * tetap — whether a non-permanent lecturer's involvement counts, and
+     * whether an international body's does (the decree names only the other
+     * three levels), is the consumer's call.
+     *
+     * @param Collection<int, object> $keterlibatan
+     * @return array<string, mixed>
+     */
+    private function penyusunanKebijakan(Collection $keterlibatan, int $dosenTetapAktif): array
+    {
+        return [
+            'keterlibatan_terverifikasi' => $keterlibatan->count(),
+            'dosen_terlibat' => $keterlibatan->pluck('dosen_id')->unique()->count(),
+            'dosen_tetap_terlibat' => $keterlibatan
+                ->where('status_kepegawaian', self::DOSEN_TETAP)
+                ->pluck('dosen_id')->unique()->count(),
+            'dosen_tetap_aktif' => $dosenTetapAktif,
+            'per_bentuk' => $keterlibatan
+                ->groupBy(fn (object $r): string => $r->kebijakan_bentuk ?? 'tidak_disebutkan')
+                ->map(fn ($g): int => $g->count()),
+            'per_tingkat' => $keterlibatan
+                ->groupBy(fn (object $r): string => $r->kebijakan_tingkat ?? 'tidak_disebutkan')
+                ->map(fn ($g): int => $g->count()),
         ];
     }
 

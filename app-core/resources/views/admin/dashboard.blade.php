@@ -37,6 +37,28 @@
         />
     </div>
 
+    @if ($akreditasiPerhatian->isNotEmpty())
+        {{-- ADR-041 §3: lulusan pada masa akreditasi tidak berlaku tidak
+             mendapat nomor PISN, tanpa eksepsi. --}}
+        <div class="mb-5">
+            <x-alert tone="warning">
+                <strong>{{ __('akreditasi.peringatan.judul') }}.</strong>
+                {{ __('akreditasi.peringatan.pengantar', ['bulan' => $bulanPeringatanAkreditasi]) }}
+                <ul class="mt-2 list-disc space-y-0.5 pl-5 text-[12.5px]">
+                    @foreach ($akreditasiPerhatian as $baris)
+                        <li>
+                            {{ __('akreditasi.peringatan.baris', ['prodi' => $baris['prodi']->namaLengkap(), 'keadaan' => $baris['keadaan']->label()]) }}
+                            @if ($baris['akreditasi'])
+                                <span class="tabular">· {{ __('akreditasi.peringatan.sampai', ['tanggal' => Format::tanggal($baris['akreditasi']->tanggal_kedaluwarsa)]) }}</span>
+                            @endif
+                            · <a href="{{ route('admin.master.prodi.akreditasi', $baris['prodi']) }}" class="underline">{{ __('akreditasi.peringatan.kelola') }}</a>
+                        </li>
+                    @endforeach
+                </ul>
+            </x-alert>
+        </div>
+    @endif
+
     <div class="grid gap-5 lg:grid-cols-2">
         <x-card title="Mahasiswa per Program Studi" flush>
             <div class="divide-y divide-line/60">
