@@ -58,6 +58,12 @@ class FeederKamusCommand extends Command
 
         $this->table(['Entitas', 'Aksi', 'Temuan', 'Dikirim', 'Di kamus'], $baris->all());
 
+        foreach ($pemeriksa->saranConfig($run) as $saran) {
+            if ($saran->barisEnv() !== null) {
+                $this->line(__('feeder.kamus.perintah.saran', ['baris' => $saran->barisEnv()]));
+            }
+        }
+
         $selisih = $laporan->reject(fn (LaporanKamusEntitas $l): bool => $l->cocok())->count();
 
         if ($selisih > 0) {

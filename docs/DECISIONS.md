@@ -1549,3 +1549,49 @@ bagian per butir.
   di basis data kampus saja. Bila balasan Feeder kampus berbentuk lain dari
   yang dikenali, layar mengatakan "tidak terbaca"; bentuk baru ditambahkan ke
   `KamusFeeder` beserta tesnya, tanpa menyalin balasan aslinya ke repo.
+
+### 2. Nama medan HP dan tanggal ijazah diatur kampus; tanggal ijazah tidak dikirim sampai namanya diisi
+
+- **Konteks.** `MahasiswaMapper` mengirim HP sebagai `telepon_seluler`, nama
+  yang belum pernah dicocokkan dengan kamus Feeder mana pun (#52). Neo Feeder
+  3.0.1 dilaporkan menambah tanggal terbit ijazah pada Lulus/DO, dengan nama
+  medan yang tidak diketahui (#53). Kode yang menebak nama akan ditolak Feeder
+  — atau lebih buruk, diterima dan diabaikan diam-diam.
+- **Keputusan.** (1) `config('feeder.medan')`: `FEEDER_MEDAN_HP` (bawaan
+  `telepon_seluler`, perilaku hari ini), `FEEDER_MEDAN_TANGGAL_IJAZAH`
+  (bawaan kosong — **tidak dikirim**), dan `FEEDER_TANGGAL_IJAZAH_SUMBER`.
+  `MedanFeeder` membaca ketiganya; nilai yang bukan nama medan
+  (`^[a-z][a-z0-9_]{1,63}$`) diabaikan — HP kembali ke bawaan, tanggal ijazah
+  tetap tidak dikirim — dan ditampilkan di layar kamus sebagai "tidak sah".
+  (2) **Sumber tanggal ijazah** dari data yang ada, tanpa kolom baru:
+  `lulus` (bawaan, `yudisium.tanggal_lulus` — tanggal yang dibaca PISN dan
+  selalu ada saat Lulus/DO pertama dikirim), `yudisium` (tanggal SK), atau
+  `wisuda` (periode wisuda paling awal lulusan itu). Bawaannya `lulus` dan
+  bukan `wisuda` karena lulusan biasanya dilaporkan sebelum diwisuda: dengan
+  `wisuda`, setiap Lulus/DO akan dikirim tanpa tanggal lalu dikirim ulang
+  sesudah wisuda. Tanggal yang belum ada hanya **peringatan**
+  (`tanggal_ijazah_kosong`): menahan lulusan membuatnya tetap Aktif di
+  PDDIKTI. Hanya Lulus yang membawanya; DO dan mengundurkan diri tidak. (3)
+  **Pemeriksa kamus menyarankan nilainya** (§1): nama yang dikonfigurasi ada
+  di kamus → "sesuai"; tidak ada tetapi kamus punya calon (sinonim HP, atau
+  medan yang memuat `tanggal`/`tgl` dan `ijazah`, yang wajib didahulukan) →
+  baris `.env` yang disarankan; tanggal ijazah diisi tetapi kamus tidak
+  mengenalnya → saran mengosongkan. Tidak ada yang diterapkan otomatis.
+  `FakeFeederClient` mengembalikan nama yang diatur ke bawaannya saat
+  membangun kamus palsu, karena kamus sebuah build tidak ikut berubah ketika
+  kampus menyunting config.
+- **Konsekuensi — idempotensi.** Hash payload dihitung atas nama dan nilai,
+  jadi mengganti nama medan **mengubah hash** setiap baris yang membawanya.
+  Artinya terkendali, bukan duplikat: baris yang sudah diterima Feeder punya
+  `feeder_id`, sehingga perbedaan hash membuatnya dikirim sebagai **Update**
+  berkunci identitas itu (`UpdateBiodataMahasiswa` dengan `id_mahasiswa`,
+  `UpdateMahasiswaLulusDO` dengan `id_registrasi_mahasiswa`), satu kali,
+  lalu dilewati lagi pada putaran berikutnya. Tidak pernah ada Insert kedua.
+  Pengiriman ulang itu memang yang benar: bila nama lama salah, nomor HP
+  atau tanggal ijazah tidak pernah sampai. Cakupannya mengikuti antrean
+  setiap entitas — biodata yang dikirim ulang hanya mahasiswa yang masuk pada
+  semester yang disinkronkan, Lulus/DO hanya yang keluar pada semester itu —
+  jadi mengganti nama tidak mengirim ulang seluruh kampus sekaligus. Catatan
+  Lulus/DO yang sudah dikunci PDDIKTI dapat ditolak saat diperbarui; tolakan
+  itu tercatat di buku besar dengan pesan Feeder, dan jalurnya PJK yang sudah
+  ada (ADR-017). Snapshot payload bawaan tidak berubah.

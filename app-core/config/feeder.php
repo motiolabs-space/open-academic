@@ -381,6 +381,35 @@ return [
         'parameter' => env('FEEDER_KAMUS_PARAMETER', 'fungsi'),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Field Names a Campus Sets
+    |--------------------------------------------------------------------------
+    |
+    | Two field names differ between what is documented and what a Feeder
+    | build may expect, and only the build's own dictionary can say which
+    | (ROADMAP #52, #53). The dictionary check suggests the value to set.
+    |
+    |   telepon_seluler        the mobile number on InsertBiodataMahasiswa.
+    |   tanggal_ijazah         the diploma date on InsertMahasiswaLulusDO.
+    |                          Empty means it is not sent at all — the safe
+    |                          default while the name is unverified.
+    |   tanggal_ijazah_sumber  where that date comes from: lulus (the
+    |                          yudisium's graduation date), yudisium (the
+    |                          decree date) or wisuda (the earliest ceremony
+    |                          the graduate is registered for).
+    |
+    | Changing a name changes the payload, so rows Feeder already accepted
+    | are sent again as updates the next time their term is synced (ADR-042).
+    |
+    */
+
+    'medan' => [
+        'telepon_seluler' => env('FEEDER_MEDAN_HP', 'telepon_seluler'),
+        'tanggal_ijazah' => env('FEEDER_MEDAN_TANGGAL_IJAZAH') ?: null,
+        'tanggal_ijazah_sumber' => env('FEEDER_TANGGAL_IJAZAH_SUMBER', 'lulus'),
+    ],
+
     // Rows pulled per page when reading Feeder back. Higher is fewer requests
     // and more memory; a term of KRS at a mid-sized campus is tens of
     // thousands of rows, so it is paged rather than fetched whole.

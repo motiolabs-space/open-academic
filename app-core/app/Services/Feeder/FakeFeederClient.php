@@ -307,8 +307,14 @@ class FakeFeederClient implements FeederClientInterface
 
         $medan = [];
 
+        // A build's dictionary does not move when the campus edits its config,
+        // so the names a campus sets are taken back to the defaults first.
         foreach ($mappers->flatMap(fn ($mapper): array => $mapper->medan())->unique() as $nama) {
-            $medan[$nama] = ['tipe' => 'teks', 'wajib' => false];
+            if ($nama === MedanFeeder::tanggalIjazah()) {
+                continue;
+            }
+
+            $medan[$nama === MedanFeeder::hp() ? MedanFeeder::HP_BAWAAN : $nama] = ['tipe' => 'teks', 'wajib' => false];
         }
 
         $ubah = $ubahan[$act] ?? [];

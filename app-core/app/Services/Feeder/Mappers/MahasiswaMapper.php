@@ -7,6 +7,7 @@ namespace App\Services\Feeder\Mappers;
 use App\Enums\StatusAdopsiFeeder;
 use App\Enums\StatusLampauFeeder;
 use App\Models\Kemahasiswaan\Mahasiswa;
+use App\Services\Feeder\MedanFeeder;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 
@@ -35,7 +36,7 @@ class MahasiswaMapper extends FeederMapper
             'jalan',
             'kelurahan',
             'kode_pos',
-            'telepon_seluler',
+            MedanFeeder::hp(),
             'email',
             'nama_ayah',
             'nama_ibu_kandung',
@@ -78,7 +79,8 @@ class MahasiswaMapper extends FeederMapper
             'jalan' => $model->alamat,
             'kelurahan' => $model->kelurahan,
             'kode_pos' => $model->kode_pos,
-            'telepon_seluler' => $model->telepon,
+            // The name follows the campus Feeder's dictionary (ROADMAP #52).
+            MedanFeeder::hp() => $model->telepon,
             'email' => $model->email,
             'nama_ayah' => $model->nama_ayah,
             'nama_ibu_kandung' => $model->nama_ibu,

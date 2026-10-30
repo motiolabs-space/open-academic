@@ -10,6 +10,12 @@ return [
         'telepon_tidak_valid' => 'Nomor HP ":telepon" tidak berbentuk nomor telepon (9–15 digit). Periksa sebelum dikirim.',
         'telepon_ganda' => 'Nomor HP ini juga tercatat pada mahasiswa lain. Neo Feeder versi terbaru dilaporkan menolak nomor HP yang sama untuk dua mahasiswa.',
         'email_tidak_valid' => 'Surel ":email" tidak berbentuk alamat surel; Neo Feeder versi terbaru dilaporkan mewajibkan surel yang sah.',
+        'tanggal_ijazah_kosong' => 'Tanggal ijazah belum ada (:sumber), jadi Lulus/DO dikirim tanpa tanggal ijazah. Lengkapi lalu sinkronkan ulang.',
+        'sumber_tanggal_ijazah' => [
+            'lulus' => 'tanggal lulus pada yudisium',
+            'yudisium' => 'tanggal SK yudisium',
+            'wisuda' => 'lulusan belum terdaftar pada periode wisuda',
+        ],
         'akm_kosong' => 'Mahasiswa tidak punya satu pun catatan aktivitas kuliah (AKM). Neo Feeder menolak meluluskan atau mengeluarkan mahasiswa tanpa riwayat AKM.',
     ],
 
@@ -283,7 +289,29 @@ return [
         'pesan' => [
             'selesai' => 'Kamus dibaca untuk :aksi aksi (:gagal gagal dibaca); :selisih entitas berselisih dengan kamus.',
         ],
+        'saran' => [
+            'judul' => 'Saran pengaturan nama medan',
+            'sekarang' => 'Sekarang',
+            'tidak_dikirim' => '(tidak dikirim)',
+            'tidak_sah' => 'Nilai ini bukan nama medan yang sah dan diabaikan; HP memakai nama bawaan, tanggal ijazah tidak dikirim.',
+            'catatan' => 'Saran tidak diterapkan otomatis. Ubah .env di server, jalankan php artisan config:cache, lalu baca ulang kamus. '
+                .'Mengubah nama medan mengirim ulang baris yang sudah diterima Feeder sebagai pembaruan pada sinkronisasi berikutnya.',
+            'medan' => [
+                'FEEDER_MEDAN_HP' => 'Nomor HP pada biodata mahasiswa',
+                'FEEDER_MEDAN_TANGGAL_IJAZAH' => 'Tanggal ijazah pada Lulus/DO',
+            ],
+            'status' => [
+                'sesuai' => 'Sesuai kamus',
+                'ubah' => 'Ubah',
+                'isi' => 'Dapat diisi',
+                'kosongkan' => 'Tidak ada di kamus',
+                'tidak_ditemukan' => 'Tidak ditemukan',
+                'tidak_terbaca' => 'Kamus tidak terbaca',
+                'tidak_sah' => 'Tidak sah',
+            ],
+        ],
         'perintah' => [
+            'saran' => 'Saran: :baris',
             'ringkasan' => 'Kamus dibaca untuk :aksi aksi (:gagal gagal), versi Feeder: :versi.',
             'ada_selisih' => ':jumlah entitas berselisih dengan kamus. Laporan lengkap ada di konsol Feeder → Kamus WS.',
         ],

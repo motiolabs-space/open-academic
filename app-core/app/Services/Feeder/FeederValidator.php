@@ -662,6 +662,16 @@ class FeederValidator
                 $isu->push($this->error('indeks_di_luar_rentang', 'IPK yudisium melebihi 4,00.'));
             }
 
+            // The campus has named the diploma-date field, so a graduate
+            // without that date is sent without it. Not refused: the record
+            // is accepted without it today, and holding a graduate back
+            // keeps them Aktif at PDDIKTI.
+            if (MedanFeeder::tanggalIjazah() !== null && MedanFeeder::tanggalIjazahDari($y) === null) {
+                $isu->push($this->peringatan('tanggal_ijazah_kosong', __('feeder.validasi.tanggal_ijazah_kosong', [
+                    'sumber' => __('feeder.validasi.sumber_tanggal_ijazah.'.MedanFeeder::sumberTanggalIjazah()),
+                ])));
+            }
+
             if (blank($y->nomor_sk)) {
                 $isu->push($this->peringatan('nomor_sk_kosong', 'Nomor SK yudisium kosong; PDDIKTI menerimanya, tetapi penerbitan nomor ijazah PISN meminta SK yudisium sebagai bukti kelulusan.'));
             }

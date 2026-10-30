@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\Feeder;
 
 use App\DTOs\Feeder\LaporanKamusEntitas;
+use App\DTOs\Feeder\SaranMedanFeeder;
 use App\DTOs\Feeder\TemuanKamus;
 use App\Enums\JenisTemuanKamus;
 use App\Exceptions\FeederException;
@@ -12,6 +13,8 @@ use App\Models\Feeder\FeederDictionaryAct;
 use App\Models\Feeder\FeederDictionaryRun;
 use App\Models\Sdm\Staff;
 use App\Services\Feeder\Contracts\FeederClientInterface;
+use App\Services\Feeder\Mappers\LulusDoMapper;
+use App\Services\Feeder\Mappers\MahasiswaMapper;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
@@ -144,6 +147,61 @@ class PemeriksaKamusFeeder
             })
             ->filter()
             ->values();
+    }
+
+    /**
+     * The config values the dictionary suggests for the field names a campus
+     * sets (MedanFeeder): the mobile number and the diploma date.
+     *
+     * A suggestion, never a change: config belongs to whoever runs the
+     * server, and a reading of the wrong Feeder must not rename a field.
+     *
+     * @return array<int, SaranMedanFeeder>
+     */
+    public function saranConfig(FeederDictionaryRun $run): array
+    {
+        $kamus = $run->aksi->keyBy('act');
+
+        $hp = $kamus->get(app(MahasiswaMapper::class)->act());
+        $lulus = $kamus->get(app(LulusDoMapper::class)->act());
+
+        return array_values(array_filter([
+            $hp === null ? null : $this->saran(
+                'FEEDER_MEDAN_HP', $hp, MedanFeeder::hp(),
+                fn (string $nama): bool => $this->kemiripan(MedanFeeder::HP_BAWAAN, $nama) >= 1.0,
+            ),
+            $lulus === null ? null : $this->saran(
+                'FEEDER_MEDAN_TANGGAL_IJAZAH', $lulus, MedanFeeder::tanggalIjazah(),
+                fn (string $nama): bool => preg_match('/(tanggal|tgl).*ijazah|ijazah.*(tanggal|tgl)/', $nama) === 1,
+            ),
+        ]));
+    }
+
+    /** @param callable(string): bool $calon whether a dictionary field is this concept */
+    private function saran(string $env, FeederDictionaryAct $aksi, ?string $sekarang, callable $calon): SaranMedanFeeder
+    {
+        if (!$aksi->terbaca()) {
+            return new SaranMedanFeeder($env, $aksi->act, $sekarang, null, 'tidak_terbaca');
+        }
+
+        $nama = collect($aksi->medan)->pluck('nama');
+
+        if ($sekarang !== null && $nama->contains($sekarang)) {
+            return new SaranMedanFeeder($env, $aksi->act, $sekarang, $sekarang, 'sesuai');
+        }
+
+        // Required candidates first: of two plausible names, the one Feeder
+        // insists on is the one it reads.
+        $disarankan = collect($aksi->medan)
+            ->filter(fn (array $m): bool => $calon((string) $m['nama']))
+            ->sortByDesc(fn (array $m): int => (int) $m['wajib'])
+            ->value('nama');
+
+        return new SaranMedanFeeder($env, $aksi->act, $sekarang, $disarankan, match (true) {
+            $disarankan !== null => $sekarang === null ? 'isi' : 'ubah',
+            $sekarang !== null && $env !== 'FEEDER_MEDAN_HP' => 'kosongkan',
+            default => 'tidak_ditemukan',
+        });
     }
 
     /**

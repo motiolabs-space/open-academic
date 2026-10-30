@@ -39,6 +39,33 @@
             @endforeach
         </div>
 
+        @if ($saran !== [] || $masalahConfig !== [])
+            <x-card class="mb-5" :title="__('feeder.kamus.saran.judul')" flush>
+                @foreach ($masalahConfig as $env => $nilai)
+                    <div class="flex flex-wrap items-center gap-3 border-b border-line/50 px-5 py-2.5 text-[12.5px] last:border-b-0">
+                        <x-chip tone="danger">{{ __('feeder.kamus.saran.status.tidak_sah') }}</x-chip>
+                        <code class="tabular">{{ $env }}={{ $nilai }}</code>
+                        <span class="text-ink-muted">{{ __('feeder.kamus.saran.tidak_sah') }}</span>
+                    </div>
+                @endforeach
+                @foreach ($saran as $s)
+                    <div class="flex flex-wrap items-center gap-3 border-b border-line/50 px-5 py-2.5 text-[12.5px] last:border-b-0">
+                        <x-chip :tone="$s->perluTindakan() ? 'warning' : ($s->status === 'sesuai' ? 'success' : 'neutral')">
+                            {{ __('feeder.kamus.saran.status.'.$s->status) }}
+                        </x-chip>
+                        <span class="w-56 flex-none text-ink-muted">{{ __('feeder.kamus.saran.medan.'.$s->env) }}</span>
+                        <span class="text-ink-faint">{{ __('feeder.kamus.saran.sekarang') }}:</span>
+                        <code class="tabular">{{ $s->sekarang ?? __('feeder.kamus.saran.tidak_dikirim') }}</code>
+                        @if ($s->barisEnv())
+                            <span class="text-ink-faint">→</span>
+                            <code class="tabular rounded bg-highlight px-1.5 py-0.5">{{ $s->barisEnv() }}</code>
+                        @endif
+                    </div>
+                @endforeach
+                <div class="px-5 py-2.5 text-[11px] text-ink-faint">{{ __('feeder.kamus.saran.catatan') }}</div>
+            </x-card>
+        @endif
+
         <x-card
             :title="__('feeder.kamus.judul')"
             :meta="__('feeder.kamus.ringkasan.oleh').': '.($run->dijalankanOleh?->nama ?? __('feeder.kamus.ringkasan.perintah'))"

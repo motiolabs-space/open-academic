@@ -8,6 +8,7 @@ use App\Enums\KeputusanEvaluasi;
 use App\Enums\StudentStatus;
 use App\Models\Kemahasiswaan\EvaluasiStudi;
 use App\Models\Kemahasiswaan\Mahasiswa;
+use App\Services\Feeder\MedanFeeder;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 
@@ -54,6 +55,7 @@ class LulusDoMapper extends FeederMapper
             'ipk',
             'judul_skripsi',
             'keterangan',
+            ...array_filter([MedanFeeder::tanggalIjazah()]),
         ];
     }
 
@@ -77,6 +79,7 @@ class LulusDoMapper extends FeederMapper
                 'prodi',
                 'ujiKompetensiLulus.tahunAkademik',
                 'yudisium.tahunAkademik',
+                'yudisium.pesertaWisuda.periode',
                 'evaluasiStudi' => fn ($q) => $q->whereIn('keputusan', $keputusan)->latest('diputuskan_at'),
                 // Ids only: the validator needs to know there is at least one.
                 'statusPerSemester:id,mahasiswa_id',
@@ -115,7 +118,16 @@ class LulusDoMapper extends FeederMapper
             ? $model->ujiKompetensiLulus?->tahunAkademik?->kode
             : null;
 
+        // Sent only once the campus has named the field after its own
+        // Feeder's dictionary (ROADMAP #53); until then a guessed name would
+        // be refused, or worse, quietly ignored.
+        $medanIjazah = MedanFeeder::tanggalIjazah();
+        $tanggalIjazah = $medanIjazah !== null && $yudisium !== null
+            ? [$medanIjazah => $this->tanggal(MedanFeeder::tanggalIjazahDari($yudisium))]
+            : [];
+
         return array_filter([
+            ...$tanggalIjazah,
             'id_registrasi_mahasiswa' => $model->feeder_registrasi_id,
             'id_jenis_keluar' => $this->kode('jenis_keluar', $model->status->value),
             'tanggal_keluar' => $this->tanggal($yudisium?->tanggal_lulus ?? $evaluasi?->diputuskan_at),

@@ -10,6 +10,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\PeriksaKamusFeederRequest;
 use App\Models\Feeder\FeederDictionaryRun;
 use App\Models\Sdm\Staff;
+use App\Services\Feeder\MedanFeeder;
 use App\Services\Feeder\PemeriksaKamusFeeder;
 use App\Support\Portal;
 use Illuminate\Http\RedirectResponse;
@@ -48,6 +49,8 @@ class FeederKamusController extends Controller
             'run' => $run,
             'laporan' => $laporan,
             'selisih' => $laporan->reject(fn (LaporanKamusEntitas $l): bool => $l->cocok())->values(),
+            'saran' => $run !== null ? $this->pemeriksa->saranConfig($run) : [],
+            'masalahConfig' => MedanFeeder::masalah(),
             'riwayat' => FeederDictionaryRun::query()->latest('id')->limit(10)->get(),
             'aktif' => (bool) config('feeder.enabled'),
         ]);
