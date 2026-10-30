@@ -11,12 +11,14 @@ use App\Models\Helpdesk\HelpdeskTiket;
 use App\Models\Kemahasiswaan\CutiMahasiswa;
 use App\Models\Kemahasiswaan\KegiatanLapanganLogbook;
 use App\Models\Kemahasiswaan\Mahasiswa;
+use App\Models\Keuangan\BeasiswaAjuan;
 use App\Models\Pmb\PmbBerkas;
 use App\Models\Sdm\PenugasanDosen;
 use App\Models\TugasAkhir\Proposal;
 use App\Services\Berkas\BerkasService;
 use App\Support\Portal;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Str;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
@@ -72,6 +74,25 @@ class BerkasController extends Controller
         return $this->alirkan(
             $cuti->dokumen_path,
             'dokumen-cuti-'.$cuti->tahunAkademik->kode.'.pdf',
+        );
+    }
+
+    /**
+     * One document attached to a scholarship application: the applicant and
+     * the finance office — BeasiswaAjuanPolicy. `urutan` is its position in
+     * the call's list of requested documents.
+     */
+    public function beasiswa(BeasiswaAjuan $ajuan, int $urutan): StreamedResponse
+    {
+        $this->authorize('view', $ajuan);
+
+        $berkas = $ajuan->berkas[$urutan] ?? null;
+
+        abort_if($berkas === null, 404);
+
+        return $this->alirkan(
+            $berkas['path'],
+            Str::slug($berkas['label']).'.'.pathinfo((string) $berkas['path'], PATHINFO_EXTENSION),
         );
     }
 

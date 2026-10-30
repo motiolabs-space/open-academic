@@ -63,6 +63,7 @@ final class Navigation
                 'title' => 'Layanan Mahasiswa',
                 'items' => [
                     self::item(__('swalayan.cuti.judul'), '◐', 'mahasiswa.cuti'),
+                    self::item(__('swalayan.beasiswa.judul'), '◇', 'mahasiswa.beasiswa'),
                 ],
             ],
         ];

@@ -232,6 +232,8 @@ Route::middleware(['auth:mahasiswa', 'term.active'])->prefix('mahasiswa')->name(
     // rute yang menerima mahasiswa sebagai parameter.
     Route::get('/cuti', [Mahasiswa\CutiController::class, 'index'])->name('cuti');
     Route::post('/cuti', [Mahasiswa\CutiController::class, 'ajukan'])->name('cuti.ajukan');
+    Route::get('/beasiswa', [Mahasiswa\BeasiswaController::class, 'index'])->name('beasiswa');
+    Route::post('/beasiswa/{periode}', [Mahasiswa\BeasiswaController::class, 'ajukan'])->name('beasiswa.ajukan');
 
     Route::get('/profil', [Mahasiswa\ProfilController::class, 'index'])->name('profil');
     Route::put('/profil', [Mahasiswa\ProfilController::class, 'perbarui'])->name('profil.perbarui');
@@ -390,6 +392,7 @@ Route::middleware('auth:staff,dosen,mahasiswa')->prefix('notifikasi')->name('not
 Route::middleware('auth:staff,mahasiswa')->prefix('berkas')->name('berkas.')->group(function (): void {
     Route::get('/pmb/{berkas}', [BerkasController::class, 'pmb'])->name('pmb');
     Route::get('/cuti/{cuti}', [BerkasController::class, 'cuti'])->name('cuti');
+    Route::get('/beasiswa/{ajuan}/{urutan}', [BerkasController::class, 'beasiswa'])->whereNumber('urutan')->name('beasiswa');
 });
 
 // Dokumen riwayat kepegawaian: dosen pemiliknya dan staf kepegawaian.
@@ -879,6 +882,11 @@ Route::middleware(['auth:staff', 'term.active'])->prefix('admin')->name('admin.'
     Route::post('/beasiswa/{beasiswa}/tetapkan', [Admin\BeasiswaController::class, 'tetapkan'])->name('beasiswa.tetapkan');
     Route::post('/beasiswa/penerima/{penerima}/cabut', [Admin\BeasiswaController::class, 'cabut'])->name('beasiswa.cabut');
     Route::get('/beasiswa/kipk/ekspor', [Admin\BeasiswaController::class, 'eksporKipk'])->name('beasiswa.kipk');
+    // Periode pendaftaran dan ajuan mahasiswa (ADR-040 §2).
+    Route::post('/beasiswa/periode', [Admin\AjuanBeasiswaController::class, 'bukaPeriode'])->name('beasiswa.periode.buka');
+    Route::get('/beasiswa/periode/{periode}', [Admin\AjuanBeasiswaController::class, 'show'])->name('beasiswa.periode');
+    Route::post('/beasiswa/periode/{periode}/tutup', [Admin\AjuanBeasiswaController::class, 'tutupPeriode'])->name('beasiswa.periode.tutup');
+    Route::post('/beasiswa/ajuan/{ajuan}/putuskan', [Admin\AjuanBeasiswaController::class, 'putuskan'])->name('beasiswa.ajuan.putuskan');
 
     Route::get('/cuti', [Admin\CutiController::class, 'index'])->name('cuti');
     Route::post('/cuti', [Admin\CutiController::class, 'ajukan'])->name('cuti.ajukan');
