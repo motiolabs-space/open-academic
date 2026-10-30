@@ -6,6 +6,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Enums\JenisKonversi;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Akademik\MintaDokumenKonversiRequest;
 use App\Models\Akademik\KonversiKredit;
 use App\Models\Akademik\MataKuliah;
 use App\Models\Kemahasiswaan\Mahasiswa;
@@ -137,6 +138,14 @@ class KonversiController extends Controller
         $this->konversi->tolak($konversi, Portal::user(), $data['alasan']);
 
         return back()->with('sukses', 'Usulan ditolak.');
+    }
+
+    /** Asks the student for a document before deciding (ADR-040 §4). */
+    public function mintaDokumen(MintaDokumenKonversiRequest $request, KonversiKredit $konversi): RedirectResponse
+    {
+        $this->konversi->mintaDokumen($konversi, Portal::user(), (string) $request->string('dokumen_diminta'));
+
+        return back()->with('sukses', __('swalayan.konversi.sukses_minta'));
     }
 
     public function cabut(Request $request, KonversiKredit $konversi): RedirectResponse

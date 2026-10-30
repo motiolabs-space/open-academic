@@ -6,6 +6,7 @@ namespace App\Http\Controllers;
 
 use App\Enums\JenisRiwayat;
 use App\Models\Akademik\AkreditasiProdi;
+use App\Models\Akademik\KonversiKredit;
 use App\Models\Helpdesk\HelpdeskBalasan;
 use App\Models\Helpdesk\HelpdeskTiket;
 use App\Models\Kemahasiswaan\CutiMahasiswa;
@@ -108,6 +109,27 @@ class BerkasController extends Controller
         return $this->alirkan(
             $poin->bukti_path,
             'bukti-prestasi-'.$poin->uuid.'.'.pathinfo((string) $poin->bukti_path, PATHINFO_EXTENSION),
+        );
+    }
+
+    /**
+     * A credit conversion's evidence — what staff attached to the proposal
+     * (`usulan`) or what the student sent when asked (`mahasiswa`). The
+     * student and the registrar — KonversiKreditPolicy.
+     */
+    public function konversi(KonversiKredit $konversi, string $sumber): StreamedResponse
+    {
+        $this->authorize('view', $konversi);
+
+        $path = match ($sumber) {
+            'usulan' => $konversi->berkas_path,
+            'mahasiswa' => $konversi->berkas_mahasiswa_path,
+            default => abort(404),
+        };
+
+        return $this->alirkan(
+            $path,
+            'konversi-'.$sumber.'-'.$konversi->uuid.'.'.pathinfo((string) $path, PATHINFO_EXTENSION),
         );
     }
 

@@ -108,6 +108,22 @@
                                                     {{ $k->pemutus->nama }} · {{ Format::tanggal($k->diputus_at) }}
                                                 </div>
                                             @endif
+                                            @if ($k->berkas_path)
+                                                <a href="{{ route('berkas.konversi', [$k, 'usulan']) }}" class="mt-1 block text-[12px] text-navy underline">{{ __('swalayan.konversi.berkas_usulan') }}</a>
+                                            @endif
+                                            @if ($k->dokumen_diminta)
+                                                <div class="mt-1 text-[11.5px]" data-dokumen-diminta>
+                                                    <span class="text-ink-faint">{{ __('swalayan.konversi.diminta', ['tanggal' => Format::tanggal($k->dokumen_diminta_at)]) }}</span>
+                                                    {{ $k->dokumen_diminta }}
+                                                </div>
+                                                @if ($k->berkas_mahasiswa_path)
+                                                    <a href="{{ route('berkas.konversi', [$k, 'mahasiswa']) }}" class="block text-[12px] text-navy underline">
+                                                        {{ __('swalayan.konversi.berkas_mahasiswa', ['tanggal' => Format::tanggal($k->berkas_mahasiswa_at)]) }}
+                                                    </a>
+                                                @elseif ($k->menungguDokumen())
+                                                    <x-chip tone="warning">{{ __('swalayan.konversi.menunggu_dokumen') }}</x-chip>
+                                                @endif
+                                            @endif
                                         </td>
                                         <td class="px-5 py-3">
                                             <div class="flex flex-wrap justify-end gap-1.5">
@@ -127,6 +143,13 @@
                                                         @csrf
                                                         <x-field label="Alasan" name="alasan" class="w-40" required />
                                                         <x-button type="submit" variant="outline" size="sm">Tolak</x-button>
+                                                    </form>
+
+                                                    <form method="POST" action="{{ route('admin.konversi.minta-dokumen', $k) }}"
+                                                        class="flex items-end gap-1.5">
+                                                        @csrf
+                                                        <x-field :label="__('swalayan.konversi.minta_label')" name="dokumen_diminta" class="w-48" required />
+                                                        <x-button type="submit" variant="ghost" size="sm">{{ __('swalayan.konversi.minta_tombol') }}</x-button>
                                                     </form>
                                                 @elseif ($k->status === \App\Enums\StatusKonversi::Disetujui)
                                                     <form method="POST" action="{{ route('admin.konversi.cabut', $k) }}"

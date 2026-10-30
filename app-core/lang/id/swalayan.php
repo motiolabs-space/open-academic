@@ -202,4 +202,50 @@ return [
             'ringkasan_ditolak' => '":judul" tidak diverifikasi. Alasan: :alasan',
         ],
     ],
+
+    'konversi' => [
+        'judul' => 'Konversi Kredit',
+        'konteks' => ':sks SKS diakui',
+        'daftar' => 'Usulan Konversi Saya',
+        'sks_diakui' => 'SKS Diakui',
+        'batas' => 'Batas pengakuan :batas SKS',
+        'menunggu' => 'Menunggu Keputusan',
+        'sks_kurikulum' => ':sks SKS di kurikulum',
+        'tanpa_nilai' => 'tanpa nilai',
+        'kosong' => 'Belum ada usulan konversi',
+        'kosong_penjelasan' => 'Konversi kredit diusulkan oleh bagian akademik untuk mahasiswa pindahan, RPL, atau kegiatan di luar kelas; hasilnya tampil di sini.',
+        'diminta' => 'Dokumen diminta (:tanggal):',
+        'berkas_usulan' => 'Berkas usulan',
+        'berkas_mahasiswa' => 'Dokumen dari mahasiswa (:tanggal)',
+        'menunggu_dokumen' => 'Menunggu dokumen',
+        'unggah_label' => 'Dokumen yang diminta',
+        'unggah_tombol' => 'Kirim Dokumen',
+        'unggah_ganti' => 'Kirim Ulang Dokumen',
+        'minta_label' => 'Minta dokumen',
+        'minta_tombol' => 'Minta',
+        'sukses_unggah' => 'Dokumen terkirim ke bagian akademik.',
+        'sukses_minta' => 'Permintaan dokumen dikirim ke mahasiswa.',
+
+        'kolom' => [
+            'mata_kuliah' => 'Mata Kuliah',
+            'asal' => 'Asal',
+            'sks' => 'SKS Diakui',
+        ],
+
+        'galat' => [
+            'keterangan_wajib' => 'Sebutkan dokumen yang diminta.',
+            'bukan_milik' => 'Usulan konversi ini bukan milik Anda.',
+            'bukan_menunggu' => 'Usulan ini sudah diputus (:status).',
+            'tidak_diminta' => 'Belum ada dokumen yang diminta untuk usulan ini.',
+        ],
+
+        'notifikasi' => [
+            'judul_diakui' => 'Konversi :kode diakui',
+            'judul_ditolak' => 'Konversi :kode ditolak',
+            'judul_diminta' => 'Dokumen diminta untuk konversi :kode',
+            'ringkasan_diakui' => ':mata_kuliah diakui sebesar :sks SKS.',
+            'ringkasan_ditolak' => ':mata_kuliah tidak diakui. Alasan: :catatan',
+            'ringkasan_diminta' => 'Bagian akademik memerlukan dokumen untuk memutus konversi :mata_kuliah: :dokumen',
+        ],
+    ],
 ];

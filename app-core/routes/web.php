@@ -236,6 +236,8 @@ Route::middleware(['auth:mahasiswa', 'term.active'])->prefix('mahasiswa')->name(
     Route::post('/beasiswa/{periode}', [Mahasiswa\BeasiswaController::class, 'ajukan'])->name('beasiswa.ajukan');
     Route::get('/poin', [Mahasiswa\PoinController::class, 'index'])->name('poin');
     Route::post('/poin', [Mahasiswa\PoinController::class, 'lapor'])->name('poin.lapor');
+    Route::get('/konversi', [Mahasiswa\KonversiController::class, 'index'])->name('konversi');
+    Route::post('/konversi/{konversi}/dokumen', [Mahasiswa\KonversiController::class, 'unggah'])->name('konversi.unggah');
 
     Route::get('/profil', [Mahasiswa\ProfilController::class, 'index'])->name('profil');
     Route::put('/profil', [Mahasiswa\ProfilController::class, 'perbarui'])->name('profil.perbarui');
@@ -396,6 +398,7 @@ Route::middleware('auth:staff,mahasiswa')->prefix('berkas')->name('berkas.')->gr
     Route::get('/cuti/{cuti}', [BerkasController::class, 'cuti'])->name('cuti');
     Route::get('/beasiswa/{ajuan}/{urutan}', [BerkasController::class, 'beasiswa'])->whereNumber('urutan')->name('beasiswa');
     Route::get('/poin/{poin}', [BerkasController::class, 'poin'])->name('poin');
+    Route::get('/konversi/{konversi}/{sumber}', [BerkasController::class, 'konversi'])->whereIn('sumber', ['usulan', 'mahasiswa'])->name('konversi');
 });
 
 // Dokumen riwayat kepegawaian: dosen pemiliknya dan staf kepegawaian.
@@ -686,6 +689,7 @@ Route::middleware(['auth:staff', 'term.active'])->prefix('admin')->name('admin.'
     Route::post('/konversi/{konversi}/setujui', [Admin\KonversiController::class, 'setujui'])->name('konversi.setujui');
     Route::post('/konversi/{konversi}/tolak', [Admin\KonversiController::class, 'tolak'])->name('konversi.tolak');
     Route::post('/konversi/{konversi}/cabut', [Admin\KonversiController::class, 'cabut'])->name('konversi.cabut');
+    Route::post('/konversi/{konversi}/minta-dokumen', [Admin\KonversiController::class, 'mintaDokumen'])->name('konversi.minta-dokumen');
 
     // Pengaturan didaftarkan sebelum {tiket} agar "pengaturan" tidak pernah
     // dibaca sebagai UUID tiket.

@@ -65,6 +65,7 @@ final class Navigation
                     self::item(__('swalayan.cuti.judul'), '◐', 'mahasiswa.cuti'),
                     self::item(__('swalayan.beasiswa.judul'), '◇', 'mahasiswa.beasiswa'),
                     self::item(__('swalayan.prestasi.judul'), '★', 'mahasiswa.poin'),
+                    self::item(__('swalayan.konversi.judul'), '⇄', 'mahasiswa.konversi'),
                 ],
             ],
         ];

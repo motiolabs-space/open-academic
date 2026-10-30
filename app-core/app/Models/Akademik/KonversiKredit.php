@@ -41,6 +41,8 @@ class KonversiKredit extends Model
             'status' => StatusKonversi::class,
             'bobot' => 'decimal:2',
             'diputus_at' => 'datetime',
+            'dokumen_diminta_at' => 'datetime',
+            'berkas_mahasiswa_at' => 'datetime',
         ];
     }
 
@@ -57,6 +59,17 @@ class KonversiKredit extends Model
     public function pemutus(): BelongsTo
     {
         return $this->belongsTo(Staff::class, 'diputus_by_staff_id');
+    }
+
+    /**
+     * Whether the assessor is waiting on a document from the student: asked
+     * for, and nothing sent since the request (ADR-040 §4).
+     */
+    public function menungguDokumen(): bool
+    {
+        return $this->status === StatusKonversi::Diajukan
+            && $this->dokumen_diminta !== null
+            && ($this->berkas_mahasiswa_at === null || $this->berkas_mahasiswa_at->lt($this->dokumen_diminta_at));
     }
 
     /** Granted conversions — the only ones that count anywhere. */
