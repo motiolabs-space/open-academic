@@ -79,3 +79,94 @@ jobs:
       - name: Build assets
         if: matrix.php == '8.4'
         run: npm run build
+
+  # SQLite meloloskan hal yang ditolak mesin sungguhan: nama indeks di atas 64
+  # karakter (MySQL), identifier salah ketik yang dibaca sebagai string literal,
+  # GROUP BY yang tidak lengkap, dan perbandingan tipe yang longgar (PostgreSQL).
+  # Job ini menjalankan migrasi dan seluruh suite di kedua mesin yang dinyatakan
+  # didukung di docs/BASIS-DATA.md, agar klaim itu teruji, bukan sekadar tertulis.
+  # Satu versi PHP cukup: yang diuji di sini mesinnya, bukan PHP-nya.
+  database:
+    name: Test on ${{ matrix.name }} (PHP 8.4)
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: MySQL 8
+            connection: mysql
+            image: mysql:8.0
+            port: 3306
+            username: root
+            health: mysqladmin ping -h 127.0.0.1 --silent
+          - name: PostgreSQL 16
+            connection: pgsql
+            image: postgres:16
+            port: 5432
+            username: postgres
+            health: pg_isready -U postgres
+
+    # Satu service per entri matriks. Variabel MYSQL_* diabaikan image Postgres
+    # dan sebaliknya, jadi keduanya boleh duduk berdampingan di sini.
+    services:
+      db:
+        image: ${{ matrix.image }}
+        env:
+          MYSQL_ROOT_PASSWORD: secret
+          MYSQL_DATABASE: open_academic_test
+          POSTGRES_PASSWORD: secret
+          POSTGRES_DB: open_academic_test
+        ports:
+          - ${{ matrix.port }}:${{ matrix.port }}
+        options: >-
+          --health-cmd "${{ matrix.health }}"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 30
+
+    # Variabel proses menang atas <env> di phpunit.xml (tanpa force="true"),
+    # jadi DB_CONNECTION=sqlite di sana tetap menjadi bawaan untuk job lain dan
+    # untuk pengembang. Pengguna superuser karena tes paralel membuat basis data
+    # sendiri per proses (open_academic_test_test_1, _2, ...).
+    env:
+      DB_CONNECTION: ${{ matrix.connection }}
+      DB_HOST: 127.0.0.1
+      DB_PORT: ${{ matrix.port }}
+      DB_DATABASE: open_academic_test
+      DB_USERNAME: ${{ matrix.username }}
+      DB_PASSWORD: secret
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: mbstring, intl, pdo_mysql, pdo_pgsql, pdo_sqlite, gd, zip, bcmath
+          coverage: none
+
+      - name: Cache Composer packages
+        uses: actions/cache@v4
+        with:
+          path: app-core/vendor
+          key: composer-php8.4-${{ hashFiles('app-core/composer.lock') }}
+          restore-keys: composer-php8.4-
+
+      - name: Install PHP dependencies
+        run: composer install --prefer-dist --no-interaction --no-progress
+
+      - name: Prepare environment
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+
+      # Migrasi dan seeder demo pada basis data utama, terpisah dari tes, agar
+      # kegagalan skema terbaca sebagai kegagalan skema — bukan sebagai ratusan
+      # tes merah dengan pesan yang sama.
+      - name: Migrate and seed demo campus
+        run: php artisan migrate --seed --force
+
+      - name: Test (Pest, paralel)
+        run: composer test:par
