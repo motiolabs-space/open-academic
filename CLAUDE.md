@@ -241,7 +241,7 @@ Event: `student.enrolled`, `student.status_changed`, `krs.approved`,
 | 1 — Inti Akademik | Service KRS/KHS, penilaian, presensi, transkrip PDF | Satu siklus semester penuh jalan end-to-end |
 | 2 — Feeder | Client, tarik referensi, mapper + ledger, validator, UI sinkron | Data demo terdorong bersih ke sandbox Neo Feeder |
 | 3 — Campus Bridge | SSO, Read API, webhook, OpenAPI | Instance Open Campus login via SSO & mengonsumsi data |
-| 4 — Data IKU | Endpoint aktivitas, penugasan, lulusan | Engine IKU Open Campus menghitung IKU 1/2/3/4/7 |
+| 4 — Data IKU | Endpoint aktivitas, penugasan, lulusan | Engine IKU Open Campus menghitung IKU 2026 dari blok `iku_2026` — 1 dan 3 penuh, 2 dan 4–6 sebagian (§6, ADR-036) |
 | 5 — Polish & Rilis | Migrasi UI penuh, audit N+1, review keamanan, docs site | Rilis publik v1.0 |
 
 Kerjakan berurutan. Nyatakan fase/modul di awal setiap sesi.

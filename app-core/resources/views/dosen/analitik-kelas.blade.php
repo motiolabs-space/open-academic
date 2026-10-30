@@ -3,6 +3,10 @@
 
 @section('title', 'Analitik Kelas')
 
+@section('aksi')
+    <x-button variant="outline" :href="route('dosen.capaian.kelas', $kelas)">{{ __('capaian.nav.kelas') }}</x-button>
+@endsection
+
 @section('content')
     <div class="grid gap-5 xl:grid-cols-[minmax(0,1fr)_340px]">
         <div class="space-y-5">

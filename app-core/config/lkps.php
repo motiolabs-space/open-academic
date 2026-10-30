@@ -218,6 +218,12 @@ return [
             'nomor' => null,
             'judul' => 'Mahasiswa Putus Studi',
         ],
+
+        // Dibaca dari capaian CPL tersimpan pada nilai final (ADR-038).
+        'capaian_pembelajaran' => [
+            'nomor' => null,
+            'judul' => 'Capaian Pembelajaran Lulusan',
+        ],
     ],
 
     // Berapa tahun ke belakang ditampilkan pada tabel yang berderet tahun.

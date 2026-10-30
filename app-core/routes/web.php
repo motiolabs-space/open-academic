@@ -257,6 +257,7 @@ Route::middleware(['auth:dosen', 'term.active'])->prefix('dosen')->name('dosen.'
     Route::get('/nilai/{kelas}', [Dosen\NilaiController::class, 'edit'])->name('nilai.kelas');
     Route::post('/nilai/{kelas}', [Dosen\NilaiController::class, 'simpan'])->name('nilai.simpan');
     Route::post('/nilai/{kelas}/rencana', [Dosen\NilaiController::class, 'rencana'])->name('nilai.rencana');
+    Route::post('/nilai/{kelas}/pemetaan', [Dosen\CapaianController::class, 'petakan'])->name('nilai.pemetaan');
     Route::post('/nilai/{kelas}/finalisasi', [Dosen\NilaiController::class, 'finalisasi'])->name('nilai.finalisasi');
 
     Route::get('/presensi', [Dosen\PresensiController::class, 'index'])->name('presensi');
@@ -277,10 +278,17 @@ Route::middleware(['auth:dosen', 'term.active'])->prefix('dosen')->name('dosen.'
     Route::put('/rps/{rps}', [Dosen\RpsController::class, 'simpan'])->name('rps.simpan');
     Route::post('/rps/{rps}/terbitkan', [Dosen\RpsController::class, 'terbitkan'])->name('rps.terbitkan');
     Route::get('/rps/jurnal/{kelas}', [Dosen\RpsController::class, 'jurnal'])->name('rps.jurnal');
+    Route::get('/rps/cpmk/{mataKuliah}', [Dosen\CpmkController::class, 'edit'])->name('cpmk');
+    Route::post('/rps/cpmk/{mataKuliah}/draf', [Dosen\CpmkController::class, 'draf'])->name('cpmk.draf');
+    Route::put('/rps/cpmk/versi/{versi}', [Dosen\CpmkController::class, 'simpan'])->name('cpmk.simpan');
+    Route::post('/rps/cpmk/versi/{versi}/terbitkan', [Dosen\CpmkController::class, 'terbitkan'])->name('cpmk.terbitkan');
     Route::post('/rps/jurnal/{pertemuan}/simpan', [Dosen\RpsController::class, 'simpanJurnal'])->name('rps.jurnal.simpan');
 
     Route::get('/analitik', [Dosen\AnalitikController::class, 'index'])->name('analitik');
     Route::get('/analitik/{kelas}', [Dosen\AnalitikController::class, 'kelas'])->name('analitik.kelas');
+    Route::get('/capaian', [Dosen\CapaianController::class, 'index'])->name('capaian');
+    Route::get('/capaian/{kelas}', [Dosen\CapaianController::class, 'kelas'])->name('capaian.kelas');
+    Route::get('/capaian/{kelas}/ekspor', [Dosen\CapaianController::class, 'ekspor'])->name('capaian.ekspor');
 
     Route::get('/bkd', [Dosen\BkdController::class, 'index'])->name('bkd');
     Route::post('/bkd/ajukan', [Dosen\BkdController::class, 'ajukan'])->name('bkd.ajukan');
@@ -560,6 +568,16 @@ Route::middleware(['auth:staff', 'term.active'])->prefix('admin')->name('admin.'
 
     Route::get('/koreksi-nilai', [Admin\KoreksiNilaiController::class, 'index'])->name('koreksi-nilai');
     Route::post('/koreksi-nilai/{nilai}', [Admin\KoreksiNilaiController::class, 'koreksi'])->name('koreksi-nilai.simpan');
+
+    // Kurikulum berbasis capaian (ADR-038): CPMK per mata kuliah per kurikulum,
+    // dan rekap capaian CPL per prodi per angkatan.
+    Route::get('/cpmk', [Admin\CpmkController::class, 'index'])->name('cpmk');
+    Route::get('/cpmk/{kurikulum}/{mataKuliah}', [Admin\CpmkController::class, 'edit'])->name('cpmk.edit');
+    Route::post('/cpmk/{kurikulum}/{mataKuliah}/draf', [Admin\CpmkController::class, 'draf'])->name('cpmk.draf');
+    Route::put('/cpmk/versi/{versi}', [Admin\CpmkController::class, 'simpan'])->name('cpmk.simpan');
+    Route::post('/cpmk/versi/{versi}/terbitkan', [Admin\CpmkController::class, 'terbitkan'])->name('cpmk.terbitkan');
+    Route::get('/capaian', [Admin\CapaianController::class, 'index'])->name('capaian');
+    Route::get('/capaian/ekspor', [Admin\CapaianController::class, 'ekspor'])->name('capaian.ekspor');
 
     // Papan baca untuk setiap staf, terpisah dari layar kelola di bawahnya
     // yang menuntut izin pengaturan. Didaftarkan lebih dulu agar "papan"

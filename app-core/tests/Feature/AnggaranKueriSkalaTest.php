@@ -165,7 +165,10 @@ it('menjaga layar dosen tetap datar saat kampus tumbuh', function () {
         '/dosen/bimbingan' => 7,
         '/dosen/nilai' => 6,
         // Which components already hold scores: one EXISTS subquery.
-        '/dosen/nilai/{kelas}' => 16,
+        // 16 → 22 (ADR-038): the outcome-mapping card reads the mapped
+        // version, the plan's version, its CPMK/sub-CPMK/CPL, and the
+        // mapping as one eager load — six queries, the same on any campus.
+        '/dosen/nilai/{kelas}' => 22,
         '/dosen/presensi' => 6,
         '/dosen/presensi/{kelas}' => 12,
         // Attendance from the class recap instead of per participant.

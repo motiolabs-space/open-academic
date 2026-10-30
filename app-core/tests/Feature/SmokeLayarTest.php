@@ -198,6 +198,7 @@ it('membuka layar dosen dalam anggaran kueri', function (string $url, int $angga
     // beban penuh.
     ['/dosen/rps', 12],
     ['/dosen/analitik', 12],
+    ['/dosen/capaian', 12],
     ['/dosen/bkd', 12],
     ['/dosen/bkd/penilaian', 13],
     ['/dosen/portofolio', 13],
@@ -241,6 +242,10 @@ it('membuka layar admin dalam anggaran kueri', function (string $url, int $angga
     ['/admin/yudisium', 30],
     ['/admin/tugas-akhir', 25],
     ['/admin/data-iku', 25],
+    // Kurikulum OBE (ADR-038): daftar mata kuliah dengan status versinya,
+    // dan rekap capaian prodi dari baris tersimpan — tidak tumbuh per baris.
+    ['/admin/cpmk', 12],
+    ['/admin/capaian', 12],
     ['/admin/feeder', 30],
     ['/admin/feeder/lampau', 12],
     ['/admin/bridge', 25],
