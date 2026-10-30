@@ -228,6 +228,11 @@ Route::middleware(['auth:mahasiswa', 'term.active'])->prefix('mahasiswa')->name(
     Route::get('/helpdesk/{tiket}', [Helpdesk\TiketPemohonController::class, 'show'])->name('helpdesk.show');
     Route::post('/helpdesk/{tiket}/balas', [Helpdesk\TiketPemohonController::class, 'balas'])->name('helpdesk.balas');
 
+    // Layanan swalayan (ADR-040). Pemohon selalu yang sedang masuk; tidak ada
+    // rute yang menerima mahasiswa sebagai parameter.
+    Route::get('/cuti', [Mahasiswa\CutiController::class, 'index'])->name('cuti');
+    Route::post('/cuti', [Mahasiswa\CutiController::class, 'ajukan'])->name('cuti.ajukan');
+
     Route::get('/profil', [Mahasiswa\ProfilController::class, 'index'])->name('profil');
     Route::put('/profil', [Mahasiswa\ProfilController::class, 'perbarui'])->name('profil.perbarui');
     Route::post('/profil/kata-sandi', [Mahasiswa\ProfilController::class, 'gantiKataSandi'])->name('profil.kata-sandi');

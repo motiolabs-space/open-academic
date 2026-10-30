@@ -123,7 +123,7 @@ class CutiController extends Controller
     {
         $this->izin('mahasiswa.manage');
 
-        $this->cuti->aktifkanKembali($cuti);
+        $this->cuti->aktifkanKembali($cuti, Portal::user());
 
         return back()->with('sukses', "{$cuti->mahasiswa->nama} aktif kembali.");
     }

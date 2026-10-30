@@ -57,6 +57,14 @@ final class Navigation
                     self::item('Aplikasi Terhubung', '⌘', 'sso.aplikasi'),
                 ],
             ],
+            [
+                // Layanan swalayan (ADR-040): yang dulu hanya bisa diminta
+                // lewat loket, kini diajukan sendiri dan diputus staf.
+                'title' => 'Layanan Mahasiswa',
+                'items' => [
+                    self::item(__('swalayan.cuti.judul'), '◐', 'mahasiswa.cuti'),
+                ],
+            ],
         ];
     }
 
