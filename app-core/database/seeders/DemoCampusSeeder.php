@@ -26,6 +26,7 @@ use Database\Seeders\Demo\MutuSeeder;
 use Database\Seeders\Demo\NotifikasiSeeder;
 use Database\Seeders\Demo\PerkuliahanSeeder;
 use Database\Seeders\Demo\PmbSeeder;
+use Database\Seeders\Demo\PrestasiSeeder;
 use Database\Seeders\Demo\ProposalTugasAkhirSeeder;
 use Database\Seeders\Demo\RiwayatAkademikSeeder;
 use Database\Seeders\Demo\RiwayatKepegawaianSeeder;
@@ -120,6 +121,10 @@ class DemoCampusSeeder extends Seeder
             ProposalTugasAkhirSeeder::class,
 
             KelulusanSeeder::class,
+
+            // Sesudah KelulusanSeeder: prestasi dicatat untuk mahasiswa yang
+            // masih aktif, dan menampilkan laporan SIMKATMAWA (ADR-037).
+            PrestasiSeeder::class,
 
             // Sesudah KelulusanSeeder: peserta KKN dipilih dari mahasiswa yang
             // masih aktif, bukan yang baru saja diluluskan.

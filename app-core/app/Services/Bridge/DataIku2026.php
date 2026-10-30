@@ -7,6 +7,7 @@ namespace App\Services\Bridge;
 use App\Enums\EducationLevel;
 use App\Enums\JenisLuaran;
 use App\Enums\JenisPoin;
+use App\Enums\StatusPekerjaanAlumni;
 use App\Enums\StudentStatus;
 use App\Enums\TingkatKegiatan;
 use App\Models\Akademik\Prodi;
@@ -155,9 +156,15 @@ class DataIku2026
     }
 
     /**
-     * IKU 2 — the population a tracer study starts from. Employment, waiting
-     * time, and salary band are tracer-study answers collected by Open Campus;
-     * whatever status has been fed back is counted, the rest is untraced.
+     * IKU 2 — the population a tracer study starts from, and the employment
+     * status read back from it (ADR-037 §2).
+     *
+     * The answers are collected elsewhere — the national tracer study or Open
+     * Campus's questionnaire — and imported onto the alumni row with their
+     * source and survey date. Counted here as they are: `belum` (the value a
+     * graduate starts with) and no row at all are both untraced. Waiting time
+     * is banded for those working or self-employed; salary bands and the IKU 2
+     * percentage stay with the consumer.
      *
      * @param Collection<int, EducationLevel> $jenjang
      * @param Collection<int, object> $lulusan
@@ -175,8 +182,16 @@ class DataIku2026
                 ->groupBy(fn (object $r): string => $r->tanggal_lulus ? substr((string) $r->tanggal_lulus, 0, 4) : 'tidak_diketahui')
                 ->map(fn ($g): int => $g->count()),
             'per_status_pekerjaan' => $lulusan
-                ->groupBy(fn (object $r): string => $r->status_pekerjaan ?? 'belum_ditelusuri')
+                ->groupBy(fn (object $r): string => $this->ditelusuri($r) ? $r->status_pekerjaan : 'belum_ditelusuri')
                 ->map(fn ($g): int => $g->count()),
+            'ditelusuri' => $lulusan->filter(fn (object $r): bool => $this->ditelusuri($r))->count(),
+            'per_sumber_status' => $lulusan
+                ->filter(fn (object $r): bool => $this->ditelusuri($r))
+                ->groupBy(fn (object $r): string => $r->status_pekerjaan_sumber ?? 'tidak_disebutkan')
+                ->map(fn ($g): int => $g->count()),
+            'masa_tunggu_bulan' => $this->bandMasaTunggu($lulusan->whereIn('status_pekerjaan', [
+                StatusPekerjaanAlumni::Bekerja->value, StatusPekerjaanAlumni::Wirausaha->value,
+            ])),
         ];
     }
 
@@ -314,6 +329,7 @@ class DataIku2026
             ->get([
                 'y.tahun_akademik_id', 'y.tanggal_lulus', 't.kode as kode_lulus',
                 'm.prodi_id', 'm.term_masuk', 'm.term_masuk_asal', 'al.status_pekerjaan',
+                'al.status_pekerjaan_sumber', 'al.masa_tunggu_bulan',
             ]);
     }
 
@@ -342,6 +358,28 @@ class DataIku2026
             '0-5' => $sksPerMahasiswa->filter(fn (int $s): bool => $s <= 5)->count(),
             '6-10' => $sksPerMahasiswa->filter(fn (int $s): bool => $s >= 6 && $s <= 10)->count(),
             '11+' => $sksPerMahasiswa->filter(fn (int $s): bool => $s >= 11)->count(),
+        ];
+    }
+
+    private function ditelusuri(object $lulusan): bool
+    {
+        return $lulusan->status_pekerjaan !== null
+            && $lulusan->status_pekerjaan !== StatusPekerjaanAlumni::BelumDitelusuri->value;
+    }
+
+    /**
+     * @param Collection<int, object> $bekerja
+     * @return array<string, int>
+     */
+    private function bandMasaTunggu(Collection $bekerja): array
+    {
+        $bulan = $bekerja->pluck('masa_tunggu_bulan');
+
+        return [
+            '0-6' => $bulan->filter(fn ($b): bool => $b !== null && (int) $b <= 6)->count(),
+            '7-12' => $bulan->filter(fn ($b): bool => $b !== null && (int) $b >= 7 && (int) $b <= 12)->count(),
+            '13+' => $bulan->filter(fn ($b): bool => $b !== null && (int) $b >= 13)->count(),
+            'tidak_diketahui' => $bulan->filter(fn ($b): bool => $b === null)->count(),
         ];
     }
 

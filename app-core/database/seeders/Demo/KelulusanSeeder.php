@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Database\Seeders\Demo;
 
+use App\Enums\StatusPekerjaanAlumni;
 use App\Enums\StudentStatus;
+use App\Enums\SumberStatusPekerjaan;
 use App\Enums\TugasAkhirStatus;
 use App\Models\Akademik\TahunAkademik;
 use App\Models\Kemahasiswaan\Alumni;
@@ -47,7 +49,13 @@ class KelulusanSeeder extends Seeder
             ->limit(9)
             ->get();
 
-        $pekerjaan = ['bekerja', 'bekerja', 'wirausaha', 'studi_lanjut', 'belum'];
+        $pekerjaan = [
+            StatusPekerjaanAlumni::Bekerja,
+            StatusPekerjaanAlumni::Bekerja,
+            StatusPekerjaanAlumni::Wirausaha,
+            StatusPekerjaanAlumni::StudiLanjut,
+            StatusPekerjaanAlumni::MencariKerja,
+        ];
         $instansi = [
             'PT Nusantara Digital Teknologi',
             'PT Bank Rakyat Nusantara',
@@ -83,14 +91,24 @@ class KelulusanSeeder extends Seeder
 
             // Sebagian lulusan sudah tertelusuri, sebagian belum — tracer study
             // yang menemukan seluruhnya sudah terisi tidak menguji apa pun.
+            // Begitu pula kontaknya (ADR-037 §2): enam terverifikasi dengan
+            // surel pribadi, satu hanya bersurel akun kampus, satu tanpa
+            // telepon, satu belum pernah diverifikasi. Semuanya jelas palsu:
+            // `@demo.test` dan nomor berawalan 0899-0000.
+            $ditelusuri = $index < 6;
+
             Alumni::create([
                 'mahasiswa_id' => $mahasiswa->id,
                 'tahun_lulus' => $lulus->year,
-                'email_pribadi' => $mahasiswa->email,
-                'telepon' => $mahasiswa->telepon,
-                'status_pekerjaan' => $index < 6 ? $pekerjaan[$index % 5] : 'belum',
-                'instansi' => $index < 6 ? $instansi[$index % 5] : null,
-                'mulai_bekerja' => $index < 6 ? $lulus->copy()->addMonth() : null,
+                'email_pribadi' => $index === 6 ? $mahasiswa->email : sprintf('alumni%02d@demo.test', $index + 1),
+                'telepon' => $index === 7 ? null : sprintf('0899-0000-%04d', $index + 1),
+                'kontak_diverifikasi_at' => $index < 8 ? $lulus->copy()->addWeeks(2) : null,
+                'status_pekerjaan' => $ditelusuri ? $pekerjaan[$index % 5] : StatusPekerjaanAlumni::BelumDitelusuri,
+                'instansi' => $ditelusuri ? $instansi[$index % 5] : null,
+                'mulai_bekerja' => $ditelusuri && $index % 5 < 3 ? $lulus->copy()->addMonth() : null,
+                'masa_tunggu_bulan' => $ditelusuri && $index % 5 < 3 ? 1 : null,
+                'status_pekerjaan_sumber' => $ditelusuri ? SumberStatusPekerjaan::SurveiKampus : null,
+                'status_pekerjaan_per' => $ditelusuri ? $lulus->copy()->addWeeks(6) : null,
             ]);
 
             WisudaPeserta::create([
