@@ -57,6 +57,17 @@ final class Navigation
                     self::item('Aplikasi Terhubung', '⌘', 'sso.aplikasi'),
                 ],
             ],
+            [
+                // Layanan swalayan (ADR-040): yang dulu hanya bisa diminta
+                // lewat loket, kini diajukan sendiri dan diputus staf.
+                'title' => 'Layanan Mahasiswa',
+                'items' => [
+                    self::item(__('swalayan.cuti.judul'), '◐', 'mahasiswa.cuti'),
+                    self::item(__('swalayan.beasiswa.judul'), '◇', 'mahasiswa.beasiswa'),
+                    self::item(__('swalayan.prestasi.judul'), '★', 'mahasiswa.poin'),
+                    self::item(__('swalayan.konversi.judul'), '⇄', 'mahasiswa.konversi'),
+                ],
+            ],
         ];
     }
 
@@ -75,6 +86,7 @@ final class Navigation
                     self::item('Presensi', '◫', 'dosen.presensi'),
                     self::item('RPS & Jurnal', '❏', 'dosen.rps'),
                     self::item('Analitik Kelas', '◔', 'dosen.analitik'),
+                    self::item(__('capaian.nav.kelas'), '◎', 'dosen.capaian'),
                     self::item('Hasil EDOM', '☆', 'dosen.edom'),
                 ],
             ],
@@ -149,6 +161,8 @@ final class Navigation
                     self::item('Kalender Akademik', '▣', 'admin.kalender'),
                     self::item('Pemakaian Ruang', '▦', 'admin.pemanfaatan-ruang.index'),
                     self::item('Padanan & Paket', '⇄', 'admin.kurikulum-lanjutan'),
+                    self::item(__('capaian.nav.cpmk'), '◎', 'admin.cpmk'),
+                    self::item(__('capaian.nav.rekap'), '◔', 'admin.capaian'),
                     self::item('Koreksi Nilai', '✎', 'admin.koreksi-nilai'),
                     self::item('Penutupan Semester', '⊟', 'admin.tutup-semester'),
                 ],

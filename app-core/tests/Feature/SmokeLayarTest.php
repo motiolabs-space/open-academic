@@ -10,10 +10,12 @@ use App\Enums\StatusPeristiwa;
 use App\Models\Akademik\JadwalUjian;
 use App\Models\Akademik\KalenderPeristiwa;
 use App\Models\Akademik\KelasKuliah;
+use App\Models\Akademik\KonversiKredit;
 use App\Models\Akademik\TahunAkademik;
 use App\Models\Bridge\BridgeConsumer;
 use App\Models\Kemahasiswaan\KegiatanLapangan;
 use App\Models\Kemahasiswaan\Mahasiswa;
+use App\Models\Keuangan\BeasiswaPeriode;
 use App\Models\Keuangan\DispensasiTagihan;
 use App\Models\Keuangan\Tagihan;
 use App\Models\Kuesioner\Kuesioner;
@@ -169,6 +171,15 @@ it('membuka layar mahasiswa dalam anggaran kueri', function (string $url, int $a
     ['/mahasiswa/kuesioner', 16],
     ['/mahasiswa/edom', 15],
     ['/mahasiswa/capaian', 12],
+    // Layanan swalayan (ADR-040). Beasiswa memeriksa halangan per periode
+    // yang sedang dibuka (tiga kueri masing-masing); periode dibuka bersamaan
+    // jarang lebih dari dua atau tiga, jadi tidak tumbuh bersama data.
+    // Beasiswa terukur 14 sendirian dan 16 di suite paralel (keadaan hangat
+    // proses berbeda); plafonnya angka yang lebih tinggi.
+    ['/mahasiswa/cuti', 7],
+    ['/mahasiswa/beasiswa', 16],
+    ['/mahasiswa/poin', 10],
+    ['/mahasiswa/konversi', 6],
 ]);
 
 it('membuka layar dosen dalam anggaran kueri', function (string $url, int $anggaran) {
@@ -201,6 +212,7 @@ it('membuka layar dosen dalam anggaran kueri', function (string $url, int $angga
     // beban penuh.
     ['/dosen/rps', 12],
     ['/dosen/analitik', 12],
+    ['/dosen/capaian', 12],
     ['/dosen/bkd', 12],
     ['/dosen/bkd/penilaian', 13],
     ['/dosen/portofolio', 13],
@@ -245,6 +257,10 @@ it('membuka layar admin dalam anggaran kueri', function (string $url, int $angga
     ['/admin/yudisium', 30],
     ['/admin/tugas-akhir', 25],
     ['/admin/data-iku', 25],
+    // Kurikulum OBE (ADR-038): daftar mata kuliah dengan status versinya,
+    // dan rekap capaian prodi dari baris tersimpan — tidak tumbuh per baris.
+    ['/admin/cpmk', 12],
+    ['/admin/capaian', 12],
     ['/admin/feeder', 30],
     ['/admin/feeder/lampau', 12],
     ['/admin/bridge', 25],
@@ -640,3 +656,21 @@ it('membuka halaman kelola konsumen Bridge demo dalam anggaran kueri', function 
 
     dalamAnggaranKueri(fn () => $this->actingAs($staff, 'staff')->get(route('admin.bridge.konsumen.show', $konsumen))->assertOk(), 14);
 });
+
+/*
+ * Layanan swalayan mahasiswa (ADR-040): sisi staf yang memutus ajuan —
+ * pemeriksaan satu periode beasiswa, cuti, antrean verifikasi poin, dan
+ * konversi satu mahasiswa yang menunggu dokumen. Masing-masing dimuat sekali
+ * per daftar, tidak per ajuan.
+ */
+it('membuka layar keputusan ajuan swalayan dalam anggaran kueri', function (Closure $url, int $anggaran) {
+    $staff = Staff::where('email', 'admin@demo.test')->firstOrFail();
+    $alamat = $url();
+
+    dalamAnggaranKueri(fn () => $this->actingAs($staff, 'staff')->get($alamat)->assertOk(), $anggaran);
+})->with([
+    'periode beasiswa' => [fn () => '/admin/beasiswa/periode/'.BeasiswaPeriode::query()->firstOrFail()->uuid, 18],
+    'cuti' => [fn () => '/admin/cuti', 15],
+    'poin' => [fn () => '/admin/poin-kemahasiswaan', 13],
+    'konversi' => [fn () => '/admin/konversi?mahasiswa='.KonversiKredit::query()->whereNotNull('dokumen_diminta')->firstOrFail()->mahasiswa->uuid, 15],
+]);

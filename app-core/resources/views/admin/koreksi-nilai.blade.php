@@ -92,6 +92,36 @@
                                         <x-button type="submit" size="sm">Simpan Koreksi</x-button>
                                     </form>
 
+                                    @if ($n->kelasKuliah->komponenNilai->isNotEmpty())
+                                        {{-- Jalur yang ikut menggeser capaian CPMK/CPL (ADR-038 §4):
+                                             capaian diukur dari komponen, bukan dari nilai akhir. --}}
+                                        <details class="mt-2">
+                                            <summary class="cursor-pointer text-[12px] font-medium text-navy">{{ __('capaian.koreksi.lewat_komponen') }}</summary>
+                                            <form method="POST" action="{{ route('admin.koreksi-nilai.simpan', $n) }}"
+                                                class="mt-2 space-y-2"
+                                                data-confirm="{{ __('capaian.koreksi.konfirmasi', ['nama' => $n->mahasiswa->nama]) }}">
+                                                @csrf
+                                                <div class="flex flex-wrap gap-2">
+                                                    @foreach ($n->kelasKuliah->komponenNilai as $k)
+                                                        <label class="flex flex-col gap-0.5 text-[11px] text-ink-muted">
+                                                            {{ $k->nama }} ({{ $k->bobot }}%)
+                                                            <input type="number" name="komponen[{{ $k->id }}]" step="0.01" min="0" max="100"
+                                                                value="{{ $n->krsDetail?->nilaiKomponen->firstWhere('komponen_nilai_id', $k->id)?->nilai }}"
+                                                                class="tabular w-24 rounded-control border border-line-input bg-surface px-2 py-1.5 text-[12px]">
+                                                        </label>
+                                                    @endforeach
+                                                </div>
+                                                <div class="flex flex-wrap items-start gap-2">
+                                                    <input type="text" name="alasan" required minlength="10"
+                                                        placeholder="{{ __('capaian.koreksi.alasan') }}"
+                                                        class="min-w-[240px] flex-1 rounded-control border border-line-input bg-surface px-2 py-1.5 text-[12px]">
+                                                    <x-button type="submit" size="sm" variant="outline">{{ __('capaian.koreksi.simpan') }}</x-button>
+                                                </div>
+                                                <p class="text-[11px] leading-relaxed text-ink-faint">{{ __('capaian.koreksi.catatan_komponen') }}</p>
+                                            </form>
+                                        </details>
+                                    @endif
+
                                     @if ($n->catatan_koreksi)
                                         <p class="mt-1.5 text-[11.5px] italic text-ink-faint">
                                             Koreksi sebelumnya: {{ $n->catatan_koreksi }}

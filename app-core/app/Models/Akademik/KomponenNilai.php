@@ -59,4 +59,16 @@ class KomponenNilai extends Model
             ->withPivot('porsi')
             ->withTimestamps();
     }
+
+    /**
+     * Which CPMK or sub-CPMK this component measures, and in what share.
+     *
+     * Supersedes cpl() for new mappings (ADR-038): a component measures what
+     * the course promises, and the CPL figure follows from the CPMK weights
+     * rather than being claimed directly.
+     */
+    public function pemetaanCpmk(): HasMany
+    {
+        return $this->hasMany(KomponenNilaiCpmk::class);
+    }
 }

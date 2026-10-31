@@ -1497,6 +1497,122 @@ Tidak ada panduan, templat, atau contoh berkas kementerian yang masuk repo
   yang diperbarui. Instalasi berjalan: `php artisan migrate` dan
   `db:seed --class=RolePermissionSeeder`.
 
+## ADR-038 — Kurikulum berbasis capaian: CPL → CPMK → sub-CPMK, penilaian per CPMK, capaian tersimpan (2026-10-29)
+
+Komparasi modul 28 Oktober menemukan kurikulum OBE sampai CPMK sebagai
+kesenjangan yang diiklankan pembanding komersial dan diminta akreditasi. Open
+Academic baru punya CPL prodi (`prodi_cpl`), RPS dengan CPL dibebankan
+(`rps_cpl.rumusan` sebagai teks CPMK bebas, `rps_pertemuan.kemampuan_akhir`
+sebagai teks sub-CPMK bebas), dan pemetaan komponen nilai langsung ke CPL
+(`komponen_nilai_cpl`) yang hanya ditulis seeder — tanpa layar. Angka
+penguasaan dihitung ulang setiap kali layar dibuka.
+
+### 1. Hierarki berversi per kurikulum, beku setelah berlaku
+
+- **Konteks.** CPMK adalah janji sebuah mata kuliah; mata kuliah yang sama di
+  kurikulum 2022 dan 2026 dapat menjanjikan hal berbeda. Di dalam satu
+  kurikulum, rumusannya direvisi — dan nilai yang sudah diukur terhadap
+  rumusan lama tidak boleh ikut berubah artinya.
+- **Keputusan.** `cpmk_versi` per (kurikulum, mata kuliah) dengan siklus
+  draf → berlaku → diarsipkan (`StatusCpmk`), satu yang berlaku lewat
+  `kunci_aktif` nullable-unique (pola `rps`). `cpmk` → `sub_cpmk` (bobot
+  per seratus terhadap induk) dan `cpmk_cpl` (bobot per seratus kontribusi
+  CPMK ke CPL). Versi berlaku tidak dapat disunting siapa pun; revisi adalah
+  draf baru yang menyalin baris berlaku menjadi baris **baru**, lalu
+  diterbitkan dan mengarsipkan yang lama tanpa menyentuh barisnya. Syarat
+  terbit, semuanya disebut sekaligus: sedikitnya satu CPMK, setiap CPMK
+  terkait ke CPL, sub-CPMK satu CPMK berjumlah 100, dan untuk setiap CPL
+  bobot CPMK yang mendukungnya berjumlah 100. Kurikulum sebuah mata kuliah
+  dibaca dari pivot `kurikulum_mata_kuliah`: kurikulum aktif prodinya, lalu
+  yang terbaru. Bobot bilangan bulat, tidak ada float.
+- **Konsekuensi.** Draf boleh setengah jadi; tidak ada yang merujuk baris
+  draf (pemetaan dan RPS hanya ke versi berlaku), jadi menyimpan draf
+  mengganti seluruh barisnya tanpa kehilangan apa pun.
+
+### 2. Dua penyusun, satu penyunting
+
+- **Keputusan.** Prodi (staf `master.manage`, layar `/admin/cpmk`) dan dosen
+  yang mengampu mata kuliah itu pada semester aktif (dari RPS,
+  `/dosen/rps/cpmk/{mk}`) — `CpmkVersiPolicy`. Keduanya memakai satu Blade
+  penyunting dan satu service. Dosen lain dan staf tanpa izin ditolak; staf
+  `master.view` membaca saja. Yang menerbitkan dicatat namanya.
+- **Konsekuensi.** Tidak ada alur persetujuan kaprodi terpisah; bila kampus
+  membutuhkannya, itu langkah di antara draf dan terbit, bukan perubahan
+  skema.
+
+### 3. Penilaian berbasis CPMK dan aritmetikanya
+
+- **Keputusan.** `komponen_nilai_cpmk`: setiap komponen memetakan ke satu
+  atau lebih **sasaran** dengan porsi per seratus yang berjumlah 100 (atau
+  tidak dipetakan sama sekali). Sasaran adalah sub-CPMK bila CPMK-nya punya
+  sub, selain itu CPMK itu sendiri — tidak pernah dua tingkat untuk satu
+  CPMK, supaya satu skor tidak terhitung dua kali. Hanya versi yang berlaku
+  untuk kelas yang dapat dipetakan: versi RPS kelas itu, atau versi berlaku
+  mata kuliahnya; kelas final dibekukan pada versi pemetaannya. Layar rencana
+  evaluasi menampilkan matriks komponen × sasaran dan **memperingatkan
+  sub-CPMK yang tidak diukur komponen mana pun**, juga komponen tanpa
+  pemetaan dan pemetaan ke versi yang sudah diarsipkan. Untuk satu mahasiswa
+  satu kelas: bobot baris = bobot komponen × porsi; sasaran = rerata terbobot
+  skornya; CPMK = rerata sub-CPMK terbobot bobot sub, **atas sub yang
+  diukur saja**, dengan `cakupan` = jumlah bobot sub yang diukur (sub yang
+  tidak dinilai tidak dihitung nol terhadap mahasiswa); CPL dalam mata kuliah
+  itu = rerata CPMK terbobot bobot CPMK→CPL atas CPMK yang terukur. Lintas
+  mata kuliah, CPL mahasiswa = SUM(nilai × sks) / SUM(sks).
+- **Konsekuensi.** Pemetaan langsung ke CPL (`komponen_nilai_cpl`, ADR RPS
+  P1) tidak dihapus: kelas lama tetap terbaca di lensa penguasaan berjalan
+  dan di `cplTanpaPengukur`, yang kini juga menghitung CPL yang tercapai
+  lewat CPMK. Seeder demo tidak lagi memetakan langsung kelas yang sudah
+  dipetakan ke CPMK, supaya skor yang sama tidak terbaca dua kali.
+
+### 4. Disimpan saat final, berubah hanya lewat koreksi ter-audit
+
+- **Keputusan.** `capaian_cpmk_mahasiswa` (nilai, cakupan) dan
+  `capaian_cpl_mahasiswa` (nilai, sks) per baris KRS, ditulis
+  `CapaianService::hitungKelas()` **di dalam transaksi finalisasi**. Perhitungan
+  pertama disisipkan massal dan diaudit sebagai satu peristiwa
+  `capaian_dihitung` pada kelas — ratusan baris yang belum pernah berubah
+  tidak perlu ratusan job audit. Jalur koreksi nilai mendapat cabang baru:
+  `PenilaianService::koreksiKomponen()` mengoreksi skor komponen, menghitung
+  ulang nilai akhir dengan bobot kelas, lalu menghitung ulang capaian baris
+  itu lewat model — setiap angka yang bergeser tercatat dengan nilai lama dan
+  barunya, dan nilai mendapat satu jejak `corrected` yang menyebut komponen
+  dan alasannya. Koreksi **nilai akhir saja** (jalur lama) tetap ada dan
+  **tidak** menggeser capaian: capaian diukur dari komponen, dan total yang
+  dikoreksi tanpa komponen tidak berkata apa-apa tentang capaian mana yang
+  keliru. Layar koreksi menyatakan perbedaan itu.
+- **Konsekuensi.** Layar dan ekspor membaca baris tersimpan; tidak ada yang
+  menghitung ulang dari skor. Pemetaan dibekukan bersama kelasnya.
+
+### 5. RPS satu sumber
+
+- **Keputusan.** `rps.cpmk_versi_id` dan `rps_pertemuan.sub_cpmk_id`. RPS
+  baru memasang versi berlaku mata kuliahnya; draf RPS yang masih terbuka
+  pindah ke versi yang baru terbit (tautan sub-CPMK minggu yang tidak lagi
+  ada dilepas, teksnya tetap). CPL RPS berversi diturunkan dari CPMK —
+  `rps_cpl` ditulis sebagai cerminannya, karena layar RPS, analitik kelas,
+  dan RPS lama membacanya — dan `simpanCpl()` menolak isian terpisah. Layar susun RPS
+  menampilkan CPMK/sub-CPMK versi itu (baca saja; disunting di layarnya
+  sendiri) dan pilihan sub-CPMK per pertemuan. RPS tanpa CPMK berlaku tetap
+  memilih CPL langsung seperti sebelumnya.
+
+### 6. Tampilan, ekspor, dan LKPS — bukan dasbor
+
+- **Keputusan.** Rekap per kelas untuk dosen pengampu (`/dosen/capaian/{kelas}`),
+  per prodi per angkatan untuk staf `nilai.view` (`/admin/capaian`), dan per
+  mahasiswa di `/mahasiswa/capaian` (CPL lintas mata kuliah dan CPMK per mata
+  kuliah dari nilai final, di samping lensa penguasaan berjalan untuk kelas
+  yang dipetakan langsung). CSV lewat `App\Support\Csv`. Policy
+  `CapaianCplMahasiswaPolicy` per portal. Perakit LKPS mendapat tabel
+  `capaian_pembelajaran` (per CPL: terukur, rerata, mencapai ambang) dari
+  baris tersimpan dalam deret tahun borang, dengan alasan — bukan nol — bila
+  belum ada. Tanpa target, tanpa perbandingan antarprodi, tanpa skor
+  akreditasi (CLAUDE.md §1, §6).
+- **Konsekuensi.** Mapper Feeder komponen evaluasi tidak berubah: PDDIKTI
+  tidak menerima CPMK, dan payload yang tidak berubah tidak mengubah snapshot.
+
+**Diperbarui juga:** `CLAUDE.md` §11 baris Fase 4 kini memakai penomoran IKU
+2026 (§6, ADR-036, ADR-041), bukan "IKU 1/2/3/4/7".
+
 ## ADR-039 — Empat layar pengelolaan: kuesioner, konsumen Bridge, klien SSO, tiket staf (2026-10-30)
 
 Inventaris kode 28 Oktober 2026 menemukan empat alur yang mesinnya ada tetapi
@@ -1602,6 +1718,93 @@ membuka tiket helpdesk. Satu ADR, satu bagian per layar.
   namanya memang menanganinya.
 - **Konsekuensi.** Tiket staf ikut antrean dan SLA yang sama; notifikasinya
   menuju `/admin/tiket-saya/{uuid}`. Tidak ada lingkaran "atasan pemohon".
+
+---
+
+## ADR-040 — Layanan swalayan mahasiswa: cuti, beasiswa, prestasi, konversi (2026-10-30)
+
+Inventaris kode 28 Oktober 2026 menemukan empat urusan yang hanya bisa
+dijalankan staf: mengajukan cuti, mengajukan beasiswa/keringanan, melaporkan
+prestasi, dan melihat poin serta status konversi kredit. Keempatnya kini punya
+jalur masuk mahasiswa. Aturan yang mengikat tetap satu: **mahasiswa mengajukan,
+staf memutuskan dengan alasan, mahasiswa diberi tahu** — tidak ada keputusan
+otomatis, dan setiap ajuan memanggil service yang sama dengan jalur staf.
+
+### 1. Cuti: jendela semester, aturan lama, event Bridge yang ternyata belum ada
+
+- **Konteks.** `CutiService::ajukan()` sudah menolak mahasiswa tidak aktif,
+  ajuan ganda per semester, dan KRS yang masih hidup. Brief menyebut juga
+  batas jumlah cuti dan larangan bertunggakan "bila ada" — **keduanya tidak
+  ada** di kode maupun konfigurasi. Brief juga menyebut persetujuan cuti
+  "tetap menerbitkan `student.status_changed` seperti hari ini"; ternyata
+  hanya yudisium yang menerbitkannya.
+- **Keputusan.** `ajukanMandiri()` membungkus `ajukan()` tanpa mengubah
+  aturannya, ditambah dua hal: semester yang boleh dipilih hanya semester
+  aktif dan semester reguler berikutnya (bukan antara, bukan setahun ke
+  depan), dan dokumen disimpan lewat `BerkasService` di dalam transaksi yang
+  sama. Batas jumlah cuti dan syarat tunggakan **tidak** dibuat: itu aturan
+  bisnis baru, dan kampus belum memintanya. `setujui()` dan `aktifkanKembali()`
+  kini menerbitkan `student.status_changed` (muatan sama dengan yudisium,
+  dipaku di `bridge.yaml`), sesudah transaksi selesai.
+- **Konsekuensi.** Persetujuan cuti mengubah status mahasiswa **saat itu
+  juga**, apa pun semester ajuannya — perilaku lama yang tidak diubah. Untuk
+  ajuan semester yang belum berjalan, layar staf memberi tanda supaya BAAK
+  memutusnya ketika semester itu aktif. Tombol "Aktifkan Kembali" di layar staf
+  selama ini memanggil service tanpa staf pemutus dan selalu gagal; diperbaiki.
+
+### 2. Beasiswa: periode pendaftaran di depan jalur penetapan yang sudah ada
+
+- **Konteks.** `BeasiswaService::tetapkan()` menjaga kuota, satu penerimaan
+  aktif per skema, dan penerapan potongan ke tagihan. Tidak ada tempat
+  mahasiswa meminta.
+- **Keputusan.** Dua tabel: `beasiswa_periode` (skema, semester mulai berlaku,
+  tanggal buka–tutup, persyaratan tertulis, IPK minimum opsional, daftar
+  berkas yang diminta) dan `beasiswa_ajuan` (motivasi, IPK saat mengajukan,
+  berkas berlabel, keputusan, tautan ke `beasiswa_penerima`). Sistem hanya
+  memeriksa yang pasti: periode dibuka, status aktif, belum mengajukan, belum
+  menerima skema yang sama, IPK minimum. Persyaratan tertulis dibaca dan
+  dinilai orang. Menetapkan memanggil `BeasiswaService::tetapkan()` dalam satu
+  transaksi dengan pembaruan ajuan; kuota penuh membiarkan ajuan menunggu.
+- **Konsekuensi.** Tidak ada uang yang bergerak karena ajuan. Berkas yang sudah
+  tersimpan dihapus bila ajuannya gagal ditulis. Satu periode per skema per
+  waktu tidak dipaksakan — kampus dapat membuka gelombang yang berdampingan.
+
+### 3. Prestasi: laporan mahasiswa masuk antrean verifikasi yang sama
+
+- **Keputusan.** `PoinKemahasiswaanService::laporkan()` lewat `catat()` —
+  kategori aktif, poin dibekukan, bukti wajib bila katalog memintanya, mulai
+  belum terverifikasi — hanya untuk kategori prestasi (pelanggaran tidak
+  dilaporkan atas diri sendiri). Rincian SIMKATMAWA divalidasi dengan aturan
+  yang sama dengan layar Lengkapi (`DataSimkatmawaRequest::aturanRincian()`);
+  dosen pembimbing tetap diisi staf. Kolom baru
+  `poin_mahasiswa.dilaporkan_by_mahasiswa_id` menandai asalnya; verifikasi dan
+  penolakan memberi tahu pelapor. Mahasiswa melihat kedua buku besarnya, tetap
+  berdampingan dan tidak pernah dijumlahkan.
+- **Konsekuensi.** Ekspor SIMKATMAWA dan `PrestasiMapper` sudah menyaring
+  `is_verified`, jadi laporan baru tidak pernah sampai ke kementerian sebelum
+  diverifikasi — dipaku tes.
+
+### 4. Konversi kredit: baca saja, dan satu dokumen bila diminta
+
+- **Keputusan.** Mahasiswa melihat usulan konversinya, statusnya, dan SKS
+  yang diakui (hanya yang disetujui terhitung) beserta plafonnya. Selama usulan
+  menunggu, penilai dapat **meminta dokumen**; mahasiswa mengunggahnya ke kolom
+  sendiri (`berkas_mahasiswa_path`) yang tidak pernah menggantikan berkas
+  usulan staf. Unggahan berikutnya mengganti yang sebelumnya (berkas lama
+  dihapus, kejadiannya tercatat di log). Diakui, ditolak, dan permintaan
+  dokumen memberi tahu mahasiswa.
+
+### 5. Izin dan batas otorisasi
+
+- Tiga izin mahasiswa baru — `cuti.ajukan`, `beasiswa.ajukan`,
+  `prestasi.lapor` — satu per alur, supaya kampus dapat menahan satu alur tanpa
+  mematikan yang lain. Membaca poin dan konversi cukup kepemilikan.
+- Tidak ada rute mahasiswa yang menerima mahasiswa sebagai parameter. Policy
+  baru (`CutiMahasiswaPolicy`, `BeasiswaAjuanPolicy`, `KonversiKreditPolicy`,
+  tambahan `PoinMahasiswaPolicy::lapor/view`) membatasi baca dan unduh berkas
+  pada pemiliknya dan staf berizin; memutus tetap `mahasiswa.manage` (cuti,
+  prestasi, konversi) dan `keuangan.manage` (beasiswa). Instalasi berjalan:
+  `php artisan migrate` lalu `db:seed --class=RolePermissionSeeder`.
 
 ---
 

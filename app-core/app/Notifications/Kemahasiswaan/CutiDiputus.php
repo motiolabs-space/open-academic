@@ -45,7 +45,7 @@ class CutiDiputus extends Notifikasi
 
     public function tautan(object $penerima): ?string
     {
-        return route('mahasiswa.profil');
+        return route('mahasiswa.cuti');
     }
 
     public function tone(): string

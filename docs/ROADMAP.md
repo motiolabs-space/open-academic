@@ -94,14 +94,14 @@ Apa yang ada hari ini, dikelompokkan menurut siapa yang memakainya.
 | Modul | | Catatan |
 |---|---|---|
 | Data & profil mahasiswa | ✅ | Kelengkapan PDDIKTI ditandai per baris. Halaman detail per mahasiswa untuk staf sejak 28 Okt 2026 — sebelumnya hanya daftar (ADR-035 §5) |
-| Cuti | ✅ | Status berpindah otomatis, dan kembali saat cuti berakhir |
+| Cuti | ✅ | Status berpindah otomatis, dan kembali saat cuti berakhir. Diajukan mahasiswa sendiri dari portal sejak 30 Okt 2026, diputus BAAK; menerbitkan `student.status_changed` (ADR-040 §1) |
 | Tugas akhir (G1) | ✅ | Satu TA aktif dijaga indeks; panel sidang wajib berisi non-pembimbing |
 | Aktivitas & MBKM | ✅ | Terverifikasi staf, jadi bukan klaim tak diperiksa |
-| Konversi kredit / RPL (G5) | ✅ | Plafon persentase menjaga arti gelar |
+| Konversi kredit / RPL (G5) | ✅ | Plafon persentase menjaga arti gelar. Mahasiswa melihat status dan SKS diakui, dan mengunggah dokumen bila diminta penilai (ADR-040 §4) |
 | Yudisium & wisuda | ✅ | Judul diambil dari catatan TA, bukan diketik ulang |
 | Surat & SKPI (G3) | ✅ | Verifikasi publik ber-QR yang benar-benar memverifikasi |
 | PMB | ✅ | Generator NIM + provisioning akun; pendaftaran daring oleh calon (#32, portal `/pmb`) |
-| Poin kemahasiswaan & pelanggaran | ✅ | Dua buku besar, tidak pernah dijumlahkan — [`POIN-KEMAHASISWAAN.md`](POIN-KEMAHASISWAAN.md) |
+| Poin kemahasiswaan & pelanggaran | ✅ | Dua buku besar, tidak pernah dijumlahkan — [`POIN-KEMAHASISWAAN.md`](POIN-KEMAHASISWAAN.md). Mahasiswa melihat poinnya dan melaporkan prestasi ke antrean verifikasi yang sama (ADR-040 §3) |
 | Laporan SIMKATMAWA | ✅ | Empat tabel (kompetisi, rekognisi, sertifikasi, pembimbing) dari prestasi terverifikasi, baris yang akan ditolak dilaporkan sebelum unduh CSV/XLSX. Ekspor saja, tanpa pengiriman — ADR-037 §1 |
 | Career center (lowongan, forum & agenda alumni) | 🚫 | Milik Open Campus (lihat §Sengaja Bukan di Sini). Tabel `alumni` di sini hanya sumber data lulusan, disajikan lewat Campus Bridge |
 | **Tracer study** | 🟡 | Kuesioner dan perhitungan milik Open Campus. Di sini: daftar lulusan dengan kelengkapan kontak, ekspor untuk tracer nasional (tercatat di log), dan impor hasil status pekerjaan ke `alumni` yang mengisi `iku_2026` — ADR-037 §2 |
@@ -113,7 +113,7 @@ Apa yang ada hari ini, dikelompokkan menurut siapa yang memakainya.
 | Matriks tarif | ✅ | Baris paling spesifik menang, tidak dijumlahkan |
 | Penerbitan tagihan massal | ✅ | Idempoten dan dapat dipratinjau |
 | Pembayaran & rekonsiliasi | ✅ | Total diturunkan dari baris, tidak pernah ditambahkan |
-| Beasiswa, keringanan, potongan (G4) | ✅ | Tak pernah negatif, tak pernah menelan pembayaran |
+| Beasiswa, keringanan, potongan (G4) | ✅ | Tak pernah negatif, tak pernah menelan pembayaran. Periode pendaftaran per skema dan ajuan mahasiswa sejak 30 Okt 2026; penetapan tetap jalur staf yang sama (ADR-040 §2) |
 | Gerbang pembayaran KRS | ✅ | Ambang + dispensasi berbatas waktu. **Koreksi 28 Okt 2026**: dispensasi dibaca gerbang dan denda sejak Fase 1 tetapi tidak ada yang dapat memberikannya; kini meja dispensasi keuangan dan permohonan dari layar tagihan mahasiswa (ADR-035 §2) |
 | Integrasi akuntansi (Easy Accounting) | ✅ | Opsional; bawaan `nonaktif` |
 | Payment gateway | 🟡 | **Opsional sejak 24 Oktober 2026** (ADR-014). Transfer manual yang dicatat kasir adalah jalur utama; kontrak adaptor ada, implementasinya dibangun hanya bila ada kampus yang membawa kredensial merchant — lihat §Menunggu di Luar Repo |
@@ -369,6 +369,7 @@ sekarang punya rencana.
 | ~~44~~ | ~~**Adopsi mahasiswa yang sudah ada di PDDIKTI**~~ | ✅ 26 Oktober 2026 — `FeederAdopsi` (ADR-020): membaca daftar riwayat pendidikan dan biodata dari Feeder per prodi + periode masuk, mencocokkan NIM lalu NIK (NIK mengalahkan nama), mengisi `feeder_id`/`feeder_registrasi_id` dan buku besar (`direction = adopt`) tanpa mengirim apa pun, sehingga dorongan berikutnya mencatat *Skipped*. Laporan empat keadaan di `/admin/feeder/adopsi` dan `openacademic:feeder-adopsi`; yang ambigu ditautkan atau dipisahkan manual dengan alasan, dan biodatanya ditolak validator sampai diputuskan. NIK tidak disimpan |
 | ~~44b~~ | ~~**Klaim mahasiswa lampau**~~ | ✅ 27 Oktober 2026 — `FeederKlaimLampau` (ADR-032): membaca `GetListDaftarLampau` per prodi + periode masuk dan menilai setiap baris dengan pencocok adopsi yang sama (`PencocokMahasiswaFeeder`, NIM lalu NIK) — cocok, ambigu, atau tidak ada di SIAKAD — di `/admin/feeder/lampau`. Staf memilih baris; validasi pra-kirim membaca ulang PDDIKTI dan menahan seluruh klaim bila satu baris bermasalah, dengan semua masalah sekaligus. `KlaimMahasiswaLampau` dikirim per baris, dicatat di buku besar (`direction = claim`): yang sukses tidak pernah dikirim ulang, yang ditolak dapat dicoba lagi. Klaim bukan penautan: adopsi #44 langsung dijalankan sesudahnya, jadi yang cocok teradopsi dan yang ambigu (hanya boleh diklaim dengan alasan) menunggu keputusan di layar adopsi. Validator menahan biodata yang diklaim tetapi belum teradopsi. NIK tidak disimpan |
 | ~~45~~ | ~~**Klaim program flagship MBKM**~~ | ✅ 26 Oktober 2026 — daftar program flagship ditarik sebagai referensi (`GetListAktivitasMBKMFlagship`, tipe `program_flagship`), tidak di-seed; penandanya `aktivitas_mahasiswa.flagship_kode`, dipilih per aktivitas di layar Verifikasi Data IKU. Entitas ke-26 `flagship_mbkm` (`InsertAktivitasMBKMFlagship`) bergantung pada `anggota_mbkm`; validator menolak aktivitas atau anggota yang belum terkirim dan program yang hilang dari referensi terakhir. Klaim dialamatkan pada `id_aktivitas`, jadi perpindahan program dikirim sebagai update; penanda yang klaimnya sudah diterima tidak dapat dicabut dari sini |
+| ~~58~~ | ~~**Kurikulum berbasis capaian sampai CPMK (OBE)**~~ | ✅ 29 Oktober 2026 — CPL prodi → CPMK per mata kuliah → sub-CPMK, berversi per kurikulum (draf → berlaku → diarsipkan; yang berlaku beku, revisi = versi baru) dengan bobot sub-CPMK→CPMK dan CPMK→CPL per seratus yang wajib menutup 100 sebelum terbit. Disusun prodi (`/admin/cpmk`) dan dosen pengampu dari RPS dengan satu penyunting. Komponen evaluasi memetakan ke sub-CPMK/CPMK berporsi; rencana evaluasi memperingatkan sub-CPMK yang tidak diukur. Saat nilai final, capaian per CPMK dan per CPL per mahasiswa dihitung dan **disimpan** (bukan dihitung ulang tiap tampil), diaudit, dan ikut bergeser lewat koreksi nilai per komponen. RPS memakai versi CPMK yang sama (CPL diturunkan, pertemuan menautkan sub-CPMK). Rekap kelas (dosen), prodi per angkatan (staf), dan per mahasiswa, ekspor CSV; tabel capaian pembelajaran di perakit LKPS. Bukan dasbor IKU. ADR-038 |
 
 ### P7 — Perubahan regulasi 2025–2026 (ADR-036)
 
@@ -397,6 +398,20 @@ Kemdiktisaintek: dua belum didukung sama sekali, dan keduanya sumber IKU 2026.
 |---|---|---|
 | ~~56~~ | ~~**Ekspor SIMKATMAWA**~~ | ✅ 29 Oktober 2026 — layar `/admin/simkatmawa`: periode dan prodi, empat tabel (prestasi kompetisi, rekognisi/karya, sertifikasi kompetensi, dosen pembimbing), validasi pra-ekspor seperti Feeder, unduh CSV/XLSX baris yang siap saja. Bidang yang kurang (tingkat SIMKATMAWA, peringkat, penyelenggara, jumlah PT/negara, tautan bukti, pembimbing, …) ditambahkan ke `poin_mahasiswa` dan diisi dari layar Lengkapi. Tanpa pengiriman otomatis. ADR-037 §1 |
 | ~~57~~ | ~~**Data lulusan untuk tracer study nasional**~~ | ✅ 29 Oktober 2026 — layar `/admin/lulusan`: kelengkapan dan verifikasi kontak lulusan, ekspor daftar lulusan tanpa NIK (izin `alumni.ekspor`, keperluan wajib, tercatat di log), impor CSV status pekerjaan dengan laporan baris ditolak; `iku_2026.iku_2_lulusan` dan `GET /graduates` kini memuat status, sumber, dan tanggal surveinya. Kuesioner tetap milik Open Campus. ADR-037 §2 |
+
+### P9 — Layanan swalayan mahasiswa (ADR-040)
+
+Ditemukan inventaris kode 28 Oktober 2026: empat urusan yang hanya bisa
+dijalankan staf. Mahasiswa kini mengajukan sendiri; staf tetap pemutus.
+
+| Item | Status |
+|---|---|
+| ~~**Ajuan cuti dari portal**~~ | ✅ 30 Oktober 2026 — `/mahasiswa/cuti`, semester aktif atau reguler berikutnya, dokumen pendukung, aturan `CutiService` tidak berubah; `student.status_changed` diterbitkan saat disetujui dan saat aktif kembali |
+| ~~**Ajuan beasiswa/keringanan**~~ | ✅ 30 Oktober 2026 — periode pendaftaran per skema (syarat, IPK minimum, berkas diminta), ajuan mahasiswa, penetapan lewat `BeasiswaService::tetapkan()` |
+| ~~**Lapor prestasi & lihat poin**~~ | ✅ 30 Oktober 2026 — `/mahasiswa/poin`, bukti dan rincian SIMKATMAWA, antrean verifikasi yang sama, ekspor hanya setelah diverifikasi |
+| ~~**Status konversi kredit**~~ | ✅ 30 Oktober 2026 — `/mahasiswa/konversi`, baca saja, dokumen bila diminta penilai |
+| Batas jumlah cuti / syarat bebas tunggakan | Belum — tidak ada di kode; perlu keputusan kampus lebih dulu (ADR-040 §1) |
+| Pembatalan ajuan oleh mahasiswa | Belum |
 
 ### Urutan yang disarankan
 

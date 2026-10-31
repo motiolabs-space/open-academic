@@ -36,6 +36,9 @@
                             <thead>
                                 <tr class="border-b border-line text-left text-[11px] uppercase tracking-[0.08em] text-ink-muted">
                                     <th class="px-4 py-3 font-semibold">Pekan</th>
+                                    @if ($versiCpmk)
+                                        <th class="px-4 py-3 font-semibold">{{ __('capaian.istilah.sub') }}</th>
+                                    @endif
                                     <th class="px-4 py-3 font-semibold">Kemampuan Akhir (Sub-CPMK)</th>
                                     <th class="px-4 py-3 font-semibold">Bahan Kajian</th>
                                     <th class="px-4 py-3 font-semibold">Metode</th>
@@ -50,6 +53,23 @@
                                             {{ $i }}
                                             <input type="hidden" name="pertemuan[{{ $i }}][pertemuan_ke]" value="{{ $i }}">
                                         </td>
+                                        @if ($versiCpmk)
+                                            {{-- Sub-CPMK yang diajarkan pekan ini, dari versi CPMK yang sama
+                                                 dengan yang diukur komponen nilai — satu sumber. --}}
+                                            <td class="px-4 py-2">
+                                                <select name="pertemuan[{{ $i }}][sub_cpmk_id]"
+                                                    @disabled(! $rps->status->dapatDisunting())
+                                                    class="w-32 rounded-control border border-line-input bg-surface px-2 py-1.5 text-[12px] outline-none focus:border-navy">
+                                                    <option value="">—</option>
+                                                    @foreach ($versiCpmk->cpmk as $c)
+                                                        @foreach ($c->sub as $sub)
+                                                            <option value="{{ $sub->id }}" @selected($p?->sub_cpmk_id === $sub->id)
+                                                                title="{{ $sub->rumusan }}">{{ $sub->kode }}</option>
+                                                        @endforeach
+                                                    @endforeach
+                                                </select>
+                                            </td>
+                                        @endif
                                         <td class="px-4 py-2">
                                             <input type="text" name="pertemuan[{{ $i }}][kemampuan_akhir]"
                                                 value="{{ $p?->kemampuan_akhir }}"
@@ -91,6 +111,36 @@
             </div>
 
             <div class="space-y-5">
+                @if ($versiCpmk)
+                    <x-card :title="__('capaian.istilah.cpmk').' · '.__('capaian.istilah.versi', ['versi' => $versiCpmk->versi])"
+                        :meta="$rps->cpl->count().' CPL'">
+                        <p class="mb-3 text-[12.5px] leading-relaxed text-ink-muted">{{ __('capaian.rps.pengantar') }}</p>
+
+                        <ul class="space-y-3">
+                            @foreach ($versiCpmk->cpmk as $c)
+                                <li class="text-[12.5px]">
+                                    <div><span class="font-semibold">{{ $c->kode }}</span> <span class="text-ink-muted">{{ $c->rumusan }}</span></div>
+                                    <div class="mt-1 flex flex-wrap gap-1">
+                                        @foreach ($c->cpl as $cpl)
+                                            <x-chip>{{ $cpl->kode }} · <span class="tabular">{{ $cpl->pivot->bobot }}%</span></x-chip>
+                                        @endforeach
+                                    </div>
+                                    @if ($c->sub->isNotEmpty())
+                                        <ul class="mt-1.5 space-y-0.5 border-l border-line pl-3 text-[12px] text-ink-muted">
+                                            @foreach ($c->sub as $sub)
+                                                <li><span class="font-medium text-ink">{{ $sub->kode }}</span> {{ $sub->rumusan }} <span class="tabular text-ink-faint">({{ $sub->bobot }}%)</span></li>
+                                            @endforeach
+                                        </ul>
+                                    @endif
+                                </li>
+                            @endforeach
+                        </ul>
+
+                        <div class="mt-4">
+                            <x-button size="sm" variant="outline" :href="route('dosen.cpmk', $mataKuliah)">{{ __('capaian.rps.kelola') }}</x-button>
+                        </div>
+                    </x-card>
+                @else
                 <x-card title="CPL yang Dibebankan" :meta="$rps->cpl->count().' dipilih'">
                     <p class="mb-3 text-[12.5px] leading-relaxed text-ink-muted">
                         Pilih beberapa, bukan semuanya. Mata kuliah yang mengaku menjawab seluruh
@@ -112,7 +162,13 @@
                             </label>
                         @endforeach
                     </div>
+                    <div class="mt-4 border-t border-line pt-3">
+                        <p class="text-[12px] text-ink-faint">{{ __('capaian.rps.tanpa_cpmk') }}</p>
+                        <x-button size="sm" variant="outline" class="mt-2" :href="route('dosen.cpmk', $mataKuliah)">{{ __('capaian.rps.susun') }}</x-button>
+                    </div>
                 </x-card>
+
+                @endif
 
                 @if ($rps->status->dapatDisunting())
                     <x-card title="Sebelum Diterbitkan">

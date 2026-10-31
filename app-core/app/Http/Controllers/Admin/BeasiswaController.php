@@ -5,12 +5,14 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Admin;
 
 use App\Enums\JenisBeasiswa;
+use App\Enums\StatusAjuanBeasiswa;
 use App\Enums\StatusPenerima;
 use App\Http\Controllers\Controller;
 use App\Models\Akademik\TahunAkademik;
 use App\Models\Kemahasiswaan\Mahasiswa;
 use App\Models\Keuangan\Beasiswa;
 use App\Models\Keuangan\BeasiswaPenerima;
+use App\Models\Keuangan\BeasiswaPeriode;
 use App\Services\Keuangan\BeasiswaService;
 use App\Services\Keuangan\EksporKipk;
 use App\Support\Portal;
@@ -56,6 +58,17 @@ class BeasiswaController extends Controller
                 ->orderByDesc('id')
                 ->paginate(25)
                 ->withQueryString(),
+            // Calls for applications (ADR-040 §2), newest first, each with how
+            // many applications are still waiting for a decision.
+            'periode' => BeasiswaPeriode::query()
+                ->with(['beasiswa', 'tahunAkademik'])
+                ->withCount([
+                    'ajuan',
+                    'ajuan as ajuan_menunggu_count' => fn ($q) => $q->where('status', StatusAjuanBeasiswa::Diajukan->value),
+                ])
+                ->latest('dibuka_mulai')
+                ->limit(20)
+                ->get(),
             'jenisPilihan' => JenisBeasiswa::options(),
             'statusPilihan' => StatusPenerima::options(),
             'daftarTerm' => TahunAkademik::terbaru()->get(['id', 'kode', 'nama']),

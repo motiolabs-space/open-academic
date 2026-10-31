@@ -228,6 +228,17 @@ Route::middleware(['auth:mahasiswa', 'term.active'])->prefix('mahasiswa')->name(
     Route::get('/helpdesk/{tiket}', [Helpdesk\TiketPemohonController::class, 'show'])->name('helpdesk.show');
     Route::post('/helpdesk/{tiket}/balas', [Helpdesk\TiketPemohonController::class, 'balas'])->name('helpdesk.balas');
 
+    // Layanan swalayan (ADR-040). Pemohon selalu yang sedang masuk; tidak ada
+    // rute yang menerima mahasiswa sebagai parameter.
+    Route::get('/cuti', [Mahasiswa\CutiController::class, 'index'])->name('cuti');
+    Route::post('/cuti', [Mahasiswa\CutiController::class, 'ajukan'])->name('cuti.ajukan');
+    Route::get('/beasiswa', [Mahasiswa\BeasiswaController::class, 'index'])->name('beasiswa');
+    Route::post('/beasiswa/{periode}', [Mahasiswa\BeasiswaController::class, 'ajukan'])->name('beasiswa.ajukan');
+    Route::get('/poin', [Mahasiswa\PoinController::class, 'index'])->name('poin');
+    Route::post('/poin', [Mahasiswa\PoinController::class, 'lapor'])->name('poin.lapor');
+    Route::get('/konversi', [Mahasiswa\KonversiController::class, 'index'])->name('konversi');
+    Route::post('/konversi/{konversi}/dokumen', [Mahasiswa\KonversiController::class, 'unggah'])->name('konversi.unggah');
+
     Route::get('/profil', [Mahasiswa\ProfilController::class, 'index'])->name('profil');
     Route::put('/profil', [Mahasiswa\ProfilController::class, 'perbarui'])->name('profil.perbarui');
     Route::post('/profil/kata-sandi', [Mahasiswa\ProfilController::class, 'gantiKataSandi'])->name('profil.kata-sandi');
@@ -263,6 +274,7 @@ Route::middleware(['auth:dosen', 'term.active'])->prefix('dosen')->name('dosen.'
     Route::get('/nilai/{kelas}', [Dosen\NilaiController::class, 'edit'])->name('nilai.kelas');
     Route::post('/nilai/{kelas}', [Dosen\NilaiController::class, 'simpan'])->name('nilai.simpan');
     Route::post('/nilai/{kelas}/rencana', [Dosen\NilaiController::class, 'rencana'])->name('nilai.rencana');
+    Route::post('/nilai/{kelas}/pemetaan', [Dosen\CapaianController::class, 'petakan'])->name('nilai.pemetaan');
     Route::post('/nilai/{kelas}/finalisasi', [Dosen\NilaiController::class, 'finalisasi'])->name('nilai.finalisasi');
 
     Route::get('/presensi', [Dosen\PresensiController::class, 'index'])->name('presensi');
@@ -287,10 +299,17 @@ Route::middleware(['auth:dosen', 'term.active'])->prefix('dosen')->name('dosen.'
     Route::put('/rps/{rps}', [Dosen\RpsController::class, 'simpan'])->name('rps.simpan');
     Route::post('/rps/{rps}/terbitkan', [Dosen\RpsController::class, 'terbitkan'])->name('rps.terbitkan');
     Route::get('/rps/jurnal/{kelas}', [Dosen\RpsController::class, 'jurnal'])->name('rps.jurnal');
+    Route::get('/rps/cpmk/{mataKuliah}', [Dosen\CpmkController::class, 'edit'])->name('cpmk');
+    Route::post('/rps/cpmk/{mataKuliah}/draf', [Dosen\CpmkController::class, 'draf'])->name('cpmk.draf');
+    Route::put('/rps/cpmk/versi/{versi}', [Dosen\CpmkController::class, 'simpan'])->name('cpmk.simpan');
+    Route::post('/rps/cpmk/versi/{versi}/terbitkan', [Dosen\CpmkController::class, 'terbitkan'])->name('cpmk.terbitkan');
     Route::post('/rps/jurnal/{pertemuan}/simpan', [Dosen\RpsController::class, 'simpanJurnal'])->name('rps.jurnal.simpan');
 
     Route::get('/analitik', [Dosen\AnalitikController::class, 'index'])->name('analitik');
     Route::get('/analitik/{kelas}', [Dosen\AnalitikController::class, 'kelas'])->name('analitik.kelas');
+    Route::get('/capaian', [Dosen\CapaianController::class, 'index'])->name('capaian');
+    Route::get('/capaian/{kelas}', [Dosen\CapaianController::class, 'kelas'])->name('capaian.kelas');
+    Route::get('/capaian/{kelas}/ekspor', [Dosen\CapaianController::class, 'ekspor'])->name('capaian.ekspor');
 
     Route::get('/bkd', [Dosen\BkdController::class, 'index'])->name('bkd');
     Route::post('/bkd/ajukan', [Dosen\BkdController::class, 'ajukan'])->name('bkd.ajukan');
@@ -377,6 +396,9 @@ Route::middleware('auth:staff,dosen,mahasiswa')->prefix('notifikasi')->name('not
 Route::middleware('auth:staff,mahasiswa')->prefix('berkas')->name('berkas.')->group(function (): void {
     Route::get('/pmb/{berkas}', [BerkasController::class, 'pmb'])->name('pmb');
     Route::get('/cuti/{cuti}', [BerkasController::class, 'cuti'])->name('cuti');
+    Route::get('/beasiswa/{ajuan}/{urutan}', [BerkasController::class, 'beasiswa'])->whereNumber('urutan')->name('beasiswa');
+    Route::get('/poin/{poin}', [BerkasController::class, 'poin'])->name('poin');
+    Route::get('/konversi/{konversi}/{sumber}', [BerkasController::class, 'konversi'])->whereIn('sumber', ['usulan', 'mahasiswa'])->name('konversi');
 });
 
 // Dokumen riwayat kepegawaian: dosen pemiliknya dan staf kepegawaian.
@@ -588,6 +610,16 @@ Route::middleware(['auth:staff', 'term.active'])->prefix('admin')->name('admin.'
     Route::get('/koreksi-nilai', [Admin\KoreksiNilaiController::class, 'index'])->name('koreksi-nilai');
     Route::post('/koreksi-nilai/{nilai}', [Admin\KoreksiNilaiController::class, 'koreksi'])->name('koreksi-nilai.simpan');
 
+    // Kurikulum berbasis capaian (ADR-038): CPMK per mata kuliah per kurikulum,
+    // dan rekap capaian CPL per prodi per angkatan.
+    Route::get('/cpmk', [Admin\CpmkController::class, 'index'])->name('cpmk');
+    Route::get('/cpmk/{kurikulum}/{mataKuliah}', [Admin\CpmkController::class, 'edit'])->name('cpmk.edit');
+    Route::post('/cpmk/{kurikulum}/{mataKuliah}/draf', [Admin\CpmkController::class, 'draf'])->name('cpmk.draf');
+    Route::put('/cpmk/versi/{versi}', [Admin\CpmkController::class, 'simpan'])->name('cpmk.simpan');
+    Route::post('/cpmk/versi/{versi}/terbitkan', [Admin\CpmkController::class, 'terbitkan'])->name('cpmk.terbitkan');
+    Route::get('/capaian', [Admin\CapaianController::class, 'index'])->name('capaian');
+    Route::get('/capaian/ekspor', [Admin\CapaianController::class, 'ekspor'])->name('capaian.ekspor');
+
     // Papan baca untuk setiap staf, terpisah dari layar kelola di bawahnya
     // yang menuntut izin pengaturan. Didaftarkan lebih dulu agar "papan"
     // tidak pernah dibaca sebagai UUID.
@@ -659,6 +691,7 @@ Route::middleware(['auth:staff', 'term.active'])->prefix('admin')->name('admin.'
     Route::post('/konversi/{konversi}/setujui', [Admin\KonversiController::class, 'setujui'])->name('konversi.setujui');
     Route::post('/konversi/{konversi}/tolak', [Admin\KonversiController::class, 'tolak'])->name('konversi.tolak');
     Route::post('/konversi/{konversi}/cabut', [Admin\KonversiController::class, 'cabut'])->name('konversi.cabut');
+    Route::post('/konversi/{konversi}/minta-dokumen', [Admin\KonversiController::class, 'mintaDokumen'])->name('konversi.minta-dokumen');
 
     // Pengaturan didaftarkan sebelum {tiket} agar "pengaturan" tidak pernah
     // dibaca sebagai UUID tiket.
@@ -858,6 +891,11 @@ Route::middleware(['auth:staff', 'term.active'])->prefix('admin')->name('admin.'
     Route::post('/beasiswa/{beasiswa}/tetapkan', [Admin\BeasiswaController::class, 'tetapkan'])->name('beasiswa.tetapkan');
     Route::post('/beasiswa/penerima/{penerima}/cabut', [Admin\BeasiswaController::class, 'cabut'])->name('beasiswa.cabut');
     Route::get('/beasiswa/kipk/ekspor', [Admin\BeasiswaController::class, 'eksporKipk'])->name('beasiswa.kipk');
+    // Periode pendaftaran dan ajuan mahasiswa (ADR-040 §2).
+    Route::post('/beasiswa/periode', [Admin\AjuanBeasiswaController::class, 'bukaPeriode'])->name('beasiswa.periode.buka');
+    Route::get('/beasiswa/periode/{periode}', [Admin\AjuanBeasiswaController::class, 'show'])->name('beasiswa.periode');
+    Route::post('/beasiswa/periode/{periode}/tutup', [Admin\AjuanBeasiswaController::class, 'tutupPeriode'])->name('beasiswa.periode.tutup');
+    Route::post('/beasiswa/ajuan/{ajuan}/putuskan', [Admin\AjuanBeasiswaController::class, 'putuskan'])->name('beasiswa.ajuan.putuskan');
 
     Route::get('/cuti', [Admin\CutiController::class, 'index'])->name('cuti');
     Route::post('/cuti', [Admin\CutiController::class, 'ajukan'])->name('cuti.ajukan');
