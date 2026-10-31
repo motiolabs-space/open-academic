@@ -120,6 +120,21 @@ memuatnya akan dipakai orang.
 Setiap endpoint menyatakan scope-nya sendiri; scope melekat pada aplikasi
 konsumen, bukan pada token, sehingga pencabutan berlaku seketika.
 
+### Setup Awal dan Notifikasi Instalasi
+
+Wizard `/setup` membuat super admin pertama tanpa autentikasi, jadi selesaikan
+segera setelah instalasi, sebelum alamatnya diumumkan. Wizard hanya terbuka
+selama belum ada satu pun akun staf, dosen, atau mahasiswa. Sesudah dipakai,
+wizard terkunci permanen dan membalas 404. Wizard hanya dapat dibuka ulang lewat
+`php artisan openacademic:setup-ulang` (ADR-043 §1).
+
+Notifikasi instalasi ke humanix.id **mati secara bawaan**. Notifikasi baru
+menyala bila kampus mencentang persetujuannya. Isinya sepuluh medan tentang
+institusi dan perangkat lunak: tanpa data pribadi, kredensial, atau
+`APP_KEY`. `HUMANIX_TELEMETRI=false` mematikannya apa pun pilihan di layar.
+Daftar medan lengkap dan riwayat yang pernah terkirim ada di
+[`docs/TELEMETRI.md`](docs/TELEMETRI.md).
+
 ### Webhook
 
 Ditandatangani HMAC-SHA256 atas `{timestamp}.{body}`. Verifikasi di sisi

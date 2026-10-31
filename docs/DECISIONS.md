@@ -1755,3 +1755,107 @@ ditulis ulang dengan kata-kata sendiri; dokumennya tidak masuk repo
   bersama daftar prodi); layar master prodi dan daftar periksa PISN juga satu
   kueri tetap. Tanggal berlaku tidak diambil dari layanan BAN-PT/LAM mana pun:
   disalin staf dari SK.
+
+---
+
+## ADR-043 — Wizard setup awal sekali pakai, dan notifikasi instalasi ke Humanix berbasis persetujuan (2026-10-31)
+
+### 1. Wizard setup: terbuka hanya bila belum ada akun sama sekali
+
+- **Konteks.** Instalasi baru (`migrate` tanpa demo) membuka halaman masuk yang
+  tidak bisa dilewati siapa pun, karena belum ada akun. Brandingnya pun masih
+  nilai contoh `.env`. Akun pertama selama ini hanya bisa dibuat lewat tinker.
+  Wizard web yang membuat super admin adalah pintu terbuka bila tetap dapat
+  dijangkau setelah dipakai. Pintu itu juga terbuka bila tampil pada kampus
+  yang sudah berjalan sebelum wizard ini ada.
+- **Keputusan.**
+  1. **`Instalasi::perluSetup()`** bernilai benar hanya bila (a) wizard dibuka
+     ulang lewat artisan, atau (b) penanda `instalasi.setup_selesai_pada`
+     belum ada **dan** tidak ada satu pun akun staf, dosen, maupun mahasiswa,
+     termasuk baris yang di-soft-delete. Syarat "tidak ada akun" membuat
+     instalasi lama tertutup tanpa langkah upgrade apa pun. Migrasi `installation_pings` tetap menulis penandanya
+     untuk instalasi lama, supaya tidak ada satu kueri tambahan di setiap
+     permintaan. Kampus demo ditandai oleh `DemoCampusSeeder`, di sebelah
+     penanda demo.
+  2. **`ArahkanKeSetup`** dipasang di grup web, di depan `auth` dalam daftar
+     prioritas. Tujuannya agar tamu yang membuka `/admin` langsung tiba di
+     wizard, tidak dipantulkan lewat halaman masuk. Rute API tidak dialihkan.
+  3. **Satu formulir, lima langkah.** Langkah-langkahnya hanya tampilan
+     (Alpine). Isian dikirim sekali dan divalidasi utuh oleh
+     `SetupInstalasiRequest`, sehingga wizard yang ditinggal setengah jalan
+     tidak meninggalkan apa pun. `SetupInstalasiService` menulis identitas,
+     super admin, dan struktur opsional di dalam satu `Cache::lock` dan satu
+     transaksi, lalu memeriksa ulang `perluSetup()` di dalam kunci. Dua
+     peramban yang mengirim bersamaan menghasilkan satu super admin dan satu
+     404.
+  4. **Penyimpanan dipakai ulang.** Identitas masuk grup `branding` di tabel
+     `settings` (kunci lama ditambah `institution_address/city/province/email/
+     phone/website`), dan logo masuk `logo_path` yang sudah dibaca
+     `BrandingService`. Kop dokumen diisi dari alamat bila masih kosong.
+     Kontak baru juga dapat disunting di Pengaturan. Semester memakai
+     `TahunAkademikService::buat()` dan `aktifkan()`.
+  5. **Peran dibuat bila belum ada.** `RolePermissionSeeder` idempoten, dan
+     wizard tidak boleh bergantung pada operator yang ingat `db:seed`.
+  6. **Dibuka ulang hanya lewat `openacademic:setup-ulang`.** Tidak ada tombol
+     web untuk itu: pemegang artisan sudah menguasai server, sedangkan sesi
+     admin yang dibajak tidak boleh bisa menyerahkan wizard kepada pengunjung
+     berikutnya. Pembukaan ulang dan penyelesaian setup tercatat di Log
+     Aktivitas dengan subjek sintetis "Instalasi", pola yang sama dengan
+     masuk lewat IdP.
+  7. **Suite uji mulai dari kampus yang sudah ter-setup.** `tests/Pest.php`
+     menulis penandanya sebelum setiap feature test. Tanpa langkah ini, tes
+     halaman publik dan PMB yang tidak membuat akun apa pun akan dialihkan
+     ke wizard. Tes wizard memanggil `instalasiBaru()`.
+- **Konsekuensi.** Logo SVG ditolak karena dapat membawa skrip dan dilayani
+  dari origin yang sama dengan portal. Bila validasi gagal, berkas logo harus
+  dipilih ulang. Peramban tidak menyimpan berkas, dan formulirnya mengatakan
+  hal itu.
+
+### 2. Notifikasi instalasi: persetujuan eksplisit, sepuluh medan, tidak berkala
+
+- **Konteks.** Pemelihara ingin tahu kampus mana yang memakai Open Academic.
+  Repo ini publik, berlisensi MIT, dan basis datanya memegang data pribadi
+  mahasiswa. Pelacak yang menyala secara bawaan akan merusak kepercayaan yang
+  justru menjadi alasan kampus memilih perangkat lunak terbuka. Alasan yang
+  sama berlaku untuk pelacak yang mengirim lebih dari yang diucapkan atau
+  tidak dapat dimatikan.
+- **Keputusan.**
+  1. **Opt-in.** Kotak di langkah terakhir wizard (dan di Pengaturan) tidak
+     pernah tercentang secara bawaan. Kalimatnya menyebut tujuan
+     (`HUMANIX_TELEMETRI_URL`) dan daftar medan persis. Daftar itu dibaca dari
+     `lang/id/instalasi.php` yang sama di kedua layar.
+  2. **Muatan tetap:** `installation_id`, `event`, `institution_name`,
+     `institution_code`, `city`, `province`, `app_version`, `php_version`
+     (mayor.minor), `db_engine` (nama mesin saja), dan `date`. `app_url`
+     hanya bila kotak kedua dicentang, dan kotak itu tidak berlaku tanpa
+     kotak pertama. ID instalasi adalah UUID acak, **bukan hash** data kampus,
+     karena hash kode PT dapat dibalik dengan meng-hash daftar kode PT yang
+     publik.
+  3. **`.env` hanya dapat mencabut.** `HUMANIX_TELEMETRI=false` (juga `0`,
+     `off`) mematikan pengiriman apa pun pilihan di layar.
+     `HUMANIX_TELEMETRI=true` tidak menyalakannya tanpa persetujuan.
+  4. **Antrean, batas waktu pendek, tanpa lempar.** `KirimPingInstalasiJob`
+     memeriksa ulang persetujuan dan menyusun muatan pada saat kirim.
+     Reporter tidak pernah melempar exception: kabar yang tidak sampai adalah
+     kabar gagal, bukan permintaan gagal. Percobaan ulang dijadwalkan job itu
+     sendiri, kecuali di antrean `sync`. Setup mengirim setelah transaksinya
+     commit dan di luar kuncinya.
+  5. **Satu kabar per versi, tidak berkala.** Indeks unik
+     `installation_pings.app_version` memastikan hal ini. Versi baru
+     terdeteksi lewat event `MigrationsEnded`/`NoPendingMigrations` karena
+     setiap pembaruan menjalankan `migrate`. Tidak ada scheduler.
+  6. **Klien di balik `InstalasiReporterInterface`** (CLAUDE.md §3 aturan 6).
+     Driver `http` atau `palsu`. Nama driver yang tidak dikenal jatuh ke
+     `palsu`, sehingga salah ketik berarti tidak mengirim apa pun. Suite
+     memakai `palsu` lewat `phpunit.xml`.
+  7. **Tercatat lokal.** Setiap kabar beserta isi persisnya tersimpan di
+     `installation_pings` dan ditampilkan di Pengaturan serta
+     `openacademic:telemetri`. Pratinjau tidak membuat ID instalasi hanya
+     karena seseorang melihatnya.
+- **Konsekuensi.** Endpoint penerima di humanix.id belum ada dan dibangun di
+  luar repo ini. URL bawaannya placeholder, dan sampai endpoint itu ada
+  setiap kabar tercatat sebagai gagal tanpa akibat lain. Versi aplikasi kini
+  tinggal di `config/instalasi.php` (`1.1.0-dev`) dan harus dinaikkan
+  bersama CHANGELOG setiap rilis. Lupa menaikkannya berarti kabar `upgraded`
+  tidak terkirim. Menambah medan muatan adalah perubahan janji: wajib lewat
+  ADR baru, memperbarui `docs/TELEMETRI.md`, dan meminta persetujuan ulang.

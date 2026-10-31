@@ -7,6 +7,16 @@ Format mengikuti [Keep a Changelog](https://keepachangelog.com/id/1.1.0/) dan
 
 ### Ditambahkan
 
+- **Wizard setup awal kampus** di `/setup` (ADR-043). Wizard ini mengisi
+  identitas PT, warna dan logo, super admin pertama, serta fakultas, prodi,
+  dan semester berjalan bila diinginkan. Wizard terkunci permanen setelah
+  dipakai dan hanya dapat dibuka ulang lewat `openacademic:setup-ulang`.
+- **Notifikasi instalasi ke Humanix, opsional dan bawaannya mati** (ADR-043,
+  `docs/TELEMETRI.md`). Notifikasi baru menyala dengan persetujuan eksplisit,
+  berisi sepuluh medan tanpa data pribadi, dan dikirim satu kali per versi.
+  Pengiriman dapat dimatikan di Pengaturan atau lewat
+  `HUMANIX_TELEMETRI=false`. Riwayatnya tercatat di `installation_pings`, dan
+  `openacademic:telemetri` menampilkan isinya.
 - **SSO OAuth2 (Laravel Passport 13).** Open Academic menjadi server OAuth2:
   aplikasi kampus lain mengarahkan penggunanya ke sini untuk masuk. Alur
   authorization-code, layar persetujuan dalam design system kampus, endpoint
