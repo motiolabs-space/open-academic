@@ -164,6 +164,8 @@ Yang sudah ada di `main` dan dapat dipakai hari ini. Pengguna: **S** staf ·
 | Notifikasi surel dan pengingat tenggat terjadwal | semua |
 | Berkas privat, verifikasi dua langkah (TOTP) untuk staf, log audit, branding, pengaturan dokumen | S |
 | Login dengan NIM, NIDN, NIP, atau surel; portal ditentukan otomatis | semua |
+| Wizard setup awal kampus: identitas PT, warna dan logo, super admin pertama, struktur awal opsional; terkunci setelah selesai | S |
+| Notifikasi instalasi ke Humanix: opsional, bawaannya mati, sepuluh medan tanpa data pribadi, dapat dimatikan di Pengaturan atau `.env` | S |
 
 Rencana kerja per modul — termasuk yang sengaja ditunda atau di luar cakupan —
 ada di [`docs/ROADMAP.md`](docs/ROADMAP.md).
