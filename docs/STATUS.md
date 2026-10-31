@@ -8,9 +8,8 @@
 
 Branch `ci/mysql-postgresql-suite`, satu PR. Keputusan: ADR-043. Satu migrasi
 baru (append-only, `2026_10_31_200000`): indeks untuk foreign key yang belum
-punya, di PostgreSQL dan SQLite saja. Nomor Sesi/ADR melompati 72/042 yang
-sudah dipakai PR #42 yang masih terbuka; disesuaikan bila urutan merge
-berbeda.
+punya, di PostgreSQL dan SQLite saja. Nomor diambil sesudah Sesi 72/ADR-042
+yang terakhir masuk `main`.
 
 - **CI** (`ci`). Job `database` di `ci.yml`: matriks MySQL 8.0 dan
   PostgreSQL 16 sebagai service container (data di tmpfs), PHP 8.4,
