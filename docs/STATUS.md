@@ -4,6 +4,47 @@
 
 ---
 
+## Sesi 73 — 2026-10-31 · Suite diuji di MySQL 8 dan PostgreSQL 16
+
+Branch `ci/mysql-postgresql-suite`, satu PR. Keputusan: ADR-043. Tanpa migrasi
+baru: seluruh migrasi lolos apa adanya di MySQL 8.0 dan PostgreSQL 16 (CI),
+serta MariaDB 10.4 dan PostgreSQL 17 (lokal). Nomor Sesi/ADR melompati 72/042 yang sudah dipakai PR #42 yang
+masih terbuka; disesuaikan bila urutan merge berbeda.
+
+- **CI** (`ci`). Job `database` di `ci.yml`: matriks MySQL 8.0 dan
+  PostgreSQL 16 sebagai service container (data di tmpfs), PHP 8.4,
+  `migrate --seed` lalu `composer test:par`. `phpunit.xml` tidak diubah —
+  env job menimpa `<env>` yang tidak di-`force`. Matriks PHP 8.2/8.4/8.5 tetap
+  di SQLite.
+- **Bug PostgreSQL di aplikasi** (`fix`). `pluck(DB::raw(...))` tanpa alias
+  di empat service (layar kelas dosen, evaluasi studi, yudisium, syarat
+  wisuda, peserta ujian pulang 500); lima tangkapan
+  `UniqueConstraintViolationException` yang melanjutkan kerja kini memakai
+  savepoint (pengingat, akuntansi ×2, nomor tiket helpdesk, nomor surat);
+  `lockForUpdate()->max()` di penomoran kelompok kegiatan lapangan kini
+  mengunci baris induk.
+- **Cast `integer` untuk kolom `year()`** yang terlewat: kurikulum, tarif,
+  pendaftar PMB, alumni (MySQL mengembalikan string).
+- **Tes.** `toBeJsonColumn()` di `tests/Pest.php` untuk payload yang dibaca
+  balik dari kolom JSON (MySQL mengurutkan ulang kunci); `(int)` pada lima
+  `sum()`; helper kategori poin tidak lagi melampaui `string(24)`; filter
+  anggaran kueri `SmokeLayarTest` membuang introspeksi skema di ketiga mesin.
+- **Dokumen.** `docs/BASIS-DATA.md`: kolom "Diuji di CI" pada tabel dukungan,
+  cara menjalankan suite di mesin sendiri, dan enam aturan portabilitas yang
+  ditemukan.
+
+**Instalasi berjalan:** tidak ada yang perlu dijalankan. Kampus PostgreSQL
+yang terkena layar 500 di atas langsung pulih setelah pembaruan.
+
+### Belum
+
+Job MySQL/PostgreSQL jauh lebih lama dari SQLite (run pertama tanpa tmpfs:
+±28 dan ±80 menit). MariaDB, PostgreSQL selain 16, SQL Server, dan Oracle
+tidak diuji di CI. `Schema::hasTable('notifications')` masih dipanggil sekali
+per permintaan di kepala portal.
+
+---
+
 ## Sesi 72 — 2026-10-30 · Butir Feeder P7: kamus web service, nama medan, re-NIM
 
 Branch `feature/p7-feeder`, satu PR, empat commit (satu per butir ROADMAP

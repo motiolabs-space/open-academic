@@ -11,13 +11,19 @@ apa yang masih menjadi tanggung jawab Anda bila memindahkannya.
 
 ## Dukungan
 
-| Mesin | Status | Catatan |
-|---|---|---|
-| **MySQL 8** / MariaDB 10.11 | ✅ Utama | Yang dipakai pengembangan dan kampus demo |
-| **PostgreSQL 13+** | ✅ Didukung | Driver bawaan Laravel; lihat §Perbedaan Perilaku |
-| **SQLite** | ✅ Untuk pengujian | Dipakai seluruh suite tes (in-memory) |
-| **SQL Server 2019+** | 🟡 Secara teori | Driver bawaan Laravel, **belum pernah kami jalankan** |
-| **Oracle** | ⚠️ Butuh paket pihak ketiga | Lihat bagian di bawah — jangan anggap ini tinggal ganti `.env` |
+| Mesin | Status | Diuji di CI | Catatan |
+|---|---|---|---|
+| **MySQL 8** / MariaDB 10.11 | ✅ Utama | ✅ MySQL 8.0 — migrasi, seeder demo, seluruh suite | Yang dipakai pengembangan dan kampus demo. MariaDB tidak punya job sendiri |
+| **PostgreSQL 13+** | ✅ Didukung | ✅ PostgreSQL 16 — migrasi, seeder demo, seluruh suite | Driver bawaan Laravel; lihat §Perbedaan Perilaku |
+| **SQLite** | ✅ Untuk pengujian | ✅ PHP 8.2, 8.4, 8.5 | Bawaan suite (in-memory) untuk pengembang dan matriks PHP |
+| **SQL Server 2019+** | 🟡 Secara teori | ❌ | Driver bawaan Laravel, **belum pernah kami jalankan** |
+| **Oracle** | ⚠️ Butuh paket pihak ketiga | ❌ | Lihat bagian di bawah — jangan anggap ini tinggal ganti `.env` |
+
+Setiap PR ke `main` dan `dev` menjalankan job `database` di
+[`ci.yml`](../.github/workflows/ci.yml): service container MySQL 8.0 dan
+PostgreSQL 16, `php artisan migrate --seed`, lalu `composer test:par`. PR tidak
+hijau bila salah satunya merah. Versi PostgreSQL lain dalam rentang 13+ tidak
+diuji tersendiri.
 
 ### Oracle — dinyatakan terbuka
 
@@ -135,6 +141,31 @@ Rupiah disimpan sebagai **integer**, bukan desimal atau float. Ini portabel ke
 mana pun dan menghindarkan seluruh persoalan pembulatan — galat satu sen pada
 lima ribu tagihan adalah angka yang nyata.
 
+### Ditemukan CI saat MySQL dan PostgreSQL mulai diuji (ADR-043)
+
+Semua lolos di SQLite. Aturannya, berlaku untuk kode baru:
+
+- **Ekspresi mentah yang dibaca lewat nama selalu diberi alias.**
+  `pluck(DB::raw('count(*)'), 'id')` membaca kolom bernama `count(*)`; MySQL
+  menamainya begitu, PostgreSQL menamainya `count`, dan layarnya 500. Tulis
+  `DB::raw('count(*) as jumlah')`.
+- **Pelanggaran unik yang ditangkap untuk melanjutkan kerja dibungkus
+  `DB::transaction()`.** Di PostgreSQL satu pernyataan yang ditolak
+  membatalkan seluruh transaksi yang sedang berjalan. Di dalam
+  `DB::transaction()` insert-nya menjadi savepoint, dan hanya savepoint itu
+  yang digulung.
+- **Jangan `lockForUpdate()` pada agregat.** PostgreSQL menolak `FOR UPDATE`
+  bersama `MAX()`/`COUNT()`. Kunci baris induknya, lalu baca agregatnya.
+- **Agregat dan kolom `year()` di-cast.** `SUM()` pulang sebagai string di
+  MySQL (DECIMAL) dan PostgreSQL (NUMERIC); kolom `YEAR` pulang sebagai string
+  di MySQL. Bungkus `sum()` dengan `(int)` dan beri cast `integer` pada setiap
+  kolom `year()`.
+- **Kolom JSON tidak menyimpan urutan kunci di MySQL.** Objek dinormalkan
+  (diurutkan menurut panjang lalu byte kunci). Jangan bergantung pada urutan
+  kunci payload yang dibaca balik; di tes pakai `toBeJsonColumn()`.
+- **Panjang `string(n)` ditegakkan.** SQLite tidak peduli; MySQL dan
+  PostgreSQL menolak barisnya.
+
 ### SQL mentah
 
 Ada beberapa `selectRaw`/`orderByRaw`, semuanya memakai konstruksi ANSI standar
@@ -145,9 +176,19 @@ dan tidak ada interpolasi nilai — parameter selalu ter-bind.
 
 ## Yang Masih Menjadi Tanggung Jawab Anda
 
-- **Menjalankan tes pada mesin tujuan.** Suite berjalan di SQLite. Sebelum
-  memindahkan kampus sungguhan ke PostgreSQL, jalankan
-  `php artisan test` dengan `DB_CONNECTION=pgsql` pada basis data terpisah.
+- **Menjalankan tes pada versi mesin Anda sendiri.** CI menguji MySQL 8.0 dan
+  PostgreSQL 16. Bila produksi Anda memakai versi lain (MariaDB, PostgreSQL 13),
+  jalankan suite sekali terhadapnya. Variabel lingkungan menimpa `phpunit.xml`,
+  jadi tidak ada berkas yang perlu diubah:
+
+  ```bash
+  DB_CONNECTION=pgsql DB_HOST=127.0.0.1 DB_PORT=5432 \
+  DB_DATABASE=oa_test DB_USERNAME=postgres DB_PASSWORD=rahasia \
+  composer test:par
+  ```
+
+  Pengguna basis datanya perlu hak `CREATE DATABASE`: tes paralel membuat satu
+  basis data per proses (`oa_test_test_1`, `_2`, ...).
 - **Kolasi dan pengurutan.** Urutan `ORDER BY` untuk huruf beraksen berbeda
   antar-mesin. Tidak memengaruhi kebenaran, tetapi daftar nama bisa tersusun
   sedikit berbeda.
