@@ -118,7 +118,7 @@ describe('periode perkuliahan', function () {
         $periode = PeriodePerkuliahan::firstOrFail();
 
         expect($hasil['terkirim'])->toBe(1)
-            ->and(FeederSyncLog::entity('periode_perkuliahan')->firstOrFail()->payload)->toBe([
+            ->and(FeederSyncLog::entity('periode_perkuliahan')->firstOrFail()->payload)->toBeJsonColumn([
                 'id_prodi' => 'a1b2c3d4',
                 'id_semester' => '20261',
                 'tanggal_awal_perkuliahan' => '2026-09-01',

@@ -35,6 +35,33 @@ expect()->extend('toBeValidTermCode', function () {
 });
 
 /*
+ * A JSON column read back from the database, compared without regard to key
+ * order.
+ *
+ * MySQL's JSON type stores objects normalised: keys come back sorted by length
+ * and then by byte, not in the order they were written. SQLite and PostgreSQL's
+ * `json` keep the written order, so `toBe()` passed there and failed on MySQL
+ * for the same row. Key order means nothing in a JSON object (and
+ * FeederSyncLog::hashPayload() sorts keys before hashing), so both sides are
+ * key-sorted here; values and their types are still compared strictly, and
+ * lists keep their order.
+ */
+expect()->extend('toBeJsonColumn', function (array $expected) {
+    $urutkan = function (array $larik) use (&$urutkan): array {
+        if (!array_is_list($larik)) {
+            ksort($larik);
+        }
+
+        return array_map(fn ($v) => is_array($v) ? $urutkan($v) : $v, $larik);
+    };
+
+    expect($this->value)->toBeArray();
+    expect($urutkan($this->value))->toBe($urutkan($expected));
+
+    return $this;
+});
+
+/*
 |--------------------------------------------------------------------------
 | Kunci Passport, terpisah per proses uji
 |--------------------------------------------------------------------------

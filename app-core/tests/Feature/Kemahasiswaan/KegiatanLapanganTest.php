@@ -649,7 +649,7 @@ describe('Feeder', function () {
         $hasil = app(FeederSyncService::class)->sinkronkan('aktivitas_mbkm', $this->term);
 
         expect($hasil['terkirim'])->toBe(1)
-            ->and(FeederSyncLog::entity('aktivitas_mbkm')->firstOrFail()->payload)->toBe([
+            ->and(FeederSyncLog::entity('aktivitas_mbkm')->firstOrFail()->payload)->toBeJsonColumn([
                 'id_jenis_aktivitas' => '5',
                 'id_prodi' => 'prodi-a',
                 'id_semester' => $this->term->kode,
@@ -681,7 +681,7 @@ describe('Feeder', function () {
         app(FeederSyncService::class)->sinkronkan('bimbing_mbkm', $this->term);
 
         expect(FeederSyncLog::entity('aktivitas_mbkm')->whereNotNull('payload')->firstOrFail()->payload['untuk_kampus_merdeka'])->toBe(1)
-            ->and(FeederSyncLog::entity('bimbing_mbkm')->firstOrFail()->payload)->toBe([
+            ->and(FeederSyncLog::entity('bimbing_mbkm')->firstOrFail()->payload)->toBeJsonColumn([
                 'id_aktivitas' => $a->feeder_id,
                 'id_kategori_kegiatan' => '110100',
                 'id_dosen' => 'dosen-7',
@@ -719,7 +719,7 @@ describe('Feeder', function () {
 
         app(FeederSyncService::class)->sinkronkan('konversi_mbkm', $this->term);
 
-        expect(FeederSyncLog::entity('konversi_mbkm')->whereNotNull('payload')->firstOrFail()->payload)->toBe([
+        expect(FeederSyncLog::entity('konversi_mbkm')->whereNotNull('payload')->firstOrFail()->payload)->toBeJsonColumn([
             'id_matkul' => 'mk-kkn',
             'id_anggota' => 'anggota-1',
             'id_semester' => $this->term->kode,

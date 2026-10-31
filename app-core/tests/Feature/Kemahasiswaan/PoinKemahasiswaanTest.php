@@ -37,7 +37,9 @@ beforeEach(function () {
 function kategoriPoin(JenisPoin $jenis, int $poin, bool $wajibBukti = false): PoinKategori
 {
     return PoinKategori::create([
-        'kode' => strtoupper($jenis->value).'-'.$poin.'-'.uniqid(),
+        // `kode` is string(24). SQLite ignores the length, MySQL refuses the
+        // row: "PRESTASI-60-" plus a 13-character uniqid is 25.
+        'kode' => substr(strtoupper($jenis->value), 0, 4).'-'.$poin.'-'.uniqid(),
         'nama' => $jenis->label().' '.$poin,
         'jenis' => $jenis,
         'tingkat' => $jenis === JenisPoin::Prestasi ? 'nasional' : 'sedang',

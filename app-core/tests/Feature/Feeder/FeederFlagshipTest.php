@@ -88,7 +88,7 @@ it('mengklaim aktivitas berpenanda flagship dengan payload yang dipaku', functio
 
     expect($hasil['terkirim'])->toBe(1)
         ->and($log->action)->toBe('InsertAktivitasMBKMFlagship')
-        ->and($log->payload)->toBe(['id_aktivitas' => 'akt-1', 'id_flagship' => 'fs-2'])
+        ->and($log->payload)->toBeJsonColumn(['id_aktivitas' => 'akt-1', 'id_flagship' => 'fs-2'])
         // Addressed by the activity, whatever the reply named.
         ->and($aktivitas->fresh()->feeder_flagship_id)->toBe('akt-1')
         ->and($this->fake->jumlahPanggilan('InsertAktivitasMBKMFlagship'))->toBe(1);
