@@ -1871,3 +1871,26 @@ ditulis ulang dengan kata-kata sendiri; dokumennya tidak masuk repo
   bersama daftar prodi); layar master prodi dan daftar periksa PISN juga satu
   kueri tetap. Tanggal berlaku tidak diambil dari layanan BAN-PT/LAM mana pun:
   disalin staf dari SK.
+
+## ADR-043 — Jawaban anonim tanpa urutan: kunci UUID acak, tanpa timestamp (2026-10-31)
+
+- **Konteks.** Dua tabel jawaban anonim — `kuesioner_jawaban_anonim` dan
+  `edom_jawaban` — tidak punya kolom responden, dan itu dijaga tes skema. Tetapi
+  keduanya punya `id` auto-increment dan `created_at`, yang berjalan sejalan
+  dengan tabel partisipasi: jawaban peserta pertama adalah id terkecil dengan
+  waktu paling awal. Pemegang akses basis data tinggal menjajarkan dua tabel.
+  Layar dan ekspor tidak pernah memperlihatkannya (ADR-039 §1); skemanya tetap
+  mengizinkannya, sedangkan janji modul ini adalah skemanya tidak mengizinkan.
+- **Keputusan.** Kunci utama kedua tabel menjadi UUID v4 acak (`char(36)`),
+  kolom `created_at`/`updated_at` dihapus. Migrasi membangun ulang tabel di
+  tempat — ganti nama ke `_lama`, buat yang baru dengan nama FK dan indeks
+  eksplisit, salin baris **dalam urutan acak**, hapus yang lama — sehingga
+  urutan fisik pun tidak membawa urutan lama. Model menetapkan UUID saat
+  `creating` dan `$timestamps = false`. Tidak ada pembaca kedua tabel yang
+  memerlukan urutan atau waktu: semuanya agregat.
+- **Konsekuensi.** Urutan pengisian tidak dapat direkonstruksi dari basis data
+  oleh siapa pun, termasuk administrator. Harganya: tidak ada lagi "kapan jawaban
+  ini masuk" — yang memang tidak boleh ada. Kunci acak sebagai PK InnoDB
+  menyebar penulisan ke halaman acak; pada skala kuesioner kampus itu tidak
+  terukur. `down()` mengembalikan bentuk lama dengan urutan baru yang tidak
+  berarti; urutan aslinya hilang untuk selamanya, dan itu tujuannya.

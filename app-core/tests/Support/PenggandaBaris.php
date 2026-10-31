@@ -158,8 +158,8 @@ final class PenggandaBaris
     }
 
     /**
-     * @param array<string, array<int, int>> $peta
-     * @return array<int, int> old id => new id
+     * @param array<string, array<int|string, int|string>> $peta
+     * @return array<int|string, int|string> old id => new id
      */
     private function salin(string $t, int $k, ?\Closure $saring, bool $akar, array $peta): array
     {
@@ -243,10 +243,17 @@ final class PenggandaBaris
             $lamaId = $baris['id'] ?? null;
             unset($baris['id']);
 
-            if ($punyaId) {
+            if (!$punyaId) {
+                DB::table($t)->insert($baris);
+            } elseif (preg_match('/int/i', $kolom['id']) === 1) {
                 $baru[$lamaId] = DB::table($t)->insertGetId($baris);
             } else {
+                // A random-key table (the anonymous answer tables, ADR-043):
+                // nothing assigns the key but the model, and this bypasses
+                // the model on purpose, so the key is minted here.
+                $baris['id'] = (string) Str::uuid();
                 DB::table($t)->insert($baris);
+                $baru[$lamaId] = $baris['id'];
             }
         }
 

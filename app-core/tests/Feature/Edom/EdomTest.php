@@ -135,6 +135,12 @@ describe('anonimitas ditegakkan skema, bukan kedisiplinan', function () {
         expect($kolom)->not->toContain('mahasiswa_id')
             ->and($kolom)->not->toContain('edom_partisipasi_id')
 
+            // Nor a clock: created_at ran in step with edom_partisipasi.diisi_at,
+            // and the id with its id. The key is a random UUID (see the
+            // migration of 31 October 2026).
+            ->and($kolom)->not->toContain('created_at')
+            ->and($kolom)->not->toContain('updated_at')
+
             // Tanpa pengenal respons pun: itu akan mengorelasikan pendapat satu
             // orang lintas pertanyaan, cukup untuk merekonstruksi individu pada
             // kelas kecil.

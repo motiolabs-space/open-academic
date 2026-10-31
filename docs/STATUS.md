@@ -4,6 +4,42 @@
 
 ---
 
+## Sesi 72 — 2026-10-31 · Jawaban anonim kehilangan urutannya
+
+Utang teknis dari ADR-039 §1, dikerjakan di branch `fix/jawaban-anonim-tanpa-urutan`.
+
+### Anonim di layar, berurutan di tabel
+
+Tabel jawaban anonim tidak punya kolom responden, dan tes skema menjaganya.
+Yang tidak dijaga: `id` auto-increment dan `created_at`. Keduanya berjalan
+sejalan dengan tabel partisipasi — jawaban peserta pertama adalah id terkecil
+dengan waktu paling awal — sehingga siapa pun yang memegang akses basis data
+tinggal menjajarkan dua tabel. Dan cacat yang sama ada di `edom_jawaban`, yang
+ROADMAP sebut "anonimitas ditegakkan skema".
+
+Keduanya dibangun ulang: kunci UUID acak, tanpa timestamp, baris lama disalin
+dalam urutan acak supaya urutan fisik pun tidak membawa urutan lama (ADR-043).
+Diverifikasi di MariaDB lokal pada 712 jawaban EDOM demo: jumlah baris tetap,
+FK utuh, tabel `_lama` hilang.
+
+### Satu jebakan nama
+
+SQLite memberi ruang nama indeks per *basis data*, MySQL memberi ruang nama
+constraint FK per basis data. Membuat tabel baru dengan nama indeks dan FK
+bawaan Laravel — yang diturunkan dari nama tabel — bentrok dengan tabel lama
+yang masih ada di sampingnya. Maka seluruh nama FK dan indeks di tabel baru
+ditulis eksplisit dan pendek.
+
+Tes skema kedua modul kini memaku ketiadaan `created_at`/`updated_at` dan bentuk
+UUID v4 kuncinya. Tidak ada pembaca yang berubah: semuanya agregat.
+
+Satu pembaca yang ternyata ada: `PenggandaBaris`, helper uji skala yang
+menggandakan baris lewat *insert* mentah dan mengandalkan auto-increment untuk
+kunci barunya. Pada tabel berkunci acak ia kini mencetak UUID sendiri — suite
+penuh (2.182 tes) yang menangkapnya.
+
+---
+
 ## Sesi 68 — 2026-10-29 · Kurikulum berbasis capaian: CPL → CPMK → sub-CPMK
 
 Branch `feature/kurikulum-obe-cpmk`, satu PR. Keputusan: ADR-038 §1–§6. Satu

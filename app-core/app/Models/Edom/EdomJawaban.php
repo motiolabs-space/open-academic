@@ -9,6 +9,7 @@ use App\Models\Sdm\Dosen;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Str;
 
 /**
  * One answer, belonging to nobody.
@@ -27,7 +28,27 @@ class EdomJawaban extends Model
 
     protected $table = 'edom_jawaban';
 
-    protected $guarded = ['id', 'created_at', 'updated_at'];
+    protected $guarded = ['id'];
+
+    /**
+     * A random key and no clock.
+     *
+     * A sequential id or a timestamp would run in step with the participation
+     * table and let anyone with database access line the two up. Neither is
+     * needed: every reader of this table aggregates.
+     */
+    public $incrementing = false;
+
+    protected $keyType = 'string';
+
+    public $timestamps = false;
+
+    protected static function booted(): void
+    {
+        static::creating(function (self $jawaban): void {
+            $jawaban->id ??= (string) Str::uuid();
+        });
+    }
 
     protected function casts(): array
     {

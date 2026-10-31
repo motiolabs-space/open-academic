@@ -76,6 +76,25 @@ describe('anonimitas struktural', function () {
             ->and($kolom)->not->toContain('mahasiswa_id');
     });
 
+    it('tidak punya kolom waktu dan tidak punya kunci berurutan', function () {
+        /*
+         * Tanpa kolom responden pun, id berurutan dan created_at berjalan
+         * sejalan dengan tabel partisipasi: pemegang akses basis data tinggal
+         * menjajarkan keduanya. Kuncinya acak dan jamnya tidak ada.
+         */
+        $kolom = Schema::getColumnListing('kuesioner_jawaban_anonim');
+
+        expect($kolom)->not->toContain('created_at')
+            ->and($kolom)->not->toContain('updated_at');
+
+        $k = kuesionerUji(anonim: true);
+        $this->kuesioner->isi($k, respondenUji(), jawabanUji($k));
+
+        foreach (KuesionerJawabanAnonim::query()->pluck('id') as $id) {
+            expect($id)->toMatch('/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/');
+        }
+    });
+
     it('menulis jawaban anonim ke tabel tanpa identitas', function () {
         $k = kuesionerUji(anonim: true);
         $mahasiswa = respondenUji();
