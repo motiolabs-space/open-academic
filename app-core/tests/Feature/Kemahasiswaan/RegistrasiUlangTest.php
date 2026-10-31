@@ -205,7 +205,7 @@ describe('pindah prodi internal', function () {
             ->and($enrolled[0]['data']['jenis_daftar'])->toBe('pindah_prodi')
             ->and($enrolled[0]['data']['mahasiswa_sebelumnya_uuid'])->toBe($this->lama->uuid)
             ->and($status)->toHaveCount(1)
-            ->and($status[0]['data'])->toBe([
+            ->and($status[0]['data'])->toBeJsonColumn([
                 'mahasiswa_uuid' => $this->lama->uuid, 'nim' => '2024IF0001', 'status_lama' => 'A', 'status_baru' => 'G',
             ]);
     });

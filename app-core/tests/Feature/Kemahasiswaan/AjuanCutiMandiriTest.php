@@ -230,7 +230,7 @@ describe('keputusan staf', function () {
         $kiriman = BridgeWebhookDelivery::where('event', 'student.status_changed')->sole()->payload['data'];
         $skema = Yaml::parseFile(base_path('../docs/openapi/bridge.yaml'))['components']['x-webhooks']['payloads']['student.status_changed'];
 
-        expect($kiriman)->toBe([
+        expect($kiriman)->toBeJsonColumn([
             'mahasiswa_uuid' => $this->mahasiswa->uuid,
             'nim' => $this->mahasiswa->nim,
             'status_lama' => StudentStatus::Aktif->value,
