@@ -26,6 +26,11 @@ berbeda.
   MySQL/MariaDB ia tidak melakukan apa-apa. Tes penjaga baru di
   `PortabilitasBasisDataTest` gagal bila migrasi berikutnya menambah FK tanpa
   indeks.
+- **Statistik PostgreSQL saat seed demo** (`perf`). Di dalam transaksi tes
+  data demo tidak pernah di-commit, jadi tidak pernah dianalisis; planner
+  mengira tabel kosong. `DemoCampusSeeder` kini menjalankan `ANALYZE` di
+  antara sub-seeder bila mesinnya PostgreSQL. Satu smoke test turun dari
+  lebih dari 50 menit menjadi ±20 detik di klaster lokal.
 - **Bug PostgreSQL di aplikasi** (`fix`). `pluck(DB::raw(...))` tanpa alias
   di empat service (layar kelas dosen, evaluasi studi, yudisium, syarat
   wisuda, peserta ujian pulang 500); lima tangkapan

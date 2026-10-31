@@ -2204,6 +2204,19 @@ bagian per butir.
     sampai saat ini". FK sesudahnya dijaga tes di `PortabilitasBasisDataTest`,
     yang gagal di SQLite juga — SQLite sama dengan PostgreSQL dalam hal ini.
 
+  - *Statistik planner di dalam transaksi tes.* Indeks saja belum cukup:
+    selama statistik menyatakan tabel kosong, planner tetap memilih nested
+    loop. `DemoCampusSeeder` — yang dijalankan setiap smoke test — menulis
+    lewat service yang membaca data seeder sebelumnya; pencarian kelas per
+    mahasiswa di `EdomSeeder` makan lebih dari satu detik per mahasiswa, dan
+    satu tes `SmokeLayarTest` tidak selesai dalam 50 menit di klaster lokal.
+    Di PostgreSQL seeder itu kini menjalankan `ANALYZE` setelah setiap
+    sub-seeder. `ANALYZE` menghitung baris yang disisipkan transaksinya
+    sendiri, makan ±0,2 detik pada tabel seukuran demo, dan ikut tergulung
+    bersama tes; tes yang sama selesai dalam ±20 detik. Seed demo di luar
+    tes tidak terpengaruh: data ter-commit dianalisis autovacuum (seed penuh
+    ±27 detik di PostgreSQL).
+
   Tiga temuan PostgreSQL adalah **bug aplikasi**, bukan artefak tes — layar
   yang 500 di kampus mana pun yang memakai PostgreSQL:
   - *`pluck(DB::raw('count(*)'), ...)` tanpa alias.* `pluck()` membaca hasil
