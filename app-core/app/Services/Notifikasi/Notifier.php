@@ -106,16 +106,22 @@ class Notifier
      * The unique index does the work; two schedulers running at once cannot both
      * win. Catching the violation rather than checking-then-inserting is the
      * whole point — the check-then-insert version has a window between the two.
+     *
+     * The insert runs in its own transaction, which becomes a savepoint when the
+     * caller already holds one. On PostgreSQL a refused statement aborts the
+     * whole enclosing transaction, so without the savepoint every query after
+     * this `return false` failed with "current transaction is aborted"; MySQL
+     * and SQLite carry on, which is why only PostgreSQL showed it (ADR-043).
      */
     private function klaim(object $penerima, string $kunci): bool
     {
         try {
-            DB::table('notifikasi_kunci')->insert([
+            DB::transaction(fn () => DB::table('notifikasi_kunci')->insert([
                 'notifiable_type' => $penerima->getMorphClass(),
                 'notifiable_id' => $penerima->getKey(),
                 'kunci' => $kunci,
                 'created_at' => now(),
-            ]);
+            ]));
 
             return true;
         } catch (UniqueConstraintViolationException) {

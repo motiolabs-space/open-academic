@@ -128,7 +128,7 @@ class YudisiumService
             ->diakui()
             ->jenis(JenisPoin::Prestasi)
             ->groupBy('mahasiswa_id')
-            ->pluck(DB::raw('SUM(poin)'), 'mahasiswa_id');
+            ->pluck(DB::raw('SUM(poin) as jumlah'), 'mahasiswa_id');
 
         return $mahasiswa->mapWithKeys(fn (Mahasiswa $m): array => [
             $m->id => $this->susunSyarat(

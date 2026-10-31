@@ -12,6 +12,7 @@ use App\Models\Keuangan\Tagihan;
 use App\Models\Keuangan\TagihanItem;
 use App\Support\Akuntansi;
 use Illuminate\Database\UniqueConstraintViolationException;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Throwable;
 
@@ -291,8 +292,10 @@ class PenjurnalanService
             $this->pastikanSeimbang($payload['entries'] ?? []);
         }
 
+        // A savepoint around the insert: on PostgreSQL the refused row would
+        // otherwise abort the caller's transaction (ADR-043).
         try {
-            return DokumenAkuntansi::create([
+            return DB::transaction(fn (): DokumenAkuntansi => DokumenAkuntansi::create([
                 'jenis' => $jenis,
                 'lokal_type' => $sumber === null ? null : $sumber::class,
                 'lokal_id' => $sumber?->getKey(),
@@ -300,7 +303,7 @@ class PenjurnalanService
                 'payload' => $payload,
                 'nominal' => $nominal,
                 'status' => StatusDokumenAkuntansi::Menunggu,
-            ]);
+            ]));
         } catch (UniqueConstraintViolationException) {
             // Already queued. Not an error — this is the guard working.
             return null;
