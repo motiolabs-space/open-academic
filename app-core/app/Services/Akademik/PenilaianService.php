@@ -6,6 +6,7 @@ namespace App\Services\Akademik;
 
 use App\DTOs\Akademik\BarisNilai;
 use App\Enums\GradeLetter;
+use App\Exceptions\AturanAkademikException;
 use App\Exceptions\PenilaianException;
 use App\Models\Akademik\KelasKuliah;
 use App\Models\Akademik\KomponenNilai;
@@ -38,6 +39,7 @@ class PenilaianService
         private readonly IndeksPrestasiCalculator $indeks,
         private readonly BridgeEventPublisher $bridge,
         private readonly Notifier $notifier,
+        private readonly CapaianService $capaian,
     ) {}
 
     /**
@@ -220,6 +222,10 @@ class PenilaianService
                 'finalized_at' => now(),
                 'finalized_by_dosen_id' => $dosen->id,
             ]);
+
+            // Inside the same transaction: a class is never final without the
+            // outcome figures its marks imply, nor the other way round.
+            $this->capaian->hitungKelas($kelas);
         });
 
         $diperbarui = $this->indeks->hitungUlangSeluruhTerm($kelas->tahunAkademik);
@@ -291,6 +297,104 @@ class PenilaianService
             $staff->nama,
             $alasan,
         ));
+
+        /*
+         * Attainment is recomputed too, and stays the same: it is measured from
+         * the component scores, which a correction of the total alone does not
+         * touch. A mistake in one exam is corrected with koreksiKomponen(),
+         * which is the path that moves the CPMK figures (ADR-038 §4).
+         */
+        $this->capaian->hitungUntuk($nilai->krsDetail);
+
+        $this->indeks->hitungUlang($nilai->mahasiswa, $nilai->krsDetail->krs->tahunAkademik);
+
+        return $nilai->refresh();
+    }
+
+    /**
+     * The audited correction path, through the component scores.
+     *
+     * The corrected components are written, the final grade is recomputed from
+     * them with the class's weights — the same arithmetic as when it was
+     * entered — and the line's CPMK and CPL attainment follow. Each moved
+     * figure is audited with its old and new value; the grade itself carries
+     * one trail entry naming every component that changed and why.
+     *
+     * @param array<int, float> $komponen komponen id => corrected score
+     */
+    public function koreksiKomponen(Nilai $nilai, array $komponen, string $alasan, Staff $staff): Nilai
+    {
+        if (blank($alasan)) {
+            throw PenilaianException::alasanKoreksiWajib();
+        }
+
+        $nilai->loadMissing(['krsDetail.krs.tahunAkademik', 'kelasKuliah.komponenNilai', 'mahasiswa']);
+
+        $daftar = $nilai->kelasKuliah->komponenNilai->keyBy('id');
+
+        foreach ($komponen as $id => $skor) {
+            if (!$daftar->has((int) $id)) {
+                throw new AturanAkademikException(__('capaian.galat.komponen_asing'));
+            }
+
+            if ($skor < 0 || $skor > 100) {
+                throw PenilaianException::nilaiDiLuarRentang();
+            }
+        }
+
+        DB::transaction(function () use ($nilai, $komponen, $alasan, $staff, $daftar): void {
+            $sebelum = NilaiKomponen::where('krs_detail_id', $nilai->krs_detail_id)
+                ->pluck('nilai', 'komponen_nilai_id');
+
+            $berubah = [];
+
+            foreach ($komponen as $id => $skor) {
+                $lama = $sebelum->get((int) $id);
+
+                if ($lama !== null && round((float) $lama, 2) === round($skor, 2)) {
+                    continue;
+                }
+
+                NilaiKomponen::updateOrCreate(
+                    ['komponen_nilai_id' => (int) $id, 'krs_detail_id' => $nilai->krs_detail_id],
+                    ['nilai' => round($skor, 2)],
+                );
+
+                $berubah[] = sprintf(
+                    '%s %s → %s',
+                    $daftar->get((int) $id)->nama,
+                    $lama === null ? '-' : number_format((float) $lama, 2, ',', '.'),
+                    number_format($skor, 2, ',', '.'),
+                );
+            }
+
+            $skor = NilaiKomponen::where('krs_detail_id', $nilai->krs_detail_id)->pluck('nilai', 'komponen_nilai_id');
+
+            $akhir = round($daftar->sum(
+                fn (KomponenNilai $k): float => (float) ($skor[$k->id] ?? 0) * ($k->bobot / 100),
+            ), 2);
+
+            $huruf = GradeLetter::fromScore($akhir);
+            $hurufLama = $nilai->nilai_huruf?->value;
+
+            $nilai->update([
+                'nilai_angka' => $akhir,
+                'nilai_huruf' => $huruf,
+                'bobot' => $huruf->weight(),
+                'catatan_koreksi' => $alasan,
+            ]);
+
+            $nilai->recordActivity('corrected', sprintf(
+                'Koreksi komponen (%s): nilai %s → %s oleh %s. Alasan: %s',
+                $berubah === [] ? 'tanpa perubahan skor' : implode('; ', $berubah),
+                $hurufLama ?? '-',
+                $huruf->value,
+                $staff->nama,
+                $alasan,
+            ));
+
+            $this->capaian->hitungUntuk($nilai->krsDetail);
+        });
 
         $this->indeks->hitungUlang($nilai->mahasiswa, $nilai->krsDetail->krs->tahunAkademik);
 

@@ -10,6 +10,7 @@ use App\Support\Instalasi;
 use Database\Seeders\Demo\AkuntansiSeeder;
 use Database\Seeders\Demo\AngkaKreditSeeder;
 use Database\Seeders\Demo\BeasiswaSeeder;
+use Database\Seeders\Demo\CapaianSeeder;
 use Database\Seeders\Demo\EdomSeeder;
 use Database\Seeders\Demo\HelpdeskSeeder;
 use Database\Seeders\Demo\IntegrasiSeeder;
@@ -146,6 +147,12 @@ class DemoCampusSeeder extends Seeder
             // Sesudah RiwayatAkademikSeeder: hanya mahasiswa dengan KRS
             // disetujui yang punya kelas untuk dinilai.
             EdomSeeder::class,
+
+            // Sesudah SuratSeeder (CPL) dan RiwayatAkademikSeeder (nilai), dan
+            // sebelum RpsSeeder: satu prodi mendapat CPL → CPMK → sub-CPMK
+            // lengkap dengan capaian tersimpan, dan RPS-nya memakai versi CPMK
+            // yang sama (ADR-038).
+            CapaianSeeder::class,
 
             // Sesudah SuratSeeder (yang membuat prodi_cpl) dan sesudah nilai
             // terisi: penguasaan CPL dihitung dari komponen yang sudah bernilai,

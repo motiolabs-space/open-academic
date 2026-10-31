@@ -8,6 +8,7 @@ use App\Models\Akademik\KelasKuliah;
 use App\Models\Akademik\KomponenNilai;
 use App\Models\Akademik\PertemuanKelas;
 use App\Models\Akademik\ProdiCpl;
+use App\Models\Akademik\SubCpmk;
 use App\Models\Akademik\TahunAkademik;
 use App\Services\Akademik\JurnalService;
 use App\Services\Akademik\RpsService;
@@ -109,9 +110,18 @@ class RpsSeeder extends Seeder
 
         $rps = $service->mulai($kelas->mataKuliah, $kelas->tahunAkademik, $penyusun);
 
+        // A course with CPMK in force: each week names the sub-CPMK it teaches.
+        $sub = $rps->cpmk_versi_id === null
+            ? collect()
+            : SubCpmk::query()
+                ->whereHas('cpmk', fn ($q) => $q->where('cpmk_versi_id', $rps->cpmk_versi_id))
+                ->orderBy('id')
+                ->pluck('id');
+
         $service->simpanPertemuan($rps, collect(self::MINGGU)
             ->map(fn (array $m, int $i): array => [
                 'pertemuan_ke' => $i + 1,
+                'sub_cpmk_id' => $sub->isEmpty() ? null : $sub[intdiv($i * $sub->count(), 16)],
                 'kemampuan_akhir' => $m[0],
                 'bahan_kajian' => $m[1],
                 'metode' => in_array($i + 1, [8, 16], true) ? 'ujian tulis' : 'ceramah & diskusi',
@@ -122,13 +132,16 @@ class RpsSeeder extends Seeder
             ])
             ->all());
 
-        // Two or three outcomes per course, never all of them.
-        $service->simpanCpl($rps, $cpl->take(2 + ($index % 2))
-            ->map(fn (ProdiCpl $c): array => [
-                'prodi_cpl_id' => $c->id,
-                'rumusan' => 'Mahasiswa mampu '.lcfirst(Str::limit($c->deskripsi, 60, '')),
-            ])
-            ->all());
+        // Two or three outcomes per course, never all of them — unless the
+        // course has CPMK in force, whose CPL the plan takes instead.
+        if ($rps->cpmk_versi_id === null) {
+            $service->simpanCpl($rps, $cpl->take(2 + ($index % 2))
+                ->map(fn (ProdiCpl $c): array => [
+                    'prodi_cpl_id' => $c->id,
+                    'rumusan' => 'Mahasiswa mampu '.lcfirst(Str::limit($c->deskripsi, 60, '')),
+                ])
+                ->all());
+        }
 
         $service->terbitkan($rps->fresh(['pertemuan', 'cpl']), $penyusun);
     }
@@ -164,6 +177,12 @@ class RpsSeeder extends Seeder
         }
 
         $komponen = KomponenNilai::where('kelas_kuliah_id', $kelas->id)->orderBy('id')->get();
+
+        // Classes mapped to CPMK by CapaianSeeder measure through those; a
+        // second, direct mapping to CPL would count the same marks twice.
+        if ($komponen->contains(fn (KomponenNilai $k): bool => $k->pemetaanCpmk()->exists())) {
+            return;
+        }
 
         foreach ($komponen as $i => $k) {
             if ($k->cpl()->exists()) {

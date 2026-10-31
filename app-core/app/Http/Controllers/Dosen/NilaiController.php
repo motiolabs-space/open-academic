@@ -10,6 +10,7 @@ use App\Http\Requests\Dosen\RencanaEvaluasiRequest;
 use App\Models\Akademik\KelasKuliah;
 use App\Models\Akademik\KomponenNilai;
 use App\Models\Akademik\Nilai;
+use App\Services\Akademik\CapaianService;
 use App\Services\Akademik\PenilaianService;
 use App\Support\Portal;
 use Illuminate\Http\RedirectResponse;
@@ -25,7 +26,10 @@ use Illuminate\View\View;
  */
 class NilaiController extends Controller
 {
-    public function __construct(private readonly PenilaianService $penilaian) {}
+    public function __construct(
+        private readonly PenilaianService $penilaian,
+        private readonly CapaianService $capaian,
+    ) {}
 
     public function index(): View
     {
@@ -80,6 +84,10 @@ class NilaiController extends Controller
                 'bernilai' => (bool) $k->nilai_exists,
             ])->values(),
             'jenisEvaluasi' => JenisEvaluasi::options(),
+
+            // Which outcomes each component measures, and which promised
+            // sub-CPMK nothing measures yet (ADR-038).
+            'cakupan' => $this->capaian->cakupan($kelas, $komponen),
             'ambangKolaboratif' => JenisEvaluasi::AMBANG_KOLABORATIF_PERSEN,
         ]);
     }

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Dosen;
 
 use App\Http\Controllers\Controller;
+use App\Models\Akademik\CpmkVersi;
 use App\Models\Akademik\KelasKuliah;
 use App\Models\Akademik\MataKuliah;
 use App\Models\Akademik\PertemuanKelas;
@@ -94,6 +95,13 @@ class RpsController extends Controller
 
             'rps' => $rps->load(['pertemuan', 'cpl']),
             'mataKuliah' => $mataKuliah,
+
+            // The outcome set the plan teaches — the same rows the grade
+            // components are mapped to. Shown read-only here; it is written on
+            // its own screen so a plan revision cannot reword it in passing.
+            'versiCpmk' => $rps->cpmk_versi_id === null
+                ? null
+                : CpmkVersi::with(CpmkVersi::MUAT)->find($rps->cpmk_versi_id),
             'cplPilihan' => ProdiCpl::where('prodi_id', $mataKuliah->prodi_id)->orderBy('kode')->get(),
             'jumlahPertemuan' => (int) config('academic.attendance.meetings_per_term', 16),
             'kekurangan' => $this->rps->kekurangan($rps->load(['pertemuan', 'cpl'])),
@@ -111,6 +119,7 @@ class RpsController extends Controller
             'cpl.*' => ['integer'],
             'pertemuan' => ['required', 'array', 'min:1'],
             'pertemuan.*.pertemuan_ke' => ['required', 'integer', 'min:1', 'max:32'],
+            'pertemuan.*.sub_cpmk_id' => ['nullable', 'integer'],
             'pertemuan.*.kemampuan_akhir' => ['nullable', 'string', 'max:500'],
             'pertemuan.*.bahan_kajian' => ['nullable', 'string', 'max:500'],
             'pertemuan.*.metode' => ['nullable', 'string', 'max:64'],
@@ -127,9 +136,12 @@ class RpsController extends Controller
             ->values()
             ->all());
 
-        $this->rps->simpanCpl($rps, collect($data['cpl'] ?? [])
-            ->map(fn (int $id): array => ['prodi_cpl_id' => $id])
-            ->all());
+        // A plan attached to a CPMK version takes its CPL from that version.
+        if ($rps->cpmk_versi_id === null) {
+            $this->rps->simpanCpl($rps, collect($data['cpl'] ?? [])
+                ->map(fn (int $id): array => ['prodi_cpl_id' => $id])
+                ->all());
+        }
 
         return back()->with('sukses', 'RPS tersimpan sebagai draf.');
     }
