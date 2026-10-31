@@ -24,6 +24,18 @@ class PrestasiMapper extends FeederMapper
         return 'InsertPrestasiMahasiswa';
     }
 
+    public function medan(): array
+    {
+        return [
+            'id_mahasiswa',
+            'id_jenis_prestasi',
+            'id_tingkat_prestasi',
+            'nama',
+            'tahun_prestasi',
+            'penyelenggara',
+        ];
+    }
+
     /** @return Builder<PoinMahasiswa> */
     protected function query(string $termCode): Builder
     {

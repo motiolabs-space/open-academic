@@ -27,6 +27,11 @@ class UjiTugasAkhirMapper extends FeederMapper
         return 'InsertUjiMahasiswa';
     }
 
+    public function medan(): array
+    {
+        return ['id_aktivitas', 'id_kategori_kegiatan', 'id_dosen', 'penguji_ke'];
+    }
+
     /** @return Builder<Penguji> */
     protected function query(string $termCode): Builder
     {

@@ -39,7 +39,7 @@ class PerbaruiAsalRequest extends FormRequest
         $mahasiswa = $this->route('mahasiswa');
 
         return $this->aturanAsal(
-            array_map(fn (JenisDaftar $j): string => $j->value, JenisDaftar::cases()),
+            array_keys(JenisDaftar::optionsIntake()),
             $mahasiswa instanceof Mahasiswa ? $mahasiswa->term_masuk : null,
         );
     }

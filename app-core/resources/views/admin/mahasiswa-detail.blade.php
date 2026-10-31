@@ -15,6 +15,10 @@
 @endphp
 
 @section('content')
+    @if (session('kata_sandi_baru'))
+        <x-kredensial-baru :data="session('kata_sandi_baru')" />
+    @endif
+
     <div class="mb-5 grid gap-3.5 sm:grid-cols-2 xl:grid-cols-4">
         <x-stat-card feature :label="$l('stat.ipk')" :value="Format::angka($terakhir?->ipk ?? 0)"
             :meta="$terakhir?->tahunAkademik?->nama ?? '—'" />
@@ -259,6 +263,11 @@
                     @endforelse
                 </div>
             </x-card>
+
+            @include('admin.partials.riwayat-registrasi', ['mahasiswa' => $mahasiswa])
+            @if ($bolehRegistrasiUlang)
+                <x-button variant="outline" size="sm" class="w-full" href="{{ route('admin.mahasiswa.registrasi-ulang', $mahasiswa) }}">{{ __('registrasi_ulang.tombol') }}</x-button>
+            @endif
 
             <x-card :title="$l('kartu.pddikti')">
                 @if ($isuFeeder->isEmpty())

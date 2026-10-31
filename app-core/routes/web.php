@@ -541,6 +541,8 @@ Route::middleware(['auth:staff', 'term.active'])->prefix('admin')->name('admin.'
     // Detail satu mahasiswa: baca saja, plus cetak KHS/transkrip dari service
     // yang sama dengan portal mahasiswa.
     Route::get('/mahasiswa/{mahasiswa}', [Admin\MahasiswaDetailController::class, 'show'])->name('mahasiswa.show');
+    Route::get('/mahasiswa/{mahasiswa}/registrasi-ulang', [Admin\RegistrasiUlangController::class, 'create'])->name('mahasiswa.registrasi-ulang');
+    Route::post('/mahasiswa/{mahasiswa}/registrasi-ulang', [Admin\RegistrasiUlangController::class, 'store'])->name('mahasiswa.registrasi-ulang.store');
     Route::get('/mahasiswa/{mahasiswa}/khs/{term}', [Admin\MahasiswaDetailController::class, 'khs'])->name('mahasiswa.khs');
     Route::get('/mahasiswa/{mahasiswa}/transkrip', [Admin\MahasiswaDetailController::class, 'transkrip'])->name('mahasiswa.transkrip');
 
@@ -935,6 +937,8 @@ Route::middleware(['auth:staff', 'term.active'])->prefix('admin')->name('admin.'
     Route::get('/feeder', [Admin\FeederController::class, 'index'])->name('feeder');
     Route::post('/feeder/validasi', [Admin\FeederController::class, 'validasi'])->name('feeder.validasi');
     Route::post('/feeder/referensi', [Admin\FeederController::class, 'tarikReferensi'])->name('feeder.referensi');
+    Route::get('/feeder/kamus', [Admin\FeederKamusController::class, 'index'])->name('feeder.kamus');
+    Route::post('/feeder/kamus', [Admin\FeederKamusController::class, 'periksa'])->name('feeder.kamus.periksa');
     Route::get('/feeder/adopsi', [Admin\FeederAdopsiController::class, 'index'])->name('feeder.adopsi');
     Route::post('/feeder/adopsi', [Admin\FeederAdopsiController::class, 'jalankan'])->name('feeder.adopsi.jalankan');
     Route::post('/feeder/adopsi/{adopsi}/tautkan', [Admin\FeederAdopsiController::class, 'tautkan'])->name('feeder.adopsi.tautkan');

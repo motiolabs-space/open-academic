@@ -10,12 +10,13 @@ use Illuminate\Support\Facades\DB;
 /**
  * Publishes `student.enrolled` — once per student, ever.
  *
- * A student record is born in exactly two places: daftar ulang of an admitted
- * applicant (PmbService, which the PMB transfer intake also goes through) and
- * a transfer enrolled without an admissions record (PindahanService). Both
- * call umumkan(). Adoption and past-student claims (#44/#44b) link students
- * that already exist here to PDDIKTI; they enrol nobody and publish nothing
- * (ADR-035 §4).
+ * A student record is born in three places: daftar ulang of an admitted
+ * applicant (PmbService, which the PMB transfer intake also goes through), a
+ * transfer enrolled without an admissions record (PindahanService), and the
+ * new registration of an internal transfer or a readmission
+ * (RegistrasiUlangService, which names the earlier one). All call umumkan().
+ * Adoption and past-student claims (#44/#44b) link students that already
+ * exist here to PDDIKTI; they enrol nobody and publish nothing (ADR-035 §4).
  *
  * Two properties:
  *
@@ -85,6 +86,11 @@ class PenerbitPendaftaran
             'semester_masuk' => $mahasiswa->term_masuk,
             'jenis_daftar' => $mahasiswa->jenis_daftar?->value,
             'status' => $mahasiswa->status->value,
+
+            // A re-NIM or readmission opens a new registration for someone
+            // already here (ADR-042 §3); this names the earlier one so a
+            // consumer can join the two accounts. Null for a first intake.
+            'mahasiswa_sebelumnya_uuid' => $mahasiswa->registrasiSebelumnya()->with('mahasiswaLama:id,uuid')->first()?->mahasiswaLama?->uuid,
         ];
     }
 }

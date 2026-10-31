@@ -28,6 +28,19 @@ class SkalaNilaiProdiMapper extends FeederMapper
         return 'InsertSkalaNilaiProdi';
     }
 
+    public function medan(): array
+    {
+        return [
+            'id_prodi',
+            'nilai_huruf',
+            'nilai_indeks',
+            'bobot_minimum',
+            'bobot_maksimum',
+            'tanggal_mulai_efektif',
+            'tanggal_akhir_efektif',
+        ];
+    }
+
     /** @return Builder<SkalaNilaiProdi> */
     protected function query(string $termCode): Builder
     {

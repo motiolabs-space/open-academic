@@ -30,6 +30,25 @@ class PeriodePerkuliahanMapper extends FeederMapper
         return 'InsertPeriodePerkuliahan';
     }
 
+    public function medan(): array
+    {
+        return [
+            'id_prodi',
+            'id_semester',
+            'tanggal_awal_perkuliahan',
+            'tanggal_akhir_perkuliahan',
+            'jumlah_minggu_pertemuan',
+            'jumlah_target_mahasiswa_baru',
+            'jumlah_pendaftar_ikut_seleksi',
+            'jumlah_pendaftar_lulus_seleksi',
+            'jumlah_daftar_ulang',
+            'jumlah_mengundurkan_diri',
+            'metode_kuliah_tatap_muka',
+            'metode_kuliah_daring',
+            'metode_kuliah_campuran',
+        ];
+    }
+
     /** @return Builder<PeriodePerkuliahan> */
     protected function query(string $termCode): Builder
     {

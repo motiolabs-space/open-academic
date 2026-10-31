@@ -1961,6 +1961,191 @@ ditulis ulang dengan kata-kata sendiri; dokumennya tidak masuk repo
 
 ---
 
+## ADR-042 — Butir Feeder P7: kamus web service, nama medan yang dapat diatur, re-NIM dan masuk kembali (2026-10-30)
+
+ROADMAP P7 menyisakan empat butir Feeder yang tidak dapat diselesaikan dari
+dokumen publik (ADR-036 §3): nama medan HP (#52), tanggal ijazah (#53),
+changelog 3.1 (#54), dan alur re-NIM / masuk kembali (#55). Satu ADR, satu
+bagian per butir.
+
+### 1. Kamus web service dibaca dari Feeder kampus, dibandingkan, dilaporkan — tidak diterapkan
+
+- **Konteks.** Nama medan hanya pasti di kamus yang dijawab Neo Feeder yang
+  terpasang (aksi kamus, lazimnya `GetDictionary`). Kamus itu materi
+  kementerian: tidak boleh masuk repo (CLAUDE.md §10), dan bentuk balasannya
+  tidak dipublikasikan sehingga tidak dapat ditulis sebagai fixture "asli".
+  Menebak nama medan sudah dua kali ditolak (#52, #53).
+- **Keputusan.** (1) **Alat, bukan tebakan.** `openacademic:feeder-kamus` dan
+  layar `/admin/feeder/kamus` (tautan dan panel ringkas di konsol Feeder)
+  memanggil aksi kamus untuk setiap aksi yang dikirim mapper, menyimpan
+  hasilnya ke dua tabel infrastruktur (`feeder_dictionary_runs`: versi,
+  driver, jumlah aksi/gagal, siapa, kapan; `feeder_dictionary_acts`: medan
+  per aksi atau galatnya), lalu membandingkannya dengan **`medan()`** — daftar
+  medan yang dideklarasikan setiap mapper. Nama aksi kamus dan nama parameter
+  pembawa aksi dapat diatur (`FEEDER_KAMUS_ACT`, `FEEDER_KAMUS_PARAMETER`),
+  seperti nama aksi lain di `config/feeder.php`. (2) **Empat jenis temuan**
+  (`JenisTemuanKamus`): medan yang kita kirim tetapi tidak dikenal kamus;
+  medan wajib yang tidak kita kirim (kunci primer tidak dihitung — itu yang
+  dikembalikan Feeder); pasangan keduanya yang tampak satu medan berganti
+  nama (sinonim yang dikenal, mis. `telepon_seluler`/`handphone`/`nomor_hp`,
+  kata yang termuat di nama lain, atau ejaan ≥ 80% mirip; dipasangkan yang
+  terbaik dulu, setiap nama sekali); dan aksi yang kamusnya tidak terbaca.
+  Medan opsional yang tidak dikirim hanya didaftar, bukan temuan. (3)
+  **Pembaca kamus toleran, penolakannya jujur.** `KamusFeeder` mencari daftar
+  medan di bentuk yang lazim (peta bernama medan, atau daftar baris yang
+  menyebut nama medan) di bawah pembungkus yang lazim (nama aksi, `request`,
+  `record`, …). Balasan yang tidak berbentuk itu dicatat sebagai "tidak
+  terbaca", **tidak pernah** sebagai aksi tanpa medan wajib. (4) **Laporan
+  diturunkan saat ditampilkan**, dari bacaan yang tersimpan dan kode yang
+  berjalan: mapper yang diperbaiki sesudah bacaan langsung terlihat cocok
+  tanpa bertanya ke Feeder lagi. (5) **Tidak ada yang diterapkan otomatis.**
+  Pemetaan, config, dan buku besar tidak disentuh; yang memutuskan orang.
+  Membaca (`feeder.view`) dan menjalankan (`feeder.sync`) dipisah. (6)
+  **`medan()` dipaku tes** terhadap kunci yang benar-benar ditulis
+  `payload()` setiap mapper, supaya deklarasi dan payload tidak bergeser.
+  (7) **Kamus palsu dikarang.** `FakeFeederClient::kamus()` punya skenario
+  `selaras`, `3.0.1`, dan `3.1` yang dibangun dari `medan()` mapper ditambah
+  perubahan fiktif (HP berganti nama, medan wajib baru, medan dihapus, aksi
+  tidak dilayani). Label versinya menamai situasi yang dikhawatirkan ROADMAP,
+  bukan klaim tentang isi Neo Feeder versi itu.
+- **Konsekuensi.** Kampus menjalankan pemeriksaan sesudah memasang atau
+  memperbarui Neo Feeder dan sebelum sinkronisasi semester. Isi kamus berada
+  di basis data kampus saja. Bila balasan Feeder kampus berbentuk lain dari
+  yang dikenali, layar mengatakan "tidak terbaca"; bentuk baru ditambahkan ke
+  `KamusFeeder` beserta tesnya, tanpa menyalin balasan aslinya ke repo.
+
+### 2. Nama medan HP dan tanggal ijazah diatur kampus; tanggal ijazah tidak dikirim sampai namanya diisi
+
+- **Konteks.** `MahasiswaMapper` mengirim HP sebagai `telepon_seluler`, nama
+  yang belum pernah dicocokkan dengan kamus Feeder mana pun (#52). Neo Feeder
+  3.0.1 dilaporkan menambah tanggal terbit ijazah pada Lulus/DO, dengan nama
+  medan yang tidak diketahui (#53). Kode yang menebak nama akan ditolak Feeder
+  — atau lebih buruk, diterima dan diabaikan diam-diam.
+- **Keputusan.** (1) `config('feeder.medan')`: `FEEDER_MEDAN_HP` (bawaan
+  `telepon_seluler`, perilaku hari ini), `FEEDER_MEDAN_TANGGAL_IJAZAH`
+  (bawaan kosong — **tidak dikirim**), dan `FEEDER_TANGGAL_IJAZAH_SUMBER`.
+  `MedanFeeder` membaca ketiganya; nilai yang bukan nama medan
+  (`^[a-z][a-z0-9_]{1,63}$`) diabaikan — HP kembali ke bawaan, tanggal ijazah
+  tetap tidak dikirim — dan ditampilkan di layar kamus sebagai "tidak sah".
+  (2) **Sumber tanggal ijazah** dari data yang ada, tanpa kolom baru:
+  `lulus` (bawaan, `yudisium.tanggal_lulus` — tanggal yang dibaca PISN dan
+  selalu ada saat Lulus/DO pertama dikirim), `yudisium` (tanggal SK), atau
+  `wisuda` (periode wisuda paling awal lulusan itu). Bawaannya `lulus` dan
+  bukan `wisuda` karena lulusan biasanya dilaporkan sebelum diwisuda: dengan
+  `wisuda`, setiap Lulus/DO akan dikirim tanpa tanggal lalu dikirim ulang
+  sesudah wisuda. Tanggal yang belum ada hanya **peringatan**
+  (`tanggal_ijazah_kosong`): menahan lulusan membuatnya tetap Aktif di
+  PDDIKTI. Hanya Lulus yang membawanya; DO dan mengundurkan diri tidak. (3)
+  **Pemeriksa kamus menyarankan nilainya** (§1): nama yang dikonfigurasi ada
+  di kamus → "sesuai"; tidak ada tetapi kamus punya calon (sinonim HP, atau
+  medan yang memuat `tanggal`/`tgl` dan `ijazah`, yang wajib didahulukan) →
+  baris `.env` yang disarankan; tanggal ijazah diisi tetapi kamus tidak
+  mengenalnya → saran mengosongkan. Tidak ada yang diterapkan otomatis.
+  `FakeFeederClient` mengembalikan nama yang diatur ke bawaannya saat
+  membangun kamus palsu, karena kamus sebuah build tidak ikut berubah ketika
+  kampus menyunting config.
+- **Konsekuensi — idempotensi.** Hash payload dihitung atas nama dan nilai,
+  jadi mengganti nama medan **mengubah hash** setiap baris yang membawanya.
+  Artinya terkendali, bukan duplikat: baris yang sudah diterima Feeder punya
+  `feeder_id`, sehingga perbedaan hash membuatnya dikirim sebagai **Update**
+  berkunci identitas itu (`UpdateBiodataMahasiswa` dengan `id_mahasiswa`,
+  `UpdateMahasiswaLulusDO` dengan `id_registrasi_mahasiswa`), satu kali,
+  lalu dilewati lagi pada putaran berikutnya. Tidak pernah ada Insert kedua.
+  Pengiriman ulang itu memang yang benar: bila nama lama salah, nomor HP
+  atau tanggal ijazah tidak pernah sampai. Cakupannya mengikuti antrean
+  setiap entitas — biodata yang dikirim ulang hanya mahasiswa yang masuk pada
+  semester yang disinkronkan, Lulus/DO hanya yang keluar pada semester itu —
+  jadi mengganti nama tidak mengirim ulang seluruh kampus sekaligus. Catatan
+  Lulus/DO yang sudah dikunci PDDIKTI dapat ditolak saat diperbarui; tolakan
+  itu tercatat di buku besar dengan pesan Feeder, dan jalurnya PJK yang sudah
+  ada (ADR-017). Snapshot payload bawaan tidak berubah.
+
+### 3. Re-NIM dan masuk kembali membuka registrasi baru sebagai baris mahasiswa baru yang tertaut; aktif kembali membuka ulang yang sama
+
+- **Konteks.** Neo Feeder 3.0.1 dilaporkan (sekunder) menambah jenis daftar
+  untuk re-NIM dan masuk kembali; kodenya tiba sendiri lewat referensi
+  `GetJenisPendaftaran`. Yang belum ada adalah alur lokal (#55). PDDIKTI
+  mengikat semuanya pada **registrasi** — satu orang, satu prodi, satu NIM
+  (`id_registrasi_mahasiswa` di bawah `id_mahasiswa`) — dan di sini satu
+  baris `mahasiswa` sudah berperan sebagai satu registrasi: NIM unik, satu
+  prodi, `feeder_registrasi_id` sendiri, KRS/nilai/AKM menggantung padanya.
+  Menimpa NIM di tempat akan memindahkan seluruh KRS dan nilai lama ke
+  registrasi baru begitu semester lama disinkronkan ulang, transkrip prodi
+  lama bercampur dengan prodi baru, dan catatan keluar registrasi lama
+  kehilangan identitasnya — dan melanggar prinsip integritas CLAUDE.md §4.
+- **Keputusan.** (1) **Tiga peristiwa** (`JenisRegistrasiUlang`), dicatat
+  staf ber-`mahasiswa.manage` dari halaman detail mahasiswa
+  (`/admin/mahasiswa/{uuid}/registrasi-ulang`) lewat
+  `RegistrasiUlangService`, satu transaksi, dan ditulis sebagai peristiwa di
+  tabel baru `riwayat_registrasi_mahasiswa` (NIM, prodi, dan status
+  sebelum/sesudah disalin; SK dan alasan; soft delete, log aktivitas; tidak
+  pernah disunting). **Pindah prodi internal** (dari Aktif, Cuti, Non-Aktif)
+  dan **masuk kembali** (dari Keluar; dari DO hanya bila
+  `ACADEMIC_MASUK_KEMBALI_DARI_DO=true`) membuka **baris mahasiswa baru**:
+  NIM baru (diisi atau dari pola prodi tujuan), akun dan surel baru, data
+  pribadi disalin, `feeder_id` orang yang sama diwarisi, jenis daftar
+  `pindah_prodi`/`masuk_kembali` (kasus baru `JenisDaftar`, `internal()`),
+  asal = kampus ini dan prodi lama, `term_masuk_asal` = semester masuk lama.
+  Baris lama tetap dengan NIM, nilai, dan registrasi PDDIKTI-nya; pindah prodi
+  mengubah statusnya menjadi Ganti Prodi (`G`), masuk kembali membiarkannya
+  tertutup. **Aktif kembali** (dari Keluar, atau DO bila diizinkan) membuka
+  ulang **baris yang sama** dengan NIM yang sama. Lulusan tidak termasuk:
+  gelar berikutnya adalah pendaftaran baru lewat PMB. Satu registrasi hanya
+  dialihkan sekali (dikunci baris saat dicatat). (2) **Yang dikirim ke
+  Feeder memakai jalur yang ada, tanpa aksi baru.** Registrasi baru: biodata
+  tidak didaftarkan dua kali (`feeder_id` warisan membuatnya pembaruan),
+  riwayat pendidikannya `InsertRiwayatPendidikanMahasiswa` pada
+  `id_mahasiswa` yang sama dengan jenis daftar yang **dipetakan kampus** dari
+  referensi Feeder (validator menolak selama belum dipetakan, seperti jenis
+  pindahan lain) dan `sks_diakui` dari konversi yang disetujui — nol dikirim
+  dan hanya diperingatkan, karena masuk kembali sah tanpa pengakuan.
+  Registrasi lama pada pindah prodi: `InsertMahasiswaLulusDO` pada semester
+  peristiwa dengan jenis keluar yang dipetakan untuk `G` (demo: Mutasi),
+  tanggal peristiwa, dan label peristiwa sebagai keterangan; status `G` tanpa
+  peristiwa tercatat ditolak validator. Aktif kembali dengan keluar yang sudah
+  dilaporkan membuka **PJK** lewat observer kolom terkunci yang sudah ada
+  (ADR-017): pembatalan keluar diajukan lewat PDDIKTI admin, tidak pernah
+  dihapus dari sini. Yang membedakan riwayat pendidikan baru dari PDM: PDM
+  untuk **koreksi** identitas registrasi yang sama; re-NIM adalah
+  **registrasi lain**, jadi tidak pernah lewat PDM. (3) **Campus Bridge.**
+  Registrasi baru adalah baris mahasiswa dan subjek SSO baru, jadi diumumkan
+  sebagai `student.enrolled` lewat `PenerbitPendaftaran` yang sama (sekali,
+  sesudah commit) — ADR-035 §4 menerbitkannya saat baris mahasiswa lahir, dan
+  adopsi/klaim tetap tidak menerbitkan karena tidak ada yang lahir. Muatannya
+  mendapat `mahasiswa_sebelumnya_uuid` (null untuk pendaftaran pertama;
+  `bridge.yaml` diperbarui) supaya konsumen dapat menautkan dua akun satu
+  orang. Perubahan status registrasi lama (pindah prodi A→G, aktif kembali
+  K→A) terbit sebagai `student.status_changed`; aktif kembali tidak
+  menerbitkan `student.enrolled`. (4) **Nomor HP ganda dihitung per orang**
+  (NIK), bukan per baris, supaya dua registrasi satu orang tidak saling
+  memperingatkan. (5) Layar intake pindahan tidak menawarkan jenis daftar
+  internal dan menolak menyunting asal registrasi internal.
+- **Konsekuensi.** Mahasiswa yang pindah prodi masuk dengan NIM dan kata sandi
+  baru; akun lama tetap dapat dibuka untuk KHS/transkrip prodi lamanya.
+  Pengakuan mata kuliah dari prodi lama dilakukan di layar konversi yang
+  sudah ada untuk baris baru. Tagihan semester baru tidak diterbitkan oleh
+  alur ini — keuangan mengikuti siklus semesternya. Kampus memetakan
+  `pindah_prodi`, `masuk_kembali` (grup `jenis_daftar`) dan `G` (grup
+  `jenis_keluar`) dari referensi yang ditarik sebelum sinkronisasi. Konsumen
+  Bridge yang mengabaikan medan tak dikenal tidak terganggu.
+
+### 4. Neo Feeder 3.1 diverifikasi di instalasi kampus, bukan dari catatan rilis
+
+- **Konteks.** Pemeriksaan ulang 30 Oktober 2026 terhadap sumber resmi
+  (Pusdatin Kemdiktisaintek, laman LLDIKTI) tetap tidak menemukan catatan
+  rilis 3.1; yang beredar hanya pengumuman bimtek/pemeliharaan dan ringkasan
+  sekunder yang tidak saling konsisten soal tanggal dan isi.
+- **Keputusan.** #54 tetap terbuka dengan tanggal pemeriksaan. Cara
+  memverifikasinya tanpa catatan rilis adalah pemeriksa kamus (§1) pada
+  instalasi kampus yang menjalankan 3.1: selisihnya per aksi adalah daftar
+  perubahan yang menyentuh data kiriman kita. Butir sekunder yang sudah
+  diterapkan sebagai validator (AKM sebelum Lulus/DO, HP unik) tidak diubah.
+- **Konsekuensi.** #54 ditutup begitu catatan resmi terbit atau satu kampus
+  melaporkan hasil pemeriksaan kamus 3.1 — laporan selisihnya, bukan
+  salinan kamusnya.
+
+---
+
 ## ADR-043 — Wizard setup awal sekali pakai, dan notifikasi instalasi ke Humanix berbasis persetujuan (2026-10-31)
 
 ### 1. Wizard setup: terbuka hanya bila belum ada akun sama sekali

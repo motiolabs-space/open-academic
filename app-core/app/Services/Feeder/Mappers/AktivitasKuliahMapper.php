@@ -23,6 +23,20 @@ class AktivitasKuliahMapper extends FeederMapper
         return 'InsertAktivitasKuliahMahasiswa';
     }
 
+    public function medan(): array
+    {
+        return [
+            'id_registrasi_mahasiswa',
+            'id_semester',
+            'id_status_mahasiswa',
+            'ips',
+            'ipk',
+            'sks_semester',
+            'sks_total',
+            'biaya_kuliah_smt',
+        ];
+    }
+
     /** @return Builder<StatusMahasiswa> */
     protected function query(string $termCode): Builder
     {

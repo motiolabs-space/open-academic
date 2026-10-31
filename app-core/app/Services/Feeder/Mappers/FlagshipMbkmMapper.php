@@ -34,6 +34,11 @@ class FlagshipMbkmMapper extends FeederMapper
         return 'InsertAktivitasMBKMFlagship';
     }
 
+    public function medan(): array
+    {
+        return ['id_aktivitas', 'id_flagship'];
+    }
+
     /** @return Builder<AktivitasMahasiswa> */
     protected function query(string $termCode): Builder
     {

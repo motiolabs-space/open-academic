@@ -69,7 +69,7 @@ class PindahanService
     public static function jenisPilihan(): array
     {
         return collect(JenisDaftar::cases())
-            ->filter(fn (JenisDaftar $jenis): bool => $jenis->butuhAsal())
+            ->filter(fn (JenisDaftar $jenis): bool => $jenis->butuhAsal() && !$jenis->internal())
             ->mapWithKeys(fn (JenisDaftar $jenis): array => [$jenis->value => $jenis->label()])
             ->all();
     }
@@ -167,6 +167,13 @@ class PindahanService
                 'Riwayat pendidikan mahasiswa ini sudah tercatat di PDDIKTI. Perubahan jenis daftar '
                     .'atau asal harus melewati pembaruan riwayat pendidikan di Feeder, bukan disunting di sini.',
             );
+        }
+
+        // A registration opened by the re-NIM flow takes its kind and origin
+        // from the event that opened it (RegistrasiUlangService); editing them
+        // here would leave the event saying one thing and the record another.
+        if ($mahasiswa->jenis_daftar?->internal()) {
+            throw new AturanAkademikException(__('registrasi_ulang.galat.asal_internal'));
         }
 
         if ($asal->jenisDaftar->butuhAsal()) {
@@ -331,7 +338,7 @@ class PindahanService
     public function jenisBelumDipetakan(): array
     {
         return collect(JenisDaftar::cases())
-            ->filter(fn (JenisDaftar $jenis): bool => $jenis->butuhAsal()
+            ->filter(fn (JenisDaftar $jenis): bool => $jenis->butuhAsal() && !$jenis->internal()
                 && FeederMapping::toFeeder('jenis_daftar', $jenis->value) === null)
             ->map(fn (JenisDaftar $jenis): string => $jenis->label())
             ->values()
