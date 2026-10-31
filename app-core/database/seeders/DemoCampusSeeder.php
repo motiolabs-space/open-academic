@@ -6,6 +6,7 @@ namespace Database\Seeders;
 
 use App\Models\System\Setting;
 use App\Support\Demo;
+use App\Support\Instalasi;
 use Database\Seeders\Demo\AkuntansiSeeder;
 use Database\Seeders\Demo\AngkaKreditSeeder;
 use Database\Seeders\Demo\BeasiswaSeeder;
@@ -206,6 +207,10 @@ class DemoCampusSeeder extends Seeder
          * never seeded by us.
          */
         Demo::tandai();
+
+        // The demo campus has an identity and a super-admin already, so the
+        // setup wizard stays closed on it (ADR-043).
+        Instalasi::tandaiSelesai();
 
         $this->ringkasan();
     }

@@ -4,9 +4,13 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Admin;
 
+use App\DTOs\Instalasi\PersetujuanTelemetriData;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Instalasi\PersetujuanTelemetriRequest;
+use App\Models\System\InstallationPing;
 use App\Models\System\Setting;
 use App\Services\Dokumen\PengaturanDokumen;
+use App\Services\Instalasi\TelemetriService;
 use App\Support\Portal;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -25,7 +29,10 @@ use Illuminate\View\View;
  */
 class PengaturanController extends Controller
 {
-    public function __construct(private readonly PengaturanDokumen $dokumen) {}
+    public function __construct(
+        private readonly PengaturanDokumen $dokumen,
+        private readonly TelemetriService $telemetri,
+    ) {}
 
     public function index(): View
     {
@@ -37,6 +44,16 @@ class PengaturanController extends Controller
             'breadcrumb' => ['Dasbor' => route('admin.dashboard'), 'Pengaturan'],
             'branding' => Setting::group('branding'),
             'dokumen' => $this->dokumen->medan(),
+            'telemetri' => [
+                'diizinkan' => $this->telemetri->diizinkanEnv(),
+                'aktif' => $this->telemetri->aktif(),
+                'setuju' => $this->telemetri->disetujui(),
+                'sertakanUrl' => $this->telemetri->sertakanUrl(),
+                'tujuan' => (string) config('instalasi.telemetri.endpoint'),
+                'urlAplikasi' => (string) config('app.url'),
+                'pratinjau' => $this->telemetri->pratinjau(),
+                'riwayat' => InstallationPing::query()->latest('id')->limit(10)->get(),
+            ],
 
             // Shown read-only so an operator can see what is in force without
             // being invited to change it from a web form.
@@ -64,6 +81,15 @@ class PengaturanController extends Controller
             // payload this campus sends is filed under somebody else.
             'institution_code' => ['nullable', 'string', 'max:32'],
 
+            // Contact details from the setup wizard (ADR-043). City and
+            // province are also what the installation ping reports.
+            'institution_address' => ['nullable', 'string', 'max:500'],
+            'institution_city' => ['nullable', 'string', 'max:100'],
+            'institution_province' => ['nullable', 'string', 'max:100'],
+            'institution_email' => ['nullable', 'email', 'max:255'],
+            'institution_phone' => ['nullable', 'string', 'max:32'],
+            'institution_website' => ['nullable', 'url:http,https', 'max:255'],
+
             'primary_color' => ['required', 'string', 'regex:/^#[0-9A-Fa-f]{6}$/'],
             'accent_color' => ['required', 'string', 'regex:/^#[0-9A-Fa-f]{6}$/'],
         ], [
@@ -72,7 +98,7 @@ class PengaturanController extends Controller
         ]);
 
         foreach ($validated as $kunci => $nilai) {
-            Setting::put('branding', $kunci, $nilai);
+            Setting::put('branding', $kunci, (string) $nilai);
         }
 
         return back()->with('sukses', 'Pengaturan disimpan. Muat ulang halaman untuk melihat perubahan warna.');
@@ -113,6 +139,20 @@ class PengaturanController extends Controller
         }
 
         return back()->with('sukses', 'Pengaturan dokumen disimpan.');
+    }
+
+    /**
+     * Consent to the installation ping (ADR-043). The same sentence the
+     * wizard asked, and the same service: turning it on here sends the ping
+     * for the running version if it has not gone out yet.
+     */
+    public function simpanTelemetri(PersetujuanTelemetriRequest $request): RedirectResponse
+    {
+        $this->izin('pengaturan.manage');
+
+        $this->telemetri->atur(PersetujuanTelemetriData::fromRequest($request));
+
+        return back()->with('sukses', __('instalasi.telemetri.disimpan'));
     }
 
     private function izin(string $permission): void

@@ -15,15 +15,22 @@ use App\Policies\Sdm\RiwayatKepegawaianPolicy;
 use App\Services\Akuntansi\AkuntansiPalsu;
 use App\Services\Akuntansi\Contracts\AkuntansiClientInterface;
 use App\Services\Akuntansi\EasyAccountingClient;
+use App\Services\Instalasi\Contracts\InstalasiReporterInterface;
+use App\Services\Instalasi\HttpInstalasiReporter;
+use App\Services\Instalasi\InstalasiReporterPalsu;
+use App\Services\Instalasi\TelemetriService;
 use App\Services\Notifikasi\Contracts\WhatsAppGatewayInterface;
 use App\Services\Notifikasi\LogWhatsAppGateway;
 use App\Services\Notifikasi\Preferensi;
 use App\Support\Akuntansi;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Events\MigrationsEnded;
+use Illuminate\Database\Events\NoPendingMigrations;
 use Illuminate\Http\Request;
 use Illuminate\Notifications\ChannelManager;
 use Illuminate\Routing\Route as RouteInstance;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\RateLimiter;
@@ -32,6 +39,7 @@ use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
 use InvalidArgumentException;
+use Throwable;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -101,6 +109,16 @@ class AppServiceProvider extends ServiceProvider
                 )),
             };
         });
+
+        /*
+         * The installation ping to Humanix (ADR-043). Singleton so the fake
+         * keeps what it "sent" for a test to read back. Any driver other than
+         * "http" is the fake: a typo here must fail towards sending nothing.
+         */
+        $this->app->singleton(InstalasiReporterInterface::class, fn (): InstalasiReporterInterface => match (config('instalasi.telemetri.driver')) {
+            'http' => new HttpInstalasiReporter,
+            default => new InstalasiReporterPalsu,
+        });
     }
 
     public function boot(): void
@@ -114,6 +132,31 @@ class AppServiceProvider extends ServiceProvider
         $this->batasPmb();
         $this->kunciFeeder();
         $this->riwayatKepegawaian();
+        $this->pingSetelahMigrasi();
+    }
+
+    /**
+     * Notices a new application version when the operator runs `migrate`,
+     * which every upgrade does anyway — so the ping is never periodic and
+     * needs no scheduler (ADR-043). A no-op without consent; never fails the
+     * migration it follows.
+     */
+    private function pingSetelahMigrasi(): void
+    {
+        // NoPendingMigrations too: a release that adds no migration is still
+        // a new version.
+        Event::listen([MigrationsEnded::class, NoPendingMigrations::class], function (object $event): void {
+            if ($event instanceof MigrationsEnded && ($event->options['pretend'] ?? false) === true) {
+                return;
+            }
+
+            try {
+                $this->app->make(TelemetriService::class)->laporkan();
+            } catch (Throwable) {
+                // laporkan() already swallows queue failures; this covers a
+                // settings table that does not exist yet mid-rollback.
+            }
+        });
     }
 
     /**

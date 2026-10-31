@@ -59,6 +59,9 @@
         <env name="IDP_ISSUER" value="https://idp.uji.test"/>
         <env name="IDP_CLIENT_ID" value="open-academic-uji"/>
         <env name="IDP_CLIENT_SECRET" value="bukan-rahasia-sungguhan"/>
+        <!-- The installation ping never reaches humanix.id from a test run;
+             tests that exercise the HTTP reporter construct it with Http::fake. -->
+        <env name="HUMANIX_TELEMETRI_DRIVER" value="palsu"/>
         <env name="PULSE_ENABLED" value="false"/>
         <env name="TELESCOPE_ENABLED" value="false"/>
         <env name="NIGHTWATCH_ENABLED" value="false"/>

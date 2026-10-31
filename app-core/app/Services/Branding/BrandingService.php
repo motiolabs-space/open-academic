@@ -33,6 +33,41 @@ class BrandingService
         return $this->value('institution_code', config('branding.institution.code'));
     }
 
+    /*
+     * Contact details from the setup wizard (ADR-043). No .env fallback: a
+     * placeholder address printed on a letterhead is worse than none.
+     */
+
+    public function institutionAddress(): string
+    {
+        return $this->value('institution_address', '');
+    }
+
+    public function institutionCity(): string
+    {
+        return $this->value('institution_city', '');
+    }
+
+    public function institutionProvince(): string
+    {
+        return $this->value('institution_province', '');
+    }
+
+    public function institutionEmail(): string
+    {
+        return $this->value('institution_email', '');
+    }
+
+    public function institutionPhone(): string
+    {
+        return $this->value('institution_phone', '');
+    }
+
+    public function institutionWebsite(): string
+    {
+        return $this->value('institution_website', '');
+    }
+
     public function primaryColor(): string
     {
         return $this->value('primary_color', config('branding.colors.primary'));

@@ -24,6 +24,20 @@
                 <x-field label="Kode PDDIKTI Institusi" name="institution_code"
                     :value="$branding['institution_code'] ?? ''"
                     hint="Salah isi berarti seluruh pelaporan kampus ini masuk atas nama institusi lain." />
+                <x-field :label="__('instalasi.field.alamat')" name="institution_address" type="textarea"
+                    :value="$branding['institution_address'] ?? ''" />
+                <div class="grid grid-cols-2 gap-3">
+                    <x-field :label="__('instalasi.field.kota')" name="institution_city"
+                        :value="$branding['institution_city'] ?? ''" />
+                    <x-field :label="__('instalasi.field.provinsi')" name="institution_province"
+                        :value="$branding['institution_province'] ?? ''" />
+                    <x-field :label="__('instalasi.field.surel')" name="institution_email" type="email"
+                        :value="$branding['institution_email'] ?? ''" />
+                    <x-field :label="__('instalasi.field.telepon')" name="institution_phone" type="tel"
+                        :value="$branding['institution_phone'] ?? ''" />
+                </div>
+                <x-field :label="__('instalasi.field.situs')" name="institution_website" type="url"
+                    :value="$branding['institution_website'] ?? ''" placeholder="https://" />
 
                 <div class="grid grid-cols-2 gap-3">
                     <div>
@@ -119,5 +133,79 @@
 
             <x-button type="submit" class="self-start">Simpan Pengaturan Dokumen</x-button>
         </form>
+    </x-card>
+
+    {{-- Notifikasi instalasi ke Humanix (ADR-043): persetujuan, isi persis
+         yang akan dikirim, dan riwayat yang pernah terkirim. --}}
+    <x-card class="mt-5" :title="__('instalasi.telemetri.judul')">
+        <x-slot:meta>
+            @if (! $telemetri['diizinkan'])
+                <x-chip tone="neutral">{{ __('instalasi.telemetri.keadaan.env') }}</x-chip>
+            @elseif ($telemetri['aktif'])
+                <x-chip tone="success">{{ __('instalasi.telemetri.keadaan.aktif') }}</x-chip>
+            @else
+                <x-chip tone="neutral">{{ __('instalasi.telemetri.keadaan.nonaktif') }}</x-chip>
+            @endif
+        </x-slot:meta>
+
+        <div class="grid gap-6 lg:grid-cols-2">
+            <form method="POST" action="{{ route('admin.pengaturan.telemetri') }}" class="flex flex-col gap-4">
+                @csrf @method('PUT')
+
+                @include('setup.partials.telemetri', [
+                    'diizinkan' => $telemetri['diizinkan'],
+                    'tujuan' => $telemetri['tujuan'],
+                    'urlAplikasi' => $telemetri['urlAplikasi'],
+                    'setuju' => $telemetri['setuju'],
+                    'sertakanUrl' => $telemetri['sertakanUrl'],
+                ])
+
+                @if ($telemetri['diizinkan'])
+                    <x-button type="submit" class="self-start">{{ __('instalasi.telemetri.simpan') }}</x-button>
+                @endif
+            </form>
+
+            <div class="flex flex-col gap-4">
+                <div>
+                    <h3 class="mb-2 text-[13px] font-semibold">{{ __('instalasi.telemetri.pratinjau') }}</h3>
+                    <pre class="overflow-x-auto rounded-control border border-line bg-canvas px-3.5 py-3 text-[11.5px] leading-relaxed">{{ json_encode($telemetri['pratinjau'], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) }}</pre>
+                </div>
+
+                <div>
+                    <h3 class="mb-2 text-[13px] font-semibold">{{ __('instalasi.telemetri.riwayat') }}</h3>
+                    @if ($telemetri['riwayat']->isEmpty())
+                        <p class="text-[12.5px] text-ink-faint">{{ __('instalasi.telemetri.riwayat_kosong') }}</p>
+                    @else
+                        <table class="w-full text-[12.5px]">
+                            <thead class="text-left text-[11px] uppercase tracking-[0.06em] text-ink-muted">
+                                <tr>
+                                    <th class="pb-1.5 font-semibold">{{ __('instalasi.telemetri.kolom.versi') }}</th>
+                                    <th class="pb-1.5 font-semibold">{{ __('instalasi.telemetri.kolom.peristiwa') }}</th>
+                                    <th class="pb-1.5 font-semibold">{{ __('instalasi.telemetri.kolom.status') }}</th>
+                                    <th class="pb-1.5 text-right font-semibold">{{ __('instalasi.telemetri.kolom.percobaan') }}</th>
+                                    <th class="pb-1.5 text-right font-semibold">{{ __('instalasi.telemetri.kolom.waktu') }}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach ($telemetri['riwayat'] as $ping)
+                                    <tr class="border-t border-line align-top">
+                                        <td class="py-1.5 tabular-nums">{{ $ping->app_version }}</td>
+                                        <td class="py-1.5">{{ $ping->event->label() }}</td>
+                                        <td class="py-1.5">
+                                            <x-chip :tone="$ping->status->tone()">{{ $ping->status->label() }}</x-chip>
+                                            @if ($ping->error)
+                                                <span class="mt-0.5 block text-[11px] text-ink-faint">{{ $ping->error }}</span>
+                                            @endif
+                                        </td>
+                                        <td class="py-1.5 text-right tabular-nums">{{ $ping->attempts }}</td>
+                                        <td class="py-1.5 text-right tabular-nums">{{ $ping->sent_at ? \App\Support\Format::tanggal($ping->sent_at) : '—' }}</td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    @endif
+                </div>
+            </div>
+        </div>
     </x-card>
 @endsection

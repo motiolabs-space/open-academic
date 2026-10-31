@@ -30,7 +30,10 @@
 
     @php
         $kelas = 'w-full rounded-control border bg-surface px-3 py-2 text-[13px] outline-none focus:border-navy focus:ring-4 focus:ring-navy/10 '
-            .($galat ? 'border-danger bg-danger-bg/30' : 'border-line-input');
+            .($galat ? 'border-danger bg-danger-bg/30' : 'border-line-input')
+            // A colour input is a swatch: at text-input padding it collapses
+            // to a hairline nobody can read or aim at.
+            .($type === 'color' ? ' h-10 cursor-pointer py-1' : '');
     @endphp
 
     @if ($options !== null)
