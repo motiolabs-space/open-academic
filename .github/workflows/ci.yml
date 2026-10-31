@@ -89,6 +89,10 @@ jobs:
   database:
     name: Test on ${{ matrix.name }} (PHP 8.4)
     runs-on: ubuntu-latest
+    # Pengaman, bukan target: PostgreSQL tidak punya batas tunggu kunci bawaan,
+    # jadi tes yang macet menunggu baris terkunci akan menunggu selamanya alih-alih
+    # gagal seperti di MySQL (innodb_lock_wait_timeout 50 detik).
+    timeout-minutes: 90
 
     strategy:
       fail-fast: false
@@ -100,15 +104,19 @@ jobs:
             port: 3306
             username: root
             health: mysqladmin ping -h 127.0.0.1 --silent
+            data: /var/lib/mysql
           - name: PostgreSQL 16
             connection: pgsql
             image: postgres:16
             port: 5432
             username: postgres
             health: pg_isready -U postgres
+            data: /var/lib/postgresql/data
 
     # Satu service per entri matriks. Variabel MYSQL_* diabaikan image Postgres
-    # dan sebaliknya, jadi keduanya boleh duduk berdampingan di sini.
+    # dan sebaliknya, jadi keduanya boleh duduk berdampingan di sini. Direktori
+    # data di tmpfs: basis data ini dibuang setelah job, dan ribuan transaksi
+    # tes yang menunggu fsync ke disk runner adalah waktu yang tidak menguji apa pun.
     services:
       db:
         image: ${{ matrix.image }}
@@ -124,6 +132,7 @@ jobs:
           --health-interval 5s
           --health-timeout 5s
           --health-retries 30
+          --tmpfs ${{ matrix.data }}
 
     # Variabel proses menang atas <env> di phpunit.xml (tanpa force="true"),
     # jadi DB_CONNECTION=sqlite di sana tetap menjadi bawaan untuk job lain dan
