@@ -97,6 +97,7 @@ Yang sudah ada di `main` dan dapat dipakai hari ini. Pengguna: **S** staf ·
 | Evaluasi studi: peringatan dan putus studi | S; M menerima notifikasi |
 | Poin kemahasiswaan, pelanggaran, prestasi; lapor prestasi oleh mahasiswa ke antrean verifikasi; ekspor SIMKATMAWA dengan validasi pra-ekspor | S; M melihat poin & melapor |
 | Konversi kredit, RPL, intake mahasiswa pindahan; permintaan dokumen ke mahasiswa | S; M melihat status & mengunggah |
+| Registrasi ulang (re-NIM): pindah prodi internal dan masuk kembali dengan NIM baru yang tertaut ke registrasi lama, aktif kembali dengan NIM yang sama | S |
 | KKN/PKL: kelompok, DPL, logbook, nilai masuk ke KRS | S, D, M |
 | SKPI | S, M |
 
@@ -146,6 +147,7 @@ Yang sudah ada di `main` dan dapat dipakai hari ini. Pengguna: **S** staf ·
 | Fitur | Pengguna |
 |---|---|
 | Neo Feeder PDDIKTI: 26 entitas, Insert/Update/Delete, validasi pra-kirim, buku besar idempotent, pembanding selisih, adopsi & klaim data lampau, PDM/PJK beserta suratnya | S |
+| Pemeriksa kamus web service Neo Feeder: membandingkan medan yang dikirim setiap entitas dengan kamus Feeder kampus, lalu menyarankan nama medan HP dan tanggal ijazah yang dapat diatur | S |
 | Borang LKPS per prodi | S |
 | Data IKU 2026 (Kepmendiktisaintek 358/M/KEP/2025) dengan layar verifikasi bukti | S, API |
 | Campus Bridge: Read API ber-scope, webhook bertanda tangan HMAC, OpenAPI; konsumen dan token dikelola dari layar staf | S, API |
@@ -327,6 +329,7 @@ php artisan openacademic:feeder-refs                  # tarik tabel referensi Fe
 php artisan openacademic:feeder-validate              # periksa tanpa mengirim apa pun
 php artisan openacademic:feeder-sync semua            # kirim berurutan sesuai dependensi
 php artisan openacademic:feeder-sync nilai --term=20261
+php artisan openacademic:feeder-kamus                 # bandingkan medan kiriman dengan kamus Feeder kampus
 ```
 
 Sinkronisasi **idempotent**: menjalankannya ulang membandingkan sidik jari
@@ -347,6 +350,14 @@ sinkronisasi satu arah, sebaik apa pun bukunya dijaga.
 
 Entitas yang aksi pembacaannya belum ditetapkan pada `config/feeder.php`
 dinyatakan **belum dapat dibandingkan**, bukan terbaca cocok.
+
+**Kamus web service** (`/admin/feeder/kamus` atau `feeder-kamus`) membaca
+`GetDictionary` Neo Feeder kampus untuk setiap aksi yang dipakai dan melaporkan
+medan yang tidak dikenal, medan wajib yang tidak dikirim, dan beda nama. Ia
+hanya melapor; nama medan HP dan tanggal ijazah diubah lewat `FEEDER_MEDAN_HP`
+dan `FEEDER_MEDAN_TANGGAL_IJAZAH` (bawaannya: tanggal ijazah tidak dikirim).
+Jalankan sesudah memasang atau memperbarui Neo Feeder. Isi kamusnya tetap di
+basis data kampus, tidak pernah masuk repo.
 
 ### Ekspor SISTER, LKPS & KIP Kuliah
 
