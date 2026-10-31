@@ -28,6 +28,7 @@ use App\Models\TugasAkhir\Proposal;
 use App\Models\TugasAkhir\TugasAkhir;
 use App\Services\Akademik\JadwalUjianService;
 use App\Services\Keuangan\DispensasiService;
+use App\Support\Instalasi;
 use App\Support\Portal;
 use Database\Seeders\DemoCampusSeeder;
 use Database\Seeders\RolePermissionSeeder;
@@ -64,6 +65,12 @@ beforeEach(function () {
     $this->seed(DemoCampusSeeder::class);
 
     Portal::lupakanTerm();
+
+    // ArahkanKeSetup reads the "instalasi" settings group on every web
+    // request. In production that group is cached forever after the first
+    // read; here the cache is a fresh array store per test, so warm it once
+    // rather than charge every screen for a query a campus never pays.
+    Instalasi::perluSetup();
 
     // The seeder writes fixtures directly and relaxes strictness while it does
     // so; the walk itself must run under the strict rules.

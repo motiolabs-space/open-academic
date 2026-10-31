@@ -4,6 +4,78 @@
 
 ---
 
+## Sesi 73 — 2026-10-31 · Wizard setup awal kampus dan notifikasi instalasi ke Humanix
+
+Satu PR. Keputusan: ADR-043 §1–§2. Satu migrasi baru (append-only):
+`installation_pings`. Migrasi ini juga menandai instalasi lama yang sudah
+punya akun sebagai sudah ter-setup.
+
+- **Wizard setup** (`/setup`). Selama instalasi belum punya penanda setup
+  dan belum punya satu pun akun staf, dosen, atau mahasiswa,
+  `ArahkanKeSetup` mengalihkan setiap rute web ke wizard. Middleware ini berjalan di depan `auth`; rute API tidak
+  dialihkan. Isiannya satu formulir lima langkah (Alpine), dengan alur
+  `SetupInstalasiRequest` → `SetupInstalasiData` →
+  `SetupInstalasiService`. Isinya:
+  - identitas PT, tersimpan di grup `branding` yang sudah ada, ditambah
+    alamat, kota, provinsi, surel, telepon, dan situs (juga dapat disunting
+    di Pengaturan);
+  - warna dan logo, lewat `primary_color`/`accent_color`/`logo_path` yang
+    sudah dibaca `BrandingService`;
+  - super admin pertama. Peran dibuat bila operator hanya menjalankan
+    `migrate`;
+  - fakultas, prodi, dan semester aktif, bila diisi. Semester memakai
+    `TahunAkademikService`.
+
+  Seluruh isian ditulis dalam satu kunci dan satu transaksi. Sesudahnya
+  `/setup` membalas 404. Kampus demo ditandai oleh `DemoCampusSeeder`.
+  Wizard hanya dapat dibuka ulang lewat `openacademic:setup-ulang`.
+  Penyelesaian dan pembukaan ulang tercatat di Log Aktivitas.
+- **Notifikasi instalasi ke Humanix.** Bawaannya mati. Notifikasi menyala
+  hanya lewat kotak persetujuan di langkah terakhir wizard atau di
+  **Pengaturan → Notifikasi Instalasi ke Humanix**.
+  - Muatan berisi sepuluh medan: UUID acak, jenis kabar, nama dan kode PT,
+    kota, provinsi, versi aplikasi, PHP mayor.minor, nama mesin DB, dan
+    tanggal. `app_url` hanya bila dicentang.
+  - `HUMANIX_TELEMETRI=false` mengalahkan layar.
+  - Pengiriman lewat `KirimPingInstalasiJob`, di balik
+    `InstalasiReporterInterface` (HTTP dan palsu). Batas waktunya 5 detik,
+    dengan 3 percobaan dan jeda 1 dan 10 menit.
+  - Kabar terkirim satu kali per versi (indeks unik), dipicu setup,
+    Pengaturan, dan `migrate`. Tidak ada jadwal berkala.
+  - Isi persis setiap kabar tercatat di `installation_pings` dan tampil di
+    Pengaturan serta `openacademic:telemetri`.
+  - Dokumentasi: `docs/TELEMETRI.md`, README §Setup Awal Kampus, SECURITY.md,
+    dan `.env.example`.
+
+**Tes baru:** SetupWizardTest 21 dan TelemetriTest 22. `tests/Pest.php`
+menandai setiap feature test sebagai kampus yang sudah ter-setup, dan tes
+wizard memanggil `instalasiBaru()`.
+- SetupWizardTest mencakup: pengalihan sebelum setup, rute API tidak
+  dialihkan, setup lengkap lalu terkunci, setup tanpa struktur opsional,
+  peran dibuat bila belum ada, sepuluh kasus validasi tanpa sisa, instalasi
+  lama yang tertutup, demo yang tertutup, buka ulang lewat artisan, dan tanpa
+  persetujuan berarti tanpa kabar.
+- TelemetriTest mencakup: muatan persis medan demi medan, URL hanya bila
+  dicentang, `.env` mengalahkan layar dengan enam bentuk nilai, pembatalan
+  kabar yang antre, galat HTTP yang tidak menggagalkan setup, jadwal ulang
+  dan batasnya, idempoten per versi, reporter HTTP dengan `Http::fake`,
+  layar Pengaturan dengan izin dan log, serta perintah pratinjau.
+
+**Instalasi berjalan:** `php artisan migrate`. Instalasi yang sudah punya akun
+otomatis dianggap ter-setup, dan notifikasi tetap mati sampai seseorang
+menyalakannya di Pengaturan.
+
+### Belum
+
+- Endpoint penerima di humanix.id belum ada dan dibangun terpisah. URL
+  bawaannya placeholder (`https://humanix.id/api/open-academic/v1/installations`).
+- `config/instalasi.php` `versi` harus dinaikkan bersama CHANGELOG setiap
+  rilis.
+- Wizard belum menawarkan impor struktur dari Neo Feeder; itu tetap lewat
+  menu Feeder sesudah masuk.
+
+---
+
 ## Sesi 72 — 2026-10-30 · Butir Feeder P7: kamus web service, nama medan, re-NIM
 
 Branch `feature/p7-feeder`, satu PR, empat commit (satu per butir ROADMAP

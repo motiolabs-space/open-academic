@@ -164,6 +164,8 @@ Yang sudah ada di `main` dan dapat dipakai hari ini. Pengguna: **S** staf ·
 | Notifikasi surel dan pengingat tenggat terjadwal | semua |
 | Berkas privat, verifikasi dua langkah (TOTP) untuk staf, log audit, branding, pengaturan dokumen | S |
 | Login dengan NIM, NIDN, NIP, atau surel; portal ditentukan otomatis | semua |
+| Wizard setup awal kampus: identitas PT, warna dan logo, super admin pertama, struktur awal opsional; terkunci setelah selesai | S |
+| Notifikasi instalasi ke Humanix: opsional, bawaannya mati, sepuluh medan tanpa data pribadi, dapat dimatikan di Pengaturan atau `.env` | S |
 
 Rencana kerja per modul — termasuk yang sengaja ditunda atau di luar cakupan —
 ada di [`docs/ROADMAP.md`](docs/ROADMAP.md).
@@ -257,6 +259,31 @@ sudah menunjuk root repo.
 ```bash
 php artisan serve
 ```
+
+### Setup Awal Kampus
+
+Instalasi tanpa kampus demo, yaitu `APP_ENV=production` atau sesudah
+`openacademic:demo-hapus`, membuka **wizard setup** di `/setup` pada kunjungan
+pertama. Wizard ini meminta lima hal:
+
+1. identitas perguruan tinggi (nama, kode PT PDDIKTI, alamat, kontak);
+2. warna dan logo;
+3. akun super admin pertama;
+4. fakultas, prodi, dan semester berjalan, bila ingin diisi sekarang;
+5. persetujuan notifikasi instalasi.
+
+Setelah selesai, `/setup` membalas 404 untuk selamanya. Wizard hanya dapat
+dibuka lagi lewat `php artisan openacademic:setup-ulang`. Kampus demo dan
+instalasi yang sudah punya akun staf dianggap sudah ter-setup.
+
+> **Notifikasi instalasi ke Humanix: opsional, bawaannya mati.** Di langkah
+> terakhir wizard, kampus dapat mengizinkan satu kabar singkat ke humanix.id
+> saat dipasang dan setiap kali versinya berubah. Isinya hanya nama dan kode
+> PT, kota/provinsi, versi aplikasi/PHP, jenis mesin basis data, ID instalasi
+> acak, dan tanggal. Kabar itu tidak pernah memuat data mahasiswa, dosen,
+> kredensial, atau `APP_KEY`. Pengiriman dapat dimatikan di Pengaturan, atau
+> untuk selamanya dengan `HUMANIX_TELEMETRI=false`. Rinciannya ada di
+> [`docs/TELEMETRI.md`](docs/TELEMETRI.md).
 
 > **Worker antrean wajib menyala.** Jejak audit, sinkronisasi Feeder, dan
 > pengiriman webhook semuanya ter-antre. Tanpa worker, ketiganya **gagal diam-diam**
@@ -435,6 +462,7 @@ $sah = hash_equals(
 | `config/lkps.php` | Delapan definisi perhitungan LKPS + susunan tabel borang per LAM |
 | `config/kipk.php` | Kode skema beasiswa yang merupakan KIP Kuliah (lewat `KIPK_BEASISWA_KODE`) |
 | `config/branding.php` | Identitas institusi & warna (dapat ditimpa lewat menu Pengaturan) |
+| `config/instalasi.php` | Versi aplikasi dan notifikasi instalasi ke Humanix (opsional, bawaan mati; [`docs/TELEMETRI.md`](docs/TELEMETRI.md)) |
 
 Aturan bisnis yang berbeda antar kampus — batas SKS, skala huruf, persentase
 kehadiran minimum, ambang pembayaran KRS — semuanya konfigurasi, bukan kode.

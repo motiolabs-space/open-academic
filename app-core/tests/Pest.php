@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+use App\Models\System\Setting;
+use App\Support\Instalasi;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\File;
@@ -17,6 +19,11 @@ use Tests\TestCase;
 
 pest()->extend(TestCase::class)
     ->use(RefreshDatabase::class)
+    // Every feature test starts on a campus that has been set up. Without
+    // this, a test that never creates an account — a public page, a PMB
+    // applicant — is redirected to /setup (ADR-043). Tests of the wizard
+    // itself call instalasiBaru().
+    ->beforeEach(fn () => Instalasi::tandaiSelesai())
     ->in('Feature');
 
 pest()->extend(TestCase::class)->in('Unit');
@@ -71,4 +78,43 @@ function siapkanKunciPassport(): void
     if (!file_exists($dir.DIRECTORY_SEPARATOR.'oauth-private.key')) {
         Artisan::call('passport:keys', ['--quiet' => true]);
     }
+}
+
+/*
+|--------------------------------------------------------------------------
+| Isian wizard setup (ADR-043)
+|--------------------------------------------------------------------------
+|
+| Di sini, bukan di berkas tesnya, karena dua berkas memakainya dan suite
+| paralel tidak menjamin keduanya dimuat oleh proses yang sama.
+|
+*/
+
+/** @param array<string, mixed> $ganti */
+function isianSetup(array $ganti = []): array
+{
+    return array_merge([
+        'nama_pt' => 'Institut Teknologi Lembah Hijau',
+        'singkatan' => 'ITLH',
+        'kode_pt' => '041234',
+        'alamat' => 'Jl. Merbabu No. 7',
+        'kota' => 'Salatiga',
+        'provinsi' => 'Jawa Tengah',
+        'surel' => 'Info@ITLH.ac.id',
+        'telepon' => '0298 321 000',
+        'situs' => 'https://itlh.ac.id',
+        'warna_utama' => '#123456',
+        'warna_aksen' => '#abcdef',
+        'admin_nama' => 'Ratna Dewi',
+        'admin_email' => 'ratna@itlh.ac.id',
+        'admin_password' => 'rahasia-kampus-1',
+        'admin_password_confirmation' => 'rahasia-kampus-1',
+    ], $ganti);
+}
+
+/** Undoes the global beforeEach: a fresh installation, never set up. */
+function instalasiBaru(): void
+{
+    // Deleted one by one so the Setting cache is busted with each row.
+    Setting::query()->where('group', Instalasi::GRUP)->get()->each->delete();
 }

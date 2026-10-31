@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 use App\Exceptions\AturanAkademikException;
 use App\Exceptions\FeederException;
+use App\Http\Middleware\ArahkanKeSetup;
 use App\Http\Middleware\EnsureBridgeScope;
 use App\Http\Middleware\EnsureTermIsActive;
 use App\Http\Middleware\PastikanAkunAktif;
 use App\Http\Middleware\PastikanDuaFaktor;
 use App\Http\Middleware\SecurityHeaders;
+use Illuminate\Contracts\Auth\Middleware\AuthenticatesRequests;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -54,7 +56,15 @@ $app = Application::configure(basePath: dirname(__DIR__))
         // A sign-in lasts only as long as the account and its password: a
         // deactivated account or a changed password ends every other session
         // on the next request (PastikanAkunAktif).
-        $middleware->web(append: [PastikanAkunAktif::class, PastikanDuaFaktor::class]);
+        //
+        // ArahkanKeSetup goes first: a fresh installation has no accounts for
+        // the other two to check (ADR-043).
+        $middleware->web(append: [ArahkanKeSetup::class, PastikanAkunAktif::class, PastikanDuaFaktor::class]);
+
+        // Ahead of `auth`, which the priority list otherwise runs first: a
+        // guest opening /admin on a fresh install should land on the wizard,
+        // not on a sign-in page that bounces them there.
+        $middleware->prependToPriorityList(AuthenticatesRequests::class, ArahkanKeSetup::class);
 
         // Guests land on the single sign-in page whichever portal they aimed
         // at — except prospective students, whose portal has its own page.

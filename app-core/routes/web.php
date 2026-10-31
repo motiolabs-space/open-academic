@@ -15,6 +15,7 @@ use App\Http\Controllers\Kuesioner\IsiKuesionerController;
 use App\Http\Controllers\Mahasiswa;
 use App\Http\Controllers\NotifikasiController;
 use App\Http\Controllers\PengumumanPortalController;
+use App\Http\Controllers\SetupController;
 use App\Http\Controllers\Sso;
 use App\Http\Controllers\VerifikasiSuratController;
 use Illuminate\Support\Facades\Route;
@@ -26,6 +27,22 @@ use Illuminate\Support\Facades\Route;
 */
 
 Route::view('/', 'landing')->name('landing');
+
+/*
+|--------------------------------------------------------------------------
+| Setup awal — sekali seumur instalasi
+|--------------------------------------------------------------------------
+|
+| Selama instalasi belum punya identitas dan akun staf, ArahkanKeSetup
+| menggiring setiap rute web ke sini. Sesudahnya kedua rute membalas 404
+| untuk siapa pun; membukanya lagi hanya lewat `openacademic:setup-ulang`.
+| Dibatasi lajunya karena formulirnya publik dan menerima kata sandi.
+|
+*/
+Route::get('/setup', [SetupController::class, 'formulir'])->name('setup.formulir');
+Route::post('/setup', [SetupController::class, 'simpan'])
+    ->middleware('throttle:10,1')
+    ->name('setup.simpan');
 
 /*
 |--------------------------------------------------------------------------
@@ -779,6 +796,8 @@ Route::middleware(['auth:staff', 'term.active'])->prefix('admin')->name('admin.'
     Route::put('/pengaturan', [Admin\PengaturanController::class, 'simpan'])->name('pengaturan.simpan');
     Route::put('/pengaturan/dokumen', [Admin\PengaturanController::class, 'simpanDokumen'])
         ->name('pengaturan.dokumen');
+    Route::put('/pengaturan/telemetri', [Admin\PengaturanController::class, 'simpanTelemetri'])
+        ->name('pengaturan.telemetri');
 
     Route::get('/kinerja', [Admin\KinerjaController::class, 'index'])->name('kinerja');
     Route::post('/kinerja/periode', [Admin\KinerjaController::class, 'simpanPeriode'])->name('kinerja.periode');
