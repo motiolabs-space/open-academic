@@ -1721,6 +1721,93 @@ membuka tiket helpdesk. Satu ADR, satu bagian per layar.
 
 ---
 
+## ADR-040 — Layanan swalayan mahasiswa: cuti, beasiswa, prestasi, konversi (2026-10-30)
+
+Inventaris kode 28 Oktober 2026 menemukan empat urusan yang hanya bisa
+dijalankan staf: mengajukan cuti, mengajukan beasiswa/keringanan, melaporkan
+prestasi, dan melihat poin serta status konversi kredit. Keempatnya kini punya
+jalur masuk mahasiswa. Aturan yang mengikat tetap satu: **mahasiswa mengajukan,
+staf memutuskan dengan alasan, mahasiswa diberi tahu** — tidak ada keputusan
+otomatis, dan setiap ajuan memanggil service yang sama dengan jalur staf.
+
+### 1. Cuti: jendela semester, aturan lama, event Bridge yang ternyata belum ada
+
+- **Konteks.** `CutiService::ajukan()` sudah menolak mahasiswa tidak aktif,
+  ajuan ganda per semester, dan KRS yang masih hidup. Brief menyebut juga
+  batas jumlah cuti dan larangan bertunggakan "bila ada" — **keduanya tidak
+  ada** di kode maupun konfigurasi. Brief juga menyebut persetujuan cuti
+  "tetap menerbitkan `student.status_changed` seperti hari ini"; ternyata
+  hanya yudisium yang menerbitkannya.
+- **Keputusan.** `ajukanMandiri()` membungkus `ajukan()` tanpa mengubah
+  aturannya, ditambah dua hal: semester yang boleh dipilih hanya semester
+  aktif dan semester reguler berikutnya (bukan antara, bukan setahun ke
+  depan), dan dokumen disimpan lewat `BerkasService` di dalam transaksi yang
+  sama. Batas jumlah cuti dan syarat tunggakan **tidak** dibuat: itu aturan
+  bisnis baru, dan kampus belum memintanya. `setujui()` dan `aktifkanKembali()`
+  kini menerbitkan `student.status_changed` (muatan sama dengan yudisium,
+  dipaku di `bridge.yaml`), sesudah transaksi selesai.
+- **Konsekuensi.** Persetujuan cuti mengubah status mahasiswa **saat itu
+  juga**, apa pun semester ajuannya — perilaku lama yang tidak diubah. Untuk
+  ajuan semester yang belum berjalan, layar staf memberi tanda supaya BAAK
+  memutusnya ketika semester itu aktif. Tombol "Aktifkan Kembali" di layar staf
+  selama ini memanggil service tanpa staf pemutus dan selalu gagal; diperbaiki.
+
+### 2. Beasiswa: periode pendaftaran di depan jalur penetapan yang sudah ada
+
+- **Konteks.** `BeasiswaService::tetapkan()` menjaga kuota, satu penerimaan
+  aktif per skema, dan penerapan potongan ke tagihan. Tidak ada tempat
+  mahasiswa meminta.
+- **Keputusan.** Dua tabel: `beasiswa_periode` (skema, semester mulai berlaku,
+  tanggal buka–tutup, persyaratan tertulis, IPK minimum opsional, daftar
+  berkas yang diminta) dan `beasiswa_ajuan` (motivasi, IPK saat mengajukan,
+  berkas berlabel, keputusan, tautan ke `beasiswa_penerima`). Sistem hanya
+  memeriksa yang pasti: periode dibuka, status aktif, belum mengajukan, belum
+  menerima skema yang sama, IPK minimum. Persyaratan tertulis dibaca dan
+  dinilai orang. Menetapkan memanggil `BeasiswaService::tetapkan()` dalam satu
+  transaksi dengan pembaruan ajuan; kuota penuh membiarkan ajuan menunggu.
+- **Konsekuensi.** Tidak ada uang yang bergerak karena ajuan. Berkas yang sudah
+  tersimpan dihapus bila ajuannya gagal ditulis. Satu periode per skema per
+  waktu tidak dipaksakan — kampus dapat membuka gelombang yang berdampingan.
+
+### 3. Prestasi: laporan mahasiswa masuk antrean verifikasi yang sama
+
+- **Keputusan.** `PoinKemahasiswaanService::laporkan()` lewat `catat()` —
+  kategori aktif, poin dibekukan, bukti wajib bila katalog memintanya, mulai
+  belum terverifikasi — hanya untuk kategori prestasi (pelanggaran tidak
+  dilaporkan atas diri sendiri). Rincian SIMKATMAWA divalidasi dengan aturan
+  yang sama dengan layar Lengkapi (`DataSimkatmawaRequest::aturanRincian()`);
+  dosen pembimbing tetap diisi staf. Kolom baru
+  `poin_mahasiswa.dilaporkan_by_mahasiswa_id` menandai asalnya; verifikasi dan
+  penolakan memberi tahu pelapor. Mahasiswa melihat kedua buku besarnya, tetap
+  berdampingan dan tidak pernah dijumlahkan.
+- **Konsekuensi.** Ekspor SIMKATMAWA dan `PrestasiMapper` sudah menyaring
+  `is_verified`, jadi laporan baru tidak pernah sampai ke kementerian sebelum
+  diverifikasi — dipaku tes.
+
+### 4. Konversi kredit: baca saja, dan satu dokumen bila diminta
+
+- **Keputusan.** Mahasiswa melihat usulan konversinya, statusnya, dan SKS
+  yang diakui (hanya yang disetujui terhitung) beserta plafonnya. Selama usulan
+  menunggu, penilai dapat **meminta dokumen**; mahasiswa mengunggahnya ke kolom
+  sendiri (`berkas_mahasiswa_path`) yang tidak pernah menggantikan berkas
+  usulan staf. Unggahan berikutnya mengganti yang sebelumnya (berkas lama
+  dihapus, kejadiannya tercatat di log). Diakui, ditolak, dan permintaan
+  dokumen memberi tahu mahasiswa.
+
+### 5. Izin dan batas otorisasi
+
+- Tiga izin mahasiswa baru — `cuti.ajukan`, `beasiswa.ajukan`,
+  `prestasi.lapor` — satu per alur, supaya kampus dapat menahan satu alur tanpa
+  mematikan yang lain. Membaca poin dan konversi cukup kepemilikan.
+- Tidak ada rute mahasiswa yang menerima mahasiswa sebagai parameter. Policy
+  baru (`CutiMahasiswaPolicy`, `BeasiswaAjuanPolicy`, `KonversiKreditPolicy`,
+  tambahan `PoinMahasiswaPolicy::lapor/view`) membatasi baca dan unduh berkas
+  pada pemiliknya dan staf berizin; memutus tetap `mahasiswa.manage` (cuti,
+  prestasi, konversi) dan `keuangan.manage` (beasiswa). Instalasi berjalan:
+  `php artisan migrate` lalu `db:seed --class=RolePermissionSeeder`.
+
+---
+
 ## ADR-041 — Data IKU 8 dan IKU 6, dan masa berlaku akreditasi prodi: fakta yang dinyatakan, diverifikasi, lalu dihitung di tempat lain (2026-10-30)
 
 Tiga butir ROADMAP P7 (#47, #48, #50) yang tertunda di ADR-036 karena

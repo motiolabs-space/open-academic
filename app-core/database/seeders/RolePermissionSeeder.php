@@ -141,6 +141,12 @@ class RolePermissionSeeder extends Seeder
             'surat.ajukan',
             'edom.isi',
             'helpdesk.ajukan',
+
+            // Self-service applications (ADR-040). One permission per flow so
+            // a campus not ready for one can withhold it without the others.
+            'cuti.ajukan',
+            'beasiswa.ajukan',
+            'prestasi.lapor',
         ],
     ];
 

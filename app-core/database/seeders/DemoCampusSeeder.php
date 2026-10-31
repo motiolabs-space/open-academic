@@ -36,6 +36,7 @@ use Database\Seeders\Demo\RiwayatKepegawaianSeeder;
 use Database\Seeders\Demo\RpsSeeder;
 use Database\Seeders\Demo\SdmSeeder;
 use Database\Seeders\Demo\SuratSeeder;
+use Database\Seeders\Demo\SwalayanSeeder;
 use Database\Seeders\Demo\TugasAkhirSeeder;
 use Database\Seeders\Demo\UjiKompetensiSeeder;
 use Illuminate\Database\Eloquent\Model;
@@ -132,6 +133,11 @@ class DemoCampusSeeder extends Seeder
             // Sesudah KelulusanSeeder: peserta KKN dipilih dari mahasiswa yang
             // masih aktif, bukan yang baru saja diluluskan.
             KegiatanLapanganSeeder::class,
+
+            // Sesudah BeasiswaSeeder, KonversiSeeder, dan PrestasiSeeder:
+            // ajuan swalayan mahasiswa (ADR-040) memakai skema, usulan
+            // konversi yang belum diputus, dan katalog prestasi dari sana.
+            SwalayanSeeder::class,
 
             // Sesudah KelulusanSeeder, sebelum IntegrasiSeeder: satu prodi
             // kesehatan dengan lulusan yang menunggu uji kompetensi. Prodinya

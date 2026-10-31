@@ -36,6 +36,21 @@ class DataSimkatmawaRequest extends FormRequest
     /** @return array<string, mixed> */
     public function rules(): array
     {
+        return [
+            ...self::aturanRincian(),
+            'dosen_pembimbing' => ['nullable', 'uuid', Rule::exists('dosen', 'uuid')->whereNull('deleted_at')],
+        ];
+    }
+
+    /**
+     * The rules for the details themselves, shared with the student's own
+     * achievement report (LaporPrestasiRequest) so both forms accept exactly
+     * the same values.
+     *
+     * @return array<string, mixed>
+     */
+    public static function aturanRincian(): array
+    {
         $tautan = ['nullable', 'string', 'max:500', 'url:http,https'];
 
         return [
@@ -53,7 +68,6 @@ class DataSimkatmawaRequest extends FormRequest
             'tautan_sertifikat' => $tautan,
             'tautan_bukti' => $tautan,
             'tautan_surat_tugas' => $tautan,
-            'dosen_pembimbing' => ['nullable', 'uuid', Rule::exists('dosen', 'uuid')->whereNull('deleted_at')],
         ];
     }
 

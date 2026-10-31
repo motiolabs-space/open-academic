@@ -13,7 +13,13 @@ use App\Models\Akademik\MataKuliah;
 use App\Models\Akademik\Nilai;
 use App\Models\Kemahasiswaan\Mahasiswa;
 use App\Models\Sdm\Staff;
+use App\Notifications\Akademik\DokumenKonversiDiminta;
+use App\Notifications\Akademik\KonversiDiputus;
+use App\Services\Berkas\BerkasService;
+use App\Services\Notifikasi\Notifier;
 use Illuminate\Database\UniqueConstraintViolationException;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -30,7 +36,83 @@ use Illuminate\Support\Facades\DB;
  */
 class KonversiService
 {
-    public function __construct(private readonly PerolehanAkademik $perolehan) {}
+    public function __construct(
+        private readonly PerolehanAkademik $perolehan,
+        private readonly Notifier $notifier,
+        private readonly BerkasService $berkas,
+    ) {}
+
+    /**
+     * A student's own conversions, newest first, for the portal (ADR-040 §4).
+     *
+     * @return Collection<int, KonversiKredit>
+     */
+    public function milikMahasiswa(Mahasiswa $mahasiswa): Collection
+    {
+        return KonversiKredit::query()
+            ->with(['mataKuliah', 'pemutus'])
+            ->where('mahasiswa_id', $mahasiswa->id)
+            ->orderByDesc('id')
+            ->get();
+    }
+
+    /**
+     * The assessor asks the student for a document before deciding.
+     *
+     * Only while the proposal waits: once decided, a new document changes
+     * nothing, and asking for one would leave the student working for a
+     * decision already made.
+     */
+    public function mintaDokumen(KonversiKredit $konversi, Staff $staff, string $keterangan): KonversiKredit
+    {
+        $this->pastikanMenunggu($konversi);
+
+        if (blank($keterangan)) {
+            throw new AturanAkademikException(__('swalayan.konversi.galat.keterangan_wajib'));
+        }
+
+        $konversi->update([
+            'dokumen_diminta' => trim($keterangan),
+            'dokumen_diminta_at' => now(),
+            'dokumen_diminta_by_staff_id' => $staff->id,
+        ]);
+
+        $konversi->loadMissing(['mahasiswa', 'mataKuliah']);
+        $this->notifier->kirim($konversi->mahasiswa, new DokumenKonversiDiminta($konversi->refresh()));
+
+        return $konversi;
+    }
+
+    /**
+     * The student sends the requested document.
+     *
+     * A later upload replaces the earlier one — the assessor reads the latest
+     * answer to the latest request — and the earlier file is removed rather
+     * than left on disk with nothing pointing at it. The activity log keeps
+     * that it happened.
+     */
+    public function unggahDokumen(KonversiKredit $konversi, Mahasiswa $mahasiswa, UploadedFile $berkas): KonversiKredit
+    {
+        if ($konversi->mahasiswa_id !== $mahasiswa->id) {
+            throw new AturanAkademikException(__('swalayan.konversi.galat.bukan_milik'));
+        }
+
+        $this->pastikanMenunggu($konversi);
+
+        if ($konversi->dokumen_diminta === null) {
+            throw new AturanAkademikException(__('swalayan.konversi.galat.tidak_diminta'));
+        }
+
+        $lama = $konversi->berkas_mahasiswa_path;
+        $baru = $this->berkas->simpan($berkas, 'konversi/'.$mahasiswa->uuid);
+
+        $konversi->update(['berkas_mahasiswa_path' => $baru, 'berkas_mahasiswa_at' => now()]);
+        $konversi->recordActivity('document_uploaded', 'Mahasiswa mengunggah dokumen yang diminta: '.$konversi->dokumen_diminta);
+
+        $this->berkas->hapus($lama);
+
+        return $konversi->refresh();
+    }
 
     /**
      * Proposes a conversion. Nothing is granted until somebody approves it.
@@ -164,7 +246,9 @@ class KonversiService
             );
         }
 
-        return $konversi->refresh();
+        $this->notifier->kirim($konversi->mahasiswa, new KonversiDiputus($konversi->refresh()));
+
+        return $konversi;
     }
 
     public function tolak(KonversiKredit $konversi, Staff $staff, string $alasan): KonversiKredit
@@ -186,7 +270,10 @@ class KonversiService
             'diputus_at' => now(),
         ]);
 
-        return $konversi->refresh();
+        $konversi->loadMissing(['mahasiswa', 'mataKuliah']);
+        $this->notifier->kirim($konversi->mahasiswa, new KonversiDiputus($konversi->refresh()));
+
+        return $konversi;
     }
 
     /**
@@ -234,6 +321,13 @@ class KonversiService
         });
 
         return $konversi->refresh();
+    }
+
+    private function pastikanMenunggu(KonversiKredit $konversi): void
+    {
+        if ($konversi->status !== StatusKonversi::Diajukan) {
+            throw new AturanAkademikException(__('swalayan.konversi.galat.bukan_menunggu', ['status' => $konversi->status->label()]));
+        }
     }
 
     /**

@@ -87,6 +87,45 @@
                 </div>
             </x-card>
 
+            <x-card flush :title="__('swalayan.beasiswa.admin.periode')">
+                <div class="overflow-x-auto">
+                    <table class="w-full min-w-[720px] text-[13px]">
+                        <tbody>
+                            @forelse ($periode as $p)
+                                <tr class="border-b border-line/50 align-top last:border-b-0 odd:bg-zebra" data-periode="{{ $p->uuid }}">
+                                    <td class="px-5 py-3">
+                                        <div class="font-medium">{{ $p->nama }}</div>
+                                        <div class="text-[11.5px] text-ink-faint">{{ $p->beasiswa->nama }} · {{ __('swalayan.beasiswa.mulai_semester', ['semester' => $p->tahunAkademik->nama]) }}</div>
+                                    </td>
+                                    <td class="tabular px-5 py-3 text-ink-muted">{{ Format::rentangTanggal($p->dibuka_mulai, $p->dibuka_sampai) }}</td>
+                                    <td class="px-5 py-3">
+                                        @if ($p->dibuka())
+                                            <x-chip tone="success">{{ __('swalayan.beasiswa.admin.status_dibuka') }}</x-chip>
+                                        @elseif ($p->ditutup_at || $p->dibuka_sampai->isPast())
+                                            <x-chip tone="neutral">{{ __('swalayan.beasiswa.admin.status_ditutup') }}</x-chip>
+                                        @else
+                                            <x-chip tone="info">{{ __('swalayan.beasiswa.admin.status_belum') }}</x-chip>
+                                        @endif
+                                        @if ($p->ajuan_menunggu_count > 0)
+                                            <div class="tabular mt-1 text-[11.5px] text-warning-ink">{{ __('swalayan.beasiswa.admin.menunggu', ['jumlah' => $p->ajuan_menunggu_count]) }}</div>
+                                        @endif
+                                    </td>
+                                    <td class="px-5 py-3 text-right">
+                                        <x-button :href="route('admin.beasiswa.periode', $p)" variant="outline" size="sm">
+                                            {{ __('swalayan.beasiswa.admin.lihat') }} ({{ $p->ajuan_count }})
+                                        </x-button>
+                                    </td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td class="px-5 py-6 text-[12.5px] text-ink-muted">{{ __('swalayan.beasiswa.admin.periode_kosong') }}</td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+            </x-card>
+
             <x-card flush title="Penerima">
                 <div class="overflow-x-auto">
                     <table class="w-full min-w-[860px] text-[13px]">
@@ -157,6 +196,28 @@
         </div>
 
         <div class="space-y-5">
+            @if ($skema->where('is_active', true)->isNotEmpty())
+                <x-card :title="__('swalayan.beasiswa.admin.buka')">
+                    <form method="POST" action="{{ route('admin.beasiswa.periode.buka') }}" class="space-y-3">
+                        @csrf
+                        <x-field :label="__('swalayan.beasiswa.admin.skema')" name="beasiswa" required
+                            :options="$skema->where('is_active', true)->mapWithKeys(fn ($s) => [$s->uuid => $s->nama])" />
+                        <x-field :label="__('swalayan.beasiswa.admin.nama')" name="nama" required />
+                        <x-field :label="__('swalayan.beasiswa.admin.semester_mulai')" name="tahun_akademik_id" required
+                            :options="$daftarTerm->mapWithKeys(fn ($t) => [$t->id => $t->nama])" />
+                        <div class="grid gap-3 sm:grid-cols-2">
+                            <x-field :label="__('swalayan.beasiswa.admin.dibuka_mulai')" name="dibuka_mulai" type="date" required />
+                            <x-field :label="__('swalayan.beasiswa.admin.dibuka_sampai')" name="dibuka_sampai" type="date" required />
+                        </div>
+                        <x-field :label="__('swalayan.beasiswa.admin.ipk_minimum')" name="ipk_minimum" placeholder="3.00" />
+                        <x-field :label="__('swalayan.beasiswa.admin.syarat')" name="syarat" type="textarea" />
+                        <x-field :label="__('swalayan.beasiswa.admin.berkas_diminta')" name="berkas_diminta" type="textarea"
+                            :hint="__('swalayan.beasiswa.admin.berkas_diminta_petunjuk')" />
+                        <x-button type="submit" class="w-full">{{ __('swalayan.beasiswa.admin.tombol_buka') }}</x-button>
+                    </form>
+                </x-card>
+            @endif
+
             <x-card title="Skema Baru">
                 <form method="POST" action="{{ route('admin.beasiswa.skema') }}" class="space-y-3">
                     @csrf

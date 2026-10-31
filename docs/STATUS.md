@@ -76,6 +76,60 @@ menyalakannya di Pengaturan.
 
 ---
 
+## Sesi 70 — 2026-10-30 · Layanan swalayan mahasiswa: cuti, beasiswa, prestasi, konversi
+
+Branch `feature/swalayan-mahasiswa`, satu PR, empat commit (satu per alur) dan
+satu commit demo + dokumen. Keputusan: ADR-040 §1–§5. Tiga migrasi baru
+(append-only). Setiap alur: mahasiswa mengajukan → staf memutuskan dengan
+alasan lewat layar dan service yang sudah ada → mahasiswa diberi tahu.
+
+- **Cuti** (`feat(kemahasiswaan)`). `/mahasiswa/cuti`: ajuan untuk semester
+  aktif atau semester reguler berikutnya, alasan, dokumen lewat
+  `BerkasService`; riwayat dan catatan keputusan. `CutiService::ajukanMandiri()`
+  membungkus `ajukan()` tanpa mengubah aturannya. Layar staf kini menautkan
+  dokumen dan menandai ajuan untuk semester yang belum berjalan. Persetujuan
+  dan aktif kembali menerbitkan `student.status_changed` (sebelumnya hanya
+  yudisium; muatan dipaku di `bridge.yaml`). Perbaikan: tombol "Aktifkan
+  Kembali" staf selalu gagal karena staf pemutus tidak diteruskan.
+- **Beasiswa** (`feat(keuangan)`). Staf membuka periode pendaftaran per skema
+  dari layar Beasiswa (tanggal, semester berlaku, persyaratan, IPK minimum,
+  berkas yang diminta) dan memeriksa ajuan di `/admin/beasiswa/periode/{uuid}`.
+  `/mahasiswa/beasiswa`: periode terbuka dengan halangan yang terbaca, ajuan
+  beserta berkas, ajuan dan penerimaan sendiri. Menetapkan memanggil
+  `BeasiswaService::tetapkan()` dalam satu transaksi — kuota, keunikan, dan
+  potongan tagihan tetap aturan lama.
+- **Prestasi & poin** (`feat(kemahasiswaan)`). `/mahasiswa/poin`: dua buku
+  besar berdampingan, riwayat dengan status verifikasi dan alasan, formulir
+  lapor prestasi dengan bukti dan rincian SIMKATMAWA (aturan validasi sama
+  dengan layar Lengkapi). Laporan masuk antrean verifikasi yang ada, ditandai
+  "Dilaporkan mahasiswa"; baru terhitung dan terekspor (SIMKATMAWA, Feeder)
+  setelah diverifikasi. Verifikasi/penolakan memberi tahu pelapor.
+- **Konversi kredit** (`feat(kemahasiswaan)`). `/mahasiswa/konversi`: usulan
+  milik sendiri, status, SKS diakui, plafon. Penilai dapat meminta dokumen
+  pada usulan yang menunggu; mahasiswa mengunggahnya ke kolom sendiri.
+  Diakui/ditolak/permintaan dokumen memberi tahu mahasiswa.
+- **Demo.** `SwalayanSeeder`: ajuan cuti menunggu, ditolak, dan satu catatan
+  cuti disetujui untuk mahasiswa demo yang berstatus Cuti; periode Beasiswa
+  Mitra Industri dengan ajuan menunggu (milik `mahasiswa1@demo.test`),
+  ditetapkan, dan ditolak; laporan prestasi menunggu, terverifikasi, ditolak;
+  usulan konversi yang menunggu dokumen.
+
+**Tes baru:** AjuanCutiMandiriTest 15, AjuanBeasiswaTest 14, LaporPrestasiMandiriTest 13, KonversiMahasiswaTest 7 — service, alur ajuan → keputusan → notifikasi, batas otorisasi antar-mahasiswa (layar dan unduhan berkas), izin per alur, Bridge `student.status_changed`, dan prestasi yang tidak terekspor sebelum diverifikasi. SmokeLayarTest: empat layar mahasiswa dan empat layar keputusan staf dalam anggaran kueri.
+
+**Instalasi berjalan:** `php artisan migrate` lalu
+`php artisan db:seed --class=RolePermissionSeeder --force` (izin
+`cuti.ajukan`, `beasiswa.ajukan`, `prestasi.lapor`).
+
+### Belum
+
+Batas jumlah cuti dan larangan cuti bertunggakan tidak ada di kode dan tidak
+dibuat (aturan bisnis baru). Persetujuan cuti untuk semester yang belum berjalan
+tetap langsung mengubah status (perilaku lama; layar staf memberi tanda).
+Mahasiswa belum dapat membatalkan ajuan sendiri. Layar beasiswa mahasiswa
+memeriksa halangan per periode terbuka (tiga kueri per periode).
+
+---
+
 ## Sesi 68 — 2026-10-29 · Kurikulum berbasis capaian: CPL → CPMK → sub-CPMK
 
 Branch `feature/kurikulum-obe-cpmk`, satu PR. Keputusan: ADR-038 §1–§6. Satu

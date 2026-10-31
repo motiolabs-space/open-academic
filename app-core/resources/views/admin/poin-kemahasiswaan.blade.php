@@ -139,6 +139,25 @@
 
                         <div class="mt-1 text-[12.5px]">{{ $baris->judul }}</div>
 
+                        @if ($baris->dilaporkan_by_mahasiswa_id)
+                            {{-- Dilaporkan dari portal mahasiswa (ADR-040 §3): bukti dan
+                                 rincian SIMKATMAWA berasal dari mahasiswa, periksa sebelum
+                                 memverifikasi. --}}
+                            <div class="mt-1 flex flex-wrap items-center gap-2 text-[11.5px]" data-dilaporkan-mahasiswa>
+                                <x-chip tone="info">{{ __('swalayan.prestasi.admin.dilaporkan') }}</x-chip>
+                                <span class="tabular text-ink-faint">{{ \App\Support\Format::tanggal($baris->tanggal) }}</span>
+                                @if ($baris->bukti_path)
+                                    <a href="{{ route('berkas.poin', $baris) }}" class="font-semibold text-navy underline">{{ __('swalayan.prestasi.admin.bukti') }}</a>
+                                @endif
+                                @if ($baris->jenis === \App\Enums\JenisPoin::Prestasi)
+                                    <a href="{{ route('admin.poin-kemahasiswaan.simkatmawa', $baris) }}" class="font-semibold text-navy underline">{{ __('simkatmawa.lengkapi.judul') }}</a>
+                                @endif
+                            </div>
+                            @if ($baris->keterangan)
+                                <p class="mt-1 text-[12px] text-ink-muted">{{ $baris->keterangan }}</p>
+                            @endif
+                        @endif
+
                         <div class="mt-2 flex flex-wrap items-end gap-2">
                             <form method="POST" action="{{ route('admin.poin-kemahasiswaan.verifikasi', $baris) }}">
                                 @csrf

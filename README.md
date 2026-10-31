@@ -93,10 +93,10 @@ Yang sudah ada di `main` dan dapat dipakai hari ini. Pengguna: **S** staf ·
 | Fitur | Pengguna |
 |---|---|
 | Data mahasiswa dengan halaman detail staf: identitas, status, dosen wali, KRS/KHS/IPK, tagihan, kesiapan PDDIKTI | S; M profil |
-| Cuti dan perubahan status mahasiswa | S |
+| Cuti dan perubahan status mahasiswa; ajuan cuti oleh mahasiswa beserta dokumen pendukung, diputus BAAK | S, M |
 | Evaluasi studi: peringatan dan putus studi | S; M menerima notifikasi |
-| Poin kemahasiswaan, pelanggaran, prestasi; ekspor SIMKATMAWA dengan validasi pra-ekspor | S |
-| Konversi kredit, RPL, intake mahasiswa pindahan | S |
+| Poin kemahasiswaan, pelanggaran, prestasi; lapor prestasi oleh mahasiswa ke antrean verifikasi; ekspor SIMKATMAWA dengan validasi pra-ekspor | S; M melihat poin & melapor |
+| Konversi kredit, RPL, intake mahasiswa pindahan; permintaan dokumen ke mahasiswa | S; M melihat status & mengunggah |
 | KKN/PKL: kelompok, DPL, logbook, nilai masuk ke KRS | S, D, M |
 | SKPI | S, M |
 
@@ -126,7 +126,7 @@ Yang sudah ada di `main` dan dapat dipakai hari ini. Pengguna: **S** staf ·
 | Pencatatan pembayaran kasir; transfer manual sebagai jalur utama | S |
 | Denda keterlambatan beserta pembebasannya (bawaan mati) | S |
 | Dispensasi pembayaran untuk membuka KRS | S; M melihat |
-| Beasiswa, keringanan, potongan; laporan semester KIP Kuliah | S |
+| Beasiswa, keringanan, potongan; periode pendaftaran dan ajuan mahasiswa, ditetapkan staf; laporan semester KIP Kuliah | S, M |
 | Integrasi akuntansi lewat outbox jurnal (opsional, bawaan mati) | S |
 
 ### SDM & Dosen

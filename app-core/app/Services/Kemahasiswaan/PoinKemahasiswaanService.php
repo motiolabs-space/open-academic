@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\Kemahasiswaan;
 
 use App\DTOs\Kemahasiswaan\DataSimkatmawa;
+use App\DTOs\Kemahasiswaan\LaporanPrestasiData;
 use App\Enums\JenisPoin;
 use App\Enums\KategoriSimkatmawa;
 use App\Exceptions\AturanAkademikException;
@@ -12,7 +13,12 @@ use App\Models\Kemahasiswaan\Mahasiswa;
 use App\Models\Kemahasiswaan\PoinKategori;
 use App\Models\Kemahasiswaan\PoinMahasiswa;
 use App\Models\Sdm\Staff;
+use App\Notifications\Kemahasiswaan\LaporanPrestasiDiputus;
+use App\Services\Berkas\BerkasService;
+use App\Services\Notifikasi\Notifier;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
+use Throwable;
 
 /**
  * Poin kemahasiswaan — achievements and violations, kept apart.
@@ -28,6 +34,62 @@ use Illuminate\Support\Collection;
  */
 class PoinKemahasiswaanService
 {
+    public function __construct(
+        private readonly BerkasService $berkas,
+        private readonly Notifier $notifier,
+    ) {}
+
+    /**
+     * Achievement categories a student may report under: active, and on the
+     * achievement side only.
+     *
+     * @return Collection<int, PoinKategori>
+     */
+    public function kategoriLaporan(): Collection
+    {
+        return PoinKategori::query()
+            ->where('jenis', JenisPoin::Prestasi->value)
+            ->where('is_active', true)
+            ->orderBy('nama')
+            ->get();
+    }
+
+    /**
+     * A student reporting their own achievement (ADR-040 §3).
+     *
+     * Goes through catat() — the same catalogue rules, the same frozen points,
+     * the same unverified starting state — so a report counts for nothing,
+     * reaches neither SIMKATMAWA nor Feeder, until staff verify it. The
+     * evidence is stored first and removed again if the row is not written.
+     */
+    public function laporkan(Mahasiswa $mahasiswa, PoinKategori $kategori, LaporanPrestasiData $data): PoinMahasiswa
+    {
+        if ($kategori->jenis !== JenisPoin::Prestasi) {
+            throw new AturanAkademikException(__('swalayan.prestasi.galat.kategori'));
+        }
+
+        $bukti = $data->bukti !== null
+            ? $this->berkas->simpan($data->bukti, 'prestasi/'.$mahasiswa->uuid)
+            : null;
+
+        try {
+            return DB::transaction(function () use ($mahasiswa, $kategori, $data, $bukti): PoinMahasiswa {
+                $baris = $this->catat($mahasiswa, $kategori, $data->catatan($bukti));
+
+                $baris->update([
+                    'dilaporkan_by_mahasiswa_id' => $mahasiswa->id,
+                    ...$data->simkatmawa->kolom(),
+                ]);
+
+                return $baris->refresh();
+            });
+        } catch (Throwable $e) {
+            $this->berkas->hapus($bukti);
+
+            throw $e;
+        }
+    }
+
     /**
      * Records a claim. Nothing counts until it is verified.
      *
@@ -83,7 +145,9 @@ class PoinKemahasiswaanService
             'alasan_tolak' => null,
         ]);
 
-        return $baris->refresh();
+        $this->beritahuPelapor($baris->refresh());
+
+        return $baris;
     }
 
     /**
@@ -113,7 +177,19 @@ class PoinKemahasiswaanService
             'alasan_tolak' => $alasan,
         ]);
 
-        return $baris->refresh();
+        $this->beritahuPelapor($baris->refresh());
+
+        return $baris;
+    }
+
+    /** Tells a student the outcome of an achievement they reported themselves. */
+    private function beritahuPelapor(PoinMahasiswa $baris): void
+    {
+        if ($baris->dilaporkan_by_mahasiswa_id === null) {
+            return;
+        }
+
+        $this->notifier->kirim($baris->mahasiswa, new LaporanPrestasiDiputus($baris));
     }
 
     /**
