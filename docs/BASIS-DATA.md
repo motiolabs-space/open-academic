@@ -145,6 +145,12 @@ lima ribu tagihan adalah angka yang nyata.
 
 Semua lolos di SQLite. Aturannya, berlaku untuk kode baru:
 
+- **Setiap foreign key diberi indeks.** InnoDB membuatnya sendiri;
+  PostgreSQL dan SQLite tidak. `foreignId()->constrained()` saja berarti
+  sequential scan untuk setiap join lewat kolom itu di PostgreSQL. Tambahkan
+  `$table->index('kolom_id')` kecuali kolomnya sudah menjadi kolom pertama
+  indeks lain (misalnya `unique(['kolom_id', ...])`).
+  `PortabilitasBasisDataTest` gagal bila ada yang terlewat.
 - **Ekspresi mentah yang dibaca lewat nama selalu diberi alias.**
   `pluck(DB::raw('count(*)'), 'id')` membaca kolom bernama `count(*)`; MySQL
   menamainya begitu, PostgreSQL menamainya `count`, dan layarnya 500. Tulis

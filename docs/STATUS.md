@@ -6,16 +6,26 @@
 
 ## Sesi 73 — 2026-10-31 · Suite diuji di MySQL 8 dan PostgreSQL 16
 
-Branch `ci/mysql-postgresql-suite`, satu PR. Keputusan: ADR-043. Tanpa migrasi
-baru: seluruh migrasi lolos apa adanya di MySQL 8.0 dan PostgreSQL 16 (CI),
-serta MariaDB 10.4 dan PostgreSQL 17 (lokal). Nomor Sesi/ADR melompati 72/042 yang sudah dipakai PR #42 yang
-masih terbuka; disesuaikan bila urutan merge berbeda.
+Branch `ci/mysql-postgresql-suite`, satu PR. Keputusan: ADR-043. Satu migrasi
+baru (append-only, `2026_10_31_200000`): indeks untuk foreign key yang belum
+punya, di PostgreSQL dan SQLite saja. Nomor Sesi/ADR melompati 72/042 yang
+sudah dipakai PR #42 yang masih terbuka; disesuaikan bila urutan merge
+berbeda.
 
 - **CI** (`ci`). Job `database` di `ci.yml`: matriks MySQL 8.0 dan
   PostgreSQL 16 sebagai service container (data di tmpfs), PHP 8.4,
-  `migrate --seed` lalu `composer test:par`. `phpunit.xml` tidak diubah —
+  `migrate --seed` lalu seluruh suite paralel. `phpunit.xml` tidak diubah —
   env job menimpa `<env>` yang tidak di-`force`. Matriks PHP 8.2/8.4/8.5 tetap
   di SQLite.
+- **Indeks foreign key** (`perf`). InnoDB mengindeks setiap foreign key
+  dengan sendirinya; PostgreSQL dan SQLite tidak. Lebih dari separuh FK
+  (177 dari 312 sebelum Sesi 68) tidak berindeks di PostgreSQL, sehingga
+  join dan `whereHas()` lewat kolom itu menjadi sequential scan: suite
+  melewati 90 menit dan beberapa kueri atas kampus demo berjalan berjam-jam.
+  Migrasinya membaca FK dari skema dan menambah indeks `*_fk_index`; di
+  MySQL/MariaDB ia tidak melakukan apa-apa. Tes penjaga baru di
+  `PortabilitasBasisDataTest` gagal bila migrasi berikutnya menambah FK tanpa
+  indeks.
 - **Bug PostgreSQL di aplikasi** (`fix`). `pluck(DB::raw(...))` tanpa alias
   di empat service (layar kelas dosen, evaluasi studi, yudisium, syarat
   wisuda, peserta ujian pulang 500); lima tangkapan
@@ -30,18 +40,20 @@ masih terbuka; disesuaikan bila urutan merge berbeda.
   `sum()`; helper kategori poin tidak lagi melampaui `string(24)`; filter
   anggaran kueri `SmokeLayarTest` membuang introspeksi skema di ketiga mesin.
 - **Dokumen.** `docs/BASIS-DATA.md`: kolom "Diuji di CI" pada tabel dukungan,
-  cara menjalankan suite di mesin sendiri, dan enam aturan portabilitas yang
+  cara menjalankan suite di mesin sendiri, dan tujuh aturan portabilitas yang
   ditemukan.
 
-**Instalasi berjalan:** tidak ada yang perlu dijalankan. Kampus PostgreSQL
-yang terkena layar 500 di atas langsung pulih setelah pembaruan.
+**Instalasi berjalan:** `php artisan migrate`. Di MySQL/MariaDB tidak ada
+yang berubah. Di PostgreSQL migrasinya membuat ±180 indeks; `CREATE INDEX`
+menahan tulis ke tabelnya selama indeks dibangun, jadi jalankan di luar jam
+sibuk pada basis data besar. Layar 500 di atas pulih setelah pembaruan.
 
 ### Belum
 
-Job MySQL/PostgreSQL jauh lebih lama dari SQLite (run pertama tanpa tmpfs:
-±28 dan ±80 menit). MariaDB, PostgreSQL selain 16, SQL Server, dan Oracle
-tidak diuji di CI. `Schema::hasTable('notifications')` masih dipanggil sekali
-per permintaan di kepala portal.
+Job PostgreSQL masih lebih lama dari MySQL dan SQLite. MariaDB, PostgreSQL
+selain 16, SQL Server, dan Oracle tidak diuji di CI.
+`Schema::hasTable('notifications')` masih dipanggil sekali per permintaan di
+kepala portal.
 
 ---
 

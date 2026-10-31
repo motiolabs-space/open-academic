@@ -2186,6 +2186,24 @@ bagian per butir.
     setiap layar terhitung satu lebih. Filternya kini membuang introspeksi
     skema di ketiga mesin; anggarannya tidak diubah.
 
+  - *Foreign key tanpa indeks.* InnoDB membuat indeks untuk setiap foreign
+    key; PostgreSQL dan SQLite tidak. 177 dari 312 FK tidak berindeks di
+    PostgreSQL. Run pertama job PostgreSQL makan ±80 menit dan run kedua
+    terpotong di 90 menit; di klaster lokal, kueri `AnalitikService` dan
+    `jadwal_kuliah … where exists (… exists …)` atas kampus demo berjalan
+    lebih dari dua jam. Data yang disisipkan tes tidak pernah di-commit, jadi
+    tidak pernah di-`ANALYZE`; planner mengira tabelnya kosong dan memilih
+    nested loop di atas sequential scan. Produksi punya statistik dan rencana
+    yang lebih baik, tetapi tetap membayar scan yang sama. Migrasi baru
+    `2026_10_31_200000_index_unindexed_foreign_keys` membaca FK dari skema
+    (`Schema::getForeignKeys()`/`getIndexes()`) dan mengindeks setiap FK yang
+    belum punya indeks berawalan kolomnya, dengan nama berakhiran
+    `_fk_index` (dipendekkan dengan hash bila melewati 63 karakter). Di
+    MySQL/MariaDB migrasi itu langsung kembali, karena tidak ada yang perlu
+    dibuat. Daftar FK sengaja dibaca, bukan ditulis: isinya adalah "semua FK
+    sampai saat ini". FK sesudahnya dijaga tes di `PortabilitasBasisDataTest`,
+    yang gagal di SQLite juga — SQLite sama dengan PostgreSQL dalam hal ini.
+
   Tiga temuan PostgreSQL adalah **bug aplikasi**, bukan artefak tes — layar
   yang 500 di kampus mana pun yang memakai PostgreSQL:
   - *`pluck(DB::raw('count(*)'), ...)` tanpa alias.* `pluck()` membaca hasil
@@ -2213,16 +2231,16 @@ bagian per butir.
     agregat. Penomoran kelompok kegiatan lapangan kini mengunci baris
     `kegiatan_lapangan` induknya lalu membaca `MAX()` tanpa kunci; hasilnya
     sama-sama berurutan di ketiga mesin.
-- **Konsekuensi.** PR tidak hijau bila salah satu mesin merah. Tidak ada
-  migrasi perbaikan: seluruh migrasi lolos apa adanya di MySQL 8.0 dan
-  PostgreSQL 16 (CI), serta MariaDB 10.4 dan PostgreSQL 17 (lokal, sebelum
-  migrasi Sesi 68 masuk). Job ini
-  jauh lebih lama dari job SQLite karena setiap tes berjalan dalam transaksi
-  di server sungguhan; ia berjalan sejajar dengan matriks PHP, jadi yang
-  bertambah adalah waktu tunggu PR, bukan urutannya. Run pertama tanpa tmpfs:
-  MySQL ±28 menit, PostgreSQL ±80 menit untuk suite (SQLite ±12); batas
-  `timeout-minutes: 90` menjaga agar tes yang menunggu kunci di PostgreSQL —
-  yang tidak punya batas tunggu bawaan — gagal alih-alih menahan runner enam
-  jam. MariaDB dan versi
-  PostgreSQL selain 16 tidak punya job sendiri. Oracle dan SQL Server tetap
-  tidak diuji (lihat `docs/BASIS-DATA.md`).
+- **Konsekuensi.** PR tidak hijau bila salah satu mesin merah. Satu migrasi
+  baru (indeks FK, PostgreSQL dan SQLite saja); selain itu seluruh migrasi
+  lolos apa adanya di MySQL 8.0 dan PostgreSQL 16 (CI), serta MariaDB 10.4
+  dan PostgreSQL 17 (lokal). Instalasi PostgreSQL yang berjalan membangun
+  ±180 indeks saat `php artisan migrate`; `CREATE INDEX` menahan tulis ke
+  tabelnya selama dibangun. Job basis data lebih lama dari job SQLite karena
+  setiap tes berjalan dalam transaksi di server sungguhan; ia berjalan sejajar
+  dengan matriks PHP, jadi yang bertambah adalah waktu tunggu PR, bukan
+  urutannya. `timeout-minutes` menjaga agar tes yang menunggu kunci di
+  PostgreSQL — yang tidak punya batas tunggu bawaan — gagal alih-alih menahan
+  runner enam jam. MariaDB dan versi PostgreSQL selain 16 tidak punya job
+  sendiri. Oracle dan SQL Server tetap tidak diuji (lihat
+  `docs/BASIS-DATA.md`).
