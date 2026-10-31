@@ -40,6 +40,7 @@ use Database\Seeders\Demo\TugasAkhirSeeder;
 use Database\Seeders\Demo\UjiKompetensiSeeder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
 use RuntimeException;
 
 /**
@@ -78,7 +79,7 @@ class DemoCampusSeeder extends Seeder
 
         $this->seedBranding();
 
-        $this->call([
+        foreach ([
             MasterAkademikSeeder::class,
             SdmSeeder::class,
             KemahasiswaanSeeder::class,
@@ -205,7 +206,10 @@ class DemoCampusSeeder extends Seeder
             // sedang diarahkan ke driver null di sini dan pengiriman sungguhan
             // akan dibuang tanpa jejak.
             NotifikasiSeeder::class,
-        ]);
+        ] as $seeder) {
+            $this->call($seeder);
+            $this->segarkanStatistik();
+        }
 
         Model::preventLazyLoading($ketat);
         config(['queue.default' => $queue]);
@@ -221,6 +225,26 @@ class DemoCampusSeeder extends Seeder
         Demo::tandai();
 
         $this->ringkasan();
+    }
+
+    /**
+     * Refreshes PostgreSQL's planner statistics between seeders.
+     *
+     * Later seeders write through services, and those services query what the
+     * earlier seeders just inserted. Inside a test that data is never committed,
+     * so autovacuum never analyses it; the planner believes every table is
+     * empty and picks nested loops over full scans. The EDOM seeder's
+     * per-student class lookup took over a second per student that way, and
+     * the PostgreSQL suite, which seeds this campus for every smoke test, ran
+     * past ninety minutes (ADR-043). ANALYZE counts the rows the current
+     * transaction inserted, costs a fraction of a second on demo-sized tables,
+     * and rolls back with the test.
+     */
+    private function segarkanStatistik(): void
+    {
+        if (DB::connection()->getDriverName() === 'pgsql') {
+            DB::statement('ANALYZE');
+        }
     }
 
     private function seedBranding(): void
