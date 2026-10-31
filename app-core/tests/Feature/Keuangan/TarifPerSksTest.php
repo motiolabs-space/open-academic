@@ -602,7 +602,7 @@ describe('potongan, beasiswa, dan denda', function () {
             ->and($tagihan->terbayar)->toBe(500_000)
             ->and($tagihan->kelebihanBayar())->toBe(200_000)
             ->and($tagihan->status)->toBe(InvoiceStatus::Lunas)
-            ->and(Pembayaran::where('tagihan_id', $tagihan->id)->sum('nominal'))->toBe(500_000);
+            ->and((int) Pembayaran::where('tagihan_id', $tagihan->id)->sum('nominal'))->toBe(500_000);
     });
 
     it('mempertahankan denda yang sudah berjalan saat baris KRS ditambahkan', function () {

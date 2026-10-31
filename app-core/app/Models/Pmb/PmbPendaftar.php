@@ -45,6 +45,7 @@ class PmbPendaftar extends Model
             'status' => ApplicantStatus::class,
             'jenis_kelamin' => Gender::class,
             'tanggal_lahir' => 'date',
+            'tahun_lulus_sekolah' => 'integer',
             'nilai_seleksi' => 'decimal:2',
             'agama_kode' => Agama::class,
             'is_calon_kip' => 'boolean',

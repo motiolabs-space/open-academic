@@ -237,7 +237,7 @@ class EvaluasiStudiService
                 StudentStatus::tidakDihitungMasaStudi(),
             ))
             ->groupBy('status_mahasiswa.mahasiswa_id')
-            ->pluck(DB::raw('count(*)'), 'status_mahasiswa.mahasiswa_id')
+            ->pluck(DB::raw('count(*) as jumlah'), 'status_mahasiswa.mahasiswa_id')
             ->map(fn ($n): int => (int) $n)
             ->all();
     }

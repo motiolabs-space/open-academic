@@ -96,7 +96,7 @@ describe('kurikulum dan mata kuliah (#24)', function () {
         $payload = FeederSyncLog::entity('kurikulum')->firstOrFail()->payload;
 
         expect($hasil['terkirim'])->toBe(1)
-            ->and($payload)->toBe([
+            ->and($payload)->toBeJsonColumn([
                 'nama_kurikulum' => 'Kurikulum OBE 2024',
                 'id_prodi' => 'a1b2c3d4',
                 'id_semester' => '20241',
@@ -134,7 +134,7 @@ describe('kurikulum dan mata kuliah (#24)', function () {
         $baris = KurikulumMataKuliah::firstOrFail();
 
         expect($hasil['terkirim'])->toBe(1)
-            ->and(FeederSyncLog::entity('matkul_kurikulum')->firstOrFail()->payload)->toBe([
+            ->and(FeederSyncLog::entity('matkul_kurikulum')->firstOrFail()->payload)->toBeJsonColumn([
                 'id_kurikulum' => 'kur-1', 'id_matkul' => 'mk-IF101', 'semester' => 1, 'sks_mata_kuliah' => 3, 'apakah_wajib' => 1,
             ])
             ->and($baris->feeder_id)->toBe('kur-1:mk-IF101');
@@ -192,7 +192,7 @@ describe('prestasi, transfer kredit, konversi MBKM (#23)', function () {
         $hasil = $this->sync->sinkronkan('prestasi', $this->term);
 
         expect($hasil['terkirim'])->toBe(1)
-            ->and(FeederSyncLog::entity('prestasi')->firstOrFail()->payload)->toBe([
+            ->and(FeederSyncLog::entity('prestasi')->firstOrFail()->payload)->toBeJsonColumn([
                 'id_mahasiswa' => 'mhs-1', 'id_jenis_prestasi' => '1', 'id_tingkat_prestasi' => '3',
                 'nama' => 'Juara 1 Gemastik', 'tahun_prestasi' => 2026, 'penyelenggara' => 'Kemdiktisaintek',
             ]);
@@ -245,7 +245,7 @@ describe('prestasi, transfer kredit, konversi MBKM (#23)', function () {
         $hasil = $this->sync->sinkronkan('konversi_mbkm', $this->term);
 
         expect($hasil['terkirim'])->toBe(1)
-            ->and(FeederSyncLog::entity('konversi_mbkm')->firstOrFail()->payload)->toBe([
+            ->and(FeederSyncLog::entity('konversi_mbkm')->firstOrFail()->payload)->toBeJsonColumn([
                 'id_matkul' => 'mk-IF301', 'id_anggota' => 'anggota-1', 'id_semester' => $this->term->kode,
                 'sks_mata_kuliah' => 3, 'nilai_angka' => '85.00', 'nilai_huruf' => 'A', 'nilai_indeks' => '4.00',
             ])

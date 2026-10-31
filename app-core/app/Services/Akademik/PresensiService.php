@@ -258,7 +258,7 @@ class PresensiService
             ->whereIn('kelas_kuliah_id', $ids)
             ->where('is_terlaksana', true)
             ->groupBy('kelas_kuliah_id')
-            ->pluck(DB::raw('COUNT(*)'), 'kelas_kuliah_id');
+            ->pluck(DB::raw('COUNT(*) as jumlah'), 'kelas_kuliah_id');
 
         // Everyone enrolled through an approved study plan, per class.
         $terdaftar = DB::table('krs_detail')

@@ -289,7 +289,7 @@ class Tagihan extends Model
             ->whereIn('mahasiswa_id', $mahasiswaIds)
             ->belumLunas()
             ->groupBy('mahasiswa_id')
-            ->pluck(DB::raw('SUM(total - terbayar)'), 'mahasiswa_id')
+            ->pluck(DB::raw('SUM(total - terbayar) as sisa'), 'mahasiswa_id')
             ->map(fn ($n): int => (int) $n);
     }
 }

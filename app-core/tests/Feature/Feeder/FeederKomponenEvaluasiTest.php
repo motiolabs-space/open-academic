@@ -128,7 +128,7 @@ describe('komponen evaluasi kelas', function () {
         $payloads = FeederSyncLog::entity('komponen_evaluasi')->orderBy('id')->pluck('payload');
 
         expect($hasil['terkirim'])->toBe(3)
-            ->and($payloads[0])->toBe([
+            ->and($payloads[0])->toBeJsonColumn([
                 'id_kelas_kuliah' => 'kelas-feeder-1',
                 'id_jenis_evaluasi' => '3',
                 'nama' => 'Tugas',

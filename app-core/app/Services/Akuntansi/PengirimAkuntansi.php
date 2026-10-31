@@ -12,6 +12,7 @@ use App\Models\Akuntansi\PemetaanAkuntansi;
 use App\Models\Kemahasiswaan\Mahasiswa;
 use App\Services\Akuntansi\Contracts\AkuntansiClientInterface;
 use Illuminate\Database\UniqueConstraintViolationException;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Throwable;
 
@@ -189,14 +190,16 @@ class PengirimAkuntansi
 
     private function ingatPemetaan(JenisEntitasAkuntansi $jenis, string $kunci, string $id, ?string $label): void
     {
+        // A savepoint around the insert: on PostgreSQL the refused row would
+        // otherwise abort the caller's transaction (ADR-044).
         try {
-            PemetaanAkuntansi::create([
+            DB::transaction(fn (): PemetaanAkuntansi => PemetaanAkuntansi::create([
                 'jenis' => $jenis,
                 'lokal_kunci' => $kunci,
                 'easyerp_id' => $id,
                 'label' => $label,
                 'dipetakan_at' => now(),
-            ]);
+            ]));
         } catch (UniqueConstraintViolationException) {
             // Two workers resolved the same student at once. Both got the same
             // remote id back — easyERP's idempotency key saw to that — so

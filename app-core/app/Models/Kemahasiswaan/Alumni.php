@@ -41,6 +41,7 @@ class Alumni extends Model
     protected function casts(): array
     {
         return [
+            'tahun_lulus' => 'integer',
             'mulai_bekerja' => 'date',
             'status_pekerjaan' => StatusPekerjaanAlumni::class,
             'status_pekerjaan_sumber' => SumberStatusPekerjaan::class,

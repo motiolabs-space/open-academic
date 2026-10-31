@@ -82,7 +82,7 @@ it('merakit satu surat dari beberapa permintaan mahasiswa yang sama, dan mencata
         ->and($surat->nomor)->toContain('/PDM/')
         ->and($surat->berlaku_sampai)->toBeNull()
         ->and($surat->isi('jenis_perubahan'))->toBe('Perubahan Data Mahasiswa')
-        ->and($surat->isi('perubahan'))->toBe([
+        ->and($surat->isi('perubahan'))->toBeJsonColumn([
             ['kolom' => 'nama_mahasiswa', 'label' => 'Nama', 'lama' => 'Rani Puspita', 'baru' => 'Rani Puspitasari', 'alasan' => 'Kesalahan pengetikan saat pendaftaran'],
             ['kolom' => 'tanggal_lahir', 'label' => 'Tanggal lahir', 'lama' => '2004-05-12', 'baru' => '2004-05-21', 'alasan' => 'Kesalahan pengetikan saat pendaftaran'],
         ])

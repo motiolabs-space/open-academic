@@ -279,7 +279,12 @@ class KegiatanLapanganService
     public function buatKelompok(KegiatanLapangan $kegiatan, KelompokKegiatanData $data): KegiatanLapanganKelompok
     {
         return DB::transaction(function () use ($kegiatan, $data): KegiatanLapanganKelompok {
-            $nomor = (int) $kegiatan->kelompok()->lockForUpdate()->max('nomor') + 1;
+            // Lock the parent, not the aggregate: PostgreSQL refuses FOR UPDATE
+            // on MAX() outright (ADR-044). Holding the activity row serialises
+            // group numbering for it on every engine.
+            KegiatanLapangan::query()->whereKey($kegiatan->id)->lockForUpdate()->first();
+
+            $nomor = (int) $kegiatan->kelompok()->max('nomor') + 1;
 
             $kelompok = KegiatanLapanganKelompok::create([
                 'kegiatan_lapangan_id' => $kegiatan->id,

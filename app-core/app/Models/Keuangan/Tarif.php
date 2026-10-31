@@ -44,6 +44,7 @@ class Tarif extends Model
     {
         return [
             'komponen' => KomponenTarif::class,
+            'angkatan' => 'integer',
             'nominal' => 'integer',
             'is_active' => 'boolean',
         ];

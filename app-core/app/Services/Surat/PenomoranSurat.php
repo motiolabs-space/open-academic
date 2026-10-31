@@ -8,6 +8,7 @@ use App\Enums\JenisSurat;
 use App\Models\Surat\Surat;
 use App\Services\Branding\BrandingService;
 use Illuminate\Database\UniqueConstraintViolationException;
+use Illuminate\Support\Facades\DB;
 use RuntimeException;
 
 /**
@@ -54,12 +55,15 @@ class PenomoranSurat
         for ($percobaan = 0; $percobaan < self::PERCOBAAN; $percobaan++) {
             $urut = $this->berikutnya($surat->jenis, $tahun);
 
+            // A savepoint per attempt: on PostgreSQL a refused write aborts
+            // the enclosing transaction, and the retry would fail with it
+            // (ADR-044).
             try {
-                $surat->forceFill([
+                DB::transaction(fn (): bool => $surat->forceFill([
                     'tahun' => $tahun,
                     'nomor_urut' => $urut,
                     'nomor' => $this->format($surat->jenis, $urut, $tahun),
-                ])->save();
+                ])->save());
 
                 return $surat;
             } catch (UniqueConstraintViolationException) {

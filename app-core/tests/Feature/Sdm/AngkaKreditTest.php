@@ -172,7 +172,7 @@ describe('baris turunan', function () {
 
         app(BkdService::class)->sahkan($laporan, $this->staf);
 
-        expect(AngkaKreditDosen::where('bkd_laporan_id', $laporan->id)->sum('nilai_ratus'))->toBe(4800);
+        expect((int) AngkaKreditDosen::where('bkd_laporan_id', $laporan->id)->sum('nilai_ratus'))->toBe(4800);
     });
 
     it('mencatat ijazah magister dan doktor sebagai Kum A, dan menariknya bila ijazahnya dihapus', function () {
@@ -191,7 +191,7 @@ describe('baris turunan', function () {
         RiwayatPendidikanDosen::where('jenjang', EducationLevel::S3->value)->first()->delete();
         $this->ak->catatPendidikan($this->dosen);
 
-        expect(AngkaKreditDosen::sum('nilai_ratus'))->toBe(15000);
+        expect((int) AngkaKreditDosen::sum('nilai_ratus'))->toBe(15000);
     });
 
     it('membiarkan baris manual saat menyusun ulang', function () {
@@ -296,7 +296,7 @@ describe('batas Kum D dan E', function () {
         expect($rekap->kum(UnsurAngkaKredit::Pengabdian))->toBe(4000)
             ->and($rekap->diakui(UnsurAngkaKredit::Pengabdian))->toBe(444)
             ->and($rekap->dipangkas(UnsurAngkaKredit::Pengabdian))->toBeTrue()
-            ->and(AngkaKreditDosen::where('unsur', 'pengabdian')->sum('nilai_ratus'))->toBe(4000);
+            ->and((int) AngkaKreditDosen::where('unsur', 'pengabdian')->sum('nilai_ratus'))->toBe(4000);
     });
 });
 
@@ -521,7 +521,7 @@ describe('layar dan policy', function () {
 
         $this->artisan('openacademic:susun-angka-kredit')->assertSuccessful();
 
-        expect(AngkaKreditDosen::sum('nilai_ratus'))->toBe(4000);
+        expect((int) AngkaKreditDosen::sum('nilai_ratus'))->toBe(4000);
     });
 
     it('mencatat Kum A saat dosen menyimpan ijazah di portofolio', function () {

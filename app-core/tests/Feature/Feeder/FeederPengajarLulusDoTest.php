@@ -274,7 +274,7 @@ describe('mahasiswa lulus / DO', function () {
         $payload = FeederSyncLog::entity('lulus_do')->firstOrFail()->payload;
 
         expect($hasil['terkirim'])->toBe(1)
-            ->and($payload)->toBe([
+            ->and($payload)->toBeJsonColumn([
                 'id_registrasi_mahasiswa' => 'reg-feeder-1',
                 'id_jenis_keluar' => '1',
                 'tanggal_keluar' => '2026-09-05',

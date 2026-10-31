@@ -38,6 +38,8 @@ class Kurikulum extends Model
     protected function casts(): array
     {
         return [
+            'tahun_mulai' => 'integer',
+            'tahun_selesai' => 'integer',
             'feeder_synced_at' => 'datetime',
             'is_active' => 'boolean',
         ];

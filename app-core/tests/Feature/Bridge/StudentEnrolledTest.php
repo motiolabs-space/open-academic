@@ -93,7 +93,7 @@ it('menerbitkan student.enrolled saat pendaftar PMB didaftarkan ulang', function
     expect($kiriman)->toHaveCount(1);
 
     expect($kiriman[0]['event'])->toBe('student.enrolled')
-        ->and($kiriman[0]['data'])->toBe([
+        ->and($kiriman[0]['data'])->toBeJsonColumn([
             'mahasiswa_uuid' => $mahasiswa->uuid,
             'nim' => $mahasiswa->nim,
             'nama' => 'Calon Bridge',

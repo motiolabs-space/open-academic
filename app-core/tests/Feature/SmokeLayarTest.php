@@ -91,9 +91,18 @@ function dalamAnggaranKueri(Closure $panggil, int $anggaran): void
     // the process. Whether this screen pays for it depends on which test ran
     // before it in the same worker, not on the screen — the BKD worksheet
     // read 18 or 22 queries by test order alone. Not a cost of the page.
+    //
+    // Schema introspection is left out on every engine, not only SQLite's
+    // catalogue. The budgets were set on SQLite, where the filter also dropped
+    // the Schema::hasTable('notifications') check in the portal header; MySQL
+    // asks information_schema for the same thing and every screen counted one
+    // query more than on SQLite.
     $kueri = array_values(array_filter(
         $kueri,
-        fn (array $q): bool => preg_match('/sqlite_master|pragma_table_xinfo/', $q['raw_query']) !== 1,
+        fn (array $q): bool => preg_match(
+            '/sqlite_master|pragma_table_xinfo|information_schema\.|pg_catalog\.|pg_class|pg_attribute/',
+            $q['raw_query'],
+        ) !== 1,
     ));
 
     expect(count($kueri))->toBeLessThanOrEqual(

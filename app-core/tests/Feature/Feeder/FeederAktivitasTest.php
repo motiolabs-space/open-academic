@@ -122,7 +122,7 @@ describe('aktivitas MBKM', function () {
         $payload = FeederSyncLog::entity('aktivitas_mbkm')->firstOrFail()->payload;
 
         expect($hasil['terkirim'])->toBe(1)
-            ->and($payload)->toBe([
+            ->and($payload)->toBeJsonColumn([
                 'id_jenis_aktivitas' => '2',
                 'id_prodi' => 'a1b2c3d4',
                 'id_semester' => $this->term->kode,
@@ -159,7 +159,7 @@ describe('aktivitas MBKM', function () {
         $payload = FeederSyncLog::entity('anggota_mbkm')->firstOrFail()->payload;
 
         expect($hasil['terkirim'])->toBe(1)
-            ->and($payload)->toBe(['id_aktivitas' => 'akt-1', 'id_registrasi_mahasiswa' => 'reg-7', 'jenis_peran' => '3'])
+            ->and($payload)->toBeJsonColumn(['id_aktivitas' => 'akt-1', 'id_registrasi_mahasiswa' => 'reg-7', 'jenis_peran' => '3'])
             ->and($aktivitas->fresh()->feeder_anggota_id)->not->toBeNull()
             ->and($aktivitas->fresh()->feeder_id)->toBe('akt-1');
     });
@@ -183,7 +183,7 @@ describe('aktivitas MBKM', function () {
         $payload = FeederSyncLog::entity('bimbing_mbkm')->firstOrFail()->payload;
 
         expect($hasil['terkirim'])->toBe(1)
-            ->and($payload)->toBe(['id_aktivitas' => 'akt-1', 'id_kategori_kegiatan' => '110100', 'id_dosen' => 'dosen-9', 'pembimbing_ke' => 1])
+            ->and($payload)->toBeJsonColumn(['id_aktivitas' => 'akt-1', 'id_kategori_kegiatan' => '110100', 'id_dosen' => 'dosen-9', 'pembimbing_ke' => 1])
             ->and($aktivitas->fresh()->feeder_bimbing_id)->not->toBeNull();
     });
 

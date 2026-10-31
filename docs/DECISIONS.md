@@ -2141,3 +2141,119 @@ bagian per butir.
 - **Konsekuensi.** #54 ditutup begitu catatan resmi terbit atau satu kampus
   melaporkan hasil pemeriksaan kamus 3.1 — laporan selisihnya, bukan
   salinan kamusnya.
+
+## ADR-044 — Suite diuji di MySQL 8 dan PostgreSQL 16, bukan hanya SQLite (2026-10-31)
+
+- **Konteks.** `docs/BASIS-DATA.md` menyatakan MySQL 8/MariaDB sebagai mesin
+  utama dan PostgreSQL 13+ didukung, tetapi CI hanya menjalankan Pest di
+  SQLite in-memory. CLAUDE.md §9 sudah mencatat dua kali SQLite meloloskan hal
+  yang gagal di MySQL. Klaim "didukung" tanpa pernah dijalankan adalah janji,
+  bukan fakta.
+- **Keputusan.** (1) **Job `database` di `ci.yml`**, matriks dua entri:
+  service container `mysql:8.0` dan `postgres:16`, PHP 8.4 saja (yang diuji
+  mesinnya, bukan PHP-nya; matriks 8.2/8.4/8.5 tetap di SQLite). Langkahnya
+  `php artisan migrate --seed` pada basis data utama — kegagalan skema atau
+  seeder demo terbaca sebagai satu langkah merah, bukan ratusan tes merah —
+  lalu `composer test:par`. Direktori data service di tmpfs.
+  (2) **`phpunit.xml` tidak diubah.** `<env>` tanpa `force="true"` tidak
+  menimpa variabel proses, jadi `DB_CONNECTION` dari env job menang dan SQLite
+  tetap bawaan untuk pengembang. Pengguna basis data superuser karena tes
+  paralel membuat basis data sendiri per proses (`*_test_1`, `_2`, ...).
+  (3) **Perbedaan yang ditemukan diperbaiki di tempat yang benar**, bukan
+  dengan melonggarkan tes:
+  - *Kolom JSON MySQL mengurutkan ulang kunci objek* (panjang, lalu byte).
+    Enam belas tes membandingkan payload Feeder/Bridge yang dibaca balik dari
+    kolom `json` dengan `toBe()`, yang peka urutan. Ekspektasi baru
+    `toBeJsonColumn()` di `tests/Pest.php` mengurutkan kunci di kedua sisi dan
+    tetap ketat soal nilai dan tipe. Kode tidak berubah: urutan kunci tidak
+    bermakna dalam objek JSON, dan `FeederSyncLog::hashPayload()` sudah
+    meng-`ksort` larik PHP sebelum di-hash, jadi idempotensi Feeder tidak
+    pernah bergantung pada apa yang disimpan kolom itu.
+  - *`SUM()` di MySQL pulang sebagai string* (DECIMAL). Seluruh `sum()` di
+    `app/` sudah di-cast `(int)`; lima tes yang belum ikut di-cast.
+  - *`YEAR` di MySQL pulang sebagai string.* Konvensi proyek memberi cast
+    `integer` pada setiap kolom `year()`; empat terlewat dan kini ditambahkan:
+    `kurikulum.tahun_mulai`/`tahun_selesai`, `tarif.angkatan`,
+    `pmb_pendaftar.tahun_lulus_sekolah`, `alumni.tahun_lulus`. Di SQLite dan
+    PostgreSQL kolom itu sudah pulang sebagai integer, jadi perilakunya kini
+    sama di ketiga mesin.
+  - *Panjang kolom.* Helper tes membuat `poin_kategori.kode` 25 karakter untuk
+    kolom `string(24)`; SQLite mengabaikan panjang, MySQL menolak barisnya.
+    Diperbaiki di helper; kode kategori sungguhan jauh lebih pendek.
+  - *Anggaran kueri.* `SmokeLayarTest` membuang kueri katalog SQLite dari
+    hitungan, yang tanpa sengaja juga membuang `Schema::hasTable('notifications')`
+    di kepala portal. Di MySQL kueri yang sama lewat `information_schema` dan
+    setiap layar terhitung satu lebih. Filternya kini membuang introspeksi
+    skema di ketiga mesin; anggarannya tidak diubah.
+
+  - *Foreign key tanpa indeks.* InnoDB membuat indeks untuk setiap foreign
+    key; PostgreSQL dan SQLite tidak. 177 dari 312 FK tidak berindeks di
+    PostgreSQL. Run pertama job PostgreSQL makan ±80 menit dan run kedua
+    terpotong di 90 menit; di klaster lokal, kueri `AnalitikService` dan
+    `jadwal_kuliah … where exists (… exists …)` atas kampus demo berjalan
+    lebih dari dua jam. Data yang disisipkan tes tidak pernah di-commit, jadi
+    tidak pernah di-`ANALYZE`; planner mengira tabelnya kosong dan memilih
+    nested loop di atas sequential scan. Produksi punya statistik dan rencana
+    yang lebih baik, tetapi tetap membayar scan yang sama. Migrasi baru
+    `2026_10_31_200000_index_unindexed_foreign_keys` membaca FK dari skema
+    (`Schema::getForeignKeys()`/`getIndexes()`) dan mengindeks setiap FK yang
+    belum punya indeks berawalan kolomnya, dengan nama berakhiran
+    `_fk_index` (dipendekkan dengan hash bila melewati 63 karakter). Di
+    MySQL/MariaDB migrasi itu langsung kembali, karena tidak ada yang perlu
+    dibuat. Daftar FK sengaja dibaca, bukan ditulis: isinya adalah "semua FK
+    sampai saat ini". FK sesudahnya dijaga tes di `PortabilitasBasisDataTest`,
+    yang gagal di SQLite juga — SQLite sama dengan PostgreSQL dalam hal ini.
+
+  - *Statistik planner di dalam transaksi tes.* Indeks saja belum cukup:
+    selama statistik menyatakan tabel kosong, planner tetap memilih nested
+    loop. `DemoCampusSeeder` — yang dijalankan setiap smoke test — menulis
+    lewat service yang membaca data seeder sebelumnya; pencarian kelas per
+    mahasiswa di `EdomSeeder` makan lebih dari satu detik per mahasiswa, dan
+    satu tes `SmokeLayarTest` tidak selesai dalam 50 menit di klaster lokal.
+    Di PostgreSQL seeder itu kini menjalankan `ANALYZE` setelah setiap
+    sub-seeder. `ANALYZE` menghitung baris yang disisipkan transaksinya
+    sendiri, makan ±0,2 detik pada tabel seukuran demo, dan ikut tergulung
+    bersama tes; tes yang sama selesai dalam ±20 detik. Seed demo di luar
+    tes tidak terpengaruh: data ter-commit dianalisis autovacuum (seed penuh
+    ±27 detik di PostgreSQL).
+
+  Tiga temuan PostgreSQL adalah **bug aplikasi**, bukan artefak tes — layar
+  yang 500 di kampus mana pun yang memakai PostgreSQL:
+  - *`pluck(DB::raw('count(*)'), ...)` tanpa alias.* `pluck()` membaca hasil
+    lewat nama kolom. MySQL dan SQLite menamai kolom itu persis teks
+    ekspresinya; PostgreSQL menamainya `count`/`sum`. Empat tempat
+    (`PresensiService::rawanAbsensi`, `EvaluasiStudiService`,
+    `YudisiumService`, `Tagihan::tunggakanPerMahasiswa`) kini memberi alias di dalam
+    ekspresinya (`count(*) as jumlah`), yang dibaca Laravel sebagai nama
+    kolom. Daftar kelas dosen, evaluasi studi, yudisium, syarat wisuda, dan
+    peserta ujian semuanya lewat salah satunya.
+  - *Pelanggaran unik yang ditangkap lalu dilanjutkan.* Lima tempat memakai
+    indeks unik sebagai kunci atomik dan menangkap
+    `UniqueConstraintViolationException` untuk melanjutkan kerja: klaim kunci
+    pengingat (`Notifier`), idempotensi dokumen akuntansi
+    (`PenjurnalanService`), pemetaan akuntansi (`PengirimAkuntansi`), dan
+    percobaan ulang nomor tiket helpdesk serta nomor surat. Di PostgreSQL
+    pernyataan yang ditolak membatalkan **seluruh** transaksi yang sedang
+    berjalan; setiap kueri berikutnya gagal dengan "current transaction is
+    aborted". Insert-nya kini dibungkus `DB::transaction()`, yang menjadi
+    savepoint bila pemanggil sudah memegang transaksi — cara yang sama dengan
+    `createOrFirst()` milik Laravel. Tempat yang menangkap lalu **melempar**
+    `AturanAkademikException` tidak diubah: operasinya batal juga, dan
+    transaksi pemanggil ikut digulung.
+  - *`lockForUpdate()->max()`.* PostgreSQL menolak `FOR UPDATE` bersama fungsi
+    agregat. Penomoran kelompok kegiatan lapangan kini mengunci baris
+    `kegiatan_lapangan` induknya lalu membaca `MAX()` tanpa kunci; hasilnya
+    sama-sama berurutan di ketiga mesin.
+- **Konsekuensi.** PR tidak hijau bila salah satu mesin merah. Satu migrasi
+  baru (indeks FK, PostgreSQL dan SQLite saja); selain itu seluruh migrasi
+  lolos apa adanya di MySQL 8.0 dan PostgreSQL 16 (CI), serta MariaDB 10.4
+  dan PostgreSQL 17 (lokal). Instalasi PostgreSQL yang berjalan membangun
+  ±180 indeks saat `php artisan migrate`; `CREATE INDEX` menahan tulis ke
+  tabelnya selama dibangun. Job basis data lebih lama dari job SQLite karena
+  setiap tes berjalan dalam transaksi di server sungguhan; ia berjalan sejajar
+  dengan matriks PHP, jadi yang bertambah adalah waktu tunggu PR, bukan
+  urutannya. `timeout-minutes` menjaga agar tes yang menunggu kunci di
+  PostgreSQL — yang tidak punya batas tunggu bawaan — gagal alih-alih menahan
+  runner enam jam. MariaDB dan versi PostgreSQL selain 16 tidak punya job
+  sendiri. Oracle dan SQL Server tetap tidak diuji (lihat
+  `docs/BASIS-DATA.md`).
