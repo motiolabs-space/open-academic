@@ -111,7 +111,7 @@ class Notifier
      * caller already holds one. On PostgreSQL a refused statement aborts the
      * whole enclosing transaction, so without the savepoint every query after
      * this `return false` failed with "current transaction is aborted"; MySQL
-     * and SQLite carry on, which is why only PostgreSQL showed it (ADR-043).
+     * and SQLite carry on, which is why only PostgreSQL showed it (ADR-044).
      */
     private function klaim(object $penerima, string $kunci): bool
     {

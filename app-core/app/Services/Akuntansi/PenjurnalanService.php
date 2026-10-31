@@ -293,7 +293,7 @@ class PenjurnalanService
         }
 
         // A savepoint around the insert: on PostgreSQL the refused row would
-        // otherwise abort the caller's transaction (ADR-043).
+        // otherwise abort the caller's transaction (ADR-044).
         try {
             return DB::transaction(fn (): DokumenAkuntansi => DokumenAkuntansi::create([
                 'jenis' => $jenis,

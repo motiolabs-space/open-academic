@@ -141,7 +141,7 @@ Rupiah disimpan sebagai **integer**, bukan desimal atau float. Ini portabel ke
 mana pun dan menghindarkan seluruh persoalan pembulatan — galat satu sen pada
 lima ribu tagihan adalah angka yang nyata.
 
-### Ditemukan CI saat MySQL dan PostgreSQL mulai diuji (ADR-043)
+### Ditemukan CI saat MySQL dan PostgreSQL mulai diuji (ADR-044)
 
 Semua lolos di SQLite. Aturannya, berlaku untuk kode baru:
 

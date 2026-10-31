@@ -57,7 +57,7 @@ class PenomoranSurat
 
             // A savepoint per attempt: on PostgreSQL a refused write aborts
             // the enclosing transaction, and the retry would fail with it
-            // (ADR-043).
+            // (ADR-044).
             try {
                 DB::transaction(fn (): bool => $surat->forceFill([
                     'tahun' => $tahun,

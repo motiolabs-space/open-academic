@@ -280,7 +280,7 @@ class KegiatanLapanganService
     {
         return DB::transaction(function () use ($kegiatan, $data): KegiatanLapanganKelompok {
             // Lock the parent, not the aggregate: PostgreSQL refuses FOR UPDATE
-            // on MAX() outright (ADR-043). Holding the activity row serialises
+            // on MAX() outright (ADR-044). Holding the activity row serialises
             // group numbering for it on every engine.
             KegiatanLapangan::query()->whereKey($kegiatan->id)->lockForUpdate()->first();
 

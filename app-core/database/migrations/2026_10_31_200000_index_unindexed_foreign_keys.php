@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Schema;
 
 /**
  * Indexes every foreign key that has no index starting with its columns
- * (ADR-043).
+ * (ADR-044).
  *
  * InnoDB creates an index for each foreign key on its own; PostgreSQL and
  * SQLite never do. On PostgreSQL more than half of the foreign keys had

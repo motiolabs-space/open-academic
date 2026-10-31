@@ -111,7 +111,7 @@ describe('foreign key diindeks', function () {
         // InnoDB mengindeks foreign key dengan sendirinya; PostgreSQL dan
         // SQLite tidak. Tanpa indeks, setiap join dan whereHas() lewat kolom
         // itu menjadi sequential scan di PostgreSQL — suite pernah berjalan
-        // lebih dari 90 menit karenanya (ADR-043). SQLite sama dengan
+        // lebih dari 90 menit karenanya (ADR-044). SQLite sama dengan
         // PostgreSQL di sini, jadi suite SQLite cukup untuk menjaganya.
         $tanpaIndeks = collect(Schema::getTableListing(schemaQualified: false))
             ->flatMap(function (string $tabel): array {

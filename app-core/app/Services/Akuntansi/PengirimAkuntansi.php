@@ -191,7 +191,7 @@ class PengirimAkuntansi
     private function ingatPemetaan(JenisEntitasAkuntansi $jenis, string $kunci, string $id, ?string $label): void
     {
         // A savepoint around the insert: on PostgreSQL the refused row would
-        // otherwise abort the caller's transaction (ADR-043).
+        // otherwise abort the caller's transaction (ADR-044).
         try {
             DB::transaction(fn (): PemetaanAkuntansi => PemetaanAkuntansi::create([
                 'jenis' => $jenis,

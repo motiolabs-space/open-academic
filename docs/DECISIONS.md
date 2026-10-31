@@ -2142,7 +2142,7 @@ bagian per butir.
   melaporkan hasil pemeriksaan kamus 3.1 — laporan selisihnya, bukan
   salinan kamusnya.
 
-## ADR-043 — Suite diuji di MySQL 8 dan PostgreSQL 16, bukan hanya SQLite (2026-10-31)
+## ADR-044 — Suite diuji di MySQL 8 dan PostgreSQL 16, bukan hanya SQLite (2026-10-31)
 
 - **Konteks.** `docs/BASIS-DATA.md` menyatakan MySQL 8/MariaDB sebagai mesin
   utama dan PostgreSQL 13+ didukung, tetapi CI hanya menjalankan Pest di

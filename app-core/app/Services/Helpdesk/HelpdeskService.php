@@ -446,7 +446,7 @@ class HelpdeskService
 
             // A savepoint per attempt: on PostgreSQL a refused insert aborts
             // the enclosing transaction, and the retry would fail with it
-            // (ADR-043).
+            // (ADR-044).
             try {
                 return DB::transaction(fn (): Model => $buat($nomor));
             } catch (UniqueConstraintViolationException) {

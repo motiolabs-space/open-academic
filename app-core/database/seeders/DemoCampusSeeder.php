@@ -236,7 +236,7 @@ class DemoCampusSeeder extends Seeder
      * empty and picks nested loops over full scans. The EDOM seeder's
      * per-student class lookup took over a second per student that way, and
      * the PostgreSQL suite, which seeds this campus for every smoke test, ran
-     * past ninety minutes (ADR-043). ANALYZE counts the rows the current
+     * past ninety minutes (ADR-044). ANALYZE counts the rows the current
      * transaction inserted, costs a fraction of a second on demo-sized tables,
      * and rolls back with the test.
      */
