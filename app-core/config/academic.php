@@ -226,6 +226,22 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Re-NIM and Readmission (ROADMAP #55, ADR-042 §3)
+    |--------------------------------------------------------------------------
+    |
+    | Whether a student who was dropped out may be readmitted or reactivated.
+    | Off by default: a drop-out is a decision the campus took, and undoing it
+    | is a statute question, not a registrar's. A student who left of their
+    | own accord (Keluar) may always come back.
+    |
+    */
+
+    'registrasi_ulang' => [
+        'izinkan_dari_do' => (bool) env('ACADEMIC_MASUK_KEMBALI_DARI_DO', false),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Graduation
     |--------------------------------------------------------------------------
     */

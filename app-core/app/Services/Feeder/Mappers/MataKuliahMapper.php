@@ -26,6 +26,22 @@ class MataKuliahMapper extends FeederMapper
         return 'InsertMataKuliah';
     }
 
+    public function medan(): array
+    {
+        return [
+            'kode_mata_kuliah',
+            'nama_mata_kuliah',
+            'id_prodi',
+            'id_jenis_mata_kuliah',
+            'sks_mata_kuliah',
+            'sks_tatap_muka',
+            'sks_praktek',
+            'sks_praktek_lapangan',
+            'sks_simulasi',
+            'tanggal_mulai_efektif',
+        ];
+    }
+
     /** @return Builder<MataKuliah> */
     protected function query(string $termCode): Builder
     {

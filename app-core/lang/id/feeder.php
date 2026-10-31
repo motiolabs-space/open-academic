@@ -10,6 +10,12 @@ return [
         'telepon_tidak_valid' => 'Nomor HP ":telepon" tidak berbentuk nomor telepon (9–15 digit). Periksa sebelum dikirim.',
         'telepon_ganda' => 'Nomor HP ini juga tercatat pada mahasiswa lain. Neo Feeder versi terbaru dilaporkan menolak nomor HP yang sama untuk dua mahasiswa.',
         'email_tidak_valid' => 'Surel ":email" tidak berbentuk alamat surel; Neo Feeder versi terbaru dilaporkan mewajibkan surel yang sah.',
+        'tanggal_ijazah_kosong' => 'Tanggal ijazah belum ada (:sumber), jadi Lulus/DO dikirim tanpa tanggal ijazah. Lengkapi lalu sinkronkan ulang.',
+        'sumber_tanggal_ijazah' => [
+            'lulus' => 'tanggal lulus pada yudisium',
+            'yudisium' => 'tanggal SK yudisium',
+            'wisuda' => 'lulusan belum terdaftar pada periode wisuda',
+        ],
         'akm_kosong' => 'Mahasiswa tidak punya satu pun catatan aktivitas kuliah (AKM). Neo Feeder menolak meluluskan atau mengeluarkan mahasiswa tanpa riwayat AKM.',
     ],
 
@@ -219,6 +225,95 @@ return [
         'validasi' => [
             'belum_diadopsi' => 'Mahasiswa ini sudah diklaim dari daftar mahasiswa lampau PDDIKTI tetapi belum diadopsi. '
                 .'Jalankan adopsi untuk prodi dan periode masuknya sebelum mengirim biodata, supaya tidak terdaftar dua kali.',
+        ],
+    ],
+
+    // Web-service dictionary check (ADR-042 §1).
+    'kamus' => [
+        'judul' => 'Kamus Web Service',
+        'konteks' => 'Medan yang diterima Neo Feeder kampus, dibandingkan dengan medan yang dikirim SIAKAD',
+        'tautan_konsol' => 'Kamus WS',
+        'penjelasan' => 'Nama medan pada web service Neo Feeder hanya dapat dipastikan dari kamus yang dijawab Feeder kampus '
+            .'sendiri (GetDictionary). Pemeriksaan membaca kamus setiap aksi yang dipakai SIAKAD, menyimpannya, lalu '
+            .'membandingkannya dengan medan yang dikirim setiap entitas. Hasilnya laporan: tidak ada pemetaan atau '
+            .'pengaturan yang diubah otomatis. Jalankan ulang setiap kali Neo Feeder kampus diperbarui.',
+        'privasi' => 'Isi kamus disimpan di basis data kampus ini saja dan tidak pernah dikirim ke mana pun.',
+        'form' => [
+            'versi' => 'Versi Neo Feeder',
+            'versi_hint' => 'Isi bila Feeder tidak melaporkan versinya sendiri, mis. 3.1.',
+            'periksa' => 'Baca kamus dari Feeder',
+        ],
+        'ringkasan' => [
+            'diperiksa' => 'Diperiksa',
+            'versi' => 'Versi Feeder',
+            'aksi' => 'Aksi dibaca',
+            'gagal' => 'Aksi gagal dibaca',
+            'selisih' => 'Entitas berselisih',
+            'oleh' => 'Dijalankan oleh',
+            'perintah' => 'perintah artisan',
+        ],
+        'versi_tidak_diketahui' => 'tidak dilaporkan',
+        'cocok' => 'Cocok',
+        'tidak_terbaca' => 'Tidak terbaca',
+        'semua_cocok' => 'Seluruh medan yang dikirim dikenal kamus, dan tidak ada medan wajib yang tertinggal.',
+        'opsional' => ':jumlah medan opsional di kamus tidak dikirim: :daftar',
+        'riwayat' => 'Pemeriksaan sebelumnya',
+        'kolom' => [
+            'entitas' => 'Entitas',
+            'aksi' => 'Aksi',
+            'temuan' => 'Temuan',
+            'dikirim' => 'Dikirim SIAKAD',
+            'kamus' => 'Di kamus Feeder',
+        ],
+        'jenis' => [
+            'tidak_dikenal' => 'Tidak dikenal Feeder',
+            'wajib_tidak_dikirim' => 'Wajib, tidak dikirim',
+            'beda_nama' => 'Beda nama',
+            'aksi_tidak_terbaca' => 'Aksi tidak terbaca',
+        ],
+        'wajib' => 'wajib',
+        'galat' => [
+            'ditolak' => 'Feeder menolak permintaan kamus untuk aksi ini.',
+            'bentuk' => 'Balasan kamus tidak berbentuk daftar medan yang dikenali; periksa versi Feeder atau nama parameter kamus.',
+        ],
+        'kosong' => [
+            'judul' => 'Kamus belum pernah dibaca',
+            'deskripsi' => 'Baca kamus dari Neo Feeder kampus untuk membandingkan nama medan dengan yang dikirim SIAKAD.',
+        ],
+        'konsol' => [
+            'judul' => 'Kamus Web Service',
+            'belum' => 'Kamus Feeder belum pernah dibaca. Bacalah sesudah memasang atau memperbarui Neo Feeder.',
+            'ringkas' => 'Dibaca :tanggal (versi :versi): :selisih dari :entitas entitas berselisih dengan kamus.',
+            'buka' => 'Buka laporan',
+        ],
+        'pesan' => [
+            'selesai' => 'Kamus dibaca untuk :aksi aksi (:gagal gagal dibaca); :selisih entitas berselisih dengan kamus.',
+        ],
+        'saran' => [
+            'judul' => 'Saran pengaturan nama medan',
+            'sekarang' => 'Sekarang',
+            'tidak_dikirim' => '(tidak dikirim)',
+            'tidak_sah' => 'Nilai ini bukan nama medan yang sah dan diabaikan; HP memakai nama bawaan, tanggal ijazah tidak dikirim.',
+            'catatan' => 'Saran tidak diterapkan otomatis. Ubah .env di server, jalankan php artisan config:cache, lalu baca ulang kamus. '
+                .'Mengubah nama medan mengirim ulang baris yang sudah diterima Feeder sebagai pembaruan pada sinkronisasi berikutnya.',
+            'medan' => [
+                'FEEDER_MEDAN_HP' => 'Nomor HP pada biodata mahasiswa',
+                'FEEDER_MEDAN_TANGGAL_IJAZAH' => 'Tanggal ijazah pada Lulus/DO',
+            ],
+            'status' => [
+                'sesuai' => 'Sesuai kamus',
+                'ubah' => 'Ubah',
+                'isi' => 'Dapat diisi',
+                'kosongkan' => 'Tidak ada di kamus',
+                'tidak_ditemukan' => 'Tidak ditemukan',
+                'tidak_terbaca' => 'Kamus tidak terbaca',
+                'tidak_sah' => 'Tidak sah',
+            ],
+        ],
+        'perintah' => [
+            'saran' => 'Saran: :baris',
+            'ringkasan' => 'Kamus dibaca untuk :aksi aksi (:gagal gagal), versi Feeder: :versi.',
+            'ada_selisih' => ':jumlah entitas berselisih dengan kamus. Laporan lengkap ada di konsol Feeder → Kamus WS.',
         ],
     ],
 

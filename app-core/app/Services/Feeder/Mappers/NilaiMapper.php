@@ -22,6 +22,11 @@ class NilaiMapper extends FeederMapper
         return 'InsertNilaiPerkuliahanKelas';
     }
 
+    public function medan(): array
+    {
+        return ['id_kelas_kuliah', 'id_registrasi_mahasiswa', 'nilai_angka', 'nilai_huruf', 'nilai_indeks'];
+    }
+
     /** @return Builder<Nilai> */
     protected function query(string $termCode): Builder
     {

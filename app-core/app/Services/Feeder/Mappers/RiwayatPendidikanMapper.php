@@ -24,6 +24,22 @@ class RiwayatPendidikanMapper extends FeederMapper
         return 'InsertRiwayatPendidikanMahasiswa';
     }
 
+    public function medan(): array
+    {
+        return [
+            'id_mahasiswa',
+            'nim',
+            'id_prodi',
+            'id_jenis_daftar',
+            'id_jalur_masuk',
+            'id_periode_masuk',
+            'tanggal_daftar',
+            'sks_diakui',
+            'nama_perguruan_tinggi_asal',
+            'nama_program_studi_asal',
+        ];
+    }
+
     /**
      * Students whose biodata already reached Feeder but whose enrolment has not.
      *
@@ -57,7 +73,9 @@ class RiwayatPendidikanMapper extends FeederMapper
             // Transfer and RPL only: what was recognised, and from where.
             // PDDIKTI has no identifier for another institution's programme,
             // so the origin travels as text.
-            'sks_diakui' => $jenis->butuhAsal() ? $model->sks_diakui : null,
+            // A re-NIM may recognise nothing yet; PDDIKTI still asks for the
+            // figure, so zero is sent rather than left out (ADR-042 §3).
+            'sks_diakui' => $jenis->butuhAsal() ? ($model->sks_diakui ?? ($jenis->internal() ? 0 : null)) : null,
             'nama_perguruan_tinggi_asal' => $jenis->butuhAsal() ? $model->pt_asal : null,
             'nama_program_studi_asal' => $jenis->butuhAsal() ? $model->prodi_asal : null,
         ], fn (mixed $nilai): bool => $nilai !== null && $nilai !== '');

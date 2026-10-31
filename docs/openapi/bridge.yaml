@@ -1050,7 +1050,8 @@ components:
       student.enrolled:
         description: |
           Mahasiswa baru terbentuk — daftar ulang PMB (termasuk pindahan lewat
-          PMB) atau intake pindahan/RPL langsung. Terbit satu kali per
+          PMB), intake pindahan/RPL langsung, atau registrasi baru lewat pindah
+          prodi internal / masuk kembali (lihat `mahasiswa_sebelumnya_uuid`). Terbit satu kali per
           mahasiswa, sesudah transaksi pendaftarannya selesai. Adopsi dan klaim
           data PDDIKTI lama tidak menerbitkan event ini; mahasiswa yang sudah
           ada sebelumnya dibaca lewat `GET /students`.
@@ -1064,12 +1065,23 @@ components:
           prodi: { type: string, description: Kode program studi }
           angkatan: { type: integer }
           semester_masuk: { type: string, description: "Kode semester PDDIKTI, mis. 20261" }
-          jenis_daftar: { type: [string, "null"], description: "baru | pindahan | rpl_transfer | rpl_perolehan | fast_track | non_gelar" }
+          jenis_daftar: { type: [string, "null"], description: "baru | pindahan | rpl_transfer | rpl_perolehan | fast_track | non_gelar | pindah_prodi | masuk_kembali" }
           status: { type: string, description: "Kode status mahasiswa, mis. A" }
+          mahasiswa_sebelumnya_uuid:
+            type: [string, "null"]
+            format: uuid
+            description: |
+              Registrasi sebelumnya dari orang yang sama, bila registrasi ini dibuka
+              lewat pindah prodi internal atau masuk kembali (NIM baru). Akun lama
+              tetap ada dengan NIM lamanya; pindah prodi juga menerbitkan
+              `student.status_changed` untuk akun lama (status `G`). Null untuk
+              mahasiswa yang baru pertama kali terdaftar.
       student.status_changed:
         description: |
           Status mahasiswa berubah: yudisium (menunggu uji kompetensi, lulus),
-          cuti disetujui BAAK, dan aktif kembali dari cuti. Terbit sesudah
+          cuti disetujui BAAK, aktif kembali dari cuti, pindah prodi internal
+          (registrasi lama menjadi `G`), dan aktif kembali dengan NIM yang sama
+          sesudah keluar (ADR-042 §3). Terbit sesudah
           transaksi keputusannya selesai — ajuan yang belum diputus tidak
           menerbitkan apa pun.
         type: object

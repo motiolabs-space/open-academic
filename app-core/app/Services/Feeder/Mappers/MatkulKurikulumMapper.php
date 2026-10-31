@@ -24,6 +24,11 @@ class MatkulKurikulumMapper extends FeederMapper
         return 'InsertMatkulKurikulum';
     }
 
+    public function medan(): array
+    {
+        return ['id_kurikulum', 'id_matkul', 'semester', 'sks_mata_kuliah', 'apakah_wajib'];
+    }
+
     /** @return Builder<KurikulumMataKuliah> */
     protected function query(string $termCode): Builder
     {

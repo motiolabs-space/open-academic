@@ -28,6 +28,11 @@ class NilaiKomponenMapper extends FeederMapper
         return 'UpdateNilaiPerkuliahanKelasKomponenEvaluasi';
     }
 
+    public function medan(): array
+    {
+        return ['id_registrasi_mahasiswa', 'id_kelas_kuliah', 'id_komponen_evaluasi', 'nilai_komponen_evaluasi'];
+    }
+
     /** @return Builder<NilaiKomponen> */
     protected function query(string $termCode): Builder
     {

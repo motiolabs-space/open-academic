@@ -4,6 +4,64 @@
 
 ---
 
+## Sesi 72 — 2026-10-30 · Butir Feeder P7: kamus web service, nama medan, re-NIM
+
+Branch `feature/p7-feeder`, satu PR, empat commit (satu per butir ROADMAP
+#52–#55). Keputusan: ADR-042 §1–§4. Dua migrasi baru (append-only). Tidak ada
+kamus Neo Feeder asli di repo — kamus palsu di `FakeFeederClient` dikarang.
+
+- **Pemeriksa kamus web service** (`feat(feeder)`, #52/#53 alatnya).
+  `openacademic:feeder-kamus` dan layar `/admin/feeder/kamus` (tombol "Kamus
+  WS" dan panel ringkas di konsol Feeder) memanggil `GetDictionary` untuk
+  setiap aksi yang dikirim mapper, menyimpan hasilnya
+  (`feeder_dictionary_runs`/`_acts`: versi, tanggal, medan wajib/opsional per
+  aksi atau galatnya), lalu membandingkannya dengan `medan()` setiap mapper:
+  medan tidak dikenal, wajib tidak dikirim, beda nama (sinonim/kemiripan),
+  aksi tidak terbaca. Laporan saja. `FEEDER_KAMUS_ACT`/`_PARAMETER` dapat
+  diatur. `medan()` kini abstrak di `FeederMapper` dan dipaku tes terhadap
+  `payload()`. Skenario palsu `selaras`, `3.0.1`, `3.1`.
+- **Nama medan yang dapat diatur** (`fix(feeder)`, #52, #53).
+  `FEEDER_MEDAN_HP` (bawaan `telepon_seluler`), `FEEDER_MEDAN_TANGGAL_IJAZAH`
+  (bawaan kosong — tidak dikirim), `FEEDER_TANGGAL_IJAZAH_SUMBER`
+  (`lulus`|`yudisium`|`wisuda`). Pemeriksa kamus menyarankan baris `.env`.
+  Mengganti nama mengubah hash: baris yang sudah diterima dikirim ulang sekali
+  sebagai Update berkunci identitasnya, tidak pernah Insert kedua (ADR-042 §2).
+- **Re-NIM / masuk kembali / aktif kembali** (`feat(kemahasiswaan)`, #55).
+  Layar Registrasi Ulang dari detail mahasiswa. Pindah prodi dan masuk kembali
+  membuka baris mahasiswa baru (NIM, akun, `feeder_id` orang yang sama, jenis
+  daftar `pindah_prodi`/`masuk_kembali`, asal kampus ini); baris lama tetap
+  dan tertaut lewat `riwayat_registrasi_mahasiswa`. Pindah prodi menutup
+  registrasi lama (status `G`) lewat Lulus/DO; aktif kembali membuka ulang NIM
+  yang sama dan membuka PJK bila keluarnya sudah dilaporkan. Bridge:
+  `student.enrolled` + `mahasiswa_sebelumnya_uuid` untuk registrasi baru,
+  `student.status_changed` untuk status lama. Nomor HP ganda kini dihitung
+  per orang (NIK). DO hanya bila `ACADEMIC_MASUK_KEMBALI_DARI_DO=true`.
+- **Neo Feeder 3.1** (`docs(roadmap)`, #54). Diperiksa ulang: tetap tidak ada
+  catatan rilis resmi. Baris #54 diarahkan ke pemeriksa kamus.
+
+**Tes baru:** FeederKamusTest 22 (pembaca kamus empat bentuk + bentuk tak
+dikenal, setiap jenis selisih, skenario selaras/3.0.1/3.1, galat per aksi,
+tanpa efek samping, perintah, layar dan izin, `medan()` vs `payload()`),
+FeederMedanTest 11 (snapshot payload sebelum/sesudah config, sumber tanggal
+ijazah, peringatan validator, idempotensi Update-bukan-Insert, saran config),
+RegistrasiUlangTest 20 (riwayat, payload riwayat pendidikan dan Lulus/DO,
+sinkron ulang tanpa duplikat, Bridge, penolakan, PJK, izin, intake).
+
+**Instalasi berjalan:** `php artisan migrate`. Sebelum sinkronisasi re-NIM,
+petakan `pindah_prodi` dan `masuk_kembali` (grup `jenis_daftar`) dari
+referensi `GetJenisPendaftaran`. Jalankan `php artisan openacademic:feeder-kamus`
+di server kampus sesudah memasang atau memperbarui Neo Feeder.
+
+### Belum
+
+Bentuk balasan `GetDictionary` sebuah Neo Feeder hidup belum pernah dilihat;
+pembaca kamus menerima bentuk yang lazim dan menyatakan "tidak terbaca" untuk
+yang lain — bentuk baru perlu ditambahkan dari laporan kampus (tanpa menyalin
+kamusnya). Nama parameter kamus (`fungsi`) mengikuti kebiasaan komunitas.
+Tagihan registrasi baru hasil re-NIM tidak diterbitkan otomatis.
+
+---
+
 ## Sesi 70 — 2026-10-30 · Layanan swalayan mahasiswa: cuti, beasiswa, prestasi, konversi
 
 Branch `feature/swalayan-mahasiswa`, satu PR, empat commit (satu per alur) dan

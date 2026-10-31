@@ -22,6 +22,18 @@ class KurikulumMapper extends FeederMapper
         return 'InsertKurikulum';
     }
 
+    public function medan(): array
+    {
+        return [
+            'nama_kurikulum',
+            'id_prodi',
+            'id_semester',
+            'jumlah_sks_lulus',
+            'jumlah_sks_wajib',
+            'jumlah_sks_pilihan',
+        ];
+    }
+
     /** @return Builder<Kurikulum> */
     protected function query(string $termCode): Builder
     {

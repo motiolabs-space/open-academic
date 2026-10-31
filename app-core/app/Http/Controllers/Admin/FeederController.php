@@ -4,17 +4,20 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Admin;
 
+use App\DTOs\Feeder\LaporanKamusEntitas;
 use App\Enums\FeederSyncStatus;
 use App\Enums\StatusPerubahanFeeder;
 use App\Http\Controllers\Controller;
 use App\Jobs\SyncFeederEntityJob;
 use App\Models\Feeder\FeederChangeRequest;
+use App\Models\Feeder\FeederDictionaryRun;
 use App\Models\Feeder\FeederDiff;
 use App\Models\Feeder\FeederSyncLog;
 use App\Models\Feeder\FeederValidationIssue;
 use App\Services\Feeder\FeederRekonsiliasi;
 use App\Services\Feeder\FeederSyncService;
 use App\Services\Feeder\FeederValidator;
+use App\Services\Feeder\PemeriksaKamusFeeder;
 use App\Support\Portal;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Collection;
@@ -34,6 +37,7 @@ class FeederController extends Controller
         private readonly FeederSyncService $sync,
         private readonly FeederValidator $validator,
         private readonly FeederRekonsiliasi $rekonsiliasi,
+        private readonly PemeriksaKamusFeeder $kamus,
     ) {}
 
     public function index(): View
@@ -71,7 +75,30 @@ class FeederController extends Controller
             'perubahanSelesai' => FeederChangeRequest::query()
                 ->where('status', StatusPerubahanFeeder::Selesai->value)
                 ->count(),
+            'kamus' => $this->ringkasKamus(),
         ]);
+    }
+
+    /**
+     * The last dictionary reading, counted, for the console's one-line panel.
+     *
+     * @return array{run: FeederDictionaryRun, selisih: int, entitas: int}|null
+     */
+    private function ringkasKamus(): ?array
+    {
+        $run = $this->kamus->terakhir();
+
+        if ($run === null) {
+            return null;
+        }
+
+        $laporan = $this->kamus->laporan($run);
+
+        return [
+            'run' => $run,
+            'selisih' => $laporan->reject(fn (LaporanKamusEntitas $l): bool => $l->cocok())->count(),
+            'entitas' => $laporan->count(),
+        ];
     }
 
     /**

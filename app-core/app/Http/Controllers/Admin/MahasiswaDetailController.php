@@ -9,6 +9,7 @@ use App\Models\Akademik\Krs;
 use App\Models\Akademik\Nilai;
 use App\Models\Akademik\TahunAkademik;
 use App\Models\Kemahasiswaan\Mahasiswa;
+use App\Models\Kemahasiswaan\RiwayatRegistrasiMahasiswa;
 use App\Models\Keuangan\Tagihan;
 use App\Services\Akademik\KhsService;
 use App\Services\Akademik\TranskripService;
@@ -57,6 +58,8 @@ class MahasiswaDetailController extends Controller
             'perubahanFeeder' => fn ($q) => $q->terbuka(),
         ]);
 
+        $this->muatRiwayatRegistrasi($mahasiswa);
+
         $riwayat = $this->khs->riwayat($mahasiswa);
         $terakhir = $riwayat->where('is_final', true)->last();
 
@@ -79,6 +82,7 @@ class MahasiswaDetailController extends Controller
                 ? Tagihan::query()->with('tahunAkademik')->where('mahasiswa_id', $mahasiswa->id)->orderByDesc('tahun_akademik_id')->get()
                 : collect(),
             'bolehWali' => $bolehWali,
+            'bolehRegistrasiUlang' => $aktor->can('registrasiUlang', $mahasiswa),
             'bolehFeeder' => $aktor->hasPermissionTo('feeder.view', 'staff'),
             'calonWali' => $bolehWali ? $wali->calon($mahasiswa->prodi_id) : collect(),
             'isuFeeder' => $validator->isuUntuk('mahasiswa', $mahasiswa)
@@ -87,6 +91,24 @@ class MahasiswaDetailController extends Controller
                 ->reject(fn (array $i): bool => $i['rule'] === 'biodata_belum_sinkron')
                 ->values(),
         ]);
+    }
+
+    /**
+     * Both directions of the registration history (ADR-042 §3) in one query:
+     * the event that opened this registration and those that started from it.
+     * Two relations would cost a query each on every visit, almost always to
+     * find nothing.
+     */
+    private function muatRiwayatRegistrasi(Mahasiswa $mahasiswa): void
+    {
+        $riwayat = RiwayatRegistrasiMahasiswa::query()
+            ->with(['mahasiswaLama:id,uuid,nim', 'mahasiswaBaru:id,uuid,nim'])
+            ->where(fn ($q) => $q->where('mahasiswa_lama_id', $mahasiswa->id)->orWhere('mahasiswa_baru_id', $mahasiswa->id))
+            ->orderByDesc('id')
+            ->get();
+
+        $mahasiswa->setRelation('peristiwaRegistrasi', $riwayat->where('mahasiswa_lama_id', $mahasiswa->id)->values());
+        $mahasiswa->setRelation('registrasiSebelumnya', $riwayat->firstWhere('mahasiswa_baru_id', $mahasiswa->id));
     }
 
     /** One term's KHS, from the same service the student prints from. */

@@ -80,6 +80,12 @@ class MahasiswaPolicy
         return $this->stafDenganIzin($actor, 'mahasiswa.manage');
     }
 
+    /** Re-NIM, readmission and reactivation: registrar's work (ADR-042 §3). */
+    public function registrasiUlang(Authenticatable $actor, ?Mahasiswa $mahasiswa = null): bool
+    {
+        return $this->stafDenganIzin($actor, 'mahasiswa.manage');
+    }
+
     public function delete(Authenticatable $actor, Mahasiswa $mahasiswa): bool
     {
         return $this->stafDenganIzin($actor, 'mahasiswa.manage');

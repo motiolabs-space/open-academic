@@ -28,6 +28,22 @@ class TransferKreditMapper extends FeederMapper
         return 'InsertTransferKreditMahasiswa';
     }
 
+    public function medan(): array
+    {
+        return [
+            'id_registrasi_mahasiswa',
+            'id_matkul',
+            'kode_mata_kuliah_asal',
+            'nama_mata_kuliah_asal',
+            'sks_mata_kuliah_asal',
+            'nilai_huruf_asal',
+            'nilai_huruf_diakui',
+            'nilai_indeks_diakui',
+            'sks_mata_kuliah_diakui',
+            'nama_perguruan_tinggi_asal',
+        ];
+    }
+
     /** @return Builder<KonversiKredit> */
     protected function query(string $termCode): Builder
     {
