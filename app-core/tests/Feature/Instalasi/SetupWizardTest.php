@@ -6,6 +6,8 @@ use App\Enums\EducationLevel;
 use App\Models\Akademik\Fakultas;
 use App\Models\Akademik\Prodi;
 use App\Models\Akademik\TahunAkademik;
+use App\Models\Kemahasiswaan\Mahasiswa;
+use App\Models\Sdm\Dosen;
 use App\Models\Sdm\Staff;
 use App\Models\System\InstallationPing;
 use App\Models\System\LogAktivitas;
@@ -163,8 +165,8 @@ it('tertutup bagi instalasi lama yang sudah punya akun tanpa penanda', function 
     $this->get(route('login'))->assertOk();
 })->with([
     'staf' => Staff::class,
-    'dosen' => App\Models\Sdm\Dosen::class,
-    'mahasiswa' => App\Models\Kemahasiswaan\Mahasiswa::class,
+    'dosen' => Dosen::class,
+    'mahasiswa' => Mahasiswa::class,
 ]);
 
 it('tertutup bagi kampus demo', function () {
