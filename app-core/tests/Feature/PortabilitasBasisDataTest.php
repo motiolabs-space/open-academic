@@ -7,6 +7,7 @@ use App\Models\Akademik\TahunAkademik;
 use App\Models\Kemahasiswaan\Mahasiswa;
 use App\Models\Sdm\Staff;
 use Database\Seeders\RolePermissionSeeder;
+use Illuminate\Support\Facades\Schema;
 
 /**
  * Guards the behaviour that differs silently between database engines.
@@ -101,6 +102,35 @@ describe('tidak ada lagi like mentah', function () {
             [],
             "Pakai scopeCari() atau whereLike(), bukan where(..., 'like', ...): "
                 .$pelanggar->implode(', '),
+        );
+    });
+});
+
+describe('foreign key diindeks', function () {
+    it('memberi setiap foreign key indeks yang diawali kolomnya', function () {
+        // InnoDB mengindeks foreign key dengan sendirinya; PostgreSQL dan
+        // SQLite tidak. Tanpa indeks, setiap join dan whereHas() lewat kolom
+        // itu menjadi sequential scan di PostgreSQL — suite pernah berjalan
+        // lebih dari 90 menit karenanya (ADR-043). SQLite sama dengan
+        // PostgreSQL di sini, jadi suite SQLite cukup untuk menjaganya.
+        $tanpaIndeks = collect(Schema::getTableListing(schemaQualified: false))
+            ->flatMap(function (string $tabel): array {
+                $indeks = array_map(fn (array $i): array => $i['columns'], Schema::getIndexes($tabel));
+
+                return collect(Schema::getForeignKeys($tabel))
+                    ->map(fn (array $fk): array => $fk['columns'])
+                    ->reject(fn (array $kolom): bool => collect($indeks)->contains(
+                        fn (array $c): bool => array_slice($c, 0, count($kolom)) === $kolom,
+                    ))
+                    ->map(fn (array $kolom): string => $tabel.'('.implode(', ', $kolom).')')
+                    ->all();
+            })
+            ->values();
+
+        expect($tanpaIndeks->all())->toBe(
+            [],
+            'Foreign key tanpa indeks — tambahkan $table->index(...) di migrasinya: '
+                .$tanpaIndeks->implode(', '),
         );
     });
 });
