@@ -60,6 +60,16 @@
                                                 Catatan: {{ $c->catatan }}
                                             </p>
                                         @endif
+                                        @if ($c->dokumen_path)
+                                            <a href="{{ route('berkas.cuti', $c) }}" class="mt-1 inline-block text-[12px] text-navy underline">
+                                                {{ __('swalayan.unduh_berkas') }}
+                                            </a>
+                                        @endif
+                                        @if ($c->status->value === 'diajukan' && $termAktif && $c->tahunAkademik->kode > $termAktif->kode)
+                                            <p class="mt-1 text-[11.5px] text-warning-ink" data-cuti-belum-berjalan>
+                                                {{ __('swalayan.cuti.belum_berjalan') }}
+                                            </p>
+                                        @endif
                                     </td>
                                     <td class="px-5 py-3 text-center">
                                         <x-chip :tone="match ($c->status->value) {

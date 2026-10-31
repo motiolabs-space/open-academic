@@ -1066,3 +1066,16 @@ components:
           semester_masuk: { type: string, description: "Kode semester PDDIKTI, mis. 20261" }
           jenis_daftar: { type: [string, "null"], description: "baru | pindahan | rpl_transfer | rpl_perolehan | fast_track | non_gelar" }
           status: { type: string, description: "Kode status mahasiswa, mis. A" }
+      student.status_changed:
+        description: |
+          Status mahasiswa berubah: yudisium (menunggu uji kompetensi, lulus),
+          cuti disetujui BAAK, dan aktif kembali dari cuti. Terbit sesudah
+          transaksi keputusannya selesai — ajuan yang belum diputus tidak
+          menerbitkan apa pun.
+        type: object
+        required: [mahasiswa_uuid, nim, status_lama, status_baru]
+        properties:
+          mahasiswa_uuid: { type: string, format: uuid }
+          nim: { type: string }
+          status_lama: { type: string, description: "Kode status mahasiswa sebelum perubahan, mis. A" }
+          status_baru: { type: string, description: "Kode status mahasiswa sesudah perubahan, mis. C" }

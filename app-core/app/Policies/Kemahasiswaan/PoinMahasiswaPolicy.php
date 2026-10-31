@@ -30,4 +30,23 @@ class PoinMahasiswaPolicy
         return $poin->jenis === JenisPoin::Prestasi
             && $this->stafDenganIzin($actor, 'mahasiswa.manage');
     }
+
+    /**
+     * A student reporting an achievement of their own (ADR-040 §3). It joins
+     * the same verification queue as anything staff record.
+     */
+    public function lapor(Authenticatable $actor): bool
+    {
+        return $this->mahasiswa($actor) && $this->izin($actor, 'prestasi.lapor');
+    }
+
+    /** A row and its evidence: the student it is about, and student affairs. */
+    public function view(Authenticatable $actor, PoinMahasiswa $poin): bool
+    {
+        if ($this->mahasiswa($actor)) {
+            return $actor->getKey() === $poin->mahasiswa_id;
+        }
+
+        return $this->stafDenganIzin($actor, 'mahasiswa.view');
+    }
 }
